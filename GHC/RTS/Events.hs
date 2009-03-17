@@ -127,11 +127,13 @@ getE = lift $ lift get
 getEventType :: GetHeader EventType
 getEventType = do 
            etNum <- getH
+           size <- getH :: GetHeader EventTypeSize
+           let etSize = if size == 0xffff then Nothing else Just size
+           -- 0xffff indicates variable-sized event
            etDescLen <- getH :: GetHeader EventTypeDescLen
            etDesc <- getEtDesc (fromIntegral etDescLen) 
-           size <- getH :: GetHeader EventTypeSize
-           -- 0xffff indicates variable-sized event
-           let etSize = if size == 0xffff then Nothing else Just size
+           etExtraLen <- getH :: GetHeader Word32
+           _skip  <- replicateM_ (fromIntegral etExtraLen) (lift getWord8)
            ete <- getH :: GetHeader Marker
            when (ete /= EVENT_ET_END) $
               throwError ("Event Type end marker not found.")
