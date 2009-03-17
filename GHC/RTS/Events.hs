@@ -35,6 +35,7 @@ type Filename = String
 type EventTypeNum = Word16
 type EventTypeDescLen = Word32
 type EventTypeDesc = String
+type EventTypeSize = Word16
 -- Event.
 type EventDescription = String
 type Timestamp = Word64
@@ -67,7 +68,7 @@ data EventType =
   EventType {
     num  :: EventTypeNum,
     desc :: EventTypeDesc,
-    size :: Maybe Word16 -- ^ 'Nothing' indicates variable size
+    size :: Maybe EventTypeSize -- ^ 'Nothing' indicates variable size
   } deriving Show
 
 data Event = 
@@ -111,7 +112,7 @@ type GetEventLog a = ReaderT (IntMap EventType) Get a
 getT :: (MonadTrans m, Binary a) => m Get a
 getT = lift get
 
--- -----------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Binary instances
 
 instance Binary EventType where
@@ -119,7 +120,7 @@ instance Binary EventType where
   get = do etNum <- get 
            etDescLen <- get :: Get EventTypeDescLen
            etDesc <- getEtDesc (fromIntegral etDescLen) 
-           size <- get :: Get Word16
+           size <- get :: Get EventTypeSize
            -- 0xffff indicates variable-sized event
            let etSize = if size == 0xffff then Nothing else Just size
            ete <- get :: Get Marker
@@ -268,3 +269,5 @@ instance Binary EventLog where
 
 readEventLogFromFile :: FilePath -> IO EventLog
 readEventLogFromFile = decodeFile
+
+{- EOF. -}
