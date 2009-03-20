@@ -24,7 +24,8 @@ scrollLeft scale viewport statusbar ctx canvas
        hadj_pagesize <- adjustmentGetPageSize hadj
        hadj_upper <- adjustmentGetUpper hadj
        let newValue = 0 `max` (hadj_value - hadj_pagesize)
-       adjustmentSetValue hadj newValue         
+       adjustmentSetValue hadj newValue  
+       adjustmentValueChanged hadj       
        refresh canvas
        return True
 
@@ -39,7 +40,8 @@ scrollRight scale viewport statusbar ctx canvas
        hadj_pagesize <- adjustmentGetPageSize hadj
        hadj_upper <- adjustmentGetUpper hadj
        let newValue = (hadj_upper - hadj_pagesize) `min` (hadj_value + hadj_pagesize)
-       adjustmentSetValue hadj newValue         
+       adjustmentSetValue hadj newValue 
+       adjustmentValueChanged hadj        
        refresh canvas
        return True
 
