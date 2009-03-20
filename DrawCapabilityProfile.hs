@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---- $Id: DrawCapabilityProfile.hs#1 2009/03/20 13:27:50 REDMOND\\satnams $
+--- $Id: DrawCapabilityProfile.hs#2 2009/03/20 16:13:19 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/DrawCapabilityProfile.hs $
 -------------------------------------------------------------------------------
 
@@ -57,11 +57,11 @@ updateCanvas canvas viewport statusbar bw_button ctx scale
               hadj_lower <- adjustmentGetLower hadj
               hadj_upper <- adjustmentGetUpper hadj
               hadj_value <- adjustmentGetValue hadj
-              hadj_pagesize <- adjustmentGetPageSize hadj
-              scaleValue <- readIORef scale
-              statusbarPush statusbar ctx ("Scale: " ++ show scaleValue ++ " width = " ++ show width ++ " height = " ++ show height ++ " hadj_value = " ++ show (truncate hadj_value) ++ " hadj_pagesize = " ++ show hadj_pagesize ++ " hadj_low = " ++ show hadj_lower ++ " hadj_upper = " ++ show hadj_upper)
+              hadj_pagesize <- adjustmentGetPageSize hadj              
               let lastTx = findLastTxValue hecs
-              widgetSetSizeRequest canvas (truncate (scaleValue * fromIntegral lastTx) + ox + 90) ((length capabilities)*gapcap+oycap)
+              scaleValue <- checkScaleValue scale viewport lastTx
+              statusbarPush statusbar ctx ("Scale: " ++ show scaleValue ++ " width = " ++ show width ++ " height = " ++ show height ++ " hadj_value = " ++ show (truncate hadj_value) ++ " hadj_pagesize = " ++ show hadj_pagesize ++ " hadj_low = " ++ show hadj_lower ++ " hadj_upper = " ++ show hadj_upper)
+              widgetSetSizeRequest canvas (truncate (scaleValue * fromIntegral lastTx) + 2*ox) ((length capabilities)*gapcap+oycap)
               renderWithDrawable win (currentView height hadj_value 
                  hadj_pagesize scaleValue maybeEventArray
                  maybeCapabilities bw_mode)
@@ -71,6 +71,21 @@ updateCanvas canvas viewport statusbar bw_button ctx scale
 updateCanvas _ _ _ _ _ _ _ _ _ = return True
 
 -------------------------------------------------------------------------------
+-- Estimate the width of the vertical scrollbar at 20 pixels
+
+checkScaleValue :: IORef Double -> Viewport -> Integer -> IO Double
+checkScaleValue scale viewport duration
+  = do scaleValue <- readIORef scale
+       if scaleValue < 0.0 then
+         do (w, _) <- widgetGetSize viewport
+            let newScale = fromIntegral (w - 2*ox - 20 - barHeight) / (fromIntegral (duration))
+            writeIORef scale newScale
+            return newScale 
+        else
+         return scaleValue
+
+-------------------------------------------------------------------------------
+
 
 currentView :: Int -> Double -> Double -> Double -> Maybe HECs -> Maybe [Int]
                -> Bool -> Render ()
@@ -254,7 +269,7 @@ drawEvent bw_mode scaleValue eventArray idx
             else
              setSourceRGBA 0.0 0.0 0.0 0.8 -- Black bar
            let rectWidth = (tsScale (ts event - startTime) scaleValue)
-           draw_rectangle_opt (scaleValue >= 0.25) (ox+ tsScale startTime scaleValue) (oycap+c*gapcap) rectWidth barHeight
+           draw_rectangle_opt (scaleValue >= 0.25) (ox+ tsScale startTime scaleValue) (oycap+c*gapcap) rectWidth (barHeight `div` 2)
            -- Optionally label the bar with the threadID if there is room
            let tStr = show t
            tExtent <- textExtents tStr
@@ -315,7 +330,7 @@ drawEvent bw_mode scaleValue eventArray idx
                      else
                       setSourceRGB 0.8 0.8 0.8 -- grey box
                     setLineWidth 2.0
-                    draw_rectangle_opt (scaleValue >= 0.25) (ox+ tsScale startTime scaleValue) (oycap+c*gapcap) (tsScale (ts event - startTime) scaleValue) barHeight
+                    draw_rectangle_opt (scaleValue >= 0.25) (ox+ tsScale startTime scaleValue) (oycap+c*gapcap + barHeight `div` 2) (tsScale (ts event - startTime) scaleValue) (barHeight `div` 2)
       MigrateThread {cap=oldc, thread=t, newCap=c}
         -> when (scaleValue >= 0.1) $ do
               setSourceRGBAhex darkRed 0.8 

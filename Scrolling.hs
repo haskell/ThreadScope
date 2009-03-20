@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
---- $Id: ThreadScope.hs#1 2009/03/20 13:27:50 REDMOND\\satnams $
---- $Source: //depot/satnams/haskell/ThreadScope/ThreadScope.hs $
+--- $Id: Scrolling.hs#1 2009/03/20 16:13:19 REDMOND\\satnams $
+--- $Source: //depot/satnams/haskell/ThreadScope/Scrolling.hs $
 -------------------------------------------------------------------------------
 
 module Scrolling

@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---- $Id: ReadEvents.hs#1 2009/03/20 13:27:50 REDMOND\\satnams $
+--- $Id: ReadEvents.hs#2 2009/03/20 16:13:19 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/ReadEvents.hs $
 -------------------------------------------------------------------------------
 
@@ -45,9 +45,9 @@ eventFromHEC hec event
 
 registerEventsFromFile :: String -> IORef (Maybe [Int]) -> MaybeHECsIORef ->
                           IORef Double -> IORef Integer ->
-                          Window -> Label -> Statusbar -> ContextId -> IO ()
+                          Window -> Viewport -> Label -> Statusbar -> ContextId -> IO ()
 registerEventsFromFile filename capabilitiesIORef eventArrayIORef scale
-                       lastTxIORef window profileNameLabel summarybar
+                       lastTxIORef window viewport profileNameLabel summarybar
                        summary_ctx
   = do fmt <- buildFormat filename 
        let pes = events (fmtData fmt)
@@ -66,13 +66,6 @@ registerEventsFromFile filename capabilitiesIORef eventArrayIORef scale
        -- Adjust height to fit capabilities
        (width, _) <- widgetGetSize window
        widgetSetSizeRequest window width ((length capabilities)*gapcap+oycap+120)
-
-       let w = if width == 1 then
-                 1450
-               else
-                 width
-       -- Make the defualt view fit the whole trace.
-       writeIORef scale (0.9* (fromIntegral w) / (fromIntegral duration))
 
        -- Set the status bar
        statusbarPush summarybar summary_ctx (show nrEvents ++ " events. Duration " ++ (printf "%.3f" (((fromIntegral duration)::Double) * 1.0e-6)) ++ " seconds.")   

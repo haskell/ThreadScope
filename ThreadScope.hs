@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 -------------------------------------------------------------------------------
---- $Id: ThreadScope.hs#1 2009/03/20 13:27:50 REDMOND\\satnams $
+--- $Id: ThreadScope.hs#2 2009/03/20 16:13:19 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/ThreadScope.hs $
 -------------------------------------------------------------------------------
 
@@ -102,7 +102,8 @@ main
        when (filename /= "") $
            do registerEventsFromFile filename capabilitiesIORef
                                      eventArrayIORef scale lastTxIORef 
-                                     window profileNameLabel summarybar
+                                     window viewport profileNameLabel 
+                                     summarybar
                                      summary_ctx
  
 
@@ -128,7 +129,8 @@ main
          when (isJust filename) $
            do registerEventsFromFile (fromJust filename) capabilitiesIORef
                                      eventArrayIORef scale lastTxIORef 
-                                     window profileNameLabel summarybar
+                                     window viewport profileNameLabel 
+                                     summarybar
                                      summary_ctx
               refresh canvas
               refresh capability_canvas
@@ -196,7 +198,7 @@ main
              when (filename /= "") $
               do registerEventsFromFile  filename capabilitiesIORef
                                          eventArrayIORef scale lastTxIORef 
-                                         window profileNameLabel summarybar
+                                         window viewport profileNameLabel summarybar
                                          summary_ctx
                  refresh canvas
 

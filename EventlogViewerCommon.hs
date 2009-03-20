@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---- $Id: EventlogViewerCommon.hs#1 2009/03/20 13:27:50 REDMOND\\satnams $
+--- $Id: EventlogViewerCommon.hs#2 2009/03/20 16:13:19 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/EventlogViewerCommon.hs $
 -------------------------------------------------------------------------------
 
@@ -82,9 +82,11 @@ eScale e s = scaleIntegerBy (event2ms e) s
 -- This scale value is used to map a micro-second value to a pixel unit.
 -- To convert a micro-second value to a pixel value, multiply it by scale.
 -- To convert a pixel value to a micro-second value, divide it by scale.
+-- A negative value means the scale value to be computed to fit the
+-- trace to the display.
 
 defaultScaleValue :: Double
-defaultScaleValue = 0.1
+defaultScaleValue = -1.0
 
 -------------------------------------------------------------------------------
 -- Scale a timetamp value (in microsecond) by a value s giving an Int
