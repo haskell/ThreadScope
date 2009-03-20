@@ -13,3 +13,7 @@ Cabal-Version:       >=1.2
 Executable threadscope
   Main-is:           ThreadScope.hs
   Build-Depends:     base, gtk, cairo, binary, array, glade
+source-repository head
+  type:     darcs
+  location: http://darcs.haskell.org/ThreadScope/
+
