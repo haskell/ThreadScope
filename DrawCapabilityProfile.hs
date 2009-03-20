@@ -40,8 +40,9 @@ updateCanvas :: DrawingArea -> Viewport -> Statusbar -> ToggleButton ->
                 IO Bool
 updateCanvas canvas viewport statusbar bw_button ctx scale 
              capabilitiesIORef eventArrayIORef
-             event
-   = do maybeCapabilities <- readIORef capabilitiesIORef
+             event@(Expose _ area region count)
+   = do -- putStrLn (show event)
+        maybeCapabilities <- readIORef capabilitiesIORef
         maybeEventArray <- readIORef eventArrayIORef
         when (isJust maybeEventArray) $
            do let Just capabilities = maybeCapabilities
@@ -49,6 +50,8 @@ updateCanvas canvas viewport statusbar bw_button ctx scale
               bw_mode <- toggleButtonGetActive bw_button
               win <- widgetGetDrawWindow canvas 
               (width,height) <- widgetGetSize viewport
+              -- Clear the drawing window
+              drawWindowClearArea win x y width height
               hadj <- viewportGetHAdjustment viewport
               hadj_lower <- adjustmentGetLower hadj
               hadj_upper <- adjustmentGetUpper hadj
@@ -60,8 +63,11 @@ updateCanvas canvas viewport statusbar bw_button ctx scale
               widgetSetSizeRequest canvas (truncate (scaleValue * fromIntegral lastTx) + ox + 90) ((length capabilities)*gapcap+oycap)
               renderWithDrawable win (currentView height hadj_value 
                  hadj_pagesize scaleValue maybeEventArray
-                  maybeCapabilities bw_mode)
+                 maybeCapabilities bw_mode)
         return True
+      where
+      Rectangle x y _ _ = area 
+updateCanvas _ _ _ _ _ _ _ _ _ = return True
 
 -------------------------------------------------------------------------------
 
