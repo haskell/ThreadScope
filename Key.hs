@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
---- $Id: Key.hs#2 2009/03/10 16:01:35 REDMOND\\satnams $
---- $Source: //depot/satnams/haskell/ghc-profiling/Events/Key.hs $
+--- $Id: Key.hs#1 2009/03/20 13:27:50 REDMOND\\satnams $
+--- $Source: //depot/satnams/haskell/ThreadScope/Key.hs $
 -------------------------------------------------------------------------------
 
 

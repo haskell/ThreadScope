@@ -1,11 +1,13 @@
-# $Id: Makefile#10 2009/03/10 17:52:49 REDMOND\\satnams $
-# $Source: //depot/satnams/haskell/ghc-profiling/Events/Makefile $
+# $Id: Makefile#1 2009/03/20 13:27:50 REDMOND\\satnams $
+# $Source: //depot/satnams/haskell/ThreadScope/Makefile $
 
 # Makefile for eventlog_viewer
 # Maintainer: satnams@microsoft.com
 
+EVENTLOG_FILES = $(HOME)/haskell/ghc-profiling/Events
+
 all:	
-	ghc --make ThreadScope.hs -o threadscope
+	ghc --make ThreadScope.hs -i$(EVENTLOG_FILES) -o threadscope
 
 cabal:	
 	runhaskell Setup configure --prefix=$(HOME)/haskell --user

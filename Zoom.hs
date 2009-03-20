@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
---- $Id: DrawCapabilityProfile.hs#17 2009/03/10 17:52:49 REDMOND\\satnams $
---- $Source: //depot/satnams/haskell/ghc-profiling/Events/DrawCapabilityProfile.hs $
+--- $Id: Zoom.hs#1 2009/03/20 13:27:50 REDMOND\\satnams $
+--- $Source: //depot/satnams/haskell/ThreadScope/Zoom.hs $
 -------------------------------------------------------------------------------
 
 module Zoom

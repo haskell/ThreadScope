@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
---- $Id: CairoDrawing.hs#2 2009/02/26 03:19:52 REDMOND\\satnams $
---- $Source: //depot/satnams/haskell/ghc-profiling/Events/CairoDrawing.hs $
+--- $Id: CairoDrawing.hs#1 2009/03/20 13:27:50 REDMOND\\satnams $
+--- $Source: //depot/satnams/haskell/ThreadScope/CairoDrawing.hs $
 -------------------------------------------------------------------------------
 
 module CairoDrawing

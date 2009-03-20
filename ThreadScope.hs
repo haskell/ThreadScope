@@ -1,7 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 -------------------------------------------------------------------------------
---- $Id: ThreadScope.hs#12 2009/03/10 17:52:49 REDMOND\\satnams $
---- $Source: //depot/satnams/haskell/ghc-profiling/Events/ThreadScope.hs $
+--- $Id: ThreadScope.hs#1 2009/03/20 13:27:50 REDMOND\\satnams $
+--- $Source: //depot/satnams/haskell/ThreadScope/ThreadScope.hs $
 -------------------------------------------------------------------------------
 
 -- ThreadScope: a graphical viewer for Haskell event log information.

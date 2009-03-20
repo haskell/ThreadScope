@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
---- $Id: ViewerColours.hs#4 2009/03/10 16:01:35 REDMOND\\satnams $
---- $Source: //depot/satnams/haskell/ghc-profiling/Events/ViewerColours.hs $
+--- $Id: ViewerColours.hs#1 2009/03/20 13:27:50 REDMOND\\satnams $
+--- $Source: //depot/satnams/haskell/ThreadScope/ViewerColours.hs $
 -------------------------------------------------------------------------------
 
 module ViewerColours where

@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
---- $Id: About.hs#5 2009/03/10 17:30:04 REDMOND\\satnams $
---- $Source: //depot/satnams/haskell/ghc-profiling/Events/About.hs $
+--- $Id: About.hs#1 2009/03/20 13:27:50 REDMOND\\satnams $
+--- $Source: //depot/satnams/haskell/ThreadScope/About.hs $
 -------------------------------------------------------------------------------
 
 module About where

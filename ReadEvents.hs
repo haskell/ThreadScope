@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
---- $Id: ReadEvents.hs#7 2009/03/10 16:01:35 REDMOND\\satnams $
---- $Source: //depot/satnams/haskell/ghc-profiling/Events/ReadEvents.hs $
+--- $Id: ReadEvents.hs#1 2009/03/20 13:27:50 REDMOND\\satnams $
+--- $Source: //depot/satnams/haskell/ThreadScope/ReadEvents.hs $
 -------------------------------------------------------------------------------
 
 module ReadEvents

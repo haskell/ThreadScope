@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
---- $Id: EventlogViewerCommon.hs#5 2009/03/10 14:37:37 REDMOND\\satnams $
---- $Source: //depot/satnams/haskell/ghc-profiling/Events/EventlogViewerCommon.hs $
+--- $Id: EventlogViewerCommon.hs#1 2009/03/20 13:27:50 REDMOND\\satnams $
+--- $Source: //depot/satnams/haskell/ThreadScope/EventlogViewerCommon.hs $
 -------------------------------------------------------------------------------
 
 module EventlogViewerCommon

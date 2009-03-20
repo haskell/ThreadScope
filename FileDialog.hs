@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
---- $Id: FileDialog.hs#1 2009/02/25 13:18:33 REDMOND\\satnams $
---- $Source: //depot/satnams/haskell/ghc-profiling/Events/FileDialog.hs $
+--- $Id: FileDialog.hs#1 2009/03/20 13:27:50 REDMOND\\satnams $
+--- $Source: //depot/satnams/haskell/ThreadScope/FileDialog.hs $
 -------------------------------------------------------------------------------
 
 module FileDialog

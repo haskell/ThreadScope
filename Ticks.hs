@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
---- $Id: Ticks.hs#6 2009/03/10 13:55:46 REDMOND\\satnams $
---- $Source: //depot/satnams/haskell/ghc-profiling/Events/Ticks.hs $
+--- $Id: Ticks.hs#1 2009/03/20 13:27:50 REDMOND\\satnams $
+--- $Source: //depot/satnams/haskell/ThreadScope/Ticks.hs $
 -------------------------------------------------------------------------------
 
 module Ticks
