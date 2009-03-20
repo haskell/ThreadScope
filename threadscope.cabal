@@ -1,0 +1,15 @@
+Name:                threadscope
+Version:             0.1
+Description:         A graphical viewer for GHC eventlog traces.
+License:             BSD3
+License-file:        LICENSE
+Copyright:           Released under the GHC license
+Author:              Donnie Jones, Simon Marlow, Satnam Singh
+Maintainer:          s.singh@ieee.org
+Bug-reports:	     s.singh@ieee.org
+Stability:	     Pre-release version for review.
+Build-Type:          Simple
+Cabal-Version:       >=1.2
+Executable threadscope
+  Main-is:           ThreadScope.hs
+  Build-Depends:     base, gtk, cairo, binary, array, glade
