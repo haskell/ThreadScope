@@ -40,6 +40,7 @@ import FileDialog
 import Key
 import ReadEvents
 import Refresh
+import Scrolling
 import Ticks
 import ViewerColours
 import Zoom
@@ -198,6 +199,24 @@ main
                                          window profileNameLabel summarybar
                                          summary_ctx
                  refresh canvas
+
+       ------------------------------------------------------------------------
+       -- Key presses
+       onKeyPress window $ \Key { eventKeyName = key, eventKeyChar = mch } -> do
+         putStrLn ("key " ++ key)
+         case key of
+           "Escape" -> mainQuit >> return True
+           "key Right" -> scrollRight scale viewport statusbar ctx canvas
+           "key Left" -> scrollLeft scale viewport statusbar ctx canvas
+           _ -> if isJust mch then
+                  case fromJust mch of 
+                    '+' -> do zoomIn scale viewport statusbar ctx canvas
+                              return True
+                    '-' -> do zoomOut scale viewport statusbar ctx canvas
+                              return True
+                    _   -> return True
+                else
+                  return True
 
        ------------------------------------------------------------------------
        -- Quit

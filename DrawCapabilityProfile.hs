@@ -52,6 +52,7 @@ updateCanvas canvas viewport statusbar bw_button ctx scale
               (width,height) <- widgetGetSize viewport
               -- Clear the drawing window
               drawWindowClearArea win x y width height
+              -- Get the scrollbar settings
               hadj <- viewportGetHAdjustment viewport
               hadj_lower <- adjustmentGetLower hadj
               hadj_upper <- adjustmentGetUpper hadj
