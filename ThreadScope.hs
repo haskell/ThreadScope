@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 -------------------------------------------------------------------------------
---- $Id: ThreadScope.hs#2 2009/03/20 16:13:19 REDMOND\\satnams $
+--- $Id: ThreadScope.hs#3 2009/03/20 17:44:01 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/ThreadScope.hs $
 -------------------------------------------------------------------------------
 
@@ -35,6 +35,7 @@ import Data.List
 import About
 import CairoDrawing
 import DrawCapabilityProfile
+import EventDuration
 import EventlogViewerCommon
 import FileDialog
 import Key

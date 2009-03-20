@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---- $Id: DrawCapabilityProfile.hs#2 2009/03/20 16:13:19 REDMOND\\satnams $
+--- $Id: DrawCapabilityProfile.hs#3 2009/03/20 17:44:01 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/DrawCapabilityProfile.hs $
 -------------------------------------------------------------------------------
 
@@ -16,6 +16,8 @@ import qualified Graphics.Rendering.Cairo as C
 -- Imports for GHC Events
 import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
+
+-- Haskell library imports
 import System.Environment
 import Text.Printf
 import Data.List
@@ -29,6 +31,7 @@ import Data.Maybe
 import About
 import CairoDrawing
 import EventlogViewerCommon
+import StartTimes
 import Ticks
 import ViewerColours
 
@@ -262,7 +265,7 @@ drawEvent bw_mode scaleValue eventArray idx
                 setLineWidth 2.0
                 draw_line (ox+eScale event scaleValue, oycap+c*gapcap-4) (ox+ eScale event scaleValue, oycap+c*gapcap+barHeight+4)
       StopThread{cap=c, thread=t, GHC.RTS.Events.status=s} ->
-        do let startTime = findRunThreadTime eventArray c (idx-1)
+        do let startTime = findRunThreadTime eventArray (idx-1)
            -- Draw a solid bar to show the thread duration
            if not bw_mode then
              setSourceRGBA 0.0 1.0 0.0 0.8 -- Green bar
@@ -377,27 +380,6 @@ tickScale scaleValue
 
 -------------------------------------------------------------------------------
 
-findRunThreadTime :: EventArray -> Int -> Int -> Timestamp
-findRunThreadTime eventArray c idx
-  = case spec (eventArray!idx) of
-      RunThread cap thr -> if cap == c then
-                             ts (eventArray!idx)
-                           else
-                             findRunThreadTime eventArray c (idx-1)
-      _ -> findRunThreadTime eventArray c (idx-1)
-
--------------------------------------------------------------------------------
-
-findStartGCTime :: EventArray -> Int -> Int -> Timestamp
-findStartGCTime eventArray c idx
-  = case spec (eventArray!idx) of
-      StartGC cap -> if cap == c then
-                       ts (eventArray!idx)
-                     else
-                       findStartGCTime eventArray c (idx-1)
-      _ -> findStartGCTime eventArray c (idx-1)
-
--------------------------------------------------------------------------------
 
 showThreadStopStatus :: ThreadStopStatus -> String
 showThreadStopStatus HeapOverflow   = "heap overflow"
