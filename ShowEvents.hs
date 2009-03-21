@@ -41,7 +41,7 @@ ppEventType et = printf "%4d: %s (size %s)" (Log.num et) (Log.desc et)
    (case Log.size et of Nothing -> "variable"; Just x -> show x)
 
 ppEvent :: IntMap EventType -> Event -> String
-ppEvent imap Event{..} =
+ppEvent imap (Event ref time spec) =
   printf "%9d: " time ++
   case spec of
     UnknownEvent ->
@@ -50,19 +50,32 @@ ppEvent imap Event{..} =
     other ->
       printf "cap %d: " (cap spec) ++
       case spec of
-        CreateThread{..}   -> printf "creating thread %d" thread
-        RunThread{..}      -> printf "running thread %d" thread
-        StopThread{..}     -> printf "stopping thread %d (%s)" thread (showThreadStopStatus status)
-        ThreadRunnable{..} -> printf "thread %d is runnable" thread
-        MigrateThread{..}  -> printf "migrating thread %d to cap %d" thread newCap
-        RunSpark{..}       -> printf "running a local spark (thread %d)" thread
-        StealSpark{..}     -> printf "thread %d stealing a spark from cap %d" thread origCap
-        Shutdown{..}       -> printf "shutting down"
-        WakeupThread{..}   -> printf "waking up thread %d on cap %d" thread otherCap
-        RequestSeqGC{..}   -> printf "requesting sequential GC"
-        RequestParGC{..}   -> printf "requesting parallel GC"
-        StartGC{..}        -> printf "starting GC"
-        EndGC{..}          -> printf "finished GC"
+        CreateThread cap thread          -> 
+          printf "creating thread %d" thread
+        RunThread cap thread             -> 
+          printf "running thread %d" thread
+        StopThread cap thread status     -> 
+          printf "stopping thread %d (%s)" thread (showThreadStopStatus status)
+        ThreadRunnable cap thread        -> 
+          printf "thread %d is runnable" thread
+        MigrateThread cap thread newCap  -> 
+          printf "migrating thread %d to cap %d" thread newCap
+        RunSpark cap thread              -> 
+          printf "running a local spark (thread %d)" thread
+        StealSpark cap thread origCap    -> 
+          printf "thread %d stealing a spark from cap %d" thread origCap
+        Shutdown cap                     -> 
+          printf "shutting down"
+        WakeupThread cap thread otherCap -> 
+          printf "waking up thread %d on cap %d" thread otherCap
+        RequestSeqGC cap                 -> 
+          printf "requesting sequential GC"
+        RequestParGC cap   -> 
+          printf "requesting parallel GC"
+        StartGC cap        -> 
+          printf "starting GC"
+        EndGC cap          -> 
+          printf "finished GC"
 
 showThreadStopStatus :: ThreadStopStatus -> String
 showThreadStopStatus HeapOverflow   = "heap overflow"
