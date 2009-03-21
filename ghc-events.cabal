@@ -16,6 +16,6 @@ build-depends:    base >= 3.0.0.0,
                   bytestring >= 0.9
 build-type:       Simple
 tested-with:      GHC == 6.8.2, GHC == 6.11.20090221
-executable:       ShowEvents.exe
-main-is:          ShowEvents.hs
+executable:       show-ghc-events
+main-is:          ShowGhcEvents.hs
 ghc-options:      -O2
