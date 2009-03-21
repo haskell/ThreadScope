@@ -18,7 +18,6 @@ module GHC.RTS.Events (
 
 {- Libraries. -}
 import Data.Word (Word16, Word32, Word64)
-import Debug.Trace
 import Data.Binary
 import Data.Binary.Get
 import Control.Monad

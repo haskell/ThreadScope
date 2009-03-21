@@ -36,14 +36,6 @@ main = do
 
 die s = do hPutStrLn stderr s; exitWith (ExitFailure 1)
 
---   putStrLn (show $ getFirstPE dat)
---   let len = length $ phaseEvents dat
---   putStrLn (show $ phaseEvents dat !! (len - 3))
---   putStrLn (show $ phaseEvents dat !! (len - 2))
---   putStrLn (show $ phaseEvents dat !! (len - 1))
--- 
--- getFirstPE dat = head $ phaseEvents dat
-
 ppEventType :: EventType -> String
 ppEventType et = printf "%4d: %s (size %s)" (Log.num et) (Log.desc et) 
    (case Log.size et of Nothing -> "variable"; Just x -> show x)
