@@ -1,0 +1,21 @@
+name:             ghc-events
+version:          0.0.1
+synopsis:         Parses EventLog files emitted from the GHC EventLog framework.
+                  Also, includes ShowEvents to print to stdout the event types 
+                  and events.
+license:          OtherLicense
+license-file:     LICENSE
+author:           Donnie Jones <donnie@darthik.com>, 
+                  Simon Marlow <marlowsd@gmail.com>
+maintainer:       Donnie Jones <donnie@darthik.com>, 
+                  Simon Marlow <marlowsd@gmail.com>
+build-depends:    base >= 4.0.0.0, 
+                  mtl >= 1.1.0.2, 
+                  containers >= 0.2.0.0, 
+                  binary >= 0.4.4, 
+                  bytestring >= 0.9
+build-type:       Simple
+tested-with:      GHC == 6.11.2
+executable:       ShowEvents.exe
+main-is:          ShowEvents.hs
+ghc-options:      -O2
