@@ -9,12 +9,13 @@ author:           Donnie Jones <donnie@darthik.com>,
                   Simon Marlow <marlowsd@gmail.com>
 maintainer:       Donnie Jones <donnie@darthik.com>, 
                   Simon Marlow <marlowsd@gmail.com>
+build-type:       Simple
 build-depends:    base >= 3.0.0.0, 
                   mtl >= 1.1.0.2, 
                   containers >= 0.1.0.1, 
                   binary >= 0.4.4, 
                   bytestring >= 0.9
-build-type:       Simple
+exposed-modules:  GHC.RTS.Events
 tested-with:      GHC == 6.8.2, GHC == 6.11.20090221
 executable:       show-ghc-events
 main-is:          ShowGhcEvents.hs
