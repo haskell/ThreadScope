@@ -117,7 +117,7 @@ getH :: Binary a => GetHeader a
 getH = lift get
 
 getE :: Binary a => GetEvents a
-getE = lift . lift $ get
+getE = lift $ lift get
 
 ------------------------------------------------------------------------------
 -- Binary instances
