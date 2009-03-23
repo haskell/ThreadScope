@@ -13,6 +13,8 @@ module GHC.RTS.Events (
        ThreadStopStatus(..),
        Header(..),
        Data(..),
+       Timestamp,
+       ThreadId,
        readEventLogFromFile,
   ) where
 
