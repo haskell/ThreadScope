@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---- $Id: ReadEvents.hs#2 2009/03/20 16:13:19 REDMOND\\satnams $
+--- $Id: ReadEvents.hs#3 2009/03/23 17:11:32 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/ReadEvents.hs $
 -------------------------------------------------------------------------------
 
@@ -49,9 +49,9 @@ registerEventsFromFile :: String -> IORef (Maybe [Int]) -> MaybeHECsIORef ->
 registerEventsFromFile filename capabilitiesIORef eventArrayIORef scale
                        lastTxIORef window viewport profileNameLabel summarybar
                        summary_ctx
-  = do fmt <- buildFormat filename 
-       let pes = events (fmtData fmt)
-           sorted = sortBy (Data.Function.on compare ts) (reverse pes)
+  = do Right fmt <- readEventLogFromFile filename 
+       let pes = events (dat fmt)
+           sorted = sortBy (Data.Function.on compare time) (reverse pes)
            hecs = rawEventsToHECs sorted
            lastTx = event2ms (last sorted) -- Last event time in ms
            capabilities = ennumerateCapabilities pes

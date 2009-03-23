@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---- $Id: EventlogViewerCommon.hs#2 2009/03/20 16:13:19 REDMOND\\satnams $
+--- $Id: EventlogViewerCommon.hs#3 2009/03/23 17:11:32 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/EventlogViewerCommon.hs $
 -------------------------------------------------------------------------------
 
@@ -98,7 +98,7 @@ tsScale t s = scaleIntegerBy (ts2ms t) s
 -- Extact a timestamp value from an event and return as microseconds
 
 event2ms :: GHCEvents.Event -> Integer
-event2ms event = ts2ms (ts event)
+event2ms event = ts2ms (time event)
 
 -------------------------------------------------------------------------------
 

@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---- $Id: DrawCapabilityProfile.hs#3 2009/03/20 17:44:01 REDMOND\\satnams $
+--- $Id: DrawCapabilityProfile.hs#4 2009/03/23 17:11:32 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/DrawCapabilityProfile.hs $
 -------------------------------------------------------------------------------
 
@@ -271,7 +271,7 @@ drawEvent bw_mode scaleValue eventArray idx
              setSourceRGBA 0.0 1.0 0.0 0.8 -- Green bar
             else
              setSourceRGBA 0.0 0.0 0.0 0.8 -- Black bar
-           let rectWidth = (tsScale (ts event - startTime) scaleValue)
+           let rectWidth = (tsScale (time event - startTime) scaleValue)
            draw_rectangle_opt (scaleValue >= 0.25) (ox+ tsScale startTime scaleValue) (oycap+c*gapcap) rectWidth (barHeight `div` 2)
            -- Optionally label the bar with the threadID if there is room
            let tStr = show t
@@ -333,7 +333,7 @@ drawEvent bw_mode scaleValue eventArray idx
                      else
                       setSourceRGB 0.8 0.8 0.8 -- grey box
                     setLineWidth 2.0
-                    draw_rectangle_opt (scaleValue >= 0.25) (ox+ tsScale startTime scaleValue) (oycap+c*gapcap + barHeight `div` 2) (tsScale (ts event - startTime) scaleValue) (barHeight `div` 2)
+                    draw_rectangle_opt (scaleValue >= 0.25) (ox+ tsScale startTime scaleValue) (oycap+c*gapcap + barHeight `div` 2) (tsScale (time event - startTime) scaleValue) (barHeight `div` 2)
       MigrateThread {cap=oldc, thread=t, newCap=c}
         -> when (scaleValue >= 0.1) $ do
               setSourceRGBAhex darkRed 0.8 

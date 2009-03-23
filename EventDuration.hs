@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---- $Id: EventDuration.hs#1 2009/03/20 17:44:01 REDMOND\\satnams $
+--- $Id: EventDuration.hs#2 2009/03/23 17:11:32 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/EventDuration.hs $
 -------------------------------------------------------------------------------
 
@@ -45,6 +45,6 @@ eventArrayToDuration' idx eventArray
     rest = eventArrayToDuration' (idx+1) eventArray
     (_, lastIdx) = bounds eventArray
     startTime = findRunThreadTime eventArray (idx-1)
-    runBar t = ThreadRun t startTime (ts event)
+    runBar t = ThreadRun t startTime (time event)
 
 -------------------------------------------------------------------------------
