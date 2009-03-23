@@ -10,9 +10,10 @@ Bug-reports:	     s.singh@ieee.org
 Stability:	     Pre-release version for review.
 Build-Type:          Simple
 Cabal-Version:       >=1.2
+Data-files:	     threadscope.glade
 Executable threadscope
   Main-is:           ThreadScope.hs
-  Build-Depends:     base, gtk, cairo, binary, array, glade
+  Build-Depends:     base, gtk, cairo, binary, array, glade, ghc-events
 source-repository head
   type:     darcs
   location: http://darcs.haskell.org/ThreadScope/

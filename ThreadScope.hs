@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 -------------------------------------------------------------------------------
---- $Id: ThreadScope.hs#3 2009/03/20 17:44:01 REDMOND\\satnams $
+--- $Id: ThreadScope.hs#4 2009/03/23 17:39:00 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/ThreadScope.hs $
 -------------------------------------------------------------------------------
 
@@ -30,6 +30,8 @@ import Data.IORef
 import Data.Maybe
 import qualified Data.Function
 import Data.List
+
+import Paths_threadscope
 
 -- Imports for ThreadScope
 import About
@@ -70,7 +72,8 @@ main
        ------------------------------------------------------------------------
        -- Get main window and viewport
        initGUI
-       Just xml <- xmlNew "threadscope.glade"
+       gladePath <- getDataFileName "threadscope.glade"
+       Just xml <- xmlNew gladePath
        window   <- xmlGetWidget xml castToWindow "main_window"
        viewport <- xmlGetWidget xml castToViewport "viewport1"
        scale <- newIORef defaultScaleValue -- How to scale ms to pixels
