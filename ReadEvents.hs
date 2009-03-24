@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---- $Id: ReadEvents.hs#3 2009/03/23 17:11:32 REDMOND\\satnams $
+--- $Id: ReadEvents.hs#4 2009/03/24 09:58:18 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/ReadEvents.hs $
 -------------------------------------------------------------------------------
 
@@ -49,32 +49,34 @@ registerEventsFromFile :: String -> IORef (Maybe [Int]) -> MaybeHECsIORef ->
 registerEventsFromFile filename capabilitiesIORef eventArrayIORef scale
                        lastTxIORef window viewport profileNameLabel summarybar
                        summary_ctx
-  = do Right fmt <- readEventLogFromFile filename 
-       let pes = events (dat fmt)
-           sorted = sortBy (Data.Function.on compare time) (reverse pes)
-           hecs = rawEventsToHECs sorted
-           lastTx = event2ms (last sorted) -- Last event time in ms
-           capabilities = ennumerateCapabilities pes
-       -- Update the IORefs used for drawing callbacks
-       writeIORef capabilitiesIORef (Just capabilities)
-       writeIORef eventArrayIORef (Just hecs)
-       writeIORef lastTxIORef lastTx
-       writeIORef scale defaultScaleValue
-       let duration = lastTx 
-           nrEvents = length pes
+  = do eitherFmt <- readEventLogFromFile filename 
+       case eitherFmt of
+        Right fmt -> 
+         do let pes = events (dat fmt)
+                sorted = sortBy (Data.Function.on compare time) (reverse pes)
+                hecs = rawEventsToHECs sorted
+                lastTx = event2ms (last sorted) -- Last event time in ms
+                capabilities = ennumerateCapabilities pes
+            -- Update the IORefs used for drawing callbacks
+            writeIORef capabilitiesIORef (Just capabilities)
+            writeIORef eventArrayIORef (Just hecs)
+            writeIORef lastTxIORef lastTx
+            writeIORef scale defaultScaleValue
+            let duration = lastTx 
+                nrEvents = length pes
 
-       -- Adjust height to fit capabilities
-       (width, _) <- widgetGetSize window
-       widgetSetSizeRequest window width ((length capabilities)*gapcap+oycap+120)
+            -- Adjust height to fit capabilities
+            (width, _) <- widgetGetSize window
+            widgetSetSizeRequest window width ((length capabilities)*gapcap+oycap+120)
 
-       -- Set the status bar
-       statusbarPush summarybar summary_ctx (show nrEvents ++ " events. Duration " ++ (printf "%.3f" (((fromIntegral duration)::Double) * 1.0e-6)) ++ " seconds.")   
+            -- Set the status bar
+            statusbarPush summarybar summary_ctx (show nrEvents ++ " events. Duration " ++ (printf "%.3f" (((fromIntegral duration)::Double) * 1.0e-6)) ++ " seconds.")   
 
+            ------------------------------------------------------------------------
+            --- Set the label for the name of the event log
+            profileNameLabel `labelSetText` filename
 
-       ------------------------------------------------------------------------
-       --- Set the label for the name of the event log
-       profileNameLabel `labelSetText` filename
-
+        Left msg -> putStrLn msg
        
 -------------------------------------------------------------------------------
 
