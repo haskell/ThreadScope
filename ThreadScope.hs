@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 -------------------------------------------------------------------------------
---- $Id: ThreadScope.hs#4 2009/03/23 17:39:00 REDMOND\\satnams $
+--- $Id: ThreadScope.hs#5 2009/03/25 15:06:27 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/ThreadScope.hs $
 -------------------------------------------------------------------------------
 
@@ -56,7 +56,7 @@ main
        -- the event log.
        args <- getArgs
        when (length args > 1)
-         (putStrLn "usage: eventlog_viewer [eventlog_filename]")
+         (putStrLn "usage: threascope [eventlog_filename]")
        let filename = if args == [] then
                        ""
                       else

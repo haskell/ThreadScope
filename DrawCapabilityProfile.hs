@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---- $Id: DrawCapabilityProfile.hs#4 2009/03/23 17:11:32 REDMOND\\satnams $
+--- $Id: DrawCapabilityProfile.hs#5 2009/03/25 15:06:27 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/DrawCapabilityProfile.hs $
 -------------------------------------------------------------------------------
 
@@ -364,22 +364,24 @@ drawEvent bw_mode scaleValue eventArray idx
     event = eventArray!idx
 
 -------------------------------------------------------------------------------
+-- tickScale adjusts the spacing between ticks to avoid collisions
 
 tickScale :: Double -> Integer
 tickScale scaleValue
-  = if scaleValue <= 3.125e-3 then
+  = if scaleValue <= 2.89e05 then
+      100000
+    else if scaleValue <= 2.31e-4 then
+      10000
+    else if scaleValue <= 3.125e-3 then
       1000
-    else
-      if scaleValue <= 0.0625 then
-        100
-      else
-         if scaleValue <= 0.25 then
+    else if scaleValue <= 0.0625 then
+      100
+    else if scaleValue <= 0.25 then
            10
-         else -- Mark major ticks every 10us
-           1
+    else -- Mark major ticks every 10us
+      1
 
 -------------------------------------------------------------------------------
-
 
 showThreadStopStatus :: ThreadStopStatus -> String
 showThreadStopStatus HeapOverflow   = "heap overflow"
