@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---- $Id: DrawCapabilityProfile.hs#5 2009/03/25 15:06:27 REDMOND\\satnams $
+--- $Id: DrawCapabilityProfile.hs#7 2009/03/30 13:46:44 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/DrawCapabilityProfile.hs $
 -------------------------------------------------------------------------------
 
@@ -28,14 +28,19 @@ import Data.Array
 import Data.IORef
 import Data.Maybe
 
+-- ThreadScope imports
 import About
 import CairoDrawing
+import EventDuration
 import EventlogViewerCommon
 import StartTimes
 import Ticks
 import ViewerColours
 
 -------------------------------------------------------------------------------
+-- |The 'updateCanvas' function is called when an expose event
+--  occurs. This function redraws the currently visible part of the
+--  main trace canvas plus related canvases.
 
 updateCanvas :: DrawingArea -> Viewport -> Statusbar -> ToggleButton ->
                 ContextId ->  IORef Double ->
@@ -115,14 +120,29 @@ currentView height hadj_value hadj_pagesize scaleValue maybeEventArray maybeCapa
 -------------------------------------------------------------------------------
 
 hecView bw_mode height scaleValue hadj_value hadj_pagesize eventArray
-  = sequence_ [drawEvent bw_mode scaleValue eventArray i |
-               i <- [startIndex..endIndex]]
+  = do sequence_ [drawEvent bw_mode scaleValue eventArray i |
+                  i <- [startIndex..endIndex]]
+       mapM_ (drawDuration scaleValue) durations
     where
     startFrom = findStartEvents eventArray startIndex
     endAt = findEndEvents eventArray endIndex lastIndex
     (_, lastIndex) = bounds eventArray
     startIndex = findStartIndexFromTime eventArray (truncate (hadj_value / scaleValue)) 0 lastIndex
     endIndex = findEndIndexFromTime eventArray (truncate ((hadj_value + hadj_pagesize) / scaleValue)) startIndex lastIndex
+    -- Test bar representation
+    durations = eventArrayToDuration eventArray
+
+-------------------------------------------------------------------------------
+
+drawDuration :: Double -> EventDuration -> Render ()
+drawDuration scaleValue (ThreadRun id c startTime endTime)
+  = do setSourceRGBA 1.0 0.0 0.0 0.8
+       draw_rectangle_opt False
+                      (ox + tsScale startTime scaleValue) -- x
+                      (oycap+c*gapcap+barHeight)           -- y
+                      (tsScale (endTime - startTime) scaleValue) -- w
+                      (barHeight `div` 2)                        -- h
+drawDuration _ other = return ()
 
 -------------------------------------------------------------------------------
 
@@ -368,7 +388,7 @@ drawEvent bw_mode scaleValue eventArray idx
 
 tickScale :: Double -> Integer
 tickScale scaleValue
-  = if scaleValue <= 2.89e05 then
+  = if scaleValue <= 2.89e-5 then
       100000
     else if scaleValue <= 2.31e-4 then
       10000
@@ -377,7 +397,7 @@ tickScale scaleValue
     else if scaleValue <= 0.0625 then
       100
     else if scaleValue <= 0.25 then
-           10
+      10
     else -- Mark major ticks every 10us
       1
 

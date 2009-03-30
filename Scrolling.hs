@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---- $Id: Scrolling.hs#1 2009/03/20 16:13:19 REDMOND\\satnams $
+--- $Id: Scrolling.hs#2 2009/03/30 13:46:44 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/Scrolling.hs $
 -------------------------------------------------------------------------------
 
@@ -26,7 +26,7 @@ scrollLeft scale viewport statusbar ctx canvas
        let newValue = 0 `max` (hadj_value - hadj_pagesize)
        adjustmentSetValue hadj newValue  
        adjustmentValueChanged hadj       
-       refresh canvas
+       -- refresh canvas
        return True
 
 -------------------------------------------------------------------------------
@@ -42,7 +42,7 @@ scrollRight scale viewport statusbar ctx canvas
        let newValue = (hadj_upper - hadj_pagesize) `min` (hadj_value + hadj_pagesize)
        adjustmentSetValue hadj newValue 
        adjustmentValueChanged hadj        
-       refresh canvas
+       -- refresh canvas
        return True
 
 -------------------------------------------------------------------------------

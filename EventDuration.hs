@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---- $Id: EventDuration.hs#2 2009/03/23 17:11:32 REDMOND\\satnams $
+--- $Id: EventDuration.hs#3 2009/03/25 16:27:24 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/EventDuration.hs $
 -------------------------------------------------------------------------------
 
@@ -21,7 +21,7 @@ import StartTimes
 -------------------------------------------------------------------------------
 
 data EventDuration
-  = ThreadRun ThreadId Timestamp Timestamp
+  = ThreadRun ThreadId Int Timestamp Timestamp
   | GC Timestamp Timestamp
     deriving (Eq, Show)
 
@@ -38,13 +38,14 @@ eventArrayToDuration' idx eventArray
       []
     else
       case spec event of
-        StopThread{cap=c, thread=t, GHC.RTS.Events.status=s} -> runBar t : rest
+        StopThread{cap=c, thread=t, GHC.RTS.Events.status=s}
+           -> runBar t c : rest
         _ -> rest
     where
     event = eventArray!idx
     rest = eventArrayToDuration' (idx+1) eventArray
     (_, lastIdx) = bounds eventArray
     startTime = findRunThreadTime eventArray (idx-1)
-    runBar t = ThreadRun t startTime (time event)
+    runBar t c = ThreadRun t c startTime (time event)
 
 -------------------------------------------------------------------------------

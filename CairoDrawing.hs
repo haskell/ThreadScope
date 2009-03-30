@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---- $Id: CairoDrawing.hs#1 2009/03/20 13:27:50 REDMOND\\satnams $
+--- $Id: CairoDrawing.hs#2 2009/03/25 16:27:24 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/CairoDrawing.hs $
 -------------------------------------------------------------------------------
 
@@ -34,7 +34,7 @@ draw_rectangle x0 y0 w h
 draw_rectangle_opt opt x0 y0 w h
   = do rectangle (fromIntegral x0) (fromIntegral y0) wr1 (fromIntegral h)
        C.fill
-       when (opt) $ do
+       when opt $ do
          setLineWidth 1
          setSourceRGBA 0 0 0 0.7
          rectangle (fromIntegral x0) (fromIntegral y0) (fromIntegral w) (fromIntegral h)

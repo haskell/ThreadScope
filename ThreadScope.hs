@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 -------------------------------------------------------------------------------
---- $Id: ThreadScope.hs#5 2009/03/25 15:06:27 REDMOND\\satnams $
+--- $Id: ThreadScope.hs#6 2009/03/30 13:46:44 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/ThreadScope.hs $
 -------------------------------------------------------------------------------
 
@@ -212,8 +212,8 @@ main
          putStrLn ("key " ++ key)
          case key of
            "Escape" -> mainQuit >> return True
-           "key Right" -> scrollRight scale viewport statusbar ctx canvas
-           "key Left" -> scrollLeft scale viewport statusbar ctx canvas
+           "Right" -> scrollRight scale viewport statusbar ctx canvas
+           "Left" -> scrollLeft scale viewport statusbar ctx canvas
            _ -> if isJust mch then
                   case fromJust mch of 
                     '+' -> do zoomIn scale viewport statusbar ctx canvas
