@@ -3,11 +3,11 @@
 <!--Generated with glade3 3.4.3 on Tue Mar 10 14:45:49 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="main_window">
-    <property name="width_request">1500</property>
+    <property name="width_request">1000</property>
     <property name="height_request">400</property>
     <property name="can_focus">True</property>
     <property name="title" translatable="yes">ThreadScope</property>
-    <property name="default_width">1500</property>
+    <property name="default_width">1000</property>
     <property name="default_height">400</property>
     <child>
       <widget class="GtkVBox" id="vbox1">
