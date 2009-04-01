@@ -10,7 +10,6 @@ Bug-reports:	     s.singh@ieee.org
 Stability:	     Pre-release version for review.
 Build-Type:          Simple
 Cabal-Version:       >=1.2
-ghc-options:	     -O2
 Data-files:	     threadscope.glade
 Executable threadscope
   Main-is:           ThreadScope.hs
@@ -18,4 +17,5 @@ Executable threadscope
 source-repository head
   type:     darcs
   location: http://darcs.haskell.org/ThreadScope/
-
+library
+  ghc-options:	     -O2
