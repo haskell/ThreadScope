@@ -44,7 +44,7 @@ type EventTypeSize = Word16
 type EventDescription = String
 type Timestamp = Word64
 type ThreadId = Word64
-
+type CapNo = Word16
 type Marker = Word32
 
 {-
@@ -182,67 +182,67 @@ getEvSpecInfo :: EventTypeNum -> GetEvents EventTypeSpecificInfo
 getEvSpecInfo num = case num of
 
  EVENT_CREATE_THREAD -> do  -- (cap, thread)
-  c  <- getE :: GetEvents Word16
+  c  <- getE :: GetEvents CapNo
   t <- getE
   return CreateThread{cap=fromIntegral c,thread=t}
 
  EVENT_RUN_THREAD -> do  --  (cap, thread)
-  c  <- getE :: GetEvents Word16
+  c  <- getE :: GetEvents CapNo
   t <- getE
   return RunThread{cap=fromIntegral c,thread=t}
 
  EVENT_STOP_THREAD -> do  -- (cap, thread, status)
-  c  <- getE :: GetEvents Word16
+  c  <- getE :: GetEvents CapNo
   t <- getE
   s <- getE :: GetEvents Word16
   return StopThread{cap=fromIntegral c,thread=t, status= toEnum (fromIntegral s)}
 
  EVENT_THREAD_RUNNABLE -> do  -- (cap, thread)
-  c  <- getE :: GetEvents Word16
+  c  <- getE :: GetEvents CapNo
   t <- getE
   return ThreadRunnable{cap=fromIntegral c,thread=t}
 
  EVENT_MIGRATE_THREAD -> do  --  (cap, thread, new_cap)
-  c  <- getE :: GetEvents Word16
+  c  <- getE :: GetEvents CapNo
   t <- getE
-  c <- getE :: GetEvents Word16
+  c <- getE :: GetEvents CapNo
   return MigrateThread{cap=fromIntegral c,thread=t,newCap=fromIntegral c}
 
  EVENT_RUN_SPARK -> do  -- (cap, thread)
-  c  <- getE :: GetEvents Word16
+  c  <- getE :: GetEvents CapNo
   t <- getE
   return RunSpark{cap=fromIntegral c,thread=t}
 
  EVENT_STEAL_SPARK -> do  -- (cap, thread, victim_cap)
-  c  <- getE :: GetEvents Word16
+  c  <- getE :: GetEvents CapNo
   t <- getE
-  c <- getE :: GetEvents Word16
+  c <- getE :: GetEvents CapNo
   return StealSpark{cap=fromIntegral c,thread=t,origCap=fromIntegral c}
 
  EVENT_SHUTDOWN -> do  -- (cap)
-  c  <- getE :: GetEvents Word16
+  c  <- getE :: GetEvents CapNo
   return Shutdown{cap=fromIntegral c}
 
  EVENT_THREAD_WAKEUP -> do  -- (cap, thread, other_cap)
-  c  <- getE :: GetEvents Word16
+  c  <- getE :: GetEvents CapNo
   t <- getE
-  c <- getE :: GetEvents Word16
+  c <- getE :: GetEvents CapNo
   return WakeupThread{cap=fromIntegral c,thread=t,otherCap=fromIntegral c}
 
  EVENT_REQUEST_SEQ_GC -> do  -- (cap)
-  c  <- getE :: GetEvents Word16
+  c  <- getE :: GetEvents CapNo
   return RequestSeqGC{cap=fromIntegral c}
 
  EVENT_REQUEST_PAR_GC -> do  -- (cap)
-  c  <- getE :: GetEvents Word16
+  c  <- getE :: GetEvents CapNo
   return RequestParGC{cap=fromIntegral c}
 
  EVENT_GC_START -> do  -- (cap)
-  c  <- getE :: GetEvents Word16
+  c  <- getE :: GetEvents CapNo
   return StartGC{cap=fromIntegral c}
 
  EVENT_GC_END -> do  -- (cap)
-  c  <- getE :: GetEvents Word16
+  c  <- getE :: GetEvents CapNo
   return EndGC{cap=fromIntegral c}
 
  other -> do -- unrecognised event, just skip it
