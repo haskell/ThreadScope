@@ -88,6 +88,7 @@ data EventTypeSpecificInfo
   | StopThread     { cap :: Int, thread :: ThreadId, status :: ThreadStopStatus }
   | ThreadRunnable { cap :: Int, thread :: ThreadId  }
   | MigrateThread  { cap :: Int, thread :: ThreadId, newCap :: Int }
+  | CreateSpark    { cap :: Int, thread :: ThreadId  }
   | RunSpark       { cap :: Int, thread :: ThreadId  }
   | StealSpark     { cap :: Int, thread :: ThreadId, origCap :: Int }
   | WakeupThread   { cap :: Int, thread :: ThreadId, otherCap :: Int }
@@ -207,6 +208,11 @@ getEvSpecInfo num = case num of
   t <- getE
   c <- getE :: GetEvents CapNo
   return MigrateThread{cap=fromIntegral c,thread=t,newCap=fromIntegral c}
+
+ EVENT_CREATE_SPARK -> do  -- (cap, thread)
+  c  <- getE :: GetEvents CapNo
+  t <- getE
+  return CreateSpark{cap=fromIntegral c,thread=t}
 
  EVENT_RUN_SPARK -> do  -- (cap, thread)
   c  <- getE :: GetEvents CapNo
