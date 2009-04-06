@@ -279,6 +279,11 @@ drawEvent bw_mode scaleValue eventArray idx
                 C.fill
             )
       RunThread{cap=c, thread=t} -> return ()
+      CreateSpark{cap=c, thread=t} -> 
+           when (scaleValue >= 0.25) $
+             do setSourceRGBAhex yellow 0.8 
+                setLineWidth 2.0
+                draw_line (ox+eScale event scaleValue, oycap+c*gapcap-4) (ox+ eScale event scaleValue, oycap+c*gapcap+barHeight+4)
       RunSpark{cap=c, thread=t} -> 
            when (scaleValue >= 0.25) $
              do setSourceRGBAhex magenta 0.8 

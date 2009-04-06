@@ -18,6 +18,9 @@ black = Color 0 0 0
 green :: Color
 green = Color 0 0xFFFF 0
 
+yellow :: Color
+yellow = Color 0xFFFF 0xFFFF 0
+
 darkGreen :: Color
 darkGreen = Color 0x0000 0x6600 0x0000
 
@@ -57,4 +60,3 @@ setSourceRGBAhex (Color r g b) t
   = setSourceRGBA (fromIntegral r/0xFFFF) (fromIntegral g/0xFFFF)
                   (fromIntegral b/0xFFFF) t
 
--------------------------------------------------------------------------------

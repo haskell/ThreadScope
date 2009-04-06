@@ -59,64 +59,73 @@ drawKey
        textPath "create thread"
        C.fill
 
-       setSourceRGBAhex magenta 1.0
-       moveTo 210 0
+       setSourceRGBAhex yellow 1.0
+       moveTo 200 0
        relLineTo 0 25
        C.stroke
        setSourceRGBA 0.0 0.0 0.0 1.0
-       moveTo 215 15
-       textPath "run spark"
+       moveTo 205 15
+       textPath "create spark"
        C.fill
 
-       setSourceRGBAhex darkGreen 1.0
+       setSourceRGBAhex magenta 1.0
        moveTo 270 0
        relLineTo 0 25
        C.stroke
        setSourceRGBA 0.0 0.0 0.0 1.0
        moveTo 275 15
+       textPath "run spark"
+       C.fill
+
+       setSourceRGBAhex darkGreen 1.0
+       moveTo 325 0
+       relLineTo 0 25
+       C.stroke
+       setSourceRGBA 0.0 0.0 0.0 1.0
+       moveTo 330 15
        textPath "thread runnable"
        C.fill
 
        setSourceRGBAhex cyan 1.0
-       moveTo 360 0
+       moveTo 410 0
        relLineTo 0 25
        C.stroke
        setSourceRGBA 0.0 0.0 0.0 1.0
-       moveTo 365 15
+       moveTo 415 15
        textPath "seq GC req"
        C.fill
 
        setSourceRGBAhex darkBlue 1.0
-       moveTo 430 0
+       moveTo 480 0
        relLineTo 0 25
        C.stroke
        setSourceRGBA 0.0 0.0 0.0 1.0
-       moveTo 435 15
+       moveTo 485 15
        textPath "par GC req"
        C.fill
 
        setSourceRGBAhex darkRed 1.0
-       moveTo 500 0
+       moveTo 550 0
        relLineTo 0 25
        C.stroke
        setSourceRGBA 0.0 0.0 0.0 1.0
-       moveTo 505 15
+       moveTo 555 15
        textPath "migrate thread"
        C.fill
 
        setSourceRGBAhex purple 1.0
-       moveTo 580 0
+       moveTo 630 0
        relLineTo 0 25
        C.stroke
        setSourceRGBA 0.0 0.0 0.0 1.0
-       moveTo 585 15
+       moveTo 635 15
        textPath "thread wakeup"
        C.fill
 
        setSourceRGBA (102/256) 0.0 (105/256) 1.0
-       rectangle 670 0 (fromIntegral barHeight) (fromIntegral barHeight)
+       rectangle 710 0 (fromIntegral barHeight) (fromIntegral barHeight)
        C.fill
-       moveTo 695 15
+       moveTo 735 15
        setSourceRGBA 0.0 0.0 0.0 1.0
        textPath "shutdown"
        C.fill
