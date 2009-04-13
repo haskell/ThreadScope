@@ -184,12 +184,12 @@ getEvSpecInfo :: EventTypeNum -> GetEvents EventTypeSpecificInfo
 getEvSpecInfo num = case num of
 
  EVENT_CREATE_THREAD -> do  -- (cap, thread)
-  c  <- getE :: GetEvents CapNo
+  c <- getE :: GetEvents CapNo
   t <- getE
   return CreateThread{cap=fromIntegral c,thread=t}
 
  EVENT_RUN_THREAD -> do  --  (cap, thread)
-  c  <- getE :: GetEvents CapNo
+  c <- getE :: GetEvents CapNo
   t <- getE
   return RunThread{cap=fromIntegral c,thread=t}
 
@@ -200,15 +200,15 @@ getEvSpecInfo num = case num of
   return StopThread{cap=fromIntegral c,thread=t, status= toEnum (fromIntegral s)}
 
  EVENT_THREAD_RUNNABLE -> do  -- (cap, thread)
-  c  <- getE :: GetEvents CapNo
+  c <- getE :: GetEvents CapNo
   t <- getE
   return ThreadRunnable{cap=fromIntegral c,thread=t}
 
  EVENT_MIGRATE_THREAD -> do  --  (cap, thread, new_cap)
   c  <- getE :: GetEvents CapNo
-  t <- getE
-  c <- getE :: GetEvents CapNo
-  return MigrateThread{cap=fromIntegral c,thread=t,newCap=fromIntegral c}
+  t  <- getE
+  nc <- getE :: GetEvents CapNo
+  return MigrateThread{cap=fromIntegral c,thread=t,newCap=fromIntegral nc}
 
  EVENT_CREATE_SPARK -> do  -- (cap, thread)
   c  <- getE :: GetEvents CapNo
@@ -216,15 +216,15 @@ getEvSpecInfo num = case num of
   return CreateSpark{cap=fromIntegral c,thread=t}
 
  EVENT_RUN_SPARK -> do  -- (cap, thread)
-  c  <- getE :: GetEvents CapNo
+  c <- getE :: GetEvents CapNo
   t <- getE
   return RunSpark{cap=fromIntegral c,thread=t}
 
  EVENT_STEAL_SPARK -> do  -- (cap, thread, victim_cap)
   c  <- getE :: GetEvents CapNo
-  t <- getE
-  c <- getE :: GetEvents CapNo
-  return StealSpark{cap=fromIntegral c,thread=t,origCap=fromIntegral c}
+  t  <- getE
+  vc <- getE :: GetEvents CapNo
+  return StealSpark{cap=fromIntegral c,thread=t,origCap=fromIntegral vc}
 
  EVENT_SPARK_TO_THREAD -> do  -- (cap, thread, spark_thread)
   c  <- getE :: GetEvents CapNo
@@ -239,8 +239,8 @@ getEvSpecInfo num = case num of
  EVENT_THREAD_WAKEUP -> do  -- (cap, thread, other_cap)
   c  <- getE :: GetEvents CapNo
   t <- getE
-  c <- getE :: GetEvents CapNo
-  return WakeupThread{cap=fromIntegral c,thread=t,otherCap=fromIntegral c}
+  oc <- getE :: GetEvents CapNo
+  return WakeupThread{cap=fromIntegral c,thread=t,otherCap=fromIntegral oc}
 
  EVENT_REQUEST_SEQ_GC -> do  -- (cap)
   c  <- getE :: GetEvents CapNo
