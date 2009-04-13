@@ -43,7 +43,7 @@ type EventTypeSize = Word16
 -- Event.
 type EventDescription = String
 type Timestamp = Word64
-type ThreadId = Word64
+type ThreadId = Word32
 type CapNo = Word16
 type Marker = Word32
 
