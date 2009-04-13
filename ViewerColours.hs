@@ -46,7 +46,13 @@ darkRed :: Color
 darkRed = Color 0xcc00 0x0000 0x0000
 
 orange :: Color
-orange = Color 0xFFFF 0x9900 0x0000 -- orange
+orange = Color 0xFFFF 0x9900 0x0000 
+
+pink :: Color
+pink = Color 0xFF00 0xC000 0xCB00
+
+darkBrown :: Color
+darkBrown = Color 0x5C00 0x4000 0x3300
 
 profileBackground :: Color
 profileBackground = Color 0xFFFF 0xFFFF 0xFFFF

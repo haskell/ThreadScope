@@ -88,6 +88,20 @@ drawKey
        textPath "run spark"
        C.fill
 
+       setSourceRGBAhex darkBrown 1.0
+       draw_line (200, 60) (200, 80)
+       setSourceRGBAhex black 1.0
+       moveTo 205 72
+       textPath "spark to thread"
+       C.fill
+
+       setSourceRGBAhex pink 1.0
+       draw_line (200, 90) (200, 110)
+       setSourceRGBAhex black 1.0
+       moveTo 205 102
+       textPath "steal spark"
+       C.fill
+
        -- GC events column.
        setSourceRGBAhex orange 1.0
        draw_rectangle 400 0 50 keyBarHeight
