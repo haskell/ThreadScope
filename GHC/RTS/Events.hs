@@ -90,8 +90,8 @@ data EventTypeSpecificInfo
   | MigrateThread  { cap :: Int, thread :: ThreadId, newCap :: Int }
   | CreateSpark    { cap :: Int, thread :: ThreadId  }
   | RunSpark       { cap :: Int, thread :: ThreadId  }
-  | StealSpark     { cap :: Int, thread :: ThreadId, origCap :: Int }
-  | SparkToThread  { cap :: Int, thread :: ThreadId, spark_thread :: ThreadId }
+  | StealSpark     { cap :: Int, thread :: ThreadId, victimCap :: Int }
+  | SparkToThread  { cap :: Int, thread :: ThreadId, sparkThread :: ThreadId }
   | WakeupThread   { cap :: Int, thread :: ThreadId, otherCap :: Int }
   | Shutdown       { cap :: Int }
   | RequestSeqGC   { cap :: Int }
@@ -204,7 +204,7 @@ getEvSpecInfo num = case num of
   t <- getE
   return ThreadRunnable{cap=fromIntegral c,thread=t}
 
- EVENT_MIGRATE_THREAD -> do  --  (cap, thread, new_cap)
+ EVENT_MIGRATE_THREAD -> do  --  (cap, thread, newCap)
   c  <- getE :: GetEvents CapNo
   t  <- getE
   nc <- getE :: GetEvents CapNo
@@ -220,17 +220,17 @@ getEvSpecInfo num = case num of
   t <- getE
   return RunSpark{cap=fromIntegral c,thread=t}
 
- EVENT_STEAL_SPARK -> do  -- (cap, thread, victim_cap)
+ EVENT_STEAL_SPARK -> do  -- (cap, thread, victimCap)
   c  <- getE :: GetEvents CapNo
   t  <- getE
   vc <- getE :: GetEvents CapNo
-  return StealSpark{cap=fromIntegral c,thread=t,origCap=fromIntegral vc}
+  return StealSpark{cap=fromIntegral c,thread=t,victimCap=fromIntegral vc}
 
- EVENT_SPARK_TO_THREAD -> do  -- (cap, thread, spark_thread)
+ EVENT_SPARK_TO_THREAD -> do  -- (cap, thread, sparkThread)
   c  <- getE :: GetEvents CapNo
   t  <- getE 
   st <- getE :: GetEvents ThreadId
-  return SparkToThread{cap=fromIntegral c,thread=t,spark_thread=st}
+  return SparkToThread{cap=fromIntegral c,thread=t,sparkThread=st}
 
  EVENT_SHUTDOWN -> do  -- (cap)
   c  <- getE :: GetEvents CapNo

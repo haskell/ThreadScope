@@ -64,10 +64,10 @@ ppEvent imap (Event ref time spec) =
           printf "create spark (thread %d)" thread
         RunSpark cap thread              -> 
           printf "running a local spark (thread %d)" thread
-        StealSpark cap thread origCap    -> 
-          printf "thread %d stealing a spark from cap %d" thread origCap
-        SparkToThread cap thread spark_thread -> 
-          printf "thread %d from cap %d turning spark into thread %d" thread cap spark_thread
+        StealSpark cap thread victimCap    -> 
+          printf "thread %d stealing a spark from cap %d" thread victimCap 
+        SparkToThread cap thread sparkThread -> 
+          printf "thread %d from cap %d turning spark into thread %d" thread cap sparkThread
         Shutdown cap                     -> 
           printf "shutting down"
         WakeupThread cap thread otherCap -> 
