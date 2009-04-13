@@ -60,6 +60,8 @@ ppEvent imap (Event ref time spec) =
           printf "thread %d is runnable" thread
         MigrateThread cap thread newCap  -> 
           printf "migrating thread %d to cap %d" thread newCap
+        CreateSpark cap thread              -> 
+          printf "create spark (thread %d)" thread
         RunSpark cap thread              -> 
           printf "running a local spark (thread %d)" thread
         StealSpark cap thread origCap    -> 
