@@ -294,7 +294,7 @@ drawEvent bw_mode scaleValue eventArray idx
              do setSourceRGBAhex pink 0.8 
                 setLineWidth 2.0
                 draw_line (ox+eScale event scaleValue, oycap+c*gapcap-4) (ox+ eScale event scaleValue, oycap+c*gapcap+barHeight+4)
-      SparkToThread{cap=c, thread=t, sparkThread=st} -> 
+      CreateSparkThread{cap=c, sparkThread=st} -> 
            when (scaleValue >= 0.25) $
              do setSourceRGBAhex darkBrown 0.8 
                 setLineWidth 2.0

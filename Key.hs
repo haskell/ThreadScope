@@ -92,7 +92,7 @@ drawKey
        draw_line (200, 60) (200, 80)
        setSourceRGBAhex black 1.0
        moveTo 205 72
-       textPath "spark to thread"
+       textPath "create spark thread"
        C.fill
 
        setSourceRGBAhex pink 1.0
