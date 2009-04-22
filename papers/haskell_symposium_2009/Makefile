@@ -5,3 +5,6 @@ DOC = ghc-parallel-tuning
 
 all:	
 	latex $(DOC).tex
+	bibtex $(DOC)
+	latex $(DOC).tex
+	latex $(DOC).tex
