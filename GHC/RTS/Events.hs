@@ -91,7 +91,7 @@ data EventTypeSpecificInfo
   | CreateSpark    { cap :: Int, thread :: ThreadId  }
   | RunSpark       { cap :: Int, thread :: ThreadId  }
   | StealSpark     { cap :: Int, thread :: ThreadId, victimCap :: Int }
-  | SparkToThread  { cap :: Int, thread :: ThreadId, sparkThread :: ThreadId }
+  | CreateSparkThread  { cap :: Int, sparkThread :: ThreadId }
   | WakeupThread   { cap :: Int, thread :: ThreadId, otherCap :: Int }
   | Shutdown       { cap :: Int }
   | RequestSeqGC   { cap :: Int }
@@ -226,11 +226,10 @@ getEvSpecInfo num = case num of
   vc <- getE :: GetEvents CapNo
   return StealSpark{cap=fromIntegral c,thread=t,victimCap=fromIntegral vc}
 
- EVENT_SPARK_TO_THREAD -> do  -- (cap, thread, sparkThread)
+ EVENT_CREATE_SPARK_THREAD -> do  -- (cap, sparkThread)
   c  <- getE :: GetEvents CapNo
-  t  <- getE 
   st <- getE :: GetEvents ThreadId
-  return SparkToThread{cap=fromIntegral c,thread=t,sparkThread=st}
+  return CreateSparkThread{cap=fromIntegral c,sparkThread=st}
 
  EVENT_SHUTDOWN -> do  -- (cap)
   c  <- getE :: GetEvents CapNo
