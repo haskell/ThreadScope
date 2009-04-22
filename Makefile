@@ -6,7 +6,7 @@
 
 
 cabal:	
-	cabal install --user
+	cabal install --user --prefix=$(HOME)/haskell
 
 haddock:
 	cabal haddock --executables

@@ -29,107 +29,97 @@ updateKeyCanvas canvas _
 
 -------------------------------------------------------------------------------
 
-keyBarHeight :: Int
-keyBarHeight = barHeight `div` 2
-
 drawKey :: Render ()
 drawKey
   = do selectFontFace "times" FontSlantNormal FontWeightNormal
        setFontSize 12
-
-       -- Thread events column.
-       setSourceRGBAhex green 1.0
-       draw_rectangle 10 0 50 keyBarHeight
-       setSourceRGBAhex black 1.0
+       setSourceRGBA 0.0 1.0 0.0 1.0
+       rectangle 10 0 50 (fromIntegral (barHeight `div` 2))
+       C.fill
+       setSourceRGBA 0.0 0.0 0.0 1.0
        moveTo 15 22
        textPath "running"
        C.fill
 
-       setSourceRGBAhex lightBlue 1.0
-       draw_line (10, 30) (10, 50)
-       setSourceRGBAhex black 1.0
-       moveTo 15 42
-       textPath "create thread"
-       C.fill
-
-       setSourceRGBAhex darkGreen 1.0
-       draw_line (10, 60) (10, 80)
-       setSourceRGBAhex black 1.0
-       moveTo 15 72
-       textPath "thread runnable"
-       C.fill
-
-       setSourceRGBAhex darkRed 1.0
-       draw_line (10, 90) (10, 110)
-       setSourceRGBAhex black 1.0
-       moveTo 15 102
-       textPath "migrate thread"
-       C.fill
-
-       setSourceRGBAhex purple 1.0
-       draw_line (10, 120) (10, 140) 
-       setSourceRGBAhex black 1.0
-       moveTo 15 132
-       textPath "thread wakeup"
-       C.fill
-
-       -- Spark events column.
-       setSourceRGBAhex yellow 1.0
-       draw_line (200, 0) (200, 20)
-       setSourceRGBAhex black 1.0
-       moveTo 205 12
-       textPath "create spark"
-       C.fill
-
-       setSourceRGBAhex magenta 1.0
-       draw_line (200, 30) (200, 50)
-       setSourceRGBAhex black 1.0
-       moveTo 205 42
-       textPath "run spark"
-       C.fill
-
-       setSourceRGBAhex darkBrown 1.0
-       draw_line (200, 60) (200, 80)
-       setSourceRGBAhex black 1.0
-       moveTo 205 72
-       textPath "create spark thread"
-       C.fill
-
-       setSourceRGBAhex pink 1.0
-       draw_line (200, 90) (200, 110)
-       setSourceRGBAhex black 1.0
-       moveTo 205 102
-       textPath "steal spark"
-       C.fill
-
-       -- GC events column.
        setSourceRGBAhex orange 1.0
-       draw_rectangle 400 0 50 keyBarHeight
-       setSourceRGBAhex black 1.0
-       moveTo 405 22
+       rectangle 70 0 50 (fromIntegral (barHeight `div` 2))
+       C.fill
+       setSourceRGBA 0.0 0.0 0.0 1.0
+       moveTo 80 22
        textPath "GC"
        C.fill
 
+       setSourceRGBAhex lightBlue 1.0
+       setLineWidth 2.0
+       moveTo 130 0
+       relLineTo 0 25
+       C.stroke
+       setSourceRGBA 0.0 0.0 0.0 1.0
+       moveTo 135 15
+       textPath "create thread"
+       C.fill
+
+       setSourceRGBAhex magenta 1.0
+       moveTo 210 0
+       relLineTo 0 25
+       C.stroke
+       setSourceRGBA 0.0 0.0 0.0 1.0
+       moveTo 215 15
+       textPath "run spark"
+       C.fill
+
+       setSourceRGBAhex darkGreen 1.0
+       moveTo 270 0
+       relLineTo 0 25
+       C.stroke
+       setSourceRGBA 0.0 0.0 0.0 1.0
+       moveTo 275 15
+       textPath "thread runnable"
+       C.fill
+
        setSourceRGBAhex cyan 1.0
-       draw_line (400, 30) (400, 50)
-       setSourceRGBAhex black 1.0
-       moveTo 405 42
+       moveTo 360 0
+       relLineTo 0 25
+       C.stroke
+       setSourceRGBA 0.0 0.0 0.0 1.0
+       moveTo 365 15
        textPath "seq GC req"
        C.fill
 
        setSourceRGBAhex darkBlue 1.0
-       draw_line (400, 60) (400, 80)
-       setSourceRGBAhex black 1.0
-       moveTo 405 72
+       moveTo 430 0
+       relLineTo 0 25
+       C.stroke
+       setSourceRGBA 0.0 0.0 0.0 1.0
+       moveTo 435 15
        textPath "par GC req"
        C.fill
-       setSourceRGBAhex cyan 1.0
 
-       -- Shutdown events column.
+       setSourceRGBAhex darkRed 1.0
+       moveTo 500 0
+       relLineTo 0 25
+       C.stroke
+       setSourceRGBA 0.0 0.0 0.0 1.0
+       moveTo 505 15
+       textPath "migrate thread"
+       C.fill
+
+       setSourceRGBAhex purple 1.0
+       moveTo 580 0
+       relLineTo 0 25
+       C.stroke
+       setSourceRGBA 0.0 0.0 0.0 1.0
+       moveTo 585 15
+       textPath "thread wakeup"
+       C.fill
+
        setSourceRGBA (102/256) 0.0 (105/256) 1.0
-       draw_rectangle 600 0 50 keyBarHeight
-       setSourceRGBAhex black 1.0
-       moveTo 605 22
+       rectangle 670 0 (fromIntegral barHeight) (fromIntegral barHeight)
+       C.fill
+       moveTo 695 15
+       setSourceRGBA 0.0 0.0 0.0 1.0
        textPath "shutdown"
        C.fill
+
+-------------------------------------------------------------------------------
 

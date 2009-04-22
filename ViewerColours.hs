@@ -18,9 +18,6 @@ black = Color 0 0 0
 green :: Color
 green = Color 0 0xFFFF 0
 
-yellow :: Color
-yellow = Color 0xFFFF 0xFFFF 0
-
 darkGreen :: Color
 darkGreen = Color 0x0000 0x6600 0x0000
 
@@ -46,13 +43,7 @@ darkRed :: Color
 darkRed = Color 0xcc00 0x0000 0x0000
 
 orange :: Color
-orange = Color 0xFFFF 0x9900 0x0000 
-
-pink :: Color
-pink = Color 0xFF00 0xC000 0xCB00
-
-darkBrown :: Color
-darkBrown = Color 0x5C00 0x4000 0x3300
+orange = Color 0xFFFF 0x9900 0x0000 -- orange
 
 profileBackground :: Color
 profileBackground = Color 0xFFFF 0xFFFF 0xFFFF
@@ -66,3 +57,4 @@ setSourceRGBAhex (Color r g b) t
   = setSourceRGBA (fromIntegral r/0xFFFF) (fromIntegral g/0xFFFF)
                   (fromIntegral b/0xFFFF) t
 
+-------------------------------------------------------------------------------
