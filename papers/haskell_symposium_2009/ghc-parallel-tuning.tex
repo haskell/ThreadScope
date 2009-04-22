@@ -37,6 +37,7 @@ Profiling information is essential for the performance tuning of parallel progra
 
 
 \section{Introduction}
+Semi-explicit parallel programs in Haskell are written using annotations to control the granularity of parallelsim and the squenecing of evaluation~\cite{spj:trin98b}. This leads to deterministic fine-grain parallel programs that can be executed on multi-core computers. However, it can be difficult to observe how effectively a program has been parallelized. This paper presents some recently developed profiling technology in the GHC system which can be used for parallel performanced tuning of Haskell programs.
 
 \section{Background}
 
