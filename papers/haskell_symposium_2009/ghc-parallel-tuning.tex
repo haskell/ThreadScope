@@ -6,19 +6,15 @@
 \usepackage{graphicx}
 \usepackage{enumerate}
 
-\newcommand{\ToDo}[1]{\par{{\bf ToDo:} \sl #1}\par}
-\newcommand{\sdm}[1]{{{\bf SDM:} \sl #1}}
-\newcommand{\spj}[1]{{{\bf SLPJ:} \sl #1}}
-% \newcommand{\ss}[1]{{{\bf SS:} \sl #1}}
 
 \nocaptionrule
 
 \title{Parallel Performance Tuning for Haskell}
 
+\authorinfo{Donnie Jones}{TBD}
+           {donnie@darthik.com}
 \authorinfo{Simon Marlow}{Microsoft Research}
            {simonmar@microsoft.com}
-\authorinfo{Donnie Jones}{Microst Research}
-           {simonpj@microsoft.com}
 \authorinfo{Satnam Singh}{Microsoft Research}
            {satnams@microsoft.com}
 
@@ -30,6 +26,22 @@
 \begin{abstract}
 \end{abstract}
 
+
+\section{Introduction}
+
+\section{Background}
+
+\section{Profiling Motivation}
+Show examples of semi-explicit parallel programs that go wrong. Show what we could measure before using heap and time profiling and motivate the need for better profiling.
+
+\section{Profiling Infrastructure}
+
+\section{Case Studies}
+Revist examples and show how performance can be tuned with the information obtained from the profiler.
+
+\section{Related Work}
+
+\section{Conclusions}
 
 \bibliographystyle{alpha}
 \bibliography{ghc-parallel-tuning}
