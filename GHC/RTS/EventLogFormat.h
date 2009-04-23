@@ -131,7 +131,7 @@
 
 typedef StgWord16 EventTypeNum;
 typedef StgWord64 Timestamp; // in nanoseconds
-typedef StgThreadID ThreadID;
-typedef StgWord16 CapNo;
+typedef StgWord64 ThreadID;
+typedef StgWord16 CapabilityNum;
 
 #endif
