@@ -97,8 +97,11 @@ main
  
        -- B&W toggle button
        bw_button <- xmlGetWidget xml castToToggleButton "black_and_white"
-       bw_button `onToggled` do -- putStrLn "ontog"
-                                refresh canvas
+       bw_button `onToggled` do refresh canvas
+
+       -- No Labels toggle button
+       labels_button <- xmlGetWidget xml castToToggleButton "labels"
+       labels_button `onToggled` do refresh canvas
 
        -- When a filename for an event log is specified open and
        -- parse the event log file and update the IORefs for 
@@ -164,11 +167,12 @@ main
          hadj_pagesize <- adjustmentGetPageSize hadj
          fn <- readIORef filenameRef
          bw_mode <- toggleButtonGetActive bw_button
+         labels_mode <- toggleButtonGetActive labels_button
          withPDFSurface (fn++".pdf") (fromIntegral width) (fromIntegral height)
            (flip renderWith $ (translate (-hadj_value) 0 >> 
                                currentView height hadj_value hadj_pagesize 
                                scaleValue maybeEventArray maybeCapabilities 
-                               bw_mode) >> showPage)
+                               bw_mode labels_mode) >> showPage)
          statusbarPush statusbar ctx ("Saved " ++ fn ++ ".pdf")
          return ()
 
@@ -238,7 +242,7 @@ main
        ------------------------------------------------------------------------
        -- Program the callback for the main drawing canvas
        canvas `onExpose` updateCanvas 
-                  canvas viewport statusbar bw_button ctx scale 
+                  canvas viewport statusbar bw_button labels_button ctx scale 
                   capabilitiesIORef eventArrayIORef
 
        ------------------------------------------------------------------------

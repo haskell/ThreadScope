@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.3 on Tue Mar 10 14:45:49 2009 -->
+<!--Generated with glade3 3.4.3 on Fri May 01 15:39:07 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="main_window">
     <property name="width_request">1500</property>
@@ -155,6 +155,20 @@
               </packing>
             </child>
             <child>
+              <widget class="GtkToggleButton" id="labels">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="label" translatable="yes">No Labels</property>
+                <property name="response_id">0</property>
+              </widget>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">4</property>
+              </packing>
+            </child>
+            <child>
               <widget class="GtkButton" id="reload_button">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
@@ -165,7 +179,7 @@
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">False</property>
-                <property name="position">4</property>
+                <property name="position">5</property>
               </packing>
             </child>
             <child>
@@ -174,7 +188,7 @@
                 <property name="label" translatable="yes">no profile loaded</property>
               </widget>
               <packing>
-                <property name="position">5</property>
+                <property name="position">6</property>
               </packing>
             </child>
           </widget>
@@ -262,6 +276,9 @@
             <property name="expand">False</property>
             <property name="position">4</property>
           </packing>
+        </child>
+        <child>
+          <placeholder/>
         </child>
       </widget>
     </child>

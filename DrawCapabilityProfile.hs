@@ -43,10 +43,10 @@ import ViewerColours
 --  main trace canvas plus related canvases.
 
 updateCanvas :: DrawingArea -> Viewport -> Statusbar -> ToggleButton ->
-                ContextId ->  IORef Double ->
+                ToggleButton -> ContextId ->  IORef Double ->
                 IORef (Maybe [Int])  -> MaybeHECsIORef -> Event ->
                 IO Bool
-updateCanvas canvas viewport statusbar bw_button ctx scale 
+updateCanvas canvas viewport statusbar bw_button labels_button ctx scale 
              capabilitiesIORef eventArrayIORef
              event@(Expose _ area region count)
    = do -- putStrLn (show event)
@@ -56,6 +56,7 @@ updateCanvas canvas viewport statusbar bw_button ctx scale
            do let Just capabilities = maybeCapabilities
                   Just hecs = maybeEventArray
               bw_mode <- toggleButtonGetActive bw_button
+              labels_mode <- toggleButtonGetActive labels_button
               win <- widgetGetDrawWindow canvas 
               (width,height) <- widgetGetSize viewport
               -- Clear the drawing window
@@ -72,11 +73,11 @@ updateCanvas canvas viewport statusbar bw_button ctx scale
               widgetSetSizeRequest canvas (truncate (scaleValue * fromIntegral lastTx) + 2*ox) ((length capabilities)*gapcap+oycap)
               renderWithDrawable win (currentView height hadj_value 
                  hadj_pagesize scaleValue maybeEventArray
-                 maybeCapabilities bw_mode)
+                 maybeCapabilities bw_mode labels_mode)
         return True
       where
       Rectangle x y _ _ = area 
-updateCanvas _ _ _ _ _ _ _ _ _ = return True
+updateCanvas _ _ _ _ _ _ _ _ _ _ = return True
 
 -------------------------------------------------------------------------------
 -- Estimate the width of the vertical scrollbar at 20 pixels
@@ -96,9 +97,9 @@ checkScaleValue scale viewport duration
 
 
 currentView :: Int -> Double -> Double -> Double -> Maybe HECs -> Maybe [Int]
-               -> Bool -> Render ()
+               -> Bool -> Bool -> Render ()
 currentView height hadj_value hadj_pagesize scaleValue 
-            maybeEventArray maybeCapabilities bw_mode
+            maybeEventArray maybeCapabilities bw_mode labels_mode
   = do when (isJust maybeEventArray) $ do
          let Just hecs = maybeEventArray
              Just capabilities = maybeCapabilities
@@ -115,15 +116,15 @@ currentView height hadj_value hadj_pagesize scaleValue
          draw_line (ox, oy) 
                    (ox+ scaleIntegerBy endTick scaleValue, oy)
          drawTicks height scaleValue startTick (10*tickAdj) (100*tickAdj) endTick
-         mapM_ (hecView bw_mode height scaleValue hadj_value hadj_pagesize) 
+         mapM_ (hecView bw_mode labels_mode height scaleValue hadj_value hadj_pagesize) 
                (map snd hecs)
 
 -------------------------------------------------------------------------------
 -- hecView draws the trace for a single HEC
 
-hecView :: Bool -> Int -> Double -> Double -> Double -> EventArray -> Render ()
-hecView bw_mode height scaleValue hadj_value hadj_pagesize eventArray
-  = do sequence_ [drawDuration bw_mode scaleValue (eventArray!i) |
+hecView :: Bool -> Bool -> Int -> Double -> Double -> Double -> EventArray -> Render ()
+hecView bw_mode labels_mode height scaleValue hadj_value hadj_pagesize eventArray
+  = do sequence_ [drawDuration bw_mode labels_mode scaleValue (eventArray!i) |
                   i <- [startIndex..endIndex]]
     where
     (_, lastIndex) = bounds eventArray
@@ -132,9 +133,9 @@ hecView bw_mode height scaleValue hadj_value hadj_pagesize eventArray
 
 -------------------------------------------------------------------------------
 
-drawDuration :: Bool -> Double -> EventDuration -> Render ()
+drawDuration :: Bool -> Bool -> Double -> EventDuration -> Render ()
 
-drawDuration bw_mode scaleValue (ThreadRun t c s startTime endTime)
+drawDuration bw_mode labels_mode scaleValue (ThreadRun t c s startTime endTime)
   = do setSourceRGBAhex (if not bw_mode then runningColour else black) 0.8
        draw_rectangle_opt False
                       (ox + tsScale startTime scaleValue) -- x
@@ -151,7 +152,7 @@ drawDuration bw_mode scaleValue (ThreadRun t c s startTime endTime)
               C.fill        
         -- Optionally write the reason for the thread being stopped
         -- depending on the zoom value
-       when (scaleValue >= subscriptThreashold)
+       when (scaleValue >= subscriptThreashold && not labels_mode)
          $ do setSourceRGB 0 0.0 0.0
               move_to (ox+tsScale endTime scaleValue, oycap+c*gapcap+barHeight+12)
               textPath (show t ++ " " ++ showThreadStopStatus s)
@@ -160,7 +161,7 @@ drawDuration bw_mode scaleValue (ThreadRun t c s startTime endTime)
     rectWidth = tsScale (endTime - startTime) scaleValue
     tStr = show t
 
-drawDuration bw_mode scaleValue (GC c startTime endTime)
+drawDuration bw_mode _ scaleValue (GC c startTime endTime)
   = do setSourceRGBAhex (if not bw_mode then gcColour else black) 1.0
        draw_rectangle_opt False
                       (ox + tsScale startTime scaleValue) -- x
@@ -168,14 +169,14 @@ drawDuration bw_mode scaleValue (GC c startTime endTime)
                       (tsScale (endTime - startTime) scaleValue) -- w
                       (barHeight `div` 2)                       -- h
 
-drawDuration bw_mode scaleValue (EV event)
+drawDuration bw_mode labels_mode scaleValue (EV event)
   = case spec event of 
       CreateThread{cap=c, thread=t} -> 
         when (scaleValue >= 0.25) $ do
           setSourceRGBAhex lightBlue 0.8 
           setLineWidth 2.0
           draw_line (ox+eScale event scaleValue, oycap+c*gapcap-4) (ox+ eScale event scaleValue, oycap+c*gapcap+barHeight+4)
-          when (scaleValue >= 4.0)
+          when (scaleValue >= 4.0 && not labels_mode)
             (do setSourceRGB 0 0.0 0.0
                 move_to (ox+eScale event scaleValue, oycap+c*gapcap+barHeight+12)
                 textPath (show t ++ " created")
@@ -193,7 +194,7 @@ drawDuration bw_mode scaleValue (EV event)
            setSourceRGBAhex darkGreen 0.8 
            setLineWidth 2.0
            draw_line (ox+ eScale event scaleValue, oycap+c*gapcap-4) (ox+ eScale event scaleValue, oycap+c*gapcap+barHeight+4)
-           when (scaleValue >= 0.2)
+           when (scaleValue >= 0.2 && not labels_mode)
             (do setSourceRGB 0.0 0.0 0.0
                 move_to (ox+eScale event scaleValue, oycap+c*gapcap-5)
                 textPath (show t ++ " runnable")
@@ -204,7 +205,7 @@ drawDuration bw_mode scaleValue (EV event)
            setSourceRGBAhex cyan 0.8 
            setLineWidth 2.0
            draw_line (ox+ eScale event scaleValue, oycap+c*gapcap-4) (ox+ eScale event scaleValue, oycap+c*gapcap+barHeight+4)
-           when (scaleValue >= subscriptThreashold)
+           when (scaleValue >= subscriptThreashold && not labels_mode)
             (do setSourceRGB 0 0.0 0.0
                 move_to (ox+eScale event scaleValue, oycap+c*gapcap-5)
                 textPath ("seq GC req")
@@ -215,7 +216,7 @@ drawDuration bw_mode scaleValue (EV event)
            setSourceRGBA 1.0 0.0 1.0 0.8 
            setLineWidth 2.0
            draw_line (ox+eScale event scaleValue, oycap+c*gapcap-4) (ox+ eScale event scaleValue, oycap+c*gapcap+barHeight+4)
-           when (scaleValue >= subscriptThreashold)
+           when (scaleValue >= subscriptThreashold && not labels_mode)
             (do setSourceRGB 0 0.0 0.0
                 move_to (ox+eScale event scaleValue, oycap+c*gapcap-5)
                 textPath ("par GC req")
@@ -227,7 +228,7 @@ drawDuration bw_mode scaleValue (EV event)
               setSourceRGBAhex darkRed 0.8 
               setLineWidth 2.0
               draw_line (ox+ eScale event scaleValue, oycap+c*gapcap-4) (ox+ eScale event scaleValue, oycap+c*gapcap+barHeight+4)
-              when (scaleValue >= subscriptThreashold)
+              when (scaleValue >= subscriptThreashold && not labels_mode)
                (do setSourceRGB 0.0 0.0 0.0
                    move_to (ox+eScale event scaleValue, oycap+c*gapcap+barHeight+12)
                    textPath (show t ++ " migrated from " ++ show oldc)
@@ -238,7 +239,7 @@ drawDuration bw_mode scaleValue (EV event)
               setSourceRGBAhex purple 0.8 
               setLineWidth 2.0
               draw_line (ox+ eScale event scaleValue, oycap+c*gapcap-4) (ox+ eScale event scaleValue, oycap+c*gapcap+barHeight+4)
-              when (scaleValue >= subscriptThreashold)
+              when (scaleValue >= subscriptThreashold && not labels_mode)
                (do setSourceRGB 0.0 0.0 0.0
                    move_to (ox+eScale event scaleValue, oycap+c*gapcap+barHeight+12)
                    textPath (show t ++ " woken from " ++ show otherc)
@@ -249,7 +250,7 @@ drawDuration bw_mode scaleValue (EV event)
             draw_rectangle (ox+ eScale event scaleValue) (oycap+c*gapcap) barHeight barHeight
       _ -> return ()    
 
-drawDuration _ _ other = return ()
+drawDuration _ _ _ other = return ()
 
 -------------------------------------------------------------------------------
 
