@@ -33,7 +33,7 @@ drawKey :: Render ()
 drawKey
   = do selectFontFace "times" FontSlantNormal FontWeightNormal
        setFontSize 12
-       setSourceRGBA 0.0 1.0 0.0 1.0
+       setSourceRGBAhex runningColour 1.0
        rectangle 10 0 50 (fromIntegral (barHeight `div` 2))
        C.fill
        setSourceRGBA 0.0 0.0 0.0 1.0
@@ -113,7 +113,7 @@ drawKey
        textPath "thread wakeup"
        C.fill
 
-       setSourceRGBA (102/256) 0.0 (105/256) 1.0
+       setSourceRGBAhex shutdownColour 1.0
        rectangle 670 0 (fromIntegral barHeight) (fromIntegral barHeight)
        C.fill
        moveTo 695 15

@@ -298,10 +298,7 @@ drawEvent bw_mode scaleValue eventArray idx
            tExtent <- textExtents tStr
            when (textExtentsWidth tExtent < fromIntegral rectWidth) $ do
              move_to (ox+ tsScale startTime scaleValue, oycap+c*gapcap) 
-             if not bw_mode then
-               setSourceRGB 0.0 0.0 0.0
-              else
-               setSourceRGB 1.0 1.0 1.0
+             setSourceRGB 1.0 1.0 1.0
              relMoveTo 4 13
              textPath tStr
              C.fill
@@ -370,7 +367,7 @@ drawEvent bw_mode scaleValue eventArray idx
                    C.fill
                )
       Shutdown{cap=c} ->
-         do setSourceRGBA (102/256) 0.0 (105/256) 0.8
+         do setSourceRGBAhex shutdownColour 0.8
             draw_rectangle (ox+ eScale event scaleValue) (oycap+c*gapcap) barHeight barHeight
       _ -> return ()    
     where

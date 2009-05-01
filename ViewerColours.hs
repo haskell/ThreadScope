@@ -12,14 +12,21 @@ import Graphics.Rendering.Cairo
 
 -- Colours
 
+runningColour :: Color
+runningColour = darkPurple
+
+shutdownColour :: Color
+shutdownColour = darkBrown
+
+-------------------------------------------------------------------------------
+
+
 black :: Color
 black = Color 0 0 0
 
 green :: Color
 green = Color 0 0xFFFF 0
 
-runningColour :: Color
-runningColour = green
 
 darkGreen :: Color
 darkGreen = Color 0x0000 0x6600 0x0000
@@ -42,6 +49,9 @@ darkBlue = Color 0 0 0xBB00
 purple :: Color
 purple = Color 0x9900 0x0000 0xcc00
 
+darkPurple :: Color
+darkPurple = Color 0x6600 0 0x6600
+
 darkRed :: Color
 darkRed = Color 0xcc00 0x0000 0x0000
 
@@ -57,6 +67,8 @@ profileBackground = Color 0xFFFF 0xFFFF 0xFFFF
 tickColour :: Color
 tickColour = Color 0x3333 0x3333 0xFFFF
 
+darkBrown :: Color
+darkBrown = Color 0x6600 0 0
 
 -------------------------------------------------------------------------------      
 setSourceRGBAhex (Color r g b) t
