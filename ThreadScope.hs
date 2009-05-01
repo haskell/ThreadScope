@@ -209,7 +209,7 @@ main
        ------------------------------------------------------------------------
        -- Key presses
        onKeyPress window $ \Key { eventKeyName = key, eventKeyChar = mch } -> do
-         putStrLn ("key " ++ key)
+         -- putStrLn ("key " ++ key)
          case key of
            "Escape" -> mainQuit >> return True
            "Right" -> scrollRight scale viewport statusbar ctx canvas

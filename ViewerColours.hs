@@ -18,6 +18,9 @@ black = Color 0 0 0
 green :: Color
 green = Color 0 0xFFFF 0
 
+runningColour :: Color
+runningColour = green
+
 darkGreen :: Color
 darkGreen = Color 0x0000 0x6600 0x0000
 
@@ -44,6 +47,9 @@ darkRed = Color 0xcc00 0x0000 0x0000
 
 orange :: Color
 orange = Color 0xFFFF 0x9900 0x0000 -- orange
+
+gcColour :: Color
+gcColour = orange
 
 profileBackground :: Color
 profileBackground = Color 0xFFFF 0xFFFF 0xFFFF

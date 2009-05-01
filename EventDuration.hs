@@ -22,7 +22,7 @@ import StartTimes
 
 data EventDuration
   = ThreadRun ThreadId Int Timestamp Timestamp
-  | GC Timestamp Timestamp
+  | GC Int Timestamp Timestamp
     deriving (Eq, Show)
 
 -------------------------------------------------------------------------------
@@ -40,6 +40,8 @@ eventArrayToDuration' idx eventArray
       case spec event of
         StopThread{cap=c, thread=t, GHC.RTS.Events.status=s}
            -> runBar t c : rest
+        EndGC  {cap=c}  
+           -> GC c (gcStartTime c) (time event) : rest
         _ -> rest
     where
     event = eventArray!idx
@@ -47,5 +49,6 @@ eventArrayToDuration' idx eventArray
     (_, lastIdx) = bounds eventArray
     startTime = findRunThreadTime eventArray (idx-1)
     runBar t c = ThreadRun t c startTime (time event)
+    gcStartTime c = findStartGCTime eventArray c (idx-1)
 
 -------------------------------------------------------------------------------

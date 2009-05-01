@@ -120,29 +120,35 @@ currentView height hadj_value hadj_pagesize scaleValue maybeEventArray maybeCapa
 -------------------------------------------------------------------------------
 
 hecView bw_mode height scaleValue hadj_value hadj_pagesize eventArray
-  = do sequence_ [drawEvent bw_mode scaleValue eventArray i |
+  = do mapM_ (drawDuration bw_mode scaleValue) durations
+       sequence_ [drawEvent bw_mode scaleValue eventArray i |
                   i <- [startIndex..endIndex]]
-       mapM_ (drawDuration scaleValue) durations
     where
     startFrom = findStartEvents eventArray startIndex
     endAt = findEndEvents eventArray endIndex lastIndex
     (_, lastIndex) = bounds eventArray
     startIndex = findStartIndexFromTime eventArray (truncate (hadj_value / scaleValue)) 0 lastIndex
     endIndex = findEndIndexFromTime eventArray (truncate ((hadj_value + hadj_pagesize) / scaleValue)) startIndex lastIndex
-    -- Test bar representation
     durations = eventArrayToDuration eventArray
 
 -------------------------------------------------------------------------------
 
-drawDuration :: Double -> EventDuration -> Render ()
-drawDuration scaleValue (ThreadRun id c startTime endTime)
-  = do setSourceRGBA 1.0 0.0 0.0 0.8
+drawDuration :: Bool -> Double -> EventDuration -> Render ()
+drawDuration bw_mode scaleValue (ThreadRun id c startTime endTime)
+  = do setSourceRGBAhex (if not bw_mode then runningColour else black) 0.8
        draw_rectangle_opt False
                       (ox + tsScale startTime scaleValue) -- x
-                      (oycap+c*gapcap+barHeight)           -- y
+                      (oycap+c*gapcap)           -- y
                       (tsScale (endTime - startTime) scaleValue) -- w
-                      (barHeight `div` 2)                        -- h
-drawDuration _ other = return ()
+                       barHeight       
+drawDuration bw_mode scaleValue (GC c startTime endTime)
+  = do setSourceRGBAhex (if not bw_mode then gcColour else black) 1.0
+       draw_rectangle_opt False
+                      (ox + tsScale startTime scaleValue) -- x
+                      (oycap+c*gapcap+barHeight)                    -- y
+                      (tsScale (endTime - startTime) scaleValue) -- w
+                      (barHeight `div` 2)                       -- h
+drawDuration _ _ other = return ()
 
 -------------------------------------------------------------------------------
 
@@ -286,13 +292,7 @@ drawEvent bw_mode scaleValue eventArray idx
                 draw_line (ox+eScale event scaleValue, oycap+c*gapcap-4) (ox+ eScale event scaleValue, oycap+c*gapcap+barHeight+4)
       StopThread{cap=c, thread=t, GHC.RTS.Events.status=s} ->
         do let startTime = findRunThreadTime eventArray (idx-1)
-           -- Draw a solid bar to show the thread duration
-           if not bw_mode then
-             setSourceRGBA 0.0 1.0 0.0 0.8 -- Green bar
-            else
-             setSourceRGBA 0.0 0.0 0.0 0.8 -- Black bar
            let rectWidth = (tsScale (time event - startTime) scaleValue)
-           draw_rectangle_opt (scaleValue >= 0.25) (ox+ tsScale startTime scaleValue) (oycap+c*gapcap) rectWidth (barHeight `div` 2)
            -- Optionally label the bar with the threadID if there is room
            let tStr = show t
            tExtent <- textExtents tStr
@@ -347,13 +347,6 @@ drawEvent bw_mode scaleValue eventArray idx
                 C.fill
             )
       StartGC _ -> return ()
-      EndGC c -> do let startTime = findStartGCTime eventArray c (idx-1)
-                    if not bw_mode then
-                      setSourceRGBAhex orange 0.8 --  1.0 0.6 0.0 0.8 -- orange box
-                     else
-                      setSourceRGB 0.8 0.8 0.8 -- grey box
-                    setLineWidth 2.0
-                    draw_rectangle_opt (scaleValue >= 0.25) (ox+ tsScale startTime scaleValue) (oycap+c*gapcap + barHeight `div` 2) (tsScale (time event - startTime) scaleValue) (barHeight `div` 2)
       MigrateThread {cap=oldc, thread=t, newCap=c}
         -> when (scaleValue >= 0.1) $ do
               setSourceRGBAhex darkRed 0.8 
