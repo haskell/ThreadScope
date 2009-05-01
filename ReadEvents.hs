@@ -10,6 +10,7 @@ import Data.Array
 import qualified Data.Function
 import Data.IORef
 import Data.List
+import EventDuration
 import Text.Printf
 
 import EventlogViewerCommon
@@ -30,7 +31,8 @@ rawEventsToHECs eventList
 -------------------------------------------------------------------------------
 
 filterHEC events hec
-  = (hec, listArray (0, nrEvents-1) eventsForThisHEC)
+  = (hec, eventArrayToDurationArray (listArray (0, nrEvents-1) 
+                                    eventsForThisHEC))
     where
     eventsForThisHEC = filter (eventFromHEC hec) events
     nrEvents = length eventsForThisHEC

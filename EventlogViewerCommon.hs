@@ -13,9 +13,19 @@ import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
 
 -------------------------------------------------------------------------------
+-- This datastructure is a duration-based representation of the event
+-- loginformation where thread-runs and GCs are explicitly represented
+-- by a single constructor identifying their start and end points.
+
+data EventDuration
+  = ThreadRun ThreadId Int ThreadStopStatus Timestamp Timestamp
+  | GC Int Timestamp Timestamp
+  | EV GHCEvents.Event
+
+-------------------------------------------------------------------------------
 
 -- An EventArray stores events for a single HEC
-type EventArray = Array Int GHCEvents.Event
+type EventArray = Array Int EventDuration
 
 -- HECs is a list of events for each HEC
 type HECs = [(Int, EventArray)]
@@ -33,7 +43,7 @@ ennumerateCapabilities events
 -- Find the last timestamp value (in microseconds)
 findLastTxValue :: HECs -> Integer
 findLastTxValue hecs
-  = maximum (map (event2ms . arrayLast) (map snd hecs))
+  = maximum (map (eventDuration2ms . arrayLast) (map snd hecs))
 
 -------------------------------------------------------------------------------
 
@@ -99,6 +109,24 @@ tsScale t s = scaleIntegerBy (ts2ms t) s
 
 event2ms :: GHCEvents.Event -> Integer
 event2ms event = ts2ms (time event)
+
+-------------------------------------------------------------------------------
+
+eventDuration2ms :: EventDuration -> Integer
+eventDuration2ms ed
+  = case ed of
+      ThreadRun _ _ _ startTime _ -> ts2ms startTime
+      GC _ startTime _ -> ts2ms startTime
+      EV ev -> event2ms ev
+
+-------------------------------------------------------------------------------
+
+endTime2ms :: EventDuration -> Integer
+endTime2ms ed
+  = case ed of
+      ThreadRun _ _ _ _ endTime -> ts2ms endTime
+      GC _ _ endTime -> ts2ms endTime
+      EV ev -> event2ms ev
 
 -------------------------------------------------------------------------------
 

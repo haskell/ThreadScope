@@ -16,7 +16,7 @@ import EventlogViewerCommon
 
 -------------------------------------------------------------------------------
 
-findRunThreadTime :: EventArray -> Int -> Timestamp
+findRunThreadTime :: Array Int GHCEvents.Event -> Int -> Timestamp
 findRunThreadTime eventArray idx
   = case spec (eventArray!idx) of
       RunThread cap thr -> time (eventArray!idx)
@@ -24,7 +24,7 @@ findRunThreadTime eventArray idx
 
 -------------------------------------------------------------------------------
 
-findStartGCTime :: EventArray -> Int -> Int -> Timestamp
+findStartGCTime :: Array Int GHCEvents.Event -> Int -> Int -> Timestamp
 findStartGCTime eventArray c idx
   = case spec (eventArray!idx) of
       StartGC cap -> if cap == c then
