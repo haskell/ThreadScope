@@ -1,3 +1,4 @@
+v v v v v v v
 % $Id: ghc-parallel-tuning.tex#1 2009/04/22 10:31:00 REDMOND\\satnams $
 % $Source: //depot/satnams/haskell/ThreadScope/papers/haskell_symposium_2009/ghc-parallel-tuning.tex $
 
@@ -242,3 +243,122 @@ This example has been used several times before and it is useful for illustratin
 \bibliography{ghc-parallel-tuning}
 
 \end{document}
+*************
+% $Id: ghc-parallel-tuning.tex#2 2009/04/29 17:03:54 REDMOND\\satnams $
+% $Source: //depot/satnams/haskell/ThreadScope/papers/haskell_symposium_2009/ghc-parallel-tuning.tex $
+
+\documentclass[twocolumn,9pt]{sigplanconf}
+
+\usepackage{url}
+% \usepackage{code}
+\usepackage{graphicx}
+\usepackage{enumerate}
+
+\usepackage{listings}
+\lstset{basicstyle=\fontfamily{cmss} \small, columns=fullflexible, language=Haskell, numbers=left, numberstyle=\tiny, numbersep=2pt}
+
+\newcommand{\codef}[1]{{\fontfamily{cmss}\small#1}}
+\newcommand{\boldcode}[1]{{\bf\fontfamily{cmss}\small#1}}
+
+
+\nocaptionrule
+
+\title{Parallel Performance Tuning for Haskell}
+
+\authorinfo{Donnie Jones}{TBD}
+           {donnie@darthik.com}
+\authorinfo{Simon Marlow}{Microsoft Research}
+           {simonmar@microsoft.com}
+\authorinfo{Satnam Singh}{Microsoft Research}
+           {satnams@microsoft.com}
+
+\begin{document}
+
+\maketitle
+%\makeatactive
+
+\begin{abstract}
+Profiling information is essential for the performance tuning of parallel programs. This paper describes a new parallel profiling mechansim in the GHC system and its associated graphical viewer. We illustrate how this system can be used to help diagnose and fix several common kinds of performance errors in semi-explicit parallel Haskell programs.
+\end{abstract}
+
+
+\section{Introduction}
+Semi-explicit parallel programs in Haskell are written using annotations to control the granularity of parallelsim and the squenecing of evaluation~\cite{spj:trin98b}. This leads to deterministic fine-grain parallel programs that can be executed on multi-core computers. However, it can be difficult to observe how effectively a program has been parallelized. This paper presents some recently developed profiling technology in the GHC system which can be used for parallel performanced tuning of Haskell programs.
+
+\section{Background}
+
+\section{Profiling Motivation}
+Show examples of semi-explicit parallel programs that go wrong. Show what we could measure before using heap and time profiling and motivate the need for better profiling.
+
+Haskell provides a mechanism to allow the user to control the granularity of parallelism by indicating what computations may be usefully carried out in parallel. This is done by using functions from the \codef{Control.Parallel} module. The interface for \codef{Control.Parallel} is shown below:
+\begin{lstlisting}
+  par :: a -> b -> b 
+  pseq :: a -> b -> b 
+\end{lstlisting}
+The function \codef{par} indicates to the Haskell run-time system that it may be beneficial to evaluate the first argument in parallel with the second argument. The \codef{par} function returns as its result the value of the second argument. One can always eliminate \codef{par} from a program by using the following identity without altering the semantics of the program:
+\begin{lstlisting}
+  par a b = b 
+\end{lstlisting}
+A thread is not necessarily created to compute the value of the expression \codef{a}. Instead, the Haskell run-time system creates a {\em spark} which has the potential to be executed on a different thread from the parent thread. A sparked computation expresses the possibility of performing some speculative evaluation. Since a thread is not necessarily created to compute the value of \codef{a} this approach has some similarities with the notion of a {\em lazy future}~\cite{mohr:91}.
+
+Sometimes it is convenient to write a function with two arguments as an infix function and this is done in Haskell by writing quotes around the function:
+\begin{lstlisting}
+  a `par` b
+\end{lstlisting}
+
+We call such programs semi-explicitly parallel because the programmer has provided a hint about the appropriate level of granularity for parallel operations and the system implicitly creates threads to implement the concurrency. The user does not need to explicitly create any threads or write any code for inter-thread communication or synchronization.
+
+To illustrate the use of \codef{par} we present a program that performs two compute intensive functions in parallel. The first compute intensive function we use is the notorious Fibonacci function:
+\begin{lstlisting}
+fib :: Int -> Int
+fib 0 = 0
+fib 1 = 1
+fib n = fib (n-1) + fib (n-2)
+\end{lstlisting}
+The second compute intensive function we use is the \codef{sumEuler} function taken from~\cite{trinder:02}:
+\begin{lstlisting}
+mkList :: Int -> [Int]
+mkList n = [1..n-1]
+
+relprime :: Int -> Int -> Bool
+relprime x y = gcd x y == 1
+
+euler :: Int -> Int
+euler n = length (filter (relprime n) (mkList n))
+
+sumEuler :: Int -> Int
+sumEuler = sum . (map euler) . mkList
+\end{lstlisting}
+The function that we wish to parallelize adds the results of calling \codef{fib} and \codef{sumEuler}:
+\begin{lstlisting}
+sumFibEuler :: Int -> Int -> Int
+sumFibEuler a b = fib a + sumEuler b
+\end{lstlisting}
+As a first attempt we can try to use \codef{par} the speculatively spark off the computation of \codef{fib} while the parent thread works on \codef{sumEuler}:
+\begin{lstlisting}
+parSumFibEuler :: Int -> Int -> Int
+parSumFibEuler a b
+  = f `par` (f + e)
+    where
+    f = fib a
+    e = sumEuler b
+\end{lstlisting}
+
+\section{Profiling Infrastructure}
+The basic infrastrucutre of the systsem, design choices and justification and a little about the viewer ThreadScope.
+
+\section{Case Studies}
+Revist examples and show how performance can be tuned with the information obtained from the profiler.
+
+\subsection{SumEuler}
+This example has been used several times before and it is useful for illustrating how sparks should be carefully constructed and the need for pseq.
+
+\input{related-work}
+
+\section{Conclusions}
+
+\bibliographystyle{alpha}
+\bibliography{ghc-parallel-tuning}
+
+\end{document}
+^ ^ ^ ^ ^ ^ ^
