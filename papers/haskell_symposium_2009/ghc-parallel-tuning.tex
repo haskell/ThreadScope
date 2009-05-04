@@ -226,6 +226,11 @@ the event-types header, which has a fixed size for a given version of
 GHC.
 
 \subsection{GHC-Events}
+GHC-Events is a general purpose event-logging framework with two components: GHC-EventLog, GHC-Events library. 
+
+GHC-EventLog is the event logger in the GHC run-time system, which was designed with a focus on speed and extensibility while incurring minimal performance overhead for Haskell programs yet achieving detailed profiling information.  New events can easily be added to GHC-EventLog simply by defining the new event in the GHC-EventLog header file, EventLogFormat.h, with the subsequent integer value as the event identifier.  This GHC-EventLog header is shared between GHC-EventLog and GHC-Events library since it holds the definition of each event.  To avoid identifier conflicts and ensure backwards-compatibility for the GHC-Events framework, event identifiers are not re-used, but rather events are deprecated and replaced by new events.  Usage of GHC-EventLog is quite straightforward: create (or use) an event from the GHC-EventLog header, call the GHC-EventLog post-event function with the event identifier from the GHC run-time system.  
+
+The output from GHC-EventLog is generated as a binary file.  The GHC-Events library is the interface to interpret the binary log file for any visualizer, e.g. the ThreadScope visualizer relies upon the GHC-Events library to parse the binary file and make available data-types to represent the events.    
 
 \subsection{ThreadScope}
 
