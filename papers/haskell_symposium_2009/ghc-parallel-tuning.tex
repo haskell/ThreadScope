@@ -100,11 +100,15 @@ parSumFibEuler a b
 The basic infrastrucutre of the systsem, design choices and justification and a little about the viewer ThreadScope.
 
 \subsection{GHC-Events}
-GHC-Events is a general purpose event-logging framework with two components: GHC-EventLog, GHC-Events library. 
+GHC-Events is a general purpose event-logging framework with two components: GHC-EventLog, GHC-Events library.  GHC-EventLog is the event logger in the GHC run-time system, which was designed with a focus on speed and extensibility while incurring minimal performance overhead for Haskell programs yet achieving detailed profiling information.  The GHC-Events library interprets the GHC-EventLog binary log file to provide an interface to the events for any visualizer.
 
-GHC-EventLog is the event logger in the GHC run-time system, which was designed with a focus on speed and extensibility while incurring minimal performance overhead for Haskell programs yet achieving detailed profiling information.  New events can easily be added to GHC-EventLog simply by defining the new event in the GHC-EventLog header file, EventLogFormat.h, with the subsequent integer value as the event identifier.  This GHC-EventLog header is shared between GHC-EventLog and GHC-Events library since it holds the definition of each event.  To avoid identifier conflicts and ensure backwards-compatibility for the GHC-Events framework, event identifiers are not re-used, but rather events are deprecated and replaced by new events.  Usage of GHC-EventLog is quite straightforward: create (or use) an event from the GHC-EventLog header, call the GHC-EventLog post-event function with the event identifier from the GHC run-time system.  
+Minimizing the performance overhead is critical when designing a system to facilitate profiling such as GHC-Events.  A pre-allocated buffer is created by GHC-Events for each GHC run-time system Capability to store its events, by doing so we prevent delays from dynamic memory allocation and require no need for locks since the buffers are separated by the Capability.  
 
-The output from GHC-EventLog is generated as a binary file.  The GHC-Events library is the interface to interpret the binary log file for any visualizer, e.g. the ThreadScope visualizer relies upon the GHC-Events library to parse the binary file and make available data-types to represent the events.    
+New events can easily be added to GHC-EventLog simply by defining the new event in the GHC-EventLog header file, EventLogFormat.h, with the subsequent integer value as the event identifier.  This GHC-EventLog header is shared between GHC-EventLog and GHC-Events library since it holds the definition of each event.  To avoid identifier conflicts and ensure backwards-compatibility for the GHC-Events framework, event identifiers are not re-used, but rather events are deprecated and replaced by new events.  
+
+Usage of GHC-EventLog is quite straightforward: create (or use) an event from the GHC-EventLog header, call the GHC-EventLog post-event function with the event identifier from the GHC run-time system.  To solidify understanding of the usage of GHC-EventLog, below is the C source code added to GHC-EventLog and the GHC run-time system for the essential parallel profiling event: create thread. TODO!
+
+The output from GHC-EventLog is generated as a binary log file.  The GHC-Events library is the interface to interpret the binary log file for any visualizer, e.g. the ThreadScope visualizer relies upon the GHC-Events library to parse the binary file and make available data-types containing the events.
 
 \subsection{ThreadScope}
 
