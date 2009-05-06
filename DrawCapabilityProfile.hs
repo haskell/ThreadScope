@@ -154,8 +154,14 @@ drawDuration bw_mode labels_mode scaleValue (ThreadRun t c s startTime endTime)
        -- Optionally label the bar with the threadID if there is room
        tExtent <- textExtents tStr
        when (textExtentsWidth tExtent < fromIntegral rectWidth) 
-         $ do move_to (ox+ tsScale startTime scaleValue, oycap+c*gapcap) 
-              setSourceRGB 1.0 1.0 1.0
+         $ do --setSourceRGBAhex black 1.0
+              --draw_rectangle_outline
+              --        (ox + tsScale startTime scaleValue) -- x
+              --        (oycap+c*gapcap)           -- y
+              --        (tsScale (endTime - startTime) scaleValue) -- w
+              --         barHeight       
+              move_to (ox+ tsScale startTime scaleValue, oycap+c*gapcap) 
+              setSourceRGBAhex labelTextColour 1.0
               relMoveTo 4 13
               textPath tStr
               C.fill        

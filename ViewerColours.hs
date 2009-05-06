@@ -18,6 +18,9 @@ runningColour = darkPurple
 shutdownColour :: Color
 shutdownColour = darkBrown
 
+labelTextColour :: Color
+labelTextColour = white
+
 -------------------------------------------------------------------------------
 
 
@@ -69,6 +72,12 @@ tickColour = Color 0x3333 0x3333 0xFFFF
 
 darkBrown :: Color
 darkBrown = Color 0x6600 0 0
+
+yellow :: Color
+yellow = Color 0xff00 0xff00 0x3300
+
+white :: Color
+white = Color 0xffff 0xffff 0xffff
 
 -------------------------------------------------------------------------------      
 setSourceRGBAhex (Color r g b) t

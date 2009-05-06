@@ -44,3 +44,10 @@ draw_rectangle_opt opt x0 y0 w h
    wr1 = 1.0 `max` wr 
 
 -------------------------------------------------------------------------------
+
+draw_rectangle_outline x0 y0 w h
+  = do setLineWidth 2
+       rectangle (fromIntegral x0) (fromIntegral y0) (fromIntegral w) (fromIntegral h)
+       stroke
+
+-------------------------------------------------------------------------------
