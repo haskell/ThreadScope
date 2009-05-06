@@ -128,8 +128,17 @@ hecView bw_mode labels_mode height scaleValue hadj_value hadj_pagesize eventArra
                   i <- [startIndex..endIndex]]
     where
     (_, lastIndex) = bounds eventArray
-    startIndex = findStartIndexFromTime eventArray (truncate (hadj_value / scaleValue)) 0 lastIndex
-    endIndex = findEndIndexFromTime eventArray (truncate ((hadj_value + hadj_pagesize) / scaleValue)) startIndex lastIndex
+    startIndex = findStartIndexFromTime eventArray (nudgeDown (truncate (hadj_value / scaleValue))) 0 lastIndex
+    endIndex = findEndIndexFromTime eventArray (truncate ((hadj_value + hadj_pagesize) / scaleValue + 1)) startIndex lastIndex
+
+-------------------------------------------------------------------------------
+
+nudgeDown :: Integer -> Integer
+nudgeDown n
+  = if n == 0 then
+      0
+    else
+      n-1
 
 -------------------------------------------------------------------------------
 
@@ -250,13 +259,35 @@ drawDuration bw_mode labels_mode scaleValue (EV event)
             draw_rectangle (ox+ eScale event scaleValue) (oycap+c*gapcap) barHeight barHeight
       _ -> return ()    
 
-drawDuration _ _ _ other = return ()
+-------------------------------------------------------------------------------
+-- Function to help debug findStartIndexFromTime
+{-
+assertBinarySearchStart eventArray atOrBefore low high | atOrBefore < eventDuration2ms (eventArray!low) = low
+assertBinarySearchStart eventArray atOrBefore low high
+  = if (atOrBefore >= eventDuration2ms (eventArray!idx)) &&
+       idx < high &&
+       (atOrBefore <= eventDuration2ms (eventArray!(idx+1))) then
+      idx
+    else
+      error ("Error in findStartIndexFromTime atOrBefore = " ++ show atOrBefore ++ " l = " ++ show l ++ " h = " ++ show h ++ " idx = " ++ show idx ++ minus1 ++ " a[idx] = " ++ show (eventDuration2ms (eventArray!idx)) ++ plus1 )
+    where
+    (idx, l, h) = findStartIndexFromTime eventArray atOrBefore low high
+    minus1 = if idx > low then
+               " a[idx-1] = " ++ show (eventDuration2ms (eventArray!(idx-1)))
+             else
+               ""
+    plus1 = if idx < high then
+               " a[idx+1] = " ++ show (eventDuration2ms (eventArray!(idx+1)))
+             else
+               ""
+-}
 
 -------------------------------------------------------------------------------
 
 -- Binary search for starting position for currently visible part of
 -- the drawing canvas
 findStartIndexFromTime :: EventArray -> Integer -> Int -> Int -> Int
+findStartIndexFromTime eventArray atOrBefore low high | atOrBefore < eventDuration2ms (eventArray!low) = low
 findStartIndexFromTime eventArray atOrBefore low high
   = if high - low <= 1 then
       low
@@ -265,9 +296,9 @@ findStartIndexFromTime eventArray atOrBefore low high
         currentIndex
       else
         if atOrBefore < (eventDuration2ms $ eventArray!currentIndex) then
-          findStartIndexFromTime eventArray atOrBefore low (low + half_width)
+          findStartIndexFromTime eventArray atOrBefore low currentIndex
         else
-          findStartIndexFromTime eventArray atOrBefore (low+half_width) high
+          findStartIndexFromTime eventArray atOrBefore (currentIndex+1) high
       where
       currentIndex = low + half_width
       half_width = (1 + high - low) `div` 2
@@ -278,17 +309,18 @@ findStartIndexFromTime eventArray atOrBefore low high
 -- the drawing canvas
 
 findEndIndexFromTime :: EventArray -> Integer -> Int -> Int -> Int 
-findEndIndexFromTime eventArray atOrBefore low high
+findEndIndexFromTime eventArray atOrAfter low high | atOrAfter > eventDuration2ms (eventArray!high) = high
+findEndIndexFromTime eventArray atOrAfter low high
   = if high - low <= 1 then
       high
     else
-      if atOrBefore >= (endTime2ms $ eventArray!currentIndex) && atOrBefore < (endTime2ms $ eventArray!(currentIndex+1)) then
+      if atOrAfter >= (endTime2ms $ eventArray!currentIndex) && atOrAfter < (endTime2ms $ eventArray!(currentIndex+1)) then
         currentIndex
       else
-        if atOrBefore < (endTime2ms $ eventArray!currentIndex) then
-          findEndIndexFromTime eventArray atOrBefore low (low + half_width)
+        if atOrAfter < (endTime2ms $ eventArray!currentIndex) then
+          findEndIndexFromTime eventArray atOrAfter low currentIndex
         else
-          findEndIndexFromTime eventArray atOrBefore (low+half_width) high
+          findEndIndexFromTime eventArray atOrAfter (currentIndex+1) high
       where
       currentIndex = low + half_width
       half_width = (1 + high - low) `div` 2
