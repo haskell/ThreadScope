@@ -426,6 +426,224 @@ used a fixed $3x3$ grid, which is too quickly solved to be a useful
 parallelism benchmark nowadays.  However $4x4$ still represents a
 sufficient challenge without optimising the program further.
 
+For the examples that follow, the benchmark is to evaluate the game
+tree 6 moves ahead, on a 4x4 grid in which the first 4 moves have
+already been randomly played.
+
+We will explore a few different parallelisations of this program using
+ThreadScope.  The function for calculating the best line in the game
+is \codef{alternate}:
+
+\begin{lstlisting}
+alternate depth player f g board
+ = move : alternate depth opponent g f board'
+ where
+   move@(board',\_) = best f possibles scores
+   scores          = map (bestMove depth opponent g f) possibles
+   possibles       = newPositions player board
+   opponent        = opposite player
+\end{lstlisting}
+
+This function calculates the sequence of moves in the game that give
+the best outcome (as calculated by the alpha-beta search) for each
+player.  At each stage, we generate the list of possible moves
+(\codef{newPositions}), evaluate each move by alpha-beta search on the
+game tree (\codef{bestMove}), and pick the best one (\codef{best}).
+
+Let's run the program sequentially first to establish the baseline
+runtime:
+
+\begin{verbatim}
+  14,484,898,888 bytes allocated in the heap
+
+  INIT  time    0.00s  (  0.00s elapsed)
+  MUT   time    8.44s  (  8.49s elapsed)
+  GC    time    3.49s  (  3.51s elapsed)
+  EXIT  time    0.00s  (  0.00s elapsed)
+  Total time   11.94s  ( 12.00s elapsed)
+\end{verbatim}
+
+One obvious way to parallelise this problem is to evaluate each of the
+possible moves in parallel.  This is easy to achieve with a
+\codef{parList} strategy:
+
+\begin{lstlisting}
+  scores = map (bestMove depth opponent g f) possibles
+             `using` parList
+\end{lstlisting}
+
+And indeed this does yield a reasonable speedup:
+
+\begin{verbatim}
+  14,485,148,912 bytes allocated in the heap
+
+  SPARKS: 12 (11 converted, 0 pruned)
+
+  INIT  time    0.00s  (  0.00s elapsed)
+  MUT   time    9.19s  (  2.76s elapsed)
+  GC    time    7.01s  (  1.75s elapsed)
+  EXIT  time    0.00s  (  0.00s elapsed)
+  Total time   16.20s  (  4.52s elapsed)
+\end{verbatim}
+
+A speedup of 2.7 on 4 processors is a good start!  However, looking at
+the ThreadScope profile (Figure~\ref{f:minimax-threadscope1}), we can
+see that there's a jagged edge on the right: our granularity is too
+large, and we don't have enough work to keep all the processors busy
+until the end.  What's more, as we can see from the runtime
+statistics, there were only 12 sparks, corresponding to the 12
+possible moves in the 4x4 grid after 4 moves have already been played.
+In order to scale to more CPUs we will need to find more parallelism.
+
+\begin{figure}
+\caption{Minimax ThreadScope profile}
+\label{f:minimax-threadscope1}
+\end{figure}
+
+The game tree evaluation is defined as follows:
+
+\begin{lstlisting}
+bestMove :: Int -> Piece -> Player -> Player -> Board
+         -> Evaluation
+bestMove depth p f g 
+  = mise f g 
+  . cropTree
+  . mapTree static
+  . prune depth
+  . searchTree p
+\end{lstlisting}
+
+Where \codef{searchTree} lazily generates a search tree starting
+from the current position, with player \texttt{p} to play next.  The
+function \codef{prune} prunes the search tree to the given depth, and
+\codef{mapTree static} applies a static evaluation function to each
+node in the tree.  The function \codef{cropTree} prunes branches below
+a node in which the game has been won by either player.  Finally,
+\codef{mise} performs the alpha-beta search, where \codef{f} and
+\codef{g} are the min and max functions over evaluations for the
+current player \codef{p}.
+
+We must be careful with parallelisation here, because the algorithm is
+relying heavily on lazy evaluation to avoid evaluating parts of the
+game tree.  Certainly we don't want to evaluate beyond the prune
+depth, and we also don't want to evaluate beyond a node in which one
+player has won (\codef{cropTree} prunes further moves after a win).
+The alpha-beta search will prune even more of the tree: for example,
+there is no point evaluating further down a branch if it has already
+been established that there is a winning move.  So unless we are
+careful, some of the parallelism we add here may be wasted
+speculation.
+
+The right place to parallelise is in the alpha-beta search itself.
+Here is the sequential code:
+
+\begin{lstlisting}
+mise :: Player -> Player -> Tree Evaluation -> Evaluation
+mise f g (Branch a []) = a
+mise f g (Branch _ l) = foldr f (g OWin XWin) (map (mise g f) l)
+\end{lstlisting}
+
+The first equation looks for a leaf, and returns the evaluation of the
+board at that point.  A leaf is either a completed game (either drawn
+or a winning position for one player), or the result of pruning the
+search tree.  The second equation is the interesting one: \codef{foldr
+  f} picks the best option for the current player from the list of
+evaluations at the next level.  The next level evaluations are given
+by \codef{map (mise g f) l}, which picks the best options for the
+\emph{other} player (which is why the \codef{f} and \codef{g} are
+reversed).
+
+The \codef{map} here is a good opportunity for parallelism.  Adding
+a \codef{parList} strategy should be enough:
+
+\begin{lstlisting}
+mise f g (Branch _ l) = foldr f (g OWin XWin) 
+                         (map (mise g f) l `using` parList)
+\end{lstlisting}
+However, this will try to parallelise every level of the search,
+leading to some sparks with very fine granularity.  Also it may
+introduce too much speculation: elements in each list after a win do
+not need to be evaluated.  Indeed if we try this we get:
+
+\begin{verbatim}
+  22,697,543,448 bytes allocated in the heap
+
+  SPARKS: 4483767 (639031 converted, 3457369 pruned)
+
+  INIT  time    0.00s  (  0.01s elapsed)
+  MUT   time   16.19s  (  4.13s elapsed)
+  GC    time   27.21s  (  6.82s elapsed)
+  EXIT  time    0.00s  (  0.00s elapsed)
+  Total time   43.41s  ( 10.95s elapsed)
+\end{verbatim}
+
+We ran a lot of sparks (600k), but the program took longer to run.
+One clue that we are actually speculating useless work is the amount
+of allocation.  In the sequential run the runtime reported 14GB
+allocated, but this parallel version allocated 22GB\footnote{CPU time
+  is not a good measure of speculative work, because in the parallel
+  runtime threads can sometimes be spinning while waiting for work,
+  particularly in the GC.}
+
+So in an attempt to eliminate some of the smaller sparks, we can
+parallelise the alpha-beta to a fixed depth.  This is done by
+introducing a new variant of \codef{mise}, \codef{parMise}, that
+applies the \codef{parList} strategy up to a certain depth, and then
+calls the sequential \codef{mise} beyond that.  Just using a depth of
+one gives quite good results:
+
+\begin{verbatim}
+  SPARKS: 132 (120 converted, 12 pruned)
+
+  INIT  time    0.00s  (  0.00s elapsed)
+  MUT   time    8.82s  (  2.59s elapsed)
+  GC    time    6.65s  (  1.70s elapsed)
+  EXIT  time    0.00s  (  0.00s elapsed)
+  Total time   15.46s  (  4.30s elapsed)
+\end{verbatim}
+
+\begin{figure}
+\caption{Minimax ThreadScope profile}
+\label{f:minimax-threadscope2}
+\end{figure}
+
+Though as we can see from the ThreadScope profile
+(Figure~\ref{f:minimax-threadscope2}), there are some gaps.
+Increasing the threshold to two works nicely:
+
+\begin{verbatim}
+  SPARKS: 1452 (405 converted, 1046 pruned)
+
+  INIT  time    0.00s  (  0.03s elapsed)
+  MUT   time    8.86s  (  2.31s elapsed)
+  GC    time    6.32s  (  1.57s elapsed)
+  EXIT  time    0.00s  (  0.00s elapsed)
+  Total time   15.19s  (  3.91s elapsed)
+\end{verbatim}
+
+We have now achieved a speedup of 3.1 on 4 cores against the
+sequential code, and as we can see from the final ThreadScope profile
+(Figure~\ref{f:minimax-threadscope3}) all our cores are kept busy.
+
+We found that increasing the threshold to 3 starts to cause
+speculation of unnecessary work.  In 4x4 tic-tac-toe most positions
+are a draw, so it turns out that there is little speculation in the
+upper levels of the alpha-beta search, but as we get deeper in the
+tree, we find positions that are a certain win for one player or
+another, which leads to speculative work if we evaluate all the moves
+in parallel.  
+
+Ideally GHC would have better support for speculation: right now,
+speculative sparks are not garbage collected when they are found to be
+unreachable.  We do plan to improve this in the future, but
+unfortunately changing the GC policy for sparks is incompatible with
+the current formulation of Strategies \cite{multicore-ghc}.
+
+\begin{figure}
+\caption{Minimax ThreadScope profile}
+\label{f:minimax-threadscope3}
+\end{figure}
+
 \input{related-work}
 
 \section{Conclusions}
