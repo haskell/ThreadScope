@@ -23,13 +23,11 @@ labelTextColour = white
 
 -------------------------------------------------------------------------------
 
-
 black :: Color
 black = Color 0 0 0
 
 green :: Color
 green = Color 0 0xFFFF 0
-
 
 darkGreen :: Color
 darkGreen = Color 0x0000 0x6600 0x0000
