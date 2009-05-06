@@ -139,10 +139,50 @@ create new tools:
 \end{itemize}
 
 \subsection{Fast runtime tracing}
+Minimizing the performance overhead is critical when designing a system
+to facilitate runtime tracing.  In the GHC runtime, a pre-allocated events buffer is 
+used by each capability to store generated events.
+By doing so, we prevent any performance delays from dynamic 
+memory allocation, and require no need for locks since the buffers are
+capability-specific.  Yet, this requires us to flush the buffer
+to the filesystem once it becomes full, but since the buffer is a
+constant size we pay a near-constant penalty for each flush and a
+deterministic delay on the GHC runtime.
 
-% how much impact does this have on runtimes?
 % how fast can we generate an event?
+From the event timestamps in the trace log file, we can verify that we can 
+generate an event within 1 ms.  However, we can also see from the log file that
+the typical duration between events is greater than 1 ms due to the computation 
+required for the event itself, thus the event generation is within
+the computation time for even very fast events, such as create spark.
+
 % how many events are there in a typical log file?
+To provide an example of the impact of GHC runtime event tracing, the parallel 
+version of the canonical Fibonacci function, \codef{parfib} (from
+the \codef{nofib} software package \cite{nofib}) typically generates over 2 million
+events in a trace file with size of approximately 40 MB for the
+calculation of the Fibonacci number 40 at threshold 10 and utilizing 2 CPU cores.
+% how much impact does this have on runtimes?
+Taking this parfib computation further, we compare the time elapsed with
+event logging enabled and without event logging for 50 executions of
+parfib on an Intel(R) Core(TM)2 Duo CPU T5250 1.50GHz.
+
+\begin{verbatim}
+  parfib eventlog 
+  ./Main 40 10 +RTS -N2 -l -RTS
+  Avg Time Elapsed  Standard Deviation
+  20.582757s        0.789547s
+
+  parfib without eventlog 
+  ./Main 40 10 +RTS -N2 -RTS
+  Avg Time Elapsed  Standard Deviation
+  17.447493s        1.352686s
+\end{verbatim}
+
+Considering the significant number of events generated in the traces and
+the very detailed profiling information made available by these traces, 
+the overhead is surprisingly insignificant at approximately a 10-25\%
+increase in elapsed time.
 
 \subsection{An extensible file format}
 
