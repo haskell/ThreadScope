@@ -126,3 +126,5 @@ parSumFibEuler a b
 \end{lstlisting}
 
 This version does not make any assumptions about the evaluation order of \codef{+} which is undefined in Haskell.
+
+This example as well as our wider experience of attempting to write semi-explicit parallel programs shows that it is often very difficult to understand if and when opportunities for parallelism expressed through \codef{par} are effectively taken up and to also understand how operations like garbage collection influence the performance of the program. Until recently one only had available high level summary information about the overall execution of a parallel Haskell program. In this paper we describe recent improvements to the Haskell run-time which allow a much more detailed profile to be generated which can then be used to help debug performance problems.
