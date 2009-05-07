@@ -84,7 +84,7 @@ experiments, but the \codef{ghc-events} library makes it almost trivial to
 create new tools:
 
 \begin{itemize}
-\item A trivial program that just prints out the (sorted) contents of
+\item A simple program that just prints out the (sorted) contents of
   the trace file as text.  Useful for checking that a trace file can
   be parsed, and for examining the exact sequence of events.
 
@@ -167,8 +167,8 @@ particular, this means that:
 \end{itemize}
 
 Nevertheless, we don't expect the form of trace files to remain
-completely static.  We expect that in the future we will want to add
-new events, and add more information to existing events.  We therefore
+completely static.  In the future we will certainly want to add new
+events, and add more information to existing events.  We therefore
 need an extensible file format.  Informally, our trace files are
 structured as follows:
 
@@ -178,13 +178,13 @@ structured as follows:
   event-type structure contains
   \begin{itemize}
     \item A unique number for this event type
-    \item A field describing the length of the event itself, or zero
-      for a variable-length event.
-    \item A variable-length string describing this event (for example
-      ``thread created'')
-    \item A variable-length field for future expansion.  We might in
-      the future want to add more fields to the event-type structure,
-      and this field allows for that.
+    \item A field describing the length in bytes of an instance of the
+      event, or zero for a variable-length event.
+    \item A variable-length string (preceded by its length) describing
+      this event (for example ``thread created'')
+    \item A variable-length field (preceded by its length) for future
+      expansion.  We might in the future want to add more fields to
+      the event-type structure, and this field allows for that.
   \end{itemize}
 \item A list of \emph{events}.  Each event begins with an event number
   that corresponds to one of the event types defined earlier, and the
@@ -204,14 +204,14 @@ The unique numbers that identify events are shared knowledge between
 GHC and the \codef{ghc-events} library.  When creating a new event, a new
 unique identifier is chosen; identifiers can never be re-used.
 
-Hence, even when parsing a trace file that contains new events, the
-parser can still give a timestamp and a description of the unknown
-events.  The parser might encounter an event-type that it knows about,
-but the event-type might contain new unknown fields.  The parser can
-recognise this situation and skip over the extra fields, because it
-knows the length of the event from the event-type structure.
-Therefore when a tool encounters a new log file it can continue to
-provide consistent functionality.
+Even when parsing a trace file that contains new events, the parser
+can still give a timestamp and a description of the unknown events.
+The parser might encounter an event-type that it knows about, but the
+event-type might contain new unknown fields.  The parser can recognise
+this situation and skip over the extra fields, because it knows the
+length of the event from the event-type structure.  Therefore when a
+tool encounters a new log file it can continue to provide consistent
+functionality.
 
 Of course, there are scenarios in which it isn't possible to provide
 this ideal graceful degradation.  For example, we might construct a
@@ -300,9 +300,9 @@ generated lazily by a function \codef{mk\_grid}.  What is happening here is
 that the main thread creates sparks before the grid has been
 evaluated, and then proceeds to evaluate the grid.  As each spark
 runs, it blocks almost immediately waiting for the main thread to
-complete evaluating the grid.
+complete evaluation of the grid.
 
-This type of blocking is often not disastrous, a thread will become
+This type of blocking is often not disastrous, since a thread will become
 unblocked soon after the thunk on which it is blocking is evaluated
 (see the discussion of ``blackholes'' in \citet{multicore-ghc}).  There
 is nevertheless a short delay between the thread becoming runnable
@@ -384,7 +384,7 @@ on an implementation of alpha-beta searching for the game tic-tac-toe,
 from Hughes' influential paper ``Why Functional Programming Matters''
 \cite{why}.  For the purposes of this paper we have generalised the
 program to use a game board of arbitrary size: the original program
-used a fixed $3x3$ grid, which is too quickly solved to be a useful
+used a fixed $3\times3$ grid, which is too quickly solved to be a useful
 parallelism benchmark nowadays.  However $4x4$ still represents a
 sufficient challenge without optimising the program further.
 
@@ -613,5 +613,6 @@ the current formulation of Strategies \cite{multicore-ghc}.
 {\small
 \bibliographystyle{plainnat}
 \bibliography{ghc-parallel-tuning}
+}
 
 \end{document}
