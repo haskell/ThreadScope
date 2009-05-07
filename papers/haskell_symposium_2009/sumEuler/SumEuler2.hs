@@ -42,7 +42,7 @@ sumFibEuler a b = fib a + sumEuler b
 
 parSumFibEuler :: Int -> Int -> Int
 parSumFibEuler a b
-  = f `par` (e `pseq` (e + f))
+  = f `par` (e + f)
     where
     f = fib a
     e = sumEuler b
@@ -50,7 +50,7 @@ parSumFibEuler a b
 -------------------------------------------------------------------------------
 
 result :: Int
-result = sumFibEuler 40 7450
+result = parSumFibEuler 38 5300
 
 -------------------------------------------------------------------------------
 

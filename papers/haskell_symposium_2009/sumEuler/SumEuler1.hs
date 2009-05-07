@@ -1,4 +1,5 @@
 -------------------------------------------------------------------------------
+-- This demonstrates that f `par` (f + e) does not result in parallelsim.
 
 module Main
 where
@@ -50,7 +51,7 @@ parSumFibEuler a b
 -------------------------------------------------------------------------------
 
 result :: Int
-result = sumFibEuler 40 7450
+result = parSumFibEuler 38 5300
 
 -------------------------------------------------------------------------------
 

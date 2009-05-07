@@ -51,17 +51,30 @@ drawTicks height scaleValue pos incr majorTick endPos
 showTickTime :: Integer -> String
 showTickTime pos
   = if pos < 1000 then
-      show pos ++ " us"
+      show pos ++ "us" 
     else
       if pos < 1000000 then
-        deZero (printf "%f" (posf / 1000)) ++ " ms"
+        reformatMS pos
       else
-        show (posf / 1000000) ++ " s"
+        show (posf / 1000000) ++ "s"
     where
     posf :: Double
     posf = fromIntegral pos
 
 -------------------------------------------------------------------------------
+
+reformatMS :: Integer -> String
+reformatMS pos
+  = if pos >= 10000 then
+      "0." ++ show (pos `div` 100000) ++ "s"
+    else
+      deZero (printf "%f" (posf / 1000)) ++ "ms"
+    where
+    posf :: Double
+    posf = fromIntegral pos
+
+-------------------------------------------------------------------------------
+
 
 showTickTime2 :: Double -> Integer -> String
 showTickTime2 scale pos

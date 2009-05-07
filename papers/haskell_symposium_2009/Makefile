@@ -4,7 +4,7 @@
 DOC = ghc-parallel-tuning
 
 all:	
-	latex $(DOC).tex
+	pdflatex $(DOC).tex
 	bibtex $(DOC)
-	latex $(DOC).tex
-	latex $(DOC).tex
+	pdflatex $(DOC).tex
+	pdflatex $(DOC).tex
