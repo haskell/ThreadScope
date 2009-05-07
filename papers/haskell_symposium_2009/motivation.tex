@@ -111,3 +111,18 @@ The execution log for this program shows that a spark was used productively and 
   EXIT  time    0.00s  (  0.00s elapsed)
   Total time   10.16s  (  5.33s elapsed)
 \end{verbatim}
+
+The better way to evaluate \codef{fib} and \codef{sumEuler} in parallel is to used the \codef{pseq} combinator to ensure that the main thread works on \codef{suMEuler} while the sparked thread works on \codef{fib}:
+
+\begin{lstlisting}
+-- A correct parallelization that does not depend on
+-- the evaluation order of +
+parSumFibEuler :: Int -> Int -> Int
+parSumFibEuler a b
+  = f `par` (e `pseq` (f + e))
+    where
+    f = fib a
+    e = sumEuler b
+\end{lstlisting}
+
+This version does not make any assumptions about the evaluation order of \codef{+} which is undefined in Haskell.
