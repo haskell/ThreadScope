@@ -59,28 +59,29 @@ Life has never been better for the Parallel Haskell programmer: GHC
 supports multicore execution out of the box, including multiple
 parallel programming models: Strategies \cite{spj:trin98b}, Concurrent
 Haskell \cite{conchask} with STM \cite{stm}, and Data Parallel Haskell
-\cite{dph}.  Runtime performance has received concerted attention
-recently, with significant improvements in parallel performance coming
-in forthcoming GHC releases \cite{multicore-ghc}.  Many of the runtime
-bottlenecks that hampered parallel performance are much reduced, with
-the result that it should be easier to achieve parallel speedups.
+\cite{dph}.  Performance of the runtime system has received concerted
+attention recently, with significant improvements in parallel
+performance coming in forthcoming GHC releases \cite{multicore-ghc}.
+Many of the runtime bottlenecks that hampered parallel performance in
+earlier GHC versions are much reduced, with the result that it should
+now be easier to achieve parallel speedups.
 
 However, optimising the runtime only addresses half of the problem;
 the other half being how to tune a given Haskell program to run
 effectively in parallel.  The programmer still has control over task
 granularity, data dependencies, speculation, and to some extent
 evaluation order.  Getting these wrong can be disastrous for parallel
-performance; for example the granularity should be not too fine nor
-too coarse.  The runtime does everything it can to broaden the window
-of granularities that yield good performance, but it cannot completely
-elimiante the upper and lower bounds.
+performance; for example the granularity should neither be too fine
+nor too coarse.  The runtime does everything it can to broaden the
+range of granularities that yield good performance, but it cannot
+completely eliminate the upper and lower bounds.
 
 Current methods for tuning Parallel Haskell programs rely largely on
 trial and error, experience, and an eye for understanding the limited
 statistics produced at the end of a program's run by the runtime
 system.  What we need are effective ways to measure and collect
 information about the runtime behaviour of Parallel Haskell programs,
-and tools to communicate this information back to the programmer in a
+and tools to communicate this information to the programmer in a
 way that they can understand and use to solve performance problems
 with their programs.
 
@@ -116,6 +117,12 @@ Strategies interact badly with garbage collection
 \cite{multicore-ghc}, so in this paper we avoid the use of the
 original Strategies library, relying instead on our own simple
 hand-rolled parallel combinators.
+
+Our work is at an early stage.  The ThreadScope tool displays only one
+particular view of the execution of Parallel Haskell programs (albeit
+a very useful one).  There are a wealth of possibilities, both for
+improving ThreadScope itself and for building new tools.  We cover
+some of the possibilities in Section~\ref{s:conclusion}.
 
 \input{motivation}
 
@@ -618,9 +625,9 @@ of allocation.  In the sequential run the runtime reported 14GB
 allocated, but this parallel version allocated 22GB\footnote{CPU time
   is not a good measure of speculative work, because in the parallel
   runtime threads can sometimes be spinning while waiting for work,
-  particularly in the GC.}
+  particularly in the GC.}.
 
-So in an attempt to eliminate some of the smaller sparks, we can
+In order to eliminate some of the smaller sparks, we can
 parallelise the alpha-beta to a fixed depth.  This is done by
 introducing a new variant of \codef{mise}, \codef{parMise}, that
 applies the \codef{parListWHNF} strategy up to a certain depth, and then
@@ -687,7 +694,8 @@ the current formulation of Strategies \cite{multicore-ghc}.
 
 \input{related-work}
 
-\section{Conclusions}
+\section{Conclusions and Further work}
+\label{s:conclusion}
 
 {\small
 \bibliographystyle{plainnat}
