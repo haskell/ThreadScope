@@ -288,6 +288,22 @@ Not bad: 8.00/3.38 is a speedup of around 2.4 on 4 cores.  But since
 this program has a highly parallel structure, we might hope to do
 better.  
 
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.3]{soda1.png}
+\end{center}
+\caption{Soda ThreadScope profile}
+\label{f:soda-threadscope}
+\end{figure*}
+
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.3]{soda2.png}
+\end{center}
+\caption{Soda ThreadScope profile (zoomed initial portion)}
+\label{f:soda-threadscope2}
+\end{figure*}
+
 Figure~\ref{f:soda-threadscope} shows the ThreadScope profile for this
 version of soda.  We can see that while an overall view of the runtime
 shows a reasonable parallelisation, if we zoom into the initial part
@@ -319,6 +335,14 @@ any sparks.  This is achieved by adding a call to \codef{rnf}:
         -- force the grid to be evaluated:
         evaluate (rnf grid)
 \end{lstlisting}
+
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.3]{soda3.png}
+\end{center}
+\caption{Soda ThreadScope profile (evaluating the input grid eagerly)}
+\label{f:soda-threadscope3}
+\end{figure*}
 
 The effect on the profile is fairly dramatic
 (Figure~\ref{f:soda-threadscope3}).  We can see that the parallel
@@ -362,21 +386,6 @@ see in this example:
   unevenly, losing a little parallelism at the end of the run.
 \end{itemize}
 
-\begin{figure}
-\caption{Soda ThreadScope profile}
-\label{f:soda-threadscope}
-\end{figure}
-
-\begin{figure}
-\caption{Soda ThreadScope profile (zoomed initial portion)}
-\label{f:soda-threadscope2}
-\end{figure}
-
-\begin{figure}
-\caption{Soda ThreadScope profile (evaluating the input grid eagerly)}
-\label{f:soda-threadscope3}
-\end{figure}
-
 \subsection{minimax}
 
 Minimax is another historical Parallel Haskell program.  It is based
@@ -384,7 +393,7 @@ on an implementation of alpha-beta searching for the game tic-tac-toe,
 from Hughes' influential paper ``Why Functional Programming Matters''
 \cite{why}.  For the purposes of this paper we have generalised the
 program to use a game board of arbitrary size: the original program
-used a fixed $3\times3$ grid, which is too quickly solved to be a useful
+used a fixed 3x3 grid, which is too quickly solved to be a useful
 parallelism benchmark nowadays.  However $4x4$ still represents a
 sufficient challenge without optimising the program further.
 
@@ -400,7 +409,7 @@ is \codef{alternate}:
 alternate depth player f g board
  = move : alternate depth opponent g f board'
  where
-   move@(board',\_) = best f possibles scores
+   move@(board',_) = best f possibles scores
    scores          = map (bestMove depth opponent g f) possibles
    possibles       = newPositions player board
    opponent        = opposite player
@@ -427,11 +436,11 @@ runtime:
 
 One obvious way to parallelise this problem is to evaluate each of the
 possible moves in parallel.  This is easy to achieve with a
-\codef{parList} strategy:
+\codef{parListWHNF} strategy:
 
 \begin{lstlisting}
   scores = map (bestMove depth opponent g f) possibles
-             `using` parList
+             `using` parListWHNF
 \end{lstlisting}
 
 And indeed this does yield a reasonable speedup:
@@ -448,6 +457,14 @@ And indeed this does yield a reasonable speedup:
   Total time   16.20s  (  4.52s elapsed)
 \end{verbatim}
 
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.3]{minimax1.png}
+\end{center}
+\caption{Minimax ThreadScope profile}
+\label{f:minimax-threadscope1}
+\end{figure*}
+
 A speedup of 2.7 on 4 processors is a good start!  However, looking at
 the ThreadScope profile (Figure~\ref{f:minimax-threadscope1}), we can
 see that there's a jagged edge on the right: our granularity is too
@@ -456,11 +473,6 @@ until the end.  What's more, as we can see from the runtime
 statistics, there were only 12 sparks, corresponding to the 12
 possible moves in the 4x4 grid after 4 moves have already been played.
 In order to scale to more CPUs we will need to find more parallelism.
-
-\begin{figure}
-\caption{Minimax ThreadScope profile}
-\label{f:minimax-threadscope1}
-\end{figure}
 
 The game tree evaluation is defined as follows:
 
@@ -516,11 +528,11 @@ by \codef{map (mise g f) l}, which picks the best options for the
 reversed).
 
 The \codef{map} here is a good opportunity for parallelism.  Adding
-a \codef{parList} strategy should be enough:
+a \codef{parListWHNF} strategy should be enough:
 
 \begin{lstlisting}
 mise f g (Branch _ l) = foldr f (g OWin XWin) 
-                         (map (mise g f) l `using` parList)
+                         (map (mise g f) l `using` parListWHNF)
 \end{lstlisting}
 However, this will try to parallelise every level of the search,
 leading to some sparks with very fine granularity.  Also it may
@@ -550,7 +562,7 @@ allocated, but this parallel version allocated 22GB\footnote{CPU time
 So in an attempt to eliminate some of the smaller sparks, we can
 parallelise the alpha-beta to a fixed depth.  This is done by
 introducing a new variant of \codef{mise}, \codef{parMise}, that
-applies the \codef{parList} strategy up to a certain depth, and then
+applies the \codef{parListWHNF} strategy up to a certain depth, and then
 calls the sequential \codef{mise} beyond that.  Just using a depth of
 one gives quite good results:
 
@@ -564,10 +576,13 @@ one gives quite good results:
   Total time   15.46s  (  4.30s elapsed)
 \end{verbatim}
 
-\begin{figure}
-\caption{Minimax ThreadScope profile}
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.3]{minimax2.png}
+\end{center}
+\caption{Minimax ThreadScope profile (with parMise 1)}
 \label{f:minimax-threadscope2}
-\end{figure}
+\end{figure*}
 
 Though as we can see from the ThreadScope profile
 (Figure~\ref{f:minimax-threadscope2}), there are some gaps.
@@ -582,6 +597,14 @@ Increasing the threshold to two works nicely:
   EXIT  time    0.00s  (  0.00s elapsed)
   Total time   15.19s  (  3.91s elapsed)
 \end{verbatim}
+
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.3]{minimax3.png}
+\end{center}
+\caption{Minimax ThreadScope profile (with parMise 2)}
+\label{f:minimax-threadscope3}
+\end{figure*}
 
 We have now achieved a speedup of 3.1 on 4 cores against the
 sequential code, and as we can see from the final ThreadScope profile
@@ -600,11 +623,6 @@ speculative sparks are not garbage collected when they are found to be
 unreachable.  We do plan to improve this in the future, but
 unfortunately changing the GC policy for sparks is incompatible with
 the current formulation of Strategies \cite{multicore-ghc}.
-
-\begin{figure}
-\caption{Minimax ThreadScope profile}
-\label{f:minimax-threadscope3}
-\end{figure}
 
 \input{related-work}
 
