@@ -29,8 +29,24 @@
 %\makeatactive
 
 \begin{abstract}
-Profiling information is essential for the performance tuning of parallel
-programs. This paper describes a new parallel profiling mechansim in the Glasgow Haskell Compiler (GHC) run-time system and its associated graphical viewer. We illustrate how this system can be used to help diagnose and fix several common kinds of performance errors in semi-explicit parallel Haskell programs.
+Parallel Haskell programming has entered the mainstream with support
+now included in GHC for multiple parallel programming models, along
+with multicore execution support in the runtime.  However, tuning
+programs for parallelism is still something of a black art.  Without
+much in the way of feedback provided by the runtime system, it is a
+matter of trial and error combined with experience to achieve good
+parallel speedups.
+
+This paper describes an early prototype of a parallel profiling system
+for multicore programming with GHC.  The system comprises three parts:
+fast event tracing in the runtime, a Haskell library for reading the
+resulting trace files, and a number of tools built on this library for
+presenting the information to the programmer.  We focus on one tool in
+particular, a graphical timeline browser called ThreadScope.
+
+The paper illustrates the use of ThreadScope through a number of case
+studies, and describes some useful methodologies for parallelising
+Haskell programs.
 \end{abstract}
 
 
