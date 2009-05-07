@@ -697,6 +697,35 @@ the current formulation of Strategies \cite{multicore-ghc}.
 \section{Conclusions and Further work}
 \label{s:conclusion}
 
+Here are some of the futurue directions we would like to take this
+work:
+
+\begin{itemize}
+\item Improve the user interface and navigation of ThreadScope.  For
+  example, it would be nice to filter the display to show just a
+  subset of the threads, in order to focus on the behaviour of a
+  particular thread or group of threads.
+
+\item The programmer should be able to generate events
+  programmatically, in order to mark positions in the timeline so that
+  different parts of the program's execution can easily be identified
+  and separated in ThreadScope.
+
+\item It would be straighforward to produce graphs similar to those
+  from the GpH programming tools \cite{gph}.
+
+\item Combine the timeline profile with information from the OS and
+  CPU.  For example, for IO-bound concurrent programs we might like to
+  see IO or network activity displayed on the timeline.  Information
+  from CPU performance counters could also be superimposed or
+  displayed alongside the thread timelines, providing insight into
+  cache behaviour, for example.
+
+\item Have the runtime system generate more tracing information, so
+  that ThreadScope can display information about such things as memory
+  usage, run queue sizes, spark pool sizes, and foreign call activity.
+\end{itemize}
+
 {\small
 \bibliographystyle{plainnat}
 \bibliography{ghc-parallel-tuning}
