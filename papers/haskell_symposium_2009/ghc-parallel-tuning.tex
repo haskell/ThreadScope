@@ -11,6 +11,9 @@
 \newcommand{\codef}[1]{{\fontfamily{cmss}\small#1}}
 \newcommand{\boldcode}[1]{{\bf\fontfamily{cmss}\small#1}}
 
+\usepackage{natbib}
+\bibpunct();A{},
+\let\cite=\citep
 
 \nocaptionrule
 
@@ -301,7 +304,7 @@ complete evaluating the grid.
 
 This type of blocking is often not disastrous, a thread will become
 unblocked soon after the thunk on which it is blocking is evaluated
-(see the discussion of ``blackholes'' in \cite{multicore-ghc}).  There
+(see the discussion of ``blackholes'' in \citet{multicore-ghc}).  There
 is nevertheless a short delay between the thread becoming runnable
 again and the runtime noticing this and moving the tread to the run
 queue.  Sometimes this delay can be hidden if the program has other
@@ -607,7 +610,8 @@ the current formulation of Strategies \cite{multicore-ghc}.
 
 \section{Conclusions}
 
-\bibliographystyle{alpha}
+{\small
+\bibliographystyle{plainnat}
 \bibliography{ghc-parallel-tuning}
 
 \end{document}
