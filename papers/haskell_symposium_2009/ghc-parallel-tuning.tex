@@ -54,12 +54,73 @@ Haskell programs.
 
 
 \section{Introduction}
-Semi-explicit parallel programs in Haskell are written using annotations to control the granularity of parallelsim and the squenecing of evaluation~\cite{spj:trin98b}. This leads to deterministic fine-grain parallel programs that can be executed on multi-core computers. However, it can be difficult to observe how effectively a program has been parallelized. This paper presents some recently developed profiling technology in the GHC run-time system and its associated graphical viewer which can be used for parallel performance tuning of Haskell programs.
+
+Life has never been better for the Parallel Haskell programmer: GHC
+supports multicore execution out of the box, including multiple
+parallel programming models: Strategies \cite{spj:trin98b}, Concurrent
+Haskell \cite{conchask} with STM \cite{stm}, and Data Parallel Haskell
+\cite{dph}.  Runtime performance has received concerted attention
+recently, with significant improvements in parallel performance coming
+in forthcoming GHC releases \cite{multicore-ghc}.  Many of the runtime
+bottlenecks that hampered parallel performance are much reduced, with
+the result that it should be easier to achieve parallel speedups.
+
+However, optimising the runtime only addresses half of the problem;
+the other half being how to tune a given Haskell program to run
+effectively in parallel.  The programmer still has control over task
+granularity, data dependencies, speculation, and to some extent
+evaluation order.  Getting these wrong can be disastrous for parallel
+performance; for example the granularity should be not too fine nor
+too coarse.  The runtime does everything it can to broaden the window
+of granularities that yield good performance, but it cannot completely
+elimiante the upper and lower bounds.
+
+Current methods for tuning Parallel Haskell programs rely largely on
+trial and error, experience, and an eye for understanding the limited
+statistics produced at the end of a program's run by the runtime
+system.  What we need are effective ways to measure and collect
+information about the runtime behaviour of Parallel Haskell programs,
+and tools to communicate this information back to the programmer in a
+way that they can understand and use to solve performance problems
+with their programs.
+
+In this paper we desribe a new profiling system developed for the
+purposes of understanding the parallel execution of Haskell programs.
+In particular, our system includes a tool called ThreadScope that
+allows the programmer to interactively browse the parallel execution
+profile.
+
+This paper contributes the following:
+
+\begin{itemize}
+\item We describe the workings of our parallel profiling system, and
+  the ThreadScope tool for understanding parallel execution.  Our
+  trace file format is fully extensible, and profiling tools built
+  using our framework are both backwards- and forward-compatible with
+  different versions of GHC.
+
+\item Through several case studies, we explore how to use ThreadScope
+  for identifying parallel performance problems, and describe a
+  selection of methodologies for parallelising Haskell code.
+\end{itemize}
+
+Earlier methodologies for parallelising Haskell code exist
+\cite{spj:trin98b}, but there are two crucial differences in the
+multicore GHC setting.  Firstly, the tradeoffs are likely to be
+different, since we are working with a shared-memory heap, and
+communication is therefore cheap\footnote{though not entirely free,
+  since memory cache hierarchies mean data still has to be shuffled
+  between processors even if that shuffling is not explicitly
+  programmed.}.  Secondly, it has recently been discovered that
+Strategies interact badly with garbage collection
+\cite{multicore-ghc}, so in this paper we avoid the use of the
+original Strategies library, relying instead on our own simple
+hand-rolled parallel combinators.
 
 \input{motivation}
 
 \section{Profiling Infrastructure}
-The profiling framework has three components:
+Our profiling framework comprises three parts:
 
 \begin{itemize}
 \item Support in GHC's runtime for tracing events to a log file at
