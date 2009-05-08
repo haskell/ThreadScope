@@ -9,6 +9,7 @@ import System.Mem
 import System.Random
 import System.Time
 import Control.Parallel
+import Control.Parallel.Strategies
 
 -------------------------------------------------------------------------------
 
@@ -154,7 +155,7 @@ ilvN n r = ilv (ilvN (n-1) r)
 -------------------------------------------------------------------------------
 
 evens :: ([a] -> [b]) -> [a] -> [b]
-evens f = chop 2 >-> map f >-> concat
+evens f = chop 2 >-> parMap rwhnf f >-> concat
 
 -------------------------------------------------------------------------------
 
