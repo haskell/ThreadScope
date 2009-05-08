@@ -1,5 +1,5 @@
-\subsection{Batcher's Biotonic Parallel Sorter}
-Batcher's bitonic merger and sorter is a parallel sorting algorithm which has a good implementation in hardware. We have produced an implementaiton of this algorithm in Haskell originally for circuit generation for FPGAs. However, this executable model also represents an interesting software implicit parallelization exercise because the entire parallel structure of the algorithm is expressed in terms of just one combinator called \codef{par2}:
+\subsection{Batcher's Bitonic Parallel Sorter}
+Batcher's bitonic merger and sorter is a parallel sorting algorithm which has a good implementation in hardware. We have produced an implementation of this algorithm in Haskell originally for circuit generation for FPGAs. However, this executable model also represents an interesting software implicit parallelization exercise because the entire parallel structure of the algorithm is expressed in terms of just one combinator called \codef{par2}:
 
 \begin{lstlisting}
 par2 :: (a -> b) -> (c -> d) -> (a, c) -> (b, d)
@@ -21,7 +21,7 @@ par2 circuit1 circuit2 (input1, input2)
     output2 = circuit2 input2
 \end{lstlisting}
 
-This relatively simple change results in a definate performance gain due to parallelsim. Here is the log output produced by running a test-bench program with just one Haskell execution context:
+This relatively simple change results in a definite performance gain due to parallelism. Here is the log output produced by running a test-bench program with just one Haskell execution context:
 
 \begin{verbatim}
 .\bsortpar.exe +RTS -N1 -l -qg0 -qb -sbsortpar-N1.log

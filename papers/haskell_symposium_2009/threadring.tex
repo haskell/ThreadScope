@@ -83,7 +83,7 @@ of gaps (Figure~\ref{f:threadring1}).
 
 In this program we want to avoid communication between the two
 separate cores, because that will be expensive.  We want as much
-communciation as possible to happen between thredas on the same core,
+communication as possible to happen between threads on the same core,
 where it is cheap.  In order to do this, we have to give the scheduler
 some help: we know the structure of the communication in this program,
 so we can place threads optimally to take advantage of that.  GHC
@@ -113,7 +113,7 @@ version:
 
 Why don't we actually see any speedup?
 Figure~\ref{f:threadring2} shows the ThreadScope profile.
-The program has now been almost linearised; there is a small amount of
+The program has now been almost linearized; there is a small amount of
 overlap, but most of the execution is sequential, first on one core
 and then the other.
 

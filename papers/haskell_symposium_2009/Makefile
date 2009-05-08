@@ -8,3 +8,10 @@ all:
 	bibtex $(DOC)
 	pdflatex $(DOC).tex
 	pdflatex $(DOC).tex
+
+spell:	
+	aspell -c ghc-parallel-tuning.tex
+	aspell -c motivation.tex
+	aspell -c threadring.tex
+	aspell -c bsort.tex
+	aspell -c related-work.tex

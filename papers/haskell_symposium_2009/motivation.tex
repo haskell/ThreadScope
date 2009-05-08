@@ -56,7 +56,7 @@ parSumFibEuler a b
     e = sumEuler b
 \end{lstlisting}
 
-To create two workloads that take roughly the same amount of time to execute we performed some experiments which show that \codef{fib 38} takes roughly the same time to execute as \codef{sumEuler 5300}. If we were to run this program and view the execution trace we would see somthing like the graph shown in Figure~\ref{f:wrongpar}. This figure shows the execution trace of two Haskell execution contexts (HECs) which hopefully correspond to threads running on distinct processor cores. The purple portion of each line shows at what time intervals a thread is running and the orange (lighter coloured) bar showes when garbage collection is occuring. Some garbage collections occur in `stop the world' mode and show up at identical times on each HEC trace.
+To create two workloads that take roughly the same amount of time to execute we performed some experiments which show that \codef{fib 38} takes roughly the same time to execute as \codef{sumEuler 5300}. If we were to run this program and view the execution trace we would see something like the graph shown in Figure~\ref{f:wrongpar}. This figure shows the execution trace of two Haskell execution contexts (HECs) which hopefully correspond to threads running on distinct processor cores. The purple portion of each line shows at what time intervals a thread is running and the orange (lighter coloured) bar shows when garbage collection is occurring. Some garbage collections occur in `stop the world' mode and show up at identical times on each HEC trace.
 
 \begin{figure*}
 \begin{center}
