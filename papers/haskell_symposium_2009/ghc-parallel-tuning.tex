@@ -34,14 +34,14 @@
 \begin{abstract}
 Parallel Haskell programming has entered the mainstream with support
 now included in GHC for multiple parallel programming models, along
-with multi-core execution support in the runtime.  However, tuning
+with multicore execution support in the runtime.  However, tuning
 programs for parallelism is still something of a black art.  Without
 much in the way of feedback provided by the runtime system, it is a
 matter of trial and error combined with experience to achieve good
 parallel speedups.
 
 This paper describes an early prototype of a parallel profiling system
-for multi-core programming with GHC.  The system comprises three parts:
+for multicore programming with GHC.  The system comprises three parts:
 fast event tracing in the runtime, a Haskell library for reading the
 resulting trace files, and a number of tools built on this library for
 presenting the information to the programmer.  We focus on one tool in
@@ -56,7 +56,7 @@ Haskell programs.
 \section{Introduction}
 
 Life has never been better for the Parallel Haskell programmer: GHC
-supports multi-core execution out of the box, including multiple
+supports multicore execution out of the box, including multiple
 parallel programming models: Strategies \cite{spj:trin98b}, Concurrent
 Haskell \cite{jones96concurrent} with STM \cite{stm}, and Data Parallel Haskell
 \cite{dph}.  Performance of the runtime system has received 
@@ -108,7 +108,7 @@ This paper contributes the following:
 
 Earlier methodologies for parallelising Haskell code exist
 \cite{spj:trin98b}, but there are two crucial differences in the
-multi-core GHC setting.  Firstly, the trade-offs are likely to be
+multicore GHC setting.  Firstly, the trade-offs are likely to be
 different, since we are working with a shared-memory heap, and
 communication is therefore cheap\footnote{though not entirely free,
   since memory cache hierarchies mean data still has to be shuffled
@@ -176,7 +176,7 @@ used by each HEC to store generated events.
 By doing so, we prevent any performance delays from dynamic 
 memory allocation, and require no locks since the buffers are
 HEC-local.  Yet, this requires us to flush the buffer
-to the file-system once it becomes full, but since the buffer is a
+to the filesystem once it becomes full, but since the buffer is a
 fixed size we pay a near-constant penalty for each flush and a
 deterministic delay on the GHC runtime.
 
