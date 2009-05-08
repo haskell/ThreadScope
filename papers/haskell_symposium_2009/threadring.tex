@@ -5,10 +5,15 @@ Benchmarks Game\footnote{\url{http://shootout.alioth.debian.org/}}
 (formerly known as the Great Computer Language Shootout).  It is a
 simple concurrency benchmark, in which a large number of threads are
 created in a ring topology, and then messages are passed around the
-ring.  The code for our version of the benchmark is given in
-Figure~\ref{f:threadring-code}.  In fact this version uses a linear
-string of threads rather than a ring.  A number of messages are pumped
-in to the first thread in the string, and then collected at the other
+ring.  We include it here as an example of profiling a Concurrent
+Haskell program using ThreadScope, in contrast to the other case
+studies which have investigated programs that use semi-explicit
+parallelism.
+
+The code for our version of the benchmark is given in
+Figure~\ref{f:threadring-code}.  This version uses a linear string of
+threads rather than a ring, where a number of messages are pumped in
+to the first thread in the string, and then collected at the other
 end.
 
 \begin{figure}
@@ -84,12 +89,13 @@ In this program we want to avoid communication between the two
 separate cores, because that will be expensive.  We want as much
 communication as possible to happen between threads on the same core,
 where it is cheap.  In order to do this, we have to give the scheduler
-some help: we know the structure of the communication in this program,
-so we can place threads optimally to take advantage of that.  GHC
-provides a way to place a thread onto a particular core (or HEC),
-using the \codef{forkOnIO} operation.  The placement scheme we use is
-to divide the string into linear segments, one segment per core (in
-our case two).
+some help.  We know the structure of the communication in this
+program: messages are passed along the string in sequence, so we can
+place threads optimally to take advantage of that.  GHC provides a way
+to place a thread onto a particular core (or HEC), using the
+\codef{forkOnIO} operation.  The placement scheme we use is to divide
+the string into linear segments, one segment per core (in our case
+two).
 
 This strategy gets us back to the same performance as the sequential
 version:
@@ -129,6 +135,7 @@ scheduling phenomenon.  The runtime has moved all the messages through
 the first string before it propagates any into the second string, and
 this can happen because the total number of messages we are using for
 the benchmark is less than the number of threads.  If we increase the
-number of messages, then we do actually see more parallelism;
+number of messages, then we do actually see more parallelism.
 Figure~\ref{f:threadring3} shows the execution profile for 2000
-messages and 2000 threads.
+messages and 2000 threads, and we can see there is significantly more
+overlap.
