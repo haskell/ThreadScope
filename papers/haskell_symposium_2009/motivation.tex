@@ -10,12 +10,15 @@ The function \codef{par} indicates to the GHC run-time system that it may be ben
 \end{lstlisting}
 A thread is not necessarily created to compute the value of the expression \codef{a}. Instead, the GHC run-time system creates a {\em spark} which has the potential to be executed on a different thread from the parent thread. A sparked computation expresses the possibility of performing some speculative evaluation. Since a thread is not necessarily created to compute the value of \codef{a}, this approach has some similarities with the notion of a {\em lazy future}~\cite{mohr:91}.
 
-Sometimes it is convenient to write a function with two arguments as an
-infix function and this is done in Haskell by writing backticks 
-around the function:
-\begin{lstlisting}
-  a `par` b
-\end{lstlisting}
+% SDM: removed, not necessary for the Haskell Symposium.  Also the
+% following paragraph doesn't make sense.
+%
+% Sometimes it is convenient to write a function with two arguments as an
+% infix function and this is done in Haskell by writing backticks 
+% around the function:
+% \begin{lstlisting}
+%   a `par` b
+% \end{lstlisting}
 
 We call such programs semi-explicitly parallel because the programmer has provided a hint about the appropriate level of granularity for parallel operations and the system implicitly creates threads to implement the concurrency. The user does not need to explicitly create any threads or write any code for inter-thread communication or synchronization.
 
