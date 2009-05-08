@@ -56,7 +56,19 @@ parSumFibEuler a b
     e = sumEuler b
 \end{lstlisting}
 
-To create two workloads that take roughly the same amount of time to execute we performed some experiments which show that \codef{fib 38} takes roughly the same time to execute as \codef{sumEuler 5300}. If we were to run this program and view the execution trace we would see something like the graph shown in Figure~\ref{f:wrongpar}. This figure shows the execution trace of two Haskell execution contexts (HECs) which hopefully correspond to threads running on distinct processor cores. The purple portion of each line shows at what time intervals a thread is running and the orange (lighter coloured) bar shows when garbage collection is occurring. Some garbage collections occur in `stop the world' mode and show up at identical times on each HEC trace.
+To create two workloads that take roughly the same amount of time to
+execute we performed some experiments which show that \codef{fib 38}
+takes roughly the same time to execute as \codef{sumEuler 5300}.  The
+execution trace for this program as displayed by ThreadScope is shown
+in Figure~\ref{f:wrongpar}. This figure shows the execution trace of
+two Haskell Execution Contexts (HECs), where each HEC corresponds to a
+processor core.  The $x$-axis is time.  The purple portion of each
+line shows at what time intervals a thread is running and the orange
+(lighter coloured) bar shows when garbage collection is occurring.
+Garbage collections are always ``stop the world'', in that all Haskell
+threads must stop during GC, but a GC may be performed either
+sequentially on one HEC or in parallel on multiple HECs; in
+Figure~\ref{f:wrongpar} we are using parallel GC.
 
 \begin{figure*}
 \begin{center}
@@ -79,15 +91,21 @@ the flags \texttt{+RTS -s -RTS}) to help understand what went wrong:
   Total time    9.77s  (  9.85s elapsed)
 \end{verbatim}
 
-The log shows that although a spark was created for the potential
-parallel evaluation of \codef{fib 38} it was never picked up for
-evaluation. In this case the performance bug is due to the fact that
-the main thread immediately starts to work on the evaluation of
-\codef{fib 38} itself which causes this spark to \emph{fizzle}
-\cite{multicore-ghc}.  A fizzled spark is one that is found to be
-under evaluation or already evaluated, so there is no profit in
-evaluating it in parallel. The log also shows that the total
-amount of computation work done is 9.39 seconds (the \codef{MUT} time); the time spent performing garbage collection was 0.37 seconds (the \codef{GC} time); and the total amount of work done amounts to 9.77 seconds with 9.85 seconds of wall clock time. A profitably parallel program will have a wall clock time (elapsed time) which is less than the total time.
+The log shows that although a single spark was created, no sparks
+where ``converted'', i.e. executed.  In this case the performance bug
+is due to the fact that the main thread immediately starts to work on
+the evaluation of \codef{fib 38} itself which causes this spark to
+\emph{fizzle}.  A fizzled spark is one that is found to be under
+evaluation or already evaluated, so there is no profit in evaluating
+it in parallel. The log also shows that the total amount of
+computation work done is 9.39 seconds (the \codef{MUT} time); the time
+spent performing garbage collection was 0.37 seconds (the \codef{GC}
+time); and the total amount of work done amounts to 9.77 seconds with
+9.85 seconds of wall clock time. A profitably parallel program will
+have a wall clock time (elapsed time) which is less than the total
+time\footnote{although to measure actual parallel speedup, the wall-clock time
+  for the parallel execution should be compared to the wall-clock time
+  for the sequential execution.}.
 
 One might be tempted to fix this problem by swapping the arguments to
 the \codef{+} operator in the hope that the main thread will work on
