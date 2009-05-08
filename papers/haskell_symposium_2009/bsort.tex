@@ -1,0 +1,70 @@
+\subsection{Batcher's Biotonic Parallel Sorter}
+Batcher's bitonic merger and sorter is a parallel sorting algorithm which has a good implementation in hardware. We have produced an implementaiton of this algorithm in Haskell originally for circuit generation for FPGAs. However, this executable model also represents an interesting software implicit parallelization exercise because the entire parallel structure of the algorithm is expressed in terms of just one combinator called \codef{par2}:
+
+\begin{lstlisting}
+par2 :: (a -> b) -> (c -> d) -> (a, c) -> (b, d)
+par2 circuit1 circuit2 (input1, input2)
+  = (output1, output2)
+    where
+    output1 = circuit1 input1
+    output2 = circuit2 input2
+\end{lstlisting}
+
+This combinator captures the idea of two circuits which are independent and execute in parallel. A straight-forward way to perform a semi-explicit parallelization of this function is use \codef{par} to spark off the evaluation of one of the sub-circuits.
+
+\begin{lstlisting}
+par2 :: (a -> b) -> (c -> d) -> (a, c) -> (b, d)
+par2 circuit1 circuit2 (input1, input2)
+  = output1 `par` (output2 `pseq` (output1, output2))
+    where
+    output1 = circuit1 input1
+    output2 = circuit2 input2
+\end{lstlisting}
+
+This relatively simple change results in a definate performance gain due to parallelsim. Here is the log output produced by running a test-bench program with just one Haskell execution context:
+
+\begin{verbatim}
+.\bsortpar.exe +RTS -N1 -l -qg0 -qb -sbsortpar-N1.log
+  SPARKS: 106496 (0 converted, 106496 pruned)
+
+  INIT  time    0.00s  (  0.00s elapsed)
+  MUT   time    5.32s  (  5.37s elapsed)
+  GC    time    0.72s  (  0.74s elapsed)
+  EXIT  time    0.00s  (  0.00s elapsed)
+  Total time    6.04s  (  6.12s elapsed)
+\end{verbatim}
+
+Although many sparks are created non are taken up because there is only one worker thread. The execution trace for this invocation is shown in Figure~\ref{f:bsortpar-n1}.
+
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.3]{bsortpar-n1.png}
+\end{center}
+\caption{A sequential execution of bsort}
+\label{f:bsortpar-n1}
+\end{figure*}
+
+Running with two threads shows a very good performance improvement:
+
+\begin{verbatim}
+$ cat bsortpar-N2.log
+.\bsortpar.exe +RTS -N2 -l -qg0 -qb -sbsortpar-N2.log
+  SPARKS: 106859 (49 converted, 106537 pruned)
+
+  INIT  time    0.00s  (  0.00s elapsed)
+  MUT   time    4.73s  (  3.03s elapsed)
+  GC    time    1.64s  (  0.72s elapsed)
+  EXIT  time    0.00s  (  0.00s elapsed)
+  Total time    6.36s  (  3.75s elapsed)
+\end{verbatim}
+
+This example produces very many sparks most of which fizzle but enough sparks are turned into productive work i.e. 6.36 seconds worth of work done in 3.75 seconds of time. The execution trace for this invocation is shown in Figure~\ref{f:bsortpar-n2}. There is an obvious sequential block of execution between 2.1 seconds and 2.9 seconds and we believe this is due to a sequential component of the algorithm which combines the results of parallel sub-computations.
+
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.3]{bsortpar-n2.png}
+\end{center}
+\caption{A parallel execution of bsort}
+\label{f:bsortpar-n2}
+\end{figure*}
+

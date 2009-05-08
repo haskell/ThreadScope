@@ -56,13 +56,13 @@ parSumFibEuler a b
 
 To create two workloads that take roughly the same amount of time to execute we performed some experiments which show that \codef{fib 38} takes roughly the same time to execute as \codef{sumEuler 5300}. If we were to run this program and view the execution trace we would see somthing like the graph shown in Figure~\ref{f:wrongpar}.
 
-\begin{figure}
+\begin{figure*}
 \begin{center}
 \includegraphics[width=8.5cm]{SumEuler1-N2-eventlog.pdf}
 \end{center}
 \caption{No parallelization of \codef{f `par` (f + e)}}
 \label{f:wrongpar}
-\end{figure}
+\end{figure*}
 
 We can examine the statistics produced by the runtime system (using
 the flags \texttt{+RTS -s -RTS}) to help understand what went wrong:
@@ -103,13 +103,13 @@ parSumFibEuler a b
 
 This results in the execution trace shown in Figure~\ref{f:lucky} which shows a sparked thread being taken up by a spare worker thread. 
 
-\begin{figure}
+\begin{figure*}
 \begin{center}
 \includegraphics[width=8.5cm]{SumEuler2-N2-eventlog.pdf}
 \end{center}
 \caption{A luck parallelization of \codef{f `par` (e + f)}}
 \label{f:lucky}
-\end{figure}
+\end{figure*}
 
 The execution log for this program shows that a spark was used productively and the elapsed time has dropped from 9.85s to 5.33s:
 
