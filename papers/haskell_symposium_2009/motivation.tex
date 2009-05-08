@@ -1,7 +1,7 @@
 \section{Profiling Motivation}
 Haskell provides a mechanism to allow the user to control the granularity of parallelism by indicating what computations may be usefully carried out in parallel. This is done by using functions from the \codef{Control.Parallel} module. The interface for \codef{Control.Parallel} is shown below:
-\begin{lstlisting}
-  par :: a -> b -> b 
+\begin{lstlisting}[columns=flexible]
+  par  :: a -> b -> b 
   pseq :: a -> b -> b 
 \end{lstlisting}
 The function \codef{par} indicates to the GHC run-time system that it may be beneficial to evaluate the first argument in parallel with the second argument. The \codef{par} function returns as its result the value of the second argument. One can always eliminate \codef{par} from a program by using the following identity without altering the semantics of the program:
