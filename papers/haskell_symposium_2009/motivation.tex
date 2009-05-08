@@ -82,7 +82,7 @@ parallel evaluation of \codef{fib 38} it was never picked up for
 evaluation. In this case the performance bug is due to the fact that
 the main thread immediately starts to work on the evaluation of
 \codef{fib 38} itself which causes this spark to \emph{fizzle}
-\cite{mulitcore-ghc}.  A fizzled spark is one that is found to be
+\cite{multicore-ghc}.  A fizzled spark is one that is found to be
 under evaluation or already evaluated, so there is no profit in
 evaluating it in parallel. The log also shows that the total
 amount of computation work done is 9.39 seconds (the \codef{MUT} time); the time spent performing garbage collection was 0.37 seconds (the \codef{GC} time); and the total amount of work done amounts to 9.77 seconds with 9.85 seconds of wall clock time. A profitably parallel program will have a wall clock time (elapsed time) which is less than the total time.

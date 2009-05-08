@@ -58,10 +58,10 @@ Haskell programs.
 Life has never been better for the Parallel Haskell programmer: GHC
 supports multicore execution out of the box, including multiple
 parallel programming models: Strategies \cite{spj:trin98b}, Concurrent
-Haskell \cite{conchask} with STM \cite{stm}, and Data Parallel Haskell
-\cite{dph}.  Performance of the runtime system has received concerted
+Haskell \cite{jones96concurrent} with STM \cite{stm}, and Data Parallel Haskell
+\cite{dph}.  Performance of the runtime system has received 
 attention recently, with significant improvements in parallel
-performance coming in forthcoming GHC releases \cite{multicore-ghc}.
+performance available in the forthcoming GHC release \cite{multicore-ghc}.
 Many of the runtime bottlenecks that hampered parallel performance in
 earlier GHC versions are much reduced, with the result that it should
 now be easier to achieve parallel speedups.
@@ -169,35 +169,66 @@ create new tools:
 \end{itemize}
 
 \subsection{Fast runtime tracing}
-Minimizing the performance overhead is critical when designing a system
+Minimizing the overhead of event logging is critical when designing a system
 to facilitate runtime tracing.  In the GHC runtime, a pre-allocated events buffer is 
-used by each capability to store generated events.
+used by each HEC to store generated events.
 By doing so, we prevent any performance delays from dynamic 
-memory allocation, and require no need for locks since the buffers are
-capability-specific.  Yet, this requires us to flush the buffer
+memory allocation, and require no locks since the buffers are
+HEC-local.  Yet, this requires us to flush the buffer
 to the filesystem once it becomes full, but since the buffer is a
-constant size we pay a near-constant penalty for each flush and a
+fixed size we pay a near-constant penalty for each flush and a
 deterministic delay on the GHC runtime.
 
-% how fast can we generate an event?
-From the event timestamps in the trace log file, we can verify that we can 
-generate an event within 1 ms.  However, we can also see from the log file that
-the typical duration between events is greater than 1 ms due to the computation 
-required for the event itself, thus the event generation is within
-the computation time for even very fast events, such as create spark.
+The HEC-local buffers are flushed independently, which means that
+events in the log file appear out-of-order and have to be sorted.
+Sorting of the events is easily performed by the profiling tool after
+reading in the log file using the \codef{ghc-events} library.
 
-% how many events are there in a typical log file?
-To provide an example of the impact of GHC runtime event tracing, the parallel 
-version of the canonical Fibonacci function, \codef{parfib} (from
-the \codef{nofib} software package \cite{nofib}) typically generates over
-2,000,000 events in a trace file with size of approximately 40 MB for the
-calculation of the Fibonacci number 40 at threshold 10 and utilizing 2
-CPU cores
+To measure the speed at which the GHC runtime can log events, we used
+a C program (no Haskell code, just using the GHC runtime system as a
+library) that simply generates 2,000,000 events, alternating between
+``thread start'' and ``thread stop'' events.  Our program generates a
+34MB trace file and runs in 0.31 seconds elapsed time:
+
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.3]{eventbench.png}
+\end{center}
+\caption{Synthetic event benchmark}
+\label{f:event-bench}
+\end{figure*}
+
+\begin{verbatim}
+  INIT  time    0.00s  (  0.02s elapsed)
+  MUT   time    0.22s  (  0.29s elapsed)
+  GC    time    0.00s  (  0.00s elapsed)
+  EXIT  time    0.00s  (  0.00s elapsed)
+  Total time    0.22s  (  0.31s elapsed)
+\end{verbatim}
+which gives a rough figure of 150ns for each event on average.
+Looking at the ThreadScope view of this program
+(Figure~\ref{f:event-bench}) we can clearly see where the buffer
+flushes are happening, and that each one is about 5ms long.
+
+An alternative approach is to use memory-mapped files, and write our
+events directly into memory, leaving the actual file writing to the
+OS.  This would allow writing to be performed asynchronously, which
+would hopefully reduce the impact of the buffer flush.  According to
+\codef{strace} on Linux, the above test program is spending 0.7s
+writing buffers, so making this asynchronous would save us about 30ns
+per event on average.  However, on a 32-bit machine where we can't
+afford to reserve a large amount of address space for the whole log
+file, we would still have to occasionally flush and remap new portions
+of the file.  This alternative approach is something we plan to
+explore in the future.
 
 % how much impact does this have on runtimes?
-Taking this parfib computation further, we compare the time elapsed with
-event logging enabled and without event logging for 50 executions of
-parfib on an Intel(R) Core(TM)2 Duo CPU T5250 1.50GHz.
+To see how much impact event logging has on real execution times, we
+took a parallel version of the canonical Fibonacci function,
+\codef{parfib}, and compared the time elapsed with and without event
+logging enabled for 50 executions of parfib on an Intel(R) Core(TM)2
+Duo CPU T5250 1.50GHz, using both cores.  The program generates about
+2,000,000 events during the run, and generates a 40MB log file.
 
 \begin{verbatim}
   parfib eventlog 
@@ -211,17 +242,16 @@ parfib on an Intel(R) Core(TM)2 Duo CPU T5250 1.50GHz.
   17.447493s        1.352686s
 \end{verbatim}
 
-Considering the significant number of events generated in the traces and
-the very detailed profiling information made available by these traces, 
-the overhead does not have an immense impact at approximately 10-25\%
-increase in elapsed time.  Yet, if we can post an event in 1ms, why event 
-the 10-25\% overhead? In the case of parfib, the create spark event
-consists of at least 80\% of the 
-the events generated, and many sparks are often created 
-one after another to create new work for the capabilities.  So, we see
-in this case we have a higher overhead due to the behavior of the program
-itself not doing much work but rather spending much of the computation
-creating sparks.
+Considering the significant number of events generated in the traces
+and the very detailed profiling information made available by these
+traces, the overhead does not have an immense impact at approximately
+10-25\% increase in elapsed time.  In the case of parfib, the event
+representing the creation of a new spark is dominant, comprising at
+least 80\% of the the events generated.  In fact, it is debatable
+whether we should be logging the creation of a spark, since the cost
+of logging this event is likely to be larger than the cost of creating
+the spark itself - a spark creation is simply a write into a circular
+buffer.
   
 For parallel quicksort, far fewer sparks are created and most of the
 computation is spent in garbage collection; thus, we can achieve an
@@ -335,8 +365,9 @@ extensibility costs almost nothing, since the extra fields are all in
 the event-types header, which has a fixed size for a given version of
 GHC.
 
-\input{bsort}
+\section{Case Studies}
 
+\input{bsort}
 
 \subsection{Soda}
 
@@ -499,7 +530,7 @@ see in this example:
 Minimax is another historical Parallel Haskell program.  It is based
 on an implementation of alpha-beta searching for the game tic-tac-toe,
 from Hughes' influential paper ``Why Functional Programming Matters''
-\cite{why}.  For the purposes of this paper we have generalised the
+\cite{hughes:why-fp-matters}.  For the purposes of this paper we have generalised the
 program to use a game board of arbitrary size: the original program
 used a fixed 3x3 grid, which is too quickly solved to be a useful
 parallelism benchmark nowadays.  However $4x4$ still represents a
