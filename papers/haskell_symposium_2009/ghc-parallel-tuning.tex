@@ -133,6 +133,22 @@ some of the possibilities in Section~\ref{s:conclusion}.
 
 \subsection{Soda}
 
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.3]{soda1.png}
+\end{center}
+\caption{Soda ThreadScope profile}
+\label{f:soda-threadscope}
+\end{figure*}
+
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.3]{soda2.png}
+\end{center}
+\caption{Soda ThreadScope profile (zoomed initial portion)}
+\label{f:soda-threadscope2}
+\end{figure*}
+
 Soda is a program for solving word-search problems: given a
 rectangular grid of letters, find occurrences of a words from a
 supplied list, where a word can appear horizontally, vertically, or
@@ -194,22 +210,6 @@ Initially we try with 4 cores, and with GHC's parallel GC enabled:
 Not bad: 8.00/3.38 is a speedup of around 2.4 on 4 cores.  But since
 this program has a highly parallel structure, we might hope to do
 better.  
-
-\begin{figure*}
-\begin{center}
-\includegraphics[scale=0.3]{soda1.png}
-\end{center}
-\caption{Soda ThreadScope profile}
-\label{f:soda-threadscope}
-\end{figure*}
-
-\begin{figure*}
-\begin{center}
-\includegraphics[scale=0.3]{soda2.png}
-\end{center}
-\caption{Soda ThreadScope profile (zoomed initial portion)}
-\label{f:soda-threadscope2}
-\end{figure*}
 
 Figure~\ref{f:soda-threadscope} shows the ThreadScope profile for this
 version of soda.  We can see that while an overall view of the runtime

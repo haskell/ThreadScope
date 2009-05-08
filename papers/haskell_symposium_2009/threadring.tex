@@ -80,6 +80,22 @@ Next, running the program on two cores:
 \label{f:threadring1}
 \end{figure*}
 
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.3]{threadring2.png}
+\end{center}
+\caption{ThreadRing profile (with explicit placement)}
+\label{f:threadring2}
+\end{figure*}
+
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.3]{threadring3.png}
+\end{center}
+\caption{ThreadRing profile (explicit placement and more messages)}
+\label{f:threadring3}
+\end{figure*}
+
 Things are significantly slower when we add a core.  Let's examine the
 ThreadScope profile to see why - at first glance, the program seems to
 be using both cores, but as we zoom in we can see that there are lots
@@ -108,27 +124,11 @@ version:
   Total time    0.26s  (  0.21s elapsed)
 \end{verbatim}
 
-\begin{figure*}
-\begin{center}
-\includegraphics[scale=0.3]{threadring2.png}
-\end{center}
-\caption{ThreadRing profile (with explicit placement)}
-\label{f:threadring2}
-\end{figure*}
-
 Why don't we actually see any speedup?
 Figure~\ref{f:threadring2} shows the ThreadScope profile.
 The program has now been almost linearized; there is a small amount of
 overlap, but most of the execution is sequential, first on one core
 and then the other.
-
-\begin{figure*}
-\begin{center}
-\includegraphics[scale=0.3]{threadring3.png}
-\end{center}
-\caption{ThreadRing profile (explicit placement and more messages)}
-\label{f:threadring3}
-\end{figure*}
 
 Investigating the profile in more detail shows that this is a
 scheduling phenomenon.  The runtime has moved all the messages through

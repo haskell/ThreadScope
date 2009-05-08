@@ -1,4 +1,12 @@
 \section{Profiling Infrastructure}
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.3]{eventbench.png}
+\end{center}
+\caption{Synthetic event benchmark}
+\label{f:event-bench}
+\end{figure*}
+
 Our profiling framework comprises three parts:
 
 \begin{itemize}
@@ -41,6 +49,7 @@ create new tools:
 \end{itemize}
 
 \subsection{Fast runtime tracing}
+
 Minimizing the overhead of event logging is critical when designing a system
 to facilitate runtime tracing.  In the GHC runtime, a pre-allocated events buffer is 
 used by each HEC to store generated events.
@@ -61,14 +70,6 @@ a C program (no Haskell code, just using the GHC runtime system as a
 library) that simply generates 2,000,000 events, alternating between
 ``thread start'' and ``thread stop'' events.  Our program generates a
 34MB trace file and runs in 0.31 seconds elapsed time:
-
-\begin{figure*}
-\begin{center}
-\includegraphics[scale=0.3]{eventbench.png}
-\end{center}
-\caption{Synthetic event benchmark}
-\label{f:event-bench}
-\end{figure*}
 
 \begin{verbatim}
   INIT  time    0.00s  (  0.02s elapsed)
