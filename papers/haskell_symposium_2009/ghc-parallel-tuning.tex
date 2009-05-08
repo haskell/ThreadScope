@@ -545,15 +545,10 @@ the current formulation of Strategies \cite{multicore-ghc}.
 \section{Conclusions and Further work}
 \label{s:conclusion}
 We have shown how thread-based profile information can be effectively
-used to help understand and fix parallel performance bugs in 
-semi-explicitly parallel Haskell programs. Many of the techniques
-we present in this paper are also applicable to other kinds of
-concurrent and parallel Haskell programs e.g. programs that
-explicitly create threads through \codef{forkIO} and synchronize
-through \codef{MVars} as well as programs that use atomic blocks
-implemented by software transactional memory. Furthermore, we expect
-the profiling techniques in this paper to be of great benefit to
-developers using Data Parallel Haskell. 
+used to help understand and fix parallel performance bugs in both
+Parallel Haskell and Concurrent Haskell programs, and we expect these
+profiling tools to also be of benefit to developers using Data
+Parallel Haskell in the future.
 
 The ability to profile parallel Haskell programs plays an important
 part in the development of such programs because the analysis
@@ -580,7 +575,10 @@ work:
   and separated in ThreadScope.
 
 \item It would be straightforward to produce graphs similar to those
-  from the GpH programming tools \cite{trinder:02}.
+  from the GpH and GranSim programming tools \cite{trinder:02,loidl},
+  either by writing a Haskell program to translate the GHC trace files
+  into the appropriate input for these tools, or by rewriting the
+  tools themselves in Haskell.
 
 \item Combine the timeline profile with information from the OS and
   CPU.  For example, for IO-bound concurrent programs we might like to
@@ -594,10 +592,16 @@ work:
   usage, run queue sizes, spark pool sizes, and foreign call activity.
 \end{itemize}
 
+\section*{Acknowledgments}
+
 The authors would like to acknowledge the work of the developers
 of previous Haskell concurrent and parallel profiling systems
 which have provided much inspiration for our own work. Specifically
 work on GpH, GranSim and Eden was particularly useful.
+
+We wish to thank Microsoft Research for funding Donnie Jones' visit to
+Cambridge in 2008 during which he developed an early prototype of
+event tracing in GHC.
 
 {\small
 \bibliographystyle{plainnat}
