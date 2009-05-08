@@ -71,10 +71,11 @@ the other half being how to tune a given Haskell program to run
 effectively in parallel.  The programmer still has control over task
 granularity, data dependencies, speculation, and to some extent
 evaluation order.  Getting these wrong can be disastrous for parallel
-performance. For example the granularity should neither be too fine
-nor too coarse.  The runtime does everything it can to broaden the
-range of granularities that yield good performance, but it cannot
-completely eliminate the upper and lower bounds.
+performance. For example, the granularity should neither be too fine
+nor too coarse.  Too coarse and the runtime will not be able to
+effectively load-balance to keep all CPUs constantly busy; too fine
+and the costs of creating and scheduling the tiny tasks outweigh the
+benefits of executing them in parallel.
 
 Current methods for tuning parallel Haskell programs rely largely on
 trial and error, experience, and an eye for understanding the limited
