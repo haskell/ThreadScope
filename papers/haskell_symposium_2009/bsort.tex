@@ -44,7 +44,15 @@ Although many sparks are created non are taken up because there is only one work
 \label{f:bsortpar-n1}
 \end{figure*}
 
-Running with two threads shows a very good performance improvement:
+\begin{figure*}
+\begin{center}
+\includegraphics[width=17cm]{bsortpar-n2.png}
+\end{center}
+\caption{A parallel execution of bsort}
+\label{f:bsortpar-n2}
+\end{figure*}
+
+ Running with two threads shows a very good performance improvement:
 
 \begin{verbatim}
 $ cat bsortpar-N2.log
@@ -59,12 +67,4 @@ $ cat bsortpar-N2.log
 \end{verbatim}
 
 This example produces very many sparks most of which fizzle but enough sparks are turned into productive work i.e. 6.36 seconds worth of work done in 3.75 seconds of time. The execution trace for this invocation is shown in Figure~\ref{f:bsortpar-n2}. There is an obvious sequential block of execution between 2.1 seconds and 2.9 seconds and we believe this is due to a sequential component of the algorithm which combines the results of parallel sub-computations.
-
-\begin{figure*}
-\begin{center}
-\includegraphics[width=17cm]{bsortpar-n2.png}
-\end{center}
-\caption{A parallel execution of bsort}
-\label{f:bsortpar-n2}
-\end{figure*}
 
