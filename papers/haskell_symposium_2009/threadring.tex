@@ -1,12 +1,11 @@
 \subsection{Thread Ring}
 
 The thread ring benchmark originates in the Compter Language
-Benchmarks Game\footnote{\url{http://shootout.alioth.debian.org/}} (formerly known as the Great Computer
-Language Shootout).  It is a simple concurrency benchmark, in which a
-large number of threads are created in a ring topology, and then
-messages are passed around the ring.
-
-The source code for our version of the benchmark is given in
+Benchmarks Game\footnote{\url{http://shootout.alioth.debian.org/}}
+(formerly known as the Great Computer Language Shootout).  It is a
+simple concurrency benchmark, in which a large number of threads are
+created in a ring topology, and then messages are passed around the
+ring.  The code for our version of the benchmark is given in
 Figure~\ref{f:threadring-code}.  In fact this version uses a linear
 string of threads rather than a ring.  A number of messages are pumped
 in to the first thread in the string, and then collected at the other
@@ -44,11 +43,11 @@ main = do
 \end{figure}
 
 Our aim is to try to make this program speed up in parallel.  We
-expect there to be parallelism available: since multiple messages are
-being pumped through the thread string, we ought to be able to pump
+expect there to be parallelism available: multiple messages are
+being pumped through the thread string, so we ought to be able to pump
 messages through distinct parts of the string in parallel.
 
-First, the sequential performance:
+First, the sequential performance.  This is for 500 messages and 2000 threads:
 
 \begin{verbatim}
   INIT  time    0.00s  (  0.00s elapsed)
@@ -126,10 +125,10 @@ and then the other.
 \end{figure*}
 
 Investigating the profile in more detail shows that this is a
-scheduling phenomena.  The runtime has moved all the messages through
+scheduling phenomenon.  The runtime has moved all the messages through
 the first string before it propagates any into the second string, and
 this can happen because the total number of messages we are using for
 the benchmark is less than the number of threads.  If we increase the
-number of messages, then we do actually see more parallelism, with the
-amount of parallelism increasing with the number of messages
-(Figure~\ref{f:threadring3}).
+number of messages, then we do actually see more parallelism;
+Figure~\ref{f:threadring3} shows the execution profile for 2000
+messages and 2000 threads.
