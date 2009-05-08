@@ -6,7 +6,7 @@
 \usepackage{enumerate}
 
 \usepackage{listings}
-\lstset{basicstyle=\fontfamily{cmss} \small, columns=fullflexible, language=Haskell, numbers=left, numberstyle=\tiny, numbersep=2pt}
+\lstset{basicstyle=\fontfamily{cmss} \small, columns=fullflexible, language=Haskell, numbers=left, numberstyle=\tiny, numbersep=2pt, literate={->}{$\rightarrow$\ }{2}{<-}{$\leftarrow$\ }{2}}
 
 \newcommand{\codef}[1]{{\fontfamily{cmss}\small#1}}
 \newcommand{\boldcode}[1]{{\bf\fontfamily{cmss}\small#1}}
@@ -553,7 +553,7 @@ We will explore a few different parallelisations of this program using
 ThreadScope.  The function for calculating the best line in the game
 is \codef{alternate}:
 
-\begin{lstlisting}
+\begin{lstlisting}[columns=flexible]
 alternate depth player f g board
  = move : alternate depth opponent g f board'
  where
@@ -624,9 +624,10 @@ In order to scale to more CPUs we will need to find more parallelism.
 
 The game tree evaluation is defined as follows:
 
-\begin{lstlisting}
+\begin{lstlisting}[columns=flexible]
 bestMove :: Int -> Piece -> Player -> Player -> Board
          -> Evaluation
+
 bestMove depth p f g 
   = mise f g 
   . cropTree
@@ -659,10 +660,11 @@ speculation.
 The right place to parallelise is in the alpha-beta search itself.
 Here is the sequential code:
 
-\begin{lstlisting}
+\begin{lstlisting}[columns=flexible]
 mise :: Player -> Player -> Tree Evaluation -> Evaluation
 mise f g (Branch a []) = a
-mise f g (Branch _ l) = foldr f (g OWin XWin) (map (mise g f) l)
+mise f g (Branch _ l)  = 
+  foldr f (g OWin XWin) (map (mise g f) l)
 \end{lstlisting}
 
 The first equation looks for a leaf, and returns the evaluation of the
