@@ -189,9 +189,11 @@ the computation time for even very fast events, such as create spark.
 % how many events are there in a typical log file?
 To provide an example of the impact of GHC runtime event tracing, the parallel 
 version of the canonical Fibonacci function, \codef{parfib} (from
-the \codef{nofib} software package \cite{nofib}) typically generates over 2 million
-events in a trace file with size of approximately 40 MB for the
-calculation of the Fibonacci number 40 at threshold 10 and utilizing 2 CPU cores.
+the \codef{nofib} software package \cite{nofib}) typically generates over
+2,000,000 events in a trace file with size of approximately 40 MB for the
+calculation of the Fibonacci number 40 at threshold 10 and utilizing 2
+CPU cores
+
 % how much impact does this have on runtimes?
 Taking this parfib computation further, we compare the time elapsed with
 event logging enabled and without event logging for 50 executions of
@@ -211,8 +213,46 @@ parfib on an Intel(R) Core(TM)2 Duo CPU T5250 1.50GHz.
 
 Considering the significant number of events generated in the traces and
 the very detailed profiling information made available by these traces, 
-the overhead is surprisingly insignificant at approximately a 10-25\%
-increase in elapsed time.
+the overhead does not have an immense impact at approximately 10-25\%
+increase in elapsed time.  Yet, if we can post an event in 1ms, why event 
+the 10-25\% overhead? In the case of parfib, the create spark event
+consists of at least 80\% of the 
+the events generated, and many sparks are often created 
+one after another to create new work for the capabilities.  So, we see
+in this case we have a higher overhead due to the behavior of the program
+itself not doing much work but rather spending much of the computation
+creating sparks.
+  
+For parallel quicksort, far fewer sparks are created and most of the
+computation is spent in garbage collection; thus, we can achieve an
+almost unnoticable overhead from event tracing.  The parallel quicksort
+example involved sorting a list of 100,000 randomly generated integers
+and was performed in the same manner as parfib where we compare with
+event logging and without, yet in this test we perform 100 executions 
+on an Intel(R) Core(TM) 2 Quad CPU 3.0Ghz. 
+
+\begin{verbatim}
+  parquicksort eventlog 
+  ./Main +RTS -N4 -l -RTS 
+  Avg Time Elapsed  Standard Deviation
+  14.201385s        2.954869
+
+  parquicksort without eventlog 
+  ./Main +RTS -N4 -RTS 
+  Avg Time Elapsed  Standard Deviation
+  15.187529s        3.385293s
+
+\end{verbatim}
+
+Since parallel quicksort spent the majority of the computation doing
+useful work, particularly garbage collection of the created lists, a
+trace file of only approximately 5MB and near 300,000 events was
+created and the overhead of event tracing is not noticeable.
+
+The crux of the event tracing is that even when a poorly performing
+program utilizes event tracing, the overhead should still not be
+devastating to the program's performance, but best of all on a program
+with high utilization event tracing should barely affect the performance.
 
 \subsection{An extensible file format}
 
