@@ -21,6 +21,27 @@ data EventDuration
   = ThreadRun ThreadId Int ThreadStopStatus Timestamp Timestamp
   | GC Int Timestamp Timestamp
   | EV GHCEvents.Event
+ 
+-------------------------------------------------------------------------------
+-- This is a tree-based view of the event information to allow
+-- abstracted representations of the running events and the GC events.
+-- Each split node will split half of the events down the LHS sub-tree
+-- and the other half of the events down the RHS sub-tree. The timestamp
+-- of the last event in the LHS subtree is also recorded as the the total
+-- number of events under this node. This node also record the average
+-- amount of time during the entire run-span for which a HEC is running
+-- a thread and also the the average amount of time spent in GC.
+
+data EventTree
+  = EventSplit Timestamp -- The start time of this run-span
+               Timestamp -- The time used to split the events into two parts
+               Timestamp -- The end time of this run-span
+               EventTree -- The LHS split <= split-time
+               EventTree -- The RHS split > split-time
+               Int       -- The number of events under this node
+               Float     -- The Run average
+               Float     -- The GC  average
+  | EventTreeLeaf [EventDuration]
 
 -------------------------------------------------------------------------------
 
