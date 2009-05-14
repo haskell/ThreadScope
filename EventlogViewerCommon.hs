@@ -21,7 +21,16 @@ data EventDuration
   = ThreadRun ThreadId Int ThreadStopStatus Timestamp Timestamp
   | GC Int Timestamp Timestamp
   | EV GHCEvents.Event
- 
+
+-------------------------------------------------------------------------------
+
+timeOfEventDuration :: EventDuration -> Timestamp
+timeOfEventDuration ed
+  = case ed of
+      ThreadRun _ _ _ startTime _ -> startTime
+      GC _ startTime _ -> startTime
+      EV event -> time event
+
 -------------------------------------------------------------------------------
 -- This is a tree-based view of the event information to allow
 -- abstracted representations of the running events and the GC events.
@@ -44,6 +53,35 @@ data EventTree
   | EventTreeLeaf [EventDuration]
 
 -------------------------------------------------------------------------------
+
+splitEvents :: [EventDuration] -> EventTree
+splitEvents [] = EventTreeLeaf [] -- The case for an empty list of events
+splitEvents [e1] = EventTreeLeaf [e1] -- The case for a singleton list
+splitEvents eventList
+  = EventSplit (timeOfEventDuration (head eventList)) -- Start time
+               splitTime -- Time of split
+               (timeOfEventDuration (last eventList)) -- End time
+               (splitEvents (take (splitIndex+1) eventList))
+               (splitEvents (drop (splitIndex+1) eventList))
+               undefined
+               undefined
+               undefined
+    where
+    len = length eventList
+    splitIndex = len `div` 2
+    splitValue = eventList!!splitIndex
+    splitTime = timeOfEventDuration splitValue
+    
+
+-- Splitting:
+-- [0]         -> [[0], []]
+-- [0,1]       -> [[0], [1]]
+-- [0,1,2]     -> [[0,1], [2]]
+-- [0,1,2,3]   -> [[0,1], [2,3]]
+-- [0,1,2,3,4] -> [[0,1,2], [3,4]]
+
+-------------------------------------------------------------------------------
+
 
 -- An EventArray stores events for a single HEC
 type EventArray = Array Int EventDuration
