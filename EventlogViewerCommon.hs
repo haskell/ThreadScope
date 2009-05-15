@@ -1,8 +1,3 @@
--------------------------------------------------------------------------------
---- $Id: EventlogViewerCommon.hs#3 2009/03/23 17:11:32 REDMOND\\satnams $
---- $Source: //depot/satnams/haskell/ThreadScope/EventlogViewerCommon.hs $
--------------------------------------------------------------------------------
-
 module EventlogViewerCommon
 where
 import Data.Array
@@ -23,12 +18,23 @@ data EventDuration
   | EV GHCEvents.Event
 
 -------------------------------------------------------------------------------
+-- The start time of an event.
 
 timeOfEventDuration :: EventDuration -> Timestamp
 timeOfEventDuration ed
   = case ed of
       ThreadRun _ _ _ startTime _ -> startTime
       GC _ startTime _ -> startTime
+      EV event -> time event
+
+-------------------------------------------------------------------------------
+-- The emd time of an event.
+
+endTimeOfEventDuration :: EventDuration -> Timestamp
+endTimeOfEventDuration ed
+  = case ed of
+      ThreadRun _ _ _ _ endTime -> endTime
+      GC _ _ endTime -> endTime
       EV event -> time event
 
 -------------------------------------------------------------------------------
@@ -41,6 +47,7 @@ timeOfEventDuration ed
 -- This node also record the average amount of time during the entire 
 -- run-span for which a HEC is running
 -- a thread and also the the average amount of time spent in GC.
+-- The EventtTree information is used to organize events for a single HEC.
 
 data EventTree
   = EventSplit Timestamp -- The start time of this run-span
@@ -85,11 +92,21 @@ splitEvents eventList
 
 -------------------------------------------------------------------------------
 
+lastEventTime :: EventTree -> Timestamp
+lastEventTime (EventSplit _ _ endTime _ _ _) = endTime
+lastEventTime (EventTreeLeaf eventList)
+  = endTimeOfEventDuration (last eventList)
+
+-------------------------------------------------------------------------------
+
+
 -- An EventArray stores events for a single HEC
 type EventArray = Array Int EventDuration
 
--- HECs is a list of events for each HEC
-type HECs = [(Int, EventArray)]
+-- The HEC data structure is a list of pairs where each pair records
+-- the unqiue ID of a HEC and its event information represented
+-- using the EventTree data-structure.
+type HECs = [(Int, EventTree)]
 
 type MaybeHECsIORef = IORef  (Maybe HECs)
 
@@ -101,10 +118,10 @@ ennumerateCapabilities events
 
 -------------------------------------------------------------------------------
 
--- Find the last timestamp value (in microseconds)
-findLastTxValue :: HECs -> Integer
+-- Find the last timestamp value 
+findLastTxValue :: HECs -> Timestamp
 findLastTxValue hecs
-  = maximum (map (eventDuration2ms . arrayLast) (map snd hecs))
+  = maximum (map (lastEventTime . snd) hecs)
 
 -------------------------------------------------------------------------------
 
@@ -139,15 +156,6 @@ gapcap = 55
 barHeight :: Int
 barHeight = 20
 
--- Scaling down from ts ns 1e-9 values to microsecond 1e-6 values
-scaleDown :: Integer
-scaleDown = 1000
-
--------------------------------------------------------------------------------
-
-eScale :: GHCEvents.Event -> Double -> Int
-eScale e s = scaleIntegerBy (event2ms e) s
-
 -------------------------------------------------------------------------------
 
 -- This scale value is used to map a micro-second value to a pixel unit.
@@ -160,44 +168,10 @@ defaultScaleValue :: Double
 defaultScaleValue = -1.0
 
 -------------------------------------------------------------------------------
--- Scale a timetamp value (in microsecond) by a value s giving an Int
+-- Scale a timetamp value by a value s giving an Int
 
 tsScale :: Timestamp -> Double -> Int
-tsScale t s = scaleIntegerBy (ts2ms t) s
-
--------------------------------------------------------------------------------
--- Extact a timestamp value from an event and return as microseconds
-
-event2ms :: GHCEvents.Event -> Integer
-event2ms event = ts2ms (time event)
-
--------------------------------------------------------------------------------
-
-eventDuration2ms :: EventDuration -> Integer
-eventDuration2ms ed
-  = case ed of
-      ThreadRun _ _ _ startTime _ -> ts2ms startTime
-      GC _ startTime _ -> ts2ms startTime
-      EV ev -> event2ms ev
-
--------------------------------------------------------------------------------
-
-endTime2ms :: EventDuration -> Integer
-endTime2ms ed
-  = case ed of
-      ThreadRun _ _ _ _ endTime -> ts2ms endTime
-      GC _ _ endTime -> ts2ms endTime
-      EV ev -> event2ms ev
-
--------------------------------------------------------------------------------
-
-ts2ms :: Timestamp -> Integer
-ts2ms t = (fromIntegral t) `div` scaleDown
-
--------------------------------------------------------------------------------
-
-ts2msInt :: Timestamp -> Int
-ts2msInt t = fromIntegral (ts2ms t)
+tsScale t s = scaleIntegerBy (toInteger t) s
 
 -------------------------------------------------------------------------------
 

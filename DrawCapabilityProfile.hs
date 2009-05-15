@@ -52,9 +52,11 @@ updateCanvas canvas viewport statusbar bw_button labels_button ctx scale
    = do -- putStrLn (show event)
         maybeCapabilities <- readIORef capabilitiesIORef
         maybeEventArray <- readIORef eventArrayIORef
+        -- Check to see if an event trace has been loaded
         when (isJust maybeEventArray) $
            do let Just capabilities = maybeCapabilities
                   Just hecs = maybeEventArray
+              -- Get state information from user-interface components
               bw_mode <- toggleButtonGetActive bw_button
               labels_mode <- toggleButtonGetActive labels_button
               win <- widgetGetDrawWindow canvas 
@@ -66,7 +68,8 @@ updateCanvas canvas viewport statusbar bw_button labels_button ctx scale
               hadj_lower <- adjustmentGetLower hadj
               hadj_upper <- adjustmentGetUpper hadj
               hadj_value <- adjustmentGetValue hadj
-              hadj_pagesize <- adjustmentGetPageSize hadj              
+              hadj_pagesize <- adjustmentGetPageSize hadj   
+              -- Work out what portion of the trace is in view         
               let lastTx = findLastTxValue hecs
               scaleValue <- checkScaleValue scale viewport lastTx
               statusbarPush statusbar ctx ("Scale: " ++ show scaleValue ++ " width = " ++ show width ++ " height = " ++ show height ++ " hadj_value = " ++ show (truncate hadj_value) ++ " hadj_pagesize = " ++ show hadj_pagesize ++ " hadj_low = " ++ show hadj_lower ++ " hadj_upper = " ++ show hadj_upper)
@@ -77,59 +80,84 @@ updateCanvas canvas viewport statusbar bw_button labels_button ctx scale
         return True
       where
       Rectangle x y _ _ = area 
-updateCanvas _ _ _ _ _ _ _ _ _ _ = return True
+updateCanvas _ _ _ _ _ _ _ _ _ other
+   = do putStrLn ("Ignorning event " ++ show other) -- Debug rendering errors
+        return True
 
 -------------------------------------------------------------------------------
--- Estimate the width of the vertical scrollbar at 20 pixels
+-- This function returns a value which can be used to scale
+-- Timestamp event log values to pixels.
+-- If the scale has previous been computed then it is resued.
+-- An "uncomputed" scale value is represetned as -1.0 (defaultScaleValue)
+-- We estimate the width of the vertical scrollbar at 20 pixels
 
-checkScaleValue :: IORef Double -> Viewport -> Integer -> IO Double
-checkScaleValue scale viewport duration
+checkScaleValue :: IORef Double -> Viewport -> Timestamp -> IO Double
+checkScaleValue scale viewport largestTimestamp
   = do scaleValue <- readIORef scale
        if scaleValue < 0.0 then
          do (w, _) <- widgetGetSize viewport
-            let newScale = fromIntegral (w - 2*ox - 20 - barHeight) / (fromIntegral (duration))
+            let newScale = fromIntegral (w - 2*ox - 20 - barHeight) / (fromIntegral (largestTimestamp))
             writeIORef scale newScale
             return newScale 
         else
          return scaleValue
 
 -------------------------------------------------------------------------------
-
+-- This function draws the current view of all the HECs with Cario
 
 currentView :: Int -> Double -> Double -> Double -> Maybe HECs -> Maybe [Int]
                -> Bool -> Bool -> Render ()
 currentView height hadj_value hadj_pagesize scaleValue 
             maybeEventArray maybeCapabilities bw_mode labels_mode
-  = do when (isJust maybeEventArray) $ do
+  = do -- If an event trace has been loaded then render it
+       when (isJust maybeEventArray) $ do
          let Just hecs = maybeEventArray
              Just capabilities = maybeCapabilities
              lastTx = findLastTxValue hecs
-             startPos = truncate (hadj_value / scaleValue) -- startPos in us
-             endPos = truncate ((hadj_value + hadj_pagesize) / scaleValue) `min` lastTx -- endPos in us
-             startTick = ((startPos `div` (100*tickAdj) - 1) * 100*tickAdj) `max` 0
-             endTick = (endPos `div` (100*tickAdj) + 1) * 100 * tickAdj 
+             startPos :: Timestamp
+             startPos = fromInteger (truncate (hadj_value / scaleValue))
+             endPos :: Timestamp
+             endPos = fromInteger (truncate ((hadj_value + hadj_pagesize) / scaleValue)) `min` lastTx 
              tickAdj = tickScale scaleValue
          selectFontFace "times" FontSlantNormal FontWeightNormal
          setFontSize 12
          setSourceRGBAhex blue 1.0
          setLineWidth 1.0
          draw_line (ox, oy) 
-                   (ox+ scaleIntegerBy endTick scaleValue, oy)
-         drawTicks height scaleValue startTick (10*tickAdj) (100*tickAdj) endTick
-         mapM_ (hecView bw_mode labels_mode height scaleValue hadj_value hadj_pagesize) 
+                   (ox+ scaleIntegerBy (toInteger endPos) scaleValue, oy)
+         drawTicks height scaleValue (toInteger startPos) (10*tickAdj) (100*tickAdj) (toInteger endPos)
+         mapM_ (hecView bw_mode labels_mode height scaleValue startPos endPos) 
                (map snd hecs)
 
 -------------------------------------------------------------------------------
 -- hecView draws the trace for a single HEC
 
-hecView :: Bool -> Bool -> Int -> Double -> Double -> Double -> EventArray -> Render ()
-hecView bw_mode labels_mode height scaleValue hadj_value hadj_pagesize eventArray
-  = do sequence_ [drawDuration bw_mode labels_mode scaleValue (eventArray!i) |
-                  i <- [startIndex..endIndex]]
+hecView :: Bool -> Bool -> Int -> Double -> Timestamp -> Timestamp
+           -> EventTree -> Render ()
+hecView bw_mode labels_mode height scaleValue startPos endPos
+        (EventSplit s splitTime e lhs rhs nrEvents)
+  = do when (startPos <= splitTime)
+         (hecView bw_mode labels_mode height scaleValue startPos endPos lhs)
+       when (endPos > splitTime)
+         (hecView bw_mode labels_mode height scaleValue startPos endPos rhs)
+hecView bw_mode labels_mode height scaleValue startPos endPos 
+        (EventTreeLeaf eventList)
+  = mapM_ (drawDuration bw_mode labels_mode scaleValue) eventsInView
     where
-    (_, lastIndex) = bounds eventArray
-    startIndex = findStartIndexFromTime eventArray (nudgeDown (truncate (hadj_value / scaleValue))) 0 lastIndex
-    endIndex = findEndIndexFromTime eventArray (truncate ((hadj_value + hadj_pagesize) / scaleValue + 1)) startIndex lastIndex
+    eventsInView = [e | e <- eventList, inView startPos endPos e]
+
+-------------------------------------------------------------------------------
+-- An event is in view if either its start-edge is in view or its end-edge
+-- is in view.
+
+inView :: Timestamp -> Timestamp -> EventDuration -> Bool
+inView viewStart viewEnd event
+  = startInView || endInView
+    where
+    eStart = timeOfEventDuration event
+    eEnd   = endTimeOfEventDuration event
+    startInView = eStart >= viewStart && eStart <= viewEnd
+    endInView   = eEnd   >= viewStart && eEnd   <= viewEnd
 
 -------------------------------------------------------------------------------
 
@@ -263,73 +291,12 @@ drawDuration bw_mode labels_mode scaleValue (EV event)
       Shutdown{cap=c} ->
          do setSourceRGBAhex shutdownColour 0.8
             draw_rectangle (ox+ eScale event scaleValue) (oycap+c*gapcap) barHeight barHeight
-      _ -> return ()    
-
--------------------------------------------------------------------------------
--- Function to help debug findStartIndexFromTime
-{-
-assertBinarySearchStart eventArray atOrBefore low high | atOrBefore < eventDuration2ms (eventArray!low) = low
-assertBinarySearchStart eventArray atOrBefore low high
-  = if (atOrBefore >= eventDuration2ms (eventArray!idx)) &&
-       idx < high &&
-       (atOrBefore <= eventDuration2ms (eventArray!(idx+1))) then
-      idx
-    else
-      error ("Error in findStartIndexFromTime atOrBefore = " ++ show atOrBefore ++ " l = " ++ show l ++ " h = " ++ show h ++ " idx = " ++ show idx ++ minus1 ++ " a[idx] = " ++ show (eventDuration2ms (eventArray!idx)) ++ plus1 )
-    where
-    (idx, l, h) = findStartIndexFromTime eventArray atOrBefore low high
-    minus1 = if idx > low then
-               " a[idx-1] = " ++ show (eventDuration2ms (eventArray!(idx-1)))
-             else
-               ""
-    plus1 = if idx < high then
-               " a[idx+1] = " ++ show (eventDuration2ms (eventArray!(idx+1)))
-             else
-               ""
--}
+      _ -> return () 
 
 -------------------------------------------------------------------------------
 
--- Binary search for starting position for currently visible part of
--- the drawing canvas
-findStartIndexFromTime :: EventArray -> Integer -> Int -> Int -> Int
-findStartIndexFromTime eventArray atOrBefore low high | atOrBefore < eventDuration2ms (eventArray!low) = low
-findStartIndexFromTime eventArray atOrBefore low high
-  = if high - low <= 1 then
-      low
-    else
-      if atOrBefore >= (eventDuration2ms $ eventArray!currentIndex) && atOrBefore < (eventDuration2ms $ eventArray!(currentIndex+1)) then
-        currentIndex
-      else
-        if atOrBefore < (eventDuration2ms $ eventArray!currentIndex) then
-          findStartIndexFromTime eventArray atOrBefore low currentIndex
-        else
-          findStartIndexFromTime eventArray atOrBefore (currentIndex+1) high
-      where
-      currentIndex = low + half_width
-      half_width = (1 + high - low) `div` 2
-                  
--------------------------------------------------------------------------------
-
--- Binary search for end position for currently visible part of
--- the drawing canvas
-
-findEndIndexFromTime :: EventArray -> Integer -> Int -> Int -> Int 
-findEndIndexFromTime eventArray atOrAfter low high | atOrAfter > eventDuration2ms (eventArray!high) = high
-findEndIndexFromTime eventArray atOrAfter low high
-  = if high - low <= 1 then
-      high
-    else
-      if atOrAfter >= (endTime2ms $ eventArray!currentIndex) && atOrAfter < (endTime2ms $ eventArray!(currentIndex+1)) then
-        currentIndex
-      else
-        if atOrAfter < (endTime2ms $ eventArray!currentIndex) then
-          findEndIndexFromTime eventArray atOrAfter low currentIndex
-        else
-          findEndIndexFromTime eventArray atOrAfter (currentIndex+1) high
-      where
-      currentIndex = low + half_width
-      half_width = (1 + high - low) `div` 2
+eScale event scaleValue
+  = truncate ((fromIntegral (time event) * scaleValue))
 
 -------------------------------------------------------------------------------
 
@@ -364,17 +331,17 @@ subscriptThreashold = 0.2
 tickScale :: Double -> Integer
 tickScale scaleValue
   = if scaleValue <= 2.89e-5 then
-      100000
+      10000000
     else if scaleValue <= 2.31e-4 then
-      10000
+      1000000
     else if scaleValue <= 3.125e-3 then
-      1000
+      100000
     else if scaleValue <= 0.0625 then
-      100
+      10000
     else if scaleValue <= 0.25 then
-      10
-    else -- Mark major ticks every 10us
-      1
+      1000
+    else 
+      100
 
 -------------------------------------------------------------------------------
 

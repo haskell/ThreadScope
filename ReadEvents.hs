@@ -1,8 +1,3 @@
--------------------------------------------------------------------------------
---- $Id: ReadEvents.hs#4 2009/03/24 09:58:18 REDMOND\\satnams $
---- $Source: //depot/satnams/haskell/ThreadScope/ReadEvents.hs $
--------------------------------------------------------------------------------
-
 module ReadEvents
 where
 
@@ -21,6 +16,22 @@ import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
 
 -------------------------------------------------------------------------------
+-- The GHC.RTS.Events library returns the profile information
+-- in a data-streucture which contains a list data structure
+-- representing the events i.e. [GHCEvents.Event]
+-- ThreadScope transforms this list into an alternative representation
+-- which (for each HEC) records event *durations* which are ordered in time.
+-- The durations represent the run-lengths for thread execution and
+-- run-lengths for garbage colleciton. This data-structure is called
+-- EventDuration. 
+-- ThreadScope then transformations this data-structure into another
+-- data-structure which gives a binary-tree view of the event information
+-- by performing a binary split on the time domain i.e. the EventTree
+-- data structure.
+
+-- GHCEvents.Event => [EventDuration] => EventTree
+
+-------------------------------------------------------------------------------
 
 rawEventsToHECs :: [GHCEvents.Event] -> HECs
 rawEventsToHECs eventList
@@ -30,13 +41,14 @@ rawEventsToHECs eventList
     
 -------------------------------------------------------------------------------
 
+filterHEC :: [GHCEvents.Event] -> Int -> (Int, EventTree)
 filterHEC events hec
-  = (hec, eventArrayToDurationArray (listArray (0, nrEvents-1) 
-                                    eventsForThisHEC))
+  = (hec, splitEvents (eventArrayToDuration eventsAsArray))
     where
     eventsForThisHEC = filter (eventFromHEC hec) events
+    eventsAsArray = listArray (0, nrEvents-1) eventsForThisHEC
     nrEvents = length eventsForThisHEC
- 
+
 -------------------------------------------------------------------------------
 
 eventFromHEC :: Int -> GHCEvents.Event -> Bool
@@ -46,7 +58,7 @@ eventFromHEC hec event
 -------------------------------------------------------------------------------
 
 registerEventsFromFile :: String -> IORef (Maybe [Int]) -> MaybeHECsIORef ->
-                          IORef Double -> IORef Integer ->
+                          IORef Double -> IORef Timestamp ->
                           Window -> Viewport -> Label -> Statusbar -> ContextId -> IO ()
 registerEventsFromFile filename capabilitiesIORef eventArrayIORef scale
                        lastTxIORef window viewport profileNameLabel summarybar
@@ -57,7 +69,7 @@ registerEventsFromFile filename capabilitiesIORef eventArrayIORef scale
          do let pes = events (dat fmt)
                 sorted = sortBy (Data.Function.on compare time) (reverse pes)
                 hecs = rawEventsToHECs sorted
-                lastTx = event2ms (last sorted) -- Last event time in ms
+                lastTx = time (last sorted) -- Last event time i
                 capabilities = ennumerateCapabilities pes
             -- Update the IORefs used for drawing callbacks
             writeIORef capabilitiesIORef (Just capabilities)
