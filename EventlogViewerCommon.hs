@@ -34,11 +34,12 @@ timeOfEventDuration ed
 -------------------------------------------------------------------------------
 -- This is a tree-based view of the event information to allow
 -- abstracted representations of the running events and the GC events.
--- Each split node will split half of the events down the LHS sub-tree
--- and the other half of the events down the RHS sub-tree. The timestamp
--- of the last event in the LHS subtree is also recorded as the the total
--- number of events under this node. This node also record the average
--- amount of time during the entire run-span for which a HEC is running
+-- Each split node will record all the events in the first half of the
+-- time span represented by the node in the LHS sub-tree and the
+-- remainder in the RHS sub-tree i.e. the data-structure represents
+-- a binary-tree split on the time axis.
+-- This node also record the average amount of time during the entire 
+-- run-span for which a HEC is running
 -- a thread and also the the average amount of time spent in GC.
 
 data EventTree
@@ -56,25 +57,24 @@ splitEvents :: [EventDuration] -> EventTree
 splitEvents [] = EventTreeLeaf [] -- The case for an empty list of events
 splitEvents [e1] = EventTreeLeaf [e1] -- The case for a singleton list
 splitEvents eventList
-  = if duration > 0 then
+  = if duration > 0 && len > 1000 then -- threshold for leaf size 
       EventSplit startTime
                  splitTime 
                  endTime 
                  (splitEvents lhs)
                  (splitEvents rhs)
                  len -- Number of events under this node
-    else -- All events at the same time so don't split
+    else -- All events at the same time so don't split or leaf
+         -- size threshold has been reached
       EventTreeLeaf eventList
     where
     startTime = timeOfEventDuration (head eventList)
     endTime = timeOfEventDuration (last eventList)
+    splitTime = startTime + (endTime - startTime) `div` 2
     duration = endTime - startTime
     len = length eventList
-    splitIndex = len `div` 2
-    splitValue = eventList!!splitIndex
-    splitTime = timeOfEventDuration splitValue
-    lhs = take (splitIndex+1) eventList
-    rhs = drop (splitIndex+1) eventList    
+    lhs = [e | e <- eventList, timeOfEventDuration e <= splitTime]
+    rhs = [e | e <- eventList, timeOfEventDuration e > splitTime]
 
 -- Splitting:
 -- [0]         -> [[0], []]
@@ -84,7 +84,6 @@ splitEvents eventList
 -- [0,1,2,3,4] -> [[0,1,2], [3,4]]
 
 -------------------------------------------------------------------------------
-
 
 -- An EventArray stores events for a single HEC
 type EventArray = Array Int EventDuration
