@@ -48,8 +48,6 @@ data EventTree
                EventTree -- The LHS split <= split-time
                EventTree -- The RHS split > split-time
                Int       -- The number of events under this node
-               Float     -- The Run average
-               Float     -- The GC  average
   | EventTreeLeaf [EventDuration]
 
 -------------------------------------------------------------------------------
@@ -58,20 +56,25 @@ splitEvents :: [EventDuration] -> EventTree
 splitEvents [] = EventTreeLeaf [] -- The case for an empty list of events
 splitEvents [e1] = EventTreeLeaf [e1] -- The case for a singleton list
 splitEvents eventList
-  = EventSplit (timeOfEventDuration (head eventList)) -- Start time
-               splitTime -- Time of split
-               (timeOfEventDuration (last eventList)) -- End time
-               (splitEvents (take (splitIndex+1) eventList))
-               (splitEvents (drop (splitIndex+1) eventList))
-               undefined
-               undefined
-               undefined
+  = if duration > 0 then
+      EventSplit startTime
+                 splitTime 
+                 endTime 
+                 (splitEvents lhs)
+                 (splitEvents rhs)
+                 len -- Number of events under this node
+    else -- All events at the same time so don't split
+      EventTreeLeaf eventList
     where
+    startTime = timeOfEventDuration (head eventList)
+    endTime = timeOfEventDuration (last eventList)
+    duration = endTime - startTime
     len = length eventList
     splitIndex = len `div` 2
     splitValue = eventList!!splitIndex
     splitTime = timeOfEventDuration splitValue
-    
+    lhs = take (splitIndex+1) eventList
+    rhs = drop (splitIndex+1) eventList    
 
 -- Splitting:
 -- [0]         -> [[0], []]
