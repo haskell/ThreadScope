@@ -181,7 +181,7 @@ barHeight = 20
 -------------------------------------------------------------------------------
 
 -- This scale value is used to map a micro-second value to a pixel unit.
--- To convert a micro-second value to a pixel value, multiply it by scale.
+-- To convert a timestamp value to a pixel value, multiply it by scale.
 -- To convert a pixel value to a micro-second value, divide it by scale.
 -- A negative value means the scale value to be computed to fit the
 -- trace to the display.

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.3 on Fri May 01 15:39:07 2009 -->
+<!--Generated with glade3 3.4.3 on Mon May 18 14:36:12 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="main_window">
     <property name="width_request">1500</property>
@@ -65,10 +65,21 @@
               </widget>
             </child>
             <child>
-              <widget class="GtkMenuItem" id="menuitem3">
+              <widget class="GtkMenuItem" id="viewMenuItem">
                 <property name="visible">True</property>
                 <property name="label" translatable="yes">_View</property>
                 <property name="use_underline">True</property>
+                <child>
+                  <widget class="GtkMenu" id="viewMenu">
+                    <property name="visible">True</property>
+                    <child>
+                      <widget class="GtkCheckMenuItem" id="fullDetail">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Full detail</property>
+                      </widget>
+                    </child>
+                  </widget>
+                </child>
               </widget>
             </child>
             <child>
@@ -282,5 +293,11 @@
         </child>
       </widget>
     </child>
+  </widget>
+  <widget class="GtkMenu" id="menu2">
+    <property name="visible">True</property>
+  </widget>
+  <widget class="GtkMenu" id="menu5">
+    <property name="visible">True</property>
   </widget>
 </glade-interface>

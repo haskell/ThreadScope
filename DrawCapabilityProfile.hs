@@ -37,11 +37,13 @@ import ViewerColours
 --  occurs. This function redraws the currently visible part of the
 --  main trace canvas plus related canvases.
 
-updateCanvas :: DrawingArea -> Viewport -> Statusbar -> ToggleButton ->
+updateCanvas :: DrawingArea -> Viewport -> Statusbar -> 
+                CheckMenuItem -> ToggleButton ->
                 ToggleButton -> ContextId ->  IORef Double ->
                 IORef (Maybe [Int])  -> MaybeHECsIORef -> Event ->
                 IO Bool
-updateCanvas canvas viewport statusbar bw_button labels_button ctx scale 
+updateCanvas canvas viewport statusbar  full_detail_menu_item 
+             bw_button labels_button ctx scale 
              capabilitiesIORef eventArrayIORef
              event@(Expose _ area region count)
    = do -- putStrLn (show event)
@@ -53,6 +55,7 @@ updateCanvas canvas viewport statusbar bw_button labels_button ctx scale
                   Just hecs = maybeEventArray
               -- Get state information from user-interface components
               bw_mode <- toggleButtonGetActive bw_button
+              full_detail <- checkMenuItemGetActive full_detail_menu_item
               labels_mode <- toggleButtonGetActive labels_button
               win <- widgetGetDrawWindow canvas 
               (width,height) <- widgetGetSize viewport
@@ -71,11 +74,11 @@ updateCanvas canvas viewport statusbar bw_button labels_button ctx scale
               widgetSetSizeRequest canvas (truncate (scaleValue * fromIntegral lastTx) + 2*ox) ((length capabilities)*gapcap+oycap)
               renderWithDrawable win (currentView width height hadj_value 
                  hadj_pagesize scaleValue maybeEventArray
-                 maybeCapabilities bw_mode labels_mode)
+                 maybeCapabilities full_detail bw_mode labels_mode)
         return True
       where
       Rectangle x y _ _ = area 
-updateCanvas _ _ _ _ _ _ _ _ _ other
+updateCanvas _ _ _ _ _ _ _ _ _ _ other
    = do putStrLn ("Ignorning event " ++ show other) -- Debug rendering errors
         return True
 
@@ -100,10 +103,10 @@ checkScaleValue scale viewport largestTimestamp
 -------------------------------------------------------------------------------
 -- This function draws the current view of all the HECs with Cario
 
-currentView :: Int -> Int -> Double -> Double -> Double -> Maybe HECs -> Maybe [Int]
-               -> Bool -> Bool -> Render ()
+currentView :: Int -> Int -> Double -> Double -> Double -> Maybe HECs -> Maybe [Int] ->
+               Bool -> Bool -> Bool -> Render ()
 currentView width height hadj_value hadj_pagesize scaleValue 
-            maybeEventArray maybeCapabilities bw_mode labels_mode
+            maybeEventArray maybeCapabilities full_detail bw_mode labels_mode
   = do -- If an event trace has been loaded then render it
        when (isJust maybeEventArray) $ do
          let Just hecs = maybeEventArray
@@ -122,25 +125,25 @@ currentView width height hadj_value hadj_pagesize scaleValue
                    (ox+ scaleIntegerBy (toInteger endPos) scaleValue, oy)
          let widthInPixelsContainingTrace = truncate (fromIntegral (endPos-startPos)*scaleValue)
          drawTicks height scaleValue (toInteger startPos) (10*tickAdj) (100*tickAdj) (toInteger endPos)
-         sequence_ [hecView c bw_mode labels_mode widthInPixelsContainingTrace height scaleValue startPos endPos eventTree | (c, eventTree) <- hecs]
+         sequence_ [hecView c full_detail bw_mode labels_mode widthInPixelsContainingTrace height scaleValue startPos endPos eventTree | (c, eventTree) <- hecs]
 
 -------------------------------------------------------------------------------
 -- hecView draws the trace for a single HEC
 
-hecView :: Int -> Bool -> Bool -> Int -> Int -> Double -> Timestamp -> 
+hecView :: Int -> Bool -> Bool -> Bool -> Int -> Int -> Double -> Timestamp -> 
            Timestamp -> EventTree -> Render ()
-hecView c bw_mode labels_mode width height scaleValue startPos endPos
+hecView c full_detail bw_mode labels_mode width height scaleValue startPos endPos
         event@(EventSplit s splitTime e lhs rhs nrEvents _ _) 
-        | width <= 100
+        | width <= 2 && not full_detail
   = -- The density of events/pixels is high so approximate
     drawAverageDuration c bw_mode labels_mode scaleValue event
-hecView c bw_mode labels_mode width height scaleValue startPos endPos
+hecView c full_detail bw_mode labels_mode width height scaleValue startPos endPos
         (EventSplit s splitTime e lhs rhs nrEvents _ _)
   = do when (startPos <= splitTime)
-         (hecView c bw_mode labels_mode (width `div` 2) height scaleValue startPos endPos lhs)
+         (hecView c full_detail bw_mode labels_mode (width `div` 2) height scaleValue startPos endPos lhs)
        when (endPos > splitTime)
-         (hecView c bw_mode labels_mode (width `div` 2) height scaleValue startPos endPos rhs)
-hecView c bw_mode labels_mode width height scaleValue startPos endPos 
+         (hecView c full_detail bw_mode labels_mode (width `div` 2) height scaleValue startPos endPos rhs)
+hecView c full_detail bw_mode labels_mode width height scaleValue startPos endPos 
         (EventTreeLeaf eventList)
   = mapM_ (drawDuration bw_mode labels_mode scaleValue) eventsInView
     where
@@ -166,10 +169,15 @@ drawAverageDuration c bw_mode labels_mode scaleValue
                     (EventSplit startTime splitTime endTime lhs rhs 
                                 nrEvents runAv gcAv)
   = do setSourceRGBAhex (if not bw_mode then darkPurple else black) runRatio
-       draw_rectangle (ox + tsScale startTime scaleValue) -- x
+       draw_outlined_rectangle (ox + tsScale startTime scaleValue) -- x
                       (oycap+c*gapcap)           -- y
                       (tsScale (endTime - startTime) scaleValue) -- w
                        barHeight
+       setSourceRGBAhex black 1.0
+       move_to (ox+ tsScale startTime scaleValue, oycap+c*gapcap)
+       relMoveTo 4 13
+       textPath (show nrEvents)
+       C.fill  
        setSourceRGBAhex (if not bw_mode then gcColour else black) gcRatio
        draw_rectangle (ox + tsScale startTime scaleValue) -- x
                       (oycap+c*gapcap+barHeight)                    -- y
@@ -208,13 +216,7 @@ drawDuration bw_mode labels_mode scaleValue (ThreadRun t c s startTime endTime)
        -- Optionally label the bar with the threadID if there is room
        tExtent <- textExtents tStr
        when (textExtentsWidth tExtent < fromIntegral rectWidth) 
-         $ do --setSourceRGBAhex black 1.0
-              --draw_rectangle_outline
-              --        (ox + tsScale startTime scaleValue) -- x
-              --        (oycap+c*gapcap)           -- y
-              --        (tsScale (endTime - startTime) scaleValue) -- w
-              --         barHeight       
-              move_to (ox+ tsScale startTime scaleValue, oycap+c*gapcap) 
+         $ do move_to (ox+ tsScale startTime scaleValue, oycap+c*gapcap) 
               setSourceRGBAhex labelTextColour 1.0
               relMoveTo 4 13
               textPath tStr

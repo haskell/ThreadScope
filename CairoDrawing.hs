@@ -24,12 +24,25 @@ move_to (x, y)
 rel_line_to (x, y)
   = relLineTo (fromIntegral x) (fromIntegral y)
 
+-------------------------------------------------------------------------------
+
 draw_rectangle x0 y0 w h
   = do rectangle (fromIntegral x0) (fromIntegral y0) (fromIntegral w) (fromIntegral h)
        C.fill
        -- setLineWidth 1
        --setSourceRGBA 0 0 0 0.7
        --stroke
+
+-------------------------------------------------------------------------------
+
+draw_outlined_rectangle x0 y0 w h
+  = do rectangle (fromIntegral x0) (fromIntegral y0) (fromIntegral w) (fromIntegral h)
+       fillPreserve
+       setLineWidth 1
+       setSourceRGBA 0 0 0 0.7
+       stroke
+
+-------------------------------------------------------------------------------
 
 draw_rectangle_opt opt x0 y0 w h
   = do rectangle (fromIntegral x0) (fromIntegral y0) wr1 (fromIntegral h)

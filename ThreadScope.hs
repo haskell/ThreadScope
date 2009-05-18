@@ -112,8 +112,13 @@ main
                                      window viewport profileNameLabel 
                                      summarybar
                                      summary_ctx
- 
 
+       ------------------------------------------------------------------------
+       -- View menu
+       full_detail_menu_item
+         <- xmlGetWidget xml castToCheckMenuItem "fullDetail"
+       full_detail_menu_item `onActivateLeaf` do refresh canvas
+ 
        ------------------------------------------------------------------------
        -- Porgram the callback for the capability canvas
        capability_canvas <- xmlGetWidget xml castToDrawingArea "capabilities"
@@ -167,12 +172,13 @@ main
          hadj_pagesize <- adjustmentGetPageSize hadj
          fn <- readIORef filenameRef
          bw_mode <- toggleButtonGetActive bw_button
+         full_detail <- checkMenuItemGetActive full_detail_menu_item
          labels_mode <- toggleButtonGetActive labels_button
          withPDFSurface (fn++".pdf") (fromIntegral width) (fromIntegral height)
            (flip renderWith $ (translate (-hadj_value) 0 >> 
                                currentView width height hadj_value hadj_pagesize 
                                scaleValue maybeEventArray maybeCapabilities 
-                               bw_mode labels_mode) >> showPage)
+                               full_detail bw_mode labels_mode) >> showPage)
          statusbarPush statusbar ctx ("Saved " ++ fn ++ ".pdf")
          return ()
 
@@ -242,7 +248,8 @@ main
        ------------------------------------------------------------------------
        -- Program the callback for the main drawing canvas
        canvas `onExpose` updateCanvas 
-                  canvas viewport statusbar bw_button labels_button ctx scale 
+                  canvas viewport statusbar full_detail_menu_item bw_button
+                  labels_button ctx scale 
                   capabilitiesIORef eventArrayIORef
 
        ------------------------------------------------------------------------
