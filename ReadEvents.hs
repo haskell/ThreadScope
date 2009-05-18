@@ -9,6 +9,7 @@ import EventDuration
 import Text.Printf
 
 import EventlogViewerCommon
+import ReportEventTree
 
 import Graphics.UI.Gtk
 
@@ -71,6 +72,8 @@ registerEventsFromFile filename capabilitiesIORef eventArrayIORef scale
                 hecs = rawEventsToHECs sorted
                 lastTx = time (last sorted) -- Last event time i
                 capabilities = ennumerateCapabilities pes
+            -- Debugging information
+            reportEventTrees hecs
             -- Update the IORefs used for drawing callbacks
             writeIORef capabilitiesIORef (Just capabilities)
             writeIORef eventArrayIORef (Just hecs)
@@ -84,7 +87,7 @@ registerEventsFromFile filename capabilitiesIORef eventArrayIORef scale
             widgetSetSizeRequest window width ((length capabilities)*gapcap+oycap+120)
 
             -- Set the status bar
-            statusbarPush summarybar summary_ctx (show nrEvents ++ " events. Duration " ++ (printf "%.3f" (((fromIntegral duration)::Double) * 1.0e-6)) ++ " seconds.")   
+            statusbarPush summarybar summary_ctx (show nrEvents ++ " events. Duration " ++ (printf "%.3f" (((fromIntegral duration)::Double) * 1.0e-9)) ++ " seconds.")   
 
             ------------------------------------------------------------------------
             --- Set the label for the name of the event log
