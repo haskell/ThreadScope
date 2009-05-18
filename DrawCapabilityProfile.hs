@@ -222,7 +222,7 @@ drawDuration bw_mode labels_mode scaleValue (ThreadRun t c s startTime endTime)
         -- Optionally write the reason for the thread being stopped
         -- depending on the zoom value
        when (scaleValue >= subscriptThreashold && not labels_mode)
-         $ do setSourceRGB 0 0.0 0.0
+         $ do setSourceRGBAhex black 1.0
               move_to (ox+tsScale endTime scaleValue, oycap+c*gapcap+barHeight+12)
               textPath (show t ++ " " ++ showThreadStopStatus s)
               C.fill

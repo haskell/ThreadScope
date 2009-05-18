@@ -56,7 +56,7 @@ main
        -- the event log.
        args <- getArgs
        when (length args > 1)
-         (putStrLn "usage: threascope [eventlog_filename]")
+         (putStrLn "usage: threadscope [eventlog_filename]")
        let filename = if args == [] then
                        ""
                       else

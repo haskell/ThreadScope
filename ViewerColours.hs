@@ -19,7 +19,7 @@ shutdownColour :: Color
 shutdownColour = darkBrown
 
 labelTextColour :: Color
-labelTextColour = white
+labelTextColour = black
 
 -------------------------------------------------------------------------------
 
