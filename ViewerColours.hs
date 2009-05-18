@@ -13,7 +13,7 @@ import Graphics.Rendering.Cairo
 -- Colours
 
 runningColour :: Color
-runningColour = darkPurple
+runningColour = green
 
 shutdownColour :: Color
 shutdownColour = darkBrown

@@ -56,6 +56,8 @@ data EventTree
                EventTree -- The LHS split <= split-time
                EventTree -- The RHS split > split-time
                Int       -- The number of events under this node
+               Timestamp -- The total amount of time spent running a thread
+               Timestamp -- The total amount of time spend in GC
   | EventTreeLeaf [EventDuration]
 
 -------------------------------------------------------------------------------
@@ -68,9 +70,11 @@ splitEvents eventList
       EventSplit startTime
                  splitTime 
                  endTime 
-                 (splitEvents lhs)
-                 (splitEvents rhs)
+                 leftSplit
+                 rightSplit
                  len -- Number of events under this node
+                 runTime
+                 gcTime
     else -- All events at the same time so don't split or leaf
          -- size threshold has been reached
       EventTreeLeaf eventList
@@ -82,6 +86,10 @@ splitEvents eventList
     len = length eventList
     lhs = [e | e <- eventList, timeOfEventDuration e <= splitTime]
     rhs = [e | e <- eventList, timeOfEventDuration e > splitTime]
+    leftSplit = splitEvents lhs
+    rightSplit = splitEvents rhs
+    runTime = runTimeOf leftSplit + runTimeOf rightSplit
+    gcTime = gcTimeOf leftSplit + gcTimeOf rightSplit
 
 -- Splitting:
 -- [0]         -> [[0], []]
@@ -92,8 +100,22 @@ splitEvents eventList
 
 -------------------------------------------------------------------------------
 
+runTimeOf :: EventTree -> Timestamp
+runTimeOf (EventSplit _ _ _ _ _ _ runTime _) = runTime
+runTimeOf (EventTreeLeaf eventList)
+  = sum [e - s | ThreadRun _ _ _ s e <- eventList]
+
+-------------------------------------------------------------------------------
+
+gcTimeOf :: EventTree -> Timestamp
+gcTimeOf (EventSplit _ _ _ _ _ _ _ gcTime) = gcTime
+gcTimeOf (EventTreeLeaf eventList)
+  = sum [e - s | GC _ s e <- eventList]
+
+-------------------------------------------------------------------------------
+
 lastEventTime :: EventTree -> Timestamp
-lastEventTime (EventSplit _ _ endTime _ _ _) = endTime
+lastEventTime (EventSplit _ _ endTime _ _ _ _ _) = endTime
 lastEventTime (EventTreeLeaf eventList)
   = endTimeOfEventDuration (last eventList)
 

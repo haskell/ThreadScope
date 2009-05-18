@@ -23,13 +23,14 @@ reportEventTree (hecNumber, eventTree)
 -------------------------------------------------------------------------------
 
 countNodes :: EventTree -> Int
-countNodes (EventSplit _ _ _ lhs rhs _) = 1 + countNodes lhs + countNodes rhs
+countNodes (EventSplit _ _ _ lhs rhs _ _ _)
+   = 1 + countNodes lhs + countNodes rhs
 countNodes (EventTreeLeaf _) = 1
 
 -------------------------------------------------------------------------------
 
 maxDepth :: EventTree -> Int
-maxDepth (EventSplit _ _ _ lhs rhs _)
+maxDepth (EventSplit _ _ _ lhs rhs _ _ _)
   = 1 + maxDepth lhs `max` maxDepth rhs
 maxDepth (EventTreeLeaf _) = 1
 

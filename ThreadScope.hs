@@ -170,7 +170,7 @@ main
          labels_mode <- toggleButtonGetActive labels_button
          withPDFSurface (fn++".pdf") (fromIntegral width) (fromIntegral height)
            (flip renderWith $ (translate (-hadj_value) 0 >> 
-                               currentView height hadj_value hadj_pagesize 
+                               currentView width height hadj_value hadj_pagesize 
                                scaleValue maybeEventArray maybeCapabilities 
                                bw_mode labels_mode) >> showPage)
          statusbarPush statusbar ctx ("Saved " ++ fn ++ ".pdf")

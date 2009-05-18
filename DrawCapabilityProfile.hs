@@ -69,7 +69,7 @@ updateCanvas canvas viewport statusbar bw_button labels_button ctx scale
               scaleValue <- checkScaleValue scale viewport lastTx
               statusbarPush statusbar ctx ("Scale: " ++ show scaleValue ++ " width = " ++ show width ++ " height = " ++ show height ++ " hadj_value = " ++ show (truncate hadj_value) ++ " hadj_pagesize = " ++ show hadj_pagesize ++ " hadj_low = " ++ show hadj_lower ++ " hadj_upper = " ++ show hadj_upper)
               widgetSetSizeRequest canvas (truncate (scaleValue * fromIntegral lastTx) + 2*ox) ((length capabilities)*gapcap+oycap)
-              renderWithDrawable win (currentView height hadj_value 
+              renderWithDrawable win (currentView width height hadj_value 
                  hadj_pagesize scaleValue maybeEventArray
                  maybeCapabilities bw_mode labels_mode)
         return True
@@ -100,9 +100,9 @@ checkScaleValue scale viewport largestTimestamp
 -------------------------------------------------------------------------------
 -- This function draws the current view of all the HECs with Cario
 
-currentView :: Int -> Double -> Double -> Double -> Maybe HECs -> Maybe [Int]
+currentView :: Int -> Int -> Double -> Double -> Double -> Maybe HECs -> Maybe [Int]
                -> Bool -> Bool -> Render ()
-currentView height hadj_value hadj_pagesize scaleValue 
+currentView width height hadj_value hadj_pagesize scaleValue 
             maybeEventArray maybeCapabilities bw_mode labels_mode
   = do -- If an event trace has been loaded then render it
        when (isJust maybeEventArray) $ do
@@ -121,21 +121,25 @@ currentView height hadj_value hadj_pagesize scaleValue
          draw_line (ox, oy) 
                    (ox+ scaleIntegerBy (toInteger endPos) scaleValue, oy)
          drawTicks height scaleValue (toInteger startPos) (10*tickAdj) (100*tickAdj) (toInteger endPos)
-         mapM_ (hecView bw_mode labels_mode height scaleValue startPos endPos) 
-               (map snd hecs)
+         sequence_ [hecView c bw_mode labels_mode width height scaleValue startPos endPos eventTree | (c, eventTree) <- hecs]
 
 -------------------------------------------------------------------------------
 -- hecView draws the trace for a single HEC
 
-hecView :: Bool -> Bool -> Int -> Double -> Timestamp -> Timestamp
-           -> EventTree -> Render ()
-hecView bw_mode labels_mode height scaleValue startPos endPos
-        (EventSplit s splitTime e lhs rhs nrEvents)
+hecView :: Int -> Bool -> Bool -> Int -> Int -> Double -> Timestamp -> 
+           Timestamp -> EventTree -> Render ()
+hecView c bw_mode labels_mode width height scaleValue startPos endPos
+        event@(EventSplit s splitTime e lhs rhs nrEvents _ _) 
+        | width < 100 && nrEvents > 200
+  = -- The density of events/pixels is high so approximate
+    drawAverageDuration c bw_mode labels_mode scaleValue event
+hecView c bw_mode labels_mode width height scaleValue startPos endPos
+        (EventSplit s splitTime e lhs rhs nrEvents _ _)
   = do when (startPos <= splitTime)
-         (hecView bw_mode labels_mode height scaleValue startPos endPos lhs)
+         (hecView c bw_mode labels_mode (width `div` 2) height scaleValue startPos endPos lhs)
        when (endPos > splitTime)
-         (hecView bw_mode labels_mode height scaleValue startPos endPos rhs)
-hecView bw_mode labels_mode height scaleValue startPos endPos 
+         (hecView c bw_mode labels_mode (width `div` 2) height scaleValue startPos endPos rhs)
+hecView c bw_mode labels_mode width height scaleValue startPos endPos 
         (EventTreeLeaf eventList)
   = mapM_ (drawDuration bw_mode labels_mode scaleValue) eventsInView
     where
@@ -153,6 +157,32 @@ inView viewStart viewEnd event
     eEnd   = endTimeOfEventDuration event
     startInView = eStart >= viewStart && eStart <= viewEnd
     endInView   = eEnd   >= viewStart && eEnd   <= viewEnd
+
+-------------------------------------------------------------------------------
+
+drawAverageDuration :: Int -> Bool -> Bool -> Double -> EventTree -> Render ()
+drawAverageDuration c bw_mode labels_mode scaleValue
+                    (EventSplit startTime splitTime endTime lhs rhs 
+                                nrEvents runAv gcAv)
+  = do setSourceRGBAhex (if not bw_mode then runningColour else black) runRatio
+       draw_rectangle (ox + tsScale startTime scaleValue) -- x
+                      (oycap+c*gapcap)           -- y
+                      (tsScale (endTime - startTime) scaleValue) -- w
+                       barHeight
+       setSourceRGBAhex (if not bw_mode then gcColour else black) gcRatio
+       draw_rectangle (ox + tsScale startTime scaleValue) -- x
+                      (oycap+c*gapcap+barHeight)                    -- y
+                      (tsScale (endTime - startTime) scaleValue) -- w
+                      (barHeight `div` 2)                       -- h
+
+    where
+    duration = endTime - startTime
+    runRatio :: Double
+    runRatio = (fromIntegral runAv) / (fromIntegral duration)
+    gcRatio :: Double
+    gcRatio = (fromIntegral gcAv) / (fromIntegral duration)
+    
+    
 
 -------------------------------------------------------------------------------
 
