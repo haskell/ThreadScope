@@ -120,8 +120,9 @@ currentView width height hadj_value hadj_pagesize scaleValue
          setLineWidth 1.0
          draw_line (ox, oy) 
                    (ox+ scaleIntegerBy (toInteger endPos) scaleValue, oy)
+         let widthInPixelsContainingTrace = truncate (fromIntegral (endPos-startPos)*scaleValue)
          drawTicks height scaleValue (toInteger startPos) (10*tickAdj) (100*tickAdj) (toInteger endPos)
-         sequence_ [hecView c bw_mode labels_mode width height scaleValue startPos endPos eventTree | (c, eventTree) <- hecs]
+         sequence_ [hecView c bw_mode labels_mode widthInPixelsContainingTrace height scaleValue startPos endPos eventTree | (c, eventTree) <- hecs]
 
 -------------------------------------------------------------------------------
 -- hecView draws the trace for a single HEC
@@ -130,7 +131,7 @@ hecView :: Int -> Bool -> Bool -> Int -> Int -> Double -> Timestamp ->
            Timestamp -> EventTree -> Render ()
 hecView c bw_mode labels_mode width height scaleValue startPos endPos
         event@(EventSplit s splitTime e lhs rhs nrEvents _ _) 
-        | width < 100 && nrEvents > 200
+        | width <= 100
   = -- The density of events/pixels is high so approximate
     drawAverageDuration c bw_mode labels_mode scaleValue event
 hecView c bw_mode labels_mode width height scaleValue startPos endPos
@@ -164,7 +165,7 @@ drawAverageDuration :: Int -> Bool -> Bool -> Double -> EventTree -> Render ()
 drawAverageDuration c bw_mode labels_mode scaleValue
                     (EventSplit startTime splitTime endTime lhs rhs 
                                 nrEvents runAv gcAv)
-  = do setSourceRGBAhex (if not bw_mode then runningColour else black) runRatio
+  = do setSourceRGBAhex (if not bw_mode then darkPurple else black) runRatio
        draw_rectangle (ox + tsScale startTime scaleValue) -- x
                       (oycap+c*gapcap)           -- y
                       (tsScale (endTime - startTime) scaleValue) -- w
