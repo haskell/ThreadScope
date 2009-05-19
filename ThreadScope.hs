@@ -39,6 +39,7 @@ import EventDuration
 import EventlogViewerCommon
 import FileDialog
 import Key
+import Options
 import ReadEvents
 import Refresh
 import Scrolling
@@ -53,12 +54,15 @@ main
        -- This application accepts one optional argument specifying 
        -- the event log.
        args <- getArgs
-       when (length args > 1)
+       let options = parseOptions args
+           filenames = [filename | Filename filename <- options]
+       when (length filenames > 1)
          (putStrLn "usage: threadscope [eventlog_filename]")
-       let filename = if args == [] then
+       let filename = if filenames == [] then
                        ""
                       else
-                        head args
+                        head filenames
+           debug = Debug `elem` options
        filenameRef <- newIORef filename
 
        -- IORefs are used to communicate informaiton about the eventlog
@@ -105,7 +109,7 @@ main
        -- parse the event log file and update the IORefs for 
        -- the capabilities and event array.
        when (filename /= "") $
-           do registerEventsFromFile filename capabilitiesIORef
+           do registerEventsFromFile debug filename capabilitiesIORef
                                      eventArrayIORef scale lastTxIORef 
                                      window viewport profileNameLabel 
                                      summarybar
@@ -137,7 +141,8 @@ main
        openMenuItem `onActivateLeaf` do
          filename <- openFileDialog window
          when (isJust filename) $
-           do registerEventsFromFile (fromJust filename) capabilitiesIORef
+           do registerEventsFromFile debug 
+                                     (fromJust filename) capabilitiesIORef
                                      eventArrayIORef scale lastTxIORef 
                                      window viewport profileNameLabel 
                                      summarybar
@@ -208,7 +213,7 @@ main
        onClicked reloadButton $
           do filename <- readIORef filenameRef
              when (filename /= "") $
-              do registerEventsFromFile  filename capabilitiesIORef
+              do registerEventsFromFile  debug filename capabilitiesIORef
                                          eventArrayIORef scale lastTxIORef 
                                          window viewport profileNameLabel summarybar
                                          summary_ctx

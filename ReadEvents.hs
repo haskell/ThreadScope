@@ -16,6 +16,9 @@ import Graphics.UI.Gtk
 import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
 
+-- Imports from Haskell library
+import Control.Monad
+
 -------------------------------------------------------------------------------
 -- The GHC.RTS.Events library returns the profile information
 -- in a data-streucture which contains a list data structure
@@ -58,10 +61,11 @@ eventFromHEC hec event
 
 -------------------------------------------------------------------------------
 
-registerEventsFromFile :: String -> IORef (Maybe [Int]) -> MaybeHECsIORef ->
+registerEventsFromFile :: Bool ->
+                          String -> IORef (Maybe [Int]) -> MaybeHECsIORef ->
                           IORef Double -> IORef Timestamp ->
                           Window -> Viewport -> Label -> Statusbar -> ContextId -> IO ()
-registerEventsFromFile filename capabilitiesIORef eventArrayIORef scale
+registerEventsFromFile debug filename capabilitiesIORef eventArrayIORef scale
                        lastTxIORef window viewport profileNameLabel summarybar
                        summary_ctx
   = do eitherFmt <- readEventLogFromFile filename 
@@ -73,7 +77,7 @@ registerEventsFromFile filename capabilitiesIORef eventArrayIORef scale
                 lastTx = time (last sorted) -- Last event time i
                 capabilities = ennumerateCapabilities pes
             -- Debugging information
-            reportEventTrees hecs
+            when debug $ reportEventTrees hecs
             -- Update the IORefs used for drawing callbacks
             writeIORef capabilitiesIORef (Just capabilities)
             writeIORef eventArrayIORef (Just hecs)
