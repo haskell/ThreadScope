@@ -33,16 +33,16 @@ import ViewerColours
 --  occurs. This function redraws the currently visible part of the
 --  main trace canvas plus related canvases.
 
-updateCanvas :: DrawingArea -> Viewport -> Statusbar -> 
+updateCanvas :: Bool -> DrawingArea -> Viewport -> Statusbar -> 
                 CheckMenuItem -> ToggleButton ->
                 ToggleButton -> ContextId ->  IORef Double ->
                 IORef (Maybe [Int])  -> MaybeHECsIORef -> Event ->
                 IO Bool
-updateCanvas canvas viewport statusbar  full_detail_menu_item 
+updateCanvas debug canvas viewport statusbar  full_detail_menu_item 
              bw_button labels_button ctx scale 
              capabilitiesIORef eventArrayIORef
              event@(Expose _ area region count)
-   = do -- putStrLn (show event)
+   = do when debug $ putStrLn (show event)
         maybeCapabilities <- readIORef capabilitiesIORef
         maybeEventArray <- readIORef eventArrayIORef
         -- Check to see if an event trace has been loaded
@@ -74,8 +74,8 @@ updateCanvas canvas viewport statusbar  full_detail_menu_item
         return True
       where
       Rectangle x y _ _ = area 
-updateCanvas _ _ _ _ _ _ _ _ _ _ other
-   = do putStrLn ("Ignorning event " ++ show other) -- Debug rendering errors
+updateCanvas debug _ _ _ _ _ _ _ _ _ _ other
+   = do when debug $ putStrLn ("Ignorning event " ++ show other) -- Debug rendering errors
         return True
 
 -------------------------------------------------------------------------------

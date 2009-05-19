@@ -222,7 +222,7 @@ main
        ------------------------------------------------------------------------
        -- Key presses
        onKeyPress window $ \Key { eventKeyName = key, eventKeyChar = mch } -> do
-         -- putStrLn ("key " ++ key)
+         when debug $ putStrLn ("key " ++ key)
          case key of
            "Escape" -> mainQuit >> return True
            "Right" -> scrollRight scale viewport statusbar ctx canvas
@@ -251,7 +251,8 @@ main
        ------------------------------------------------------------------------
        -- Program the callback for the main drawing canvas
        canvas `onExpose` updateCanvas 
-                  canvas viewport statusbar full_detail_menu_item bw_button
+                  debug canvas viewport statusbar full_detail_menu_item 
+                  bw_button
                   labels_button ctx scale 
                   capabilitiesIORef eventArrayIORef
 
