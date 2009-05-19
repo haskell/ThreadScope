@@ -55,6 +55,9 @@ updateCanvas debug canvas viewport statusbar  full_detail_menu_item
               labels_mode <- toggleButtonGetActive labels_button
               win <- widgetGetDrawWindow canvas 
               (width,height) <- widgetGetSize viewport
+              when debug $
+                putStrLn ("width = " ++ show width ++ 
+                          " height = " ++ show height)
               -- Clear the drawing window
               drawWindowClearArea win x y width height
               -- Get the scrollbar settings
@@ -63,9 +66,14 @@ updateCanvas debug canvas viewport statusbar  full_detail_menu_item
               hadj_upper <- adjustmentGetUpper hadj
               hadj_value <- adjustmentGetValue hadj
               hadj_pagesize <- adjustmentGetPageSize hadj   
-              -- Work out what portion of the trace is in view         
+              -- Work out what portion of the trace is in view  
+              -- Compute start time of view              
               let lastTx = findLastTxValue hecs
               scaleValue <- checkScaleValue scale viewport lastTx
+              let startTimeOfView = truncate (hadj_value / scaleValue)  
+                  endTimeOfView = truncate ((hadj_value + hadj_pagesize) / scaleValue) `min` lastTx
+              when debug $
+                putStrLn ("start time of view = " ++ show startTimeOfView ++ " end time of view = " ++ show endTimeOfView)   
               statusbarPush statusbar ctx ("Scale: " ++ show scaleValue ++ " width = " ++ show width ++ " height = " ++ show height ++ " hadj_value = " ++ show (truncate hadj_value) ++ " hadj_pagesize = " ++ show hadj_pagesize ++ " hadj_low = " ++ show hadj_lower ++ " hadj_upper = " ++ show hadj_upper)
               widgetSetSizeRequest canvas (truncate (scaleValue * fromIntegral lastTx) + 2*ox) ((length capabilities)*gapcap+oycap)
               renderWithDrawable win (currentView width height hadj_value 
