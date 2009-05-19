@@ -1,8 +1,4 @@
 {-# LANGUAGE RecordWildCards #-}
--------------------------------------------------------------------------------
---- $Id: ThreadScope.hs#6 2009/03/30 13:46:44 REDMOND\\satnams $
---- $Source: //depot/satnams/haskell/ThreadScope/ThreadScope.hs $
--------------------------------------------------------------------------------
 
 -- ThreadScope: a graphical viewer for Haskell event log information.
 -- Maintainer: satnams@microsoft.com, s.singh@ieee.org
@@ -36,7 +32,9 @@ import Paths_threadscope
 -- Imports for ThreadScope
 import About
 import CairoDrawing
+import CapabilityLabels
 import DrawCapabilityProfile
+import UpdateCanvas
 import EventDuration
 import EventlogViewerCommon
 import FileDialog
