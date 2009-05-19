@@ -134,8 +134,8 @@ hecView :: Int -> Bool -> Bool -> Bool -> Int -> Int -> Double -> Timestamp ->
            Timestamp -> EventTree -> Render ()
 hecView c full_detail bw_mode labels_mode width height scaleValue startPos endPos
         event@(EventSplit s splitTime e lhs rhs nrEvents _ _) 
-        | width <= 2 && not full_detail
-  = -- The density of events/pixels is high so approximate
+        | inView2 startPos endPos s e && width <= 100 && not full_detail
+  = -- 
     drawAverageDuration c bw_mode labels_mode scaleValue event
 hecView c full_detail bw_mode labels_mode width height scaleValue startPos endPos
         (EventSplit s splitTime e lhs rhs nrEvents _ _)
@@ -159,6 +159,15 @@ inView viewStart viewEnd event
     where
     eStart = timeOfEventDuration event
     eEnd   = endTimeOfEventDuration event
+    startInView = eStart >= viewStart && eStart <= viewEnd
+    endInView   = eEnd   >= viewStart && eEnd   <= viewEnd
+
+-------------------------------------------------------------------------------
+
+inView2 :: Timestamp -> Timestamp -> Timestamp -> Timestamp -> Bool
+inView2 viewStart viewEnd eStart eEnd
+  = startInView || endInView
+    where
     startInView = eStart >= viewStart && eStart <= viewEnd
     endInView   = eEnd   >= viewStart && eEnd   <= viewEnd
 
