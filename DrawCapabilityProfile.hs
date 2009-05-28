@@ -48,8 +48,9 @@ currentView width height hadj_value hadj_pagesize scaleValue
              startPos :: Timestamp
              startPos = fromInteger (truncate (hadj_value / scaleValue))
              endPos :: Timestamp
-             endPos = fromInteger (truncate ((hadj_value + hadj_pagesize) / scaleValue)) `min` lastTx 
+             endPos = fromInteger (truncate ((hadj_value + fromIntegral width) / scaleValue)) `min` lastTx 
              tickAdj = tickScale scaleValue
+         
          selectFontFace "times" FontSlantNormal FontWeightNormal
          setFontSize 12
          setSourceRGBAhex blue 1.0
@@ -59,6 +60,7 @@ currentView width height hadj_value hadj_pagesize scaleValue
          let widthInPixelsContainingTrace = truncate (fromIntegral (endPos-startPos)*scaleValue)
          drawTicks height scaleValue (toInteger startPos) (10*tickAdj) (100*tickAdj) (toInteger endPos)
          sequence_ [hecView c full_detail bw_mode labels_mode widthInPixelsContainingTrace height scaleValue startPos endPos eventTree | (c, eventTree) <- hecs]
+         C.translate (-hadj_value) 0
 
 -------------------------------------------------------------------------------
 -- hecView draws the trace for a single HEC

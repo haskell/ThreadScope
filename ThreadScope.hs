@@ -77,8 +77,11 @@ main
        gladePath <- getDataFileName "threadscope.glade"
        Just xml <- xmlNew gladePath
        window   <- xmlGetWidget xml castToWindow "main_window"
+       profile_scrolled_window 
+         <- xmlGetWidget xml castToScrolledWindow "profile_scrolled_window"
        viewport <- xmlGetWidget xml castToViewport "viewport1"
        scale <- newIORef defaultScaleValue -- How to scale ms to pixels
+
 
        ------------------------------------------------------------------------
        -- Status bar functionality
@@ -236,6 +239,12 @@ main
                     _   -> return True
                 else
                   return True
+
+       ------------------------------------------------------------------------
+       -- Set up horizontal scrollbar
+       -- Just hscrollbar <- scrolledWindowGetHScrollbar profile_scrolled_window 
+       -- hscrollbar `onRangeValueChanged` (refresh canvas)
+
 
        ------------------------------------------------------------------------
        -- Quit

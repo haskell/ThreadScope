@@ -58,8 +58,6 @@ updateCanvas debug canvas viewport statusbar  full_detail_menu_item
               when debug $
                 putStrLn ("width = " ++ show width ++ 
                           " height = " ++ show height)
-              -- Clear the drawing window
-              -- drawWindowClearArea win x y width height
               -- Get the scrollbar settings
               hadj <- viewportGetHAdjustment viewport
               hadj_lower <- adjustmentGetLower hadj
@@ -75,7 +73,7 @@ updateCanvas debug canvas viewport statusbar  full_detail_menu_item
               when debug $
                 putStrLn ("start time of view = " ++ show startTimeOfView ++ " end time of view = " ++ show endTimeOfView)   
               statusbarPush statusbar ctx ("Scale: " ++ show scaleValue ++ " width = " ++ show width ++ " height = " ++ show height ++ " hadj_value = " ++ show (truncate hadj_value) ++ " hadj_pagesize = " ++ show hadj_pagesize ++ " hadj_low = " ++ show hadj_lower ++ " hadj_upper = " ++ show hadj_upper)
-              widgetSetSizeRequest canvas (truncate (scaleValue * fromIntegral lastTx) + 2*ox) ((length capabilities)*gapcap+oycap)
+              -- widgetSetSizeRequest canvas (truncate (scaleValue * fromIntegral lastTx) + 2*ox) ((length capabilities)*gapcap+oycap)
               renderWithDrawable win (currentView width height hadj_value 
                  hadj_pagesize scaleValue maybeEventArray
                  maybeCapabilities full_detail bw_mode labels_mode)

@@ -25,7 +25,7 @@ zoomIn scale viewport statusbar ctx canvas
        hadj_pagesize <- adjustmentGetPageSize hadj -- Get size of bar
        hadj_upper <- adjustmentGetUpper hadj -- Get max value of scrollbar
        let maxVal = 2 * (hadj_upper - hadj_pagesize)
-       -- adjustmentSetValue hadj (((hadj_value+hadj_pagesize/4)*2) `min` maxVal)
+       adjustmentSetPageSize hadj (hadj_pagesize / 2)
        statusbarPush statusbar ctx ("Scale " ++ show (2*scaleValue))           
        refresh canvas
 
@@ -45,7 +45,7 @@ zoomOut scale viewport statusbar ctx canvas
        hadj_value <- adjustmentGetValue hadj
        hadj_pagesize <- adjustmentGetPageSize hadj
        hadj_upper <- adjustmentGetUpper hadj
-       -- adjustmentSetValue hadj ((hadj_value/2-hadj_pagesize/4) `max` 0)
+       adjustmentSetPageSize hadj (hadj_pagesize * 2)
        statusbarPush statusbar ctx ("Scale " ++ show (scaleValue/2))           
        refresh canvas
 

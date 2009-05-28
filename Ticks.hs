@@ -19,8 +19,8 @@ import ViewerColours
 
 -------------------------------------------------------------------------------
 
-drawTicks :: Int -> Double -> Integer -> Integer -> Integer -> Integer ->
-             Render ()
+drawTicks :: Int -> Double -> Integer -> Integer -> 
+             Integer -> Integer -> Render ()
 drawTicks height scaleValue pos incr majorTick endPos
   = if pos <= endPos then
       do draw_line (x0, y0) (x1,y1)

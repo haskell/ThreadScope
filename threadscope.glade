@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.3 on Mon May 18 14:36:12 2009 -->
+<!--Generated with glade3 3.4.3 on Thu May 28 12:45:46 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="main_window">
     <property name="width_request">1500</property>
@@ -222,7 +222,7 @@
               </packing>
             </child>
             <child>
-              <widget class="GtkScrolledWindow" id="scrolledwindow1">
+              <widget class="GtkScrolledWindow" id="profile_scrolled_window">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="shadow_type">GTK_SHADOW_OUT</property>
