@@ -59,7 +59,7 @@ updateCanvas debug canvas viewport statusbar  full_detail_menu_item
                 putStrLn ("width = " ++ show width ++ 
                           " height = " ++ show height)
               -- Clear the drawing window
-              drawWindowClearArea win x y width height
+              -- drawWindowClearArea win x y width height
               -- Get the scrollbar settings
               hadj <- viewportGetHAdjustment viewport
               hadj_lower <- adjustmentGetLower hadj
