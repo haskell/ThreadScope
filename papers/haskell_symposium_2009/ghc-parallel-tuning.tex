@@ -353,7 +353,10 @@ possible moves in parallel.  This is easy to achieve with a
   scores = map (bestMove depth opponent g f) possibles
              `using` parListWHNF
 \end{lstlisting}
-
+where \codef{using} is defined to apply its first argument to its second argument and then return the result evaluated to weak-head normal form.
+\begin{lstlisting}
+x `using` s = s x `seq` x
+\end{lstlisting}
 And indeed this does yield a reasonable speedup:
 
 \begin{verbatim}
