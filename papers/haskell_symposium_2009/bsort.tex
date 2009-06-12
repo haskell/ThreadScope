@@ -47,7 +47,7 @@ sortB cmp input
 
 The \codef{sndList} combinator breaks a list into two halves and applies its argument circuit to the top halve and the identity function to the bottom halve and then concatenates the sub-results into a single list. 
 
-A straight-forward way to perform a semi-explicit parallelization of the \codef{par2} combinator is use \codef{par} to spark off the evaluation of one of the sub-circuits.
+A straightforward way to perform a semi-explicit parallelization of the \codef{par2} combinator is use \codef{par} to spark off the evaluation of one of the sub-circuits.
 
 \begin{lstlisting}
 par2 :: (a -> b) -> (c -> d) -> (a, c) -> (b, d)
@@ -104,7 +104,7 @@ $ cat bsortpar-N2.log
 \end{verbatim}
 
 This example produces very many sparks most of which fizzle but enough sparks are turned into productive work i.e. 6.36 seconds worth of work done in 3.75 seconds of time. The execution trace for this invocation is shown in Figure~\ref{f:bsortpar-n2}. 
-There is an obvious sequential block of execution between 2.1 seconds and 2.9 seconds and this is due to a sequential component of the algorithm which combines the results of parallel sub-computations i.e the \codef{evens} function. We can use the parallel stratagies library to change the sequential application in the definition of \codef{evens} to a parallel map operation:
+There is an obvious sequential block of execution between 2.1 seconds and 2.9 seconds and this is due to a sequential component of the algorithm which combines the results of parallel sub-computations i.e the \codef{evens} function. We can use the parallel strategies library to change the sequential application in the definition of \codef{evens} to a parallel map operation:
 
 \begin{lstlisting}
 evens :: ([a] -> [b]) -> [a] -> [b]
