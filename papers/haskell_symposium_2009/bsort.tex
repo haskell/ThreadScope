@@ -20,6 +20,8 @@ ilv :: ([a] -> [b]) -> [a] -> [b]
 ilv r = unriffle >-> two r >-> riffle
 \end{lstlisting}
 
+The \codef{halve} combinator breaks a list into two sub-lists of even length and the \codef{unhalve} operate performs the inverse operation. The \codef{riffile} combinator permutes its inputs by breaking a list into two halves and then interleaving the resulting lists. \codef{unriffle} performs the inverse permutation.
+
 These combinators are in turn used to define a butterfly parallel processing network which describes a merger:
 
 \begin{lstlisting}
@@ -28,14 +30,14 @@ butterfly circuit input
   = (ilv (butterfly circuit) >-> evens circuit) input
 \end{lstlisting}
 
-A column of par-wise processing elements is used to combine the results of two sub-merges:
+The \codef{evens} combinator breaks an input list into adjacent groups of two elements and applies the \codef{circuit} argument to each group.  A column of par-wise processing elements is used to combine the results of two sub-merges:
 
 \begin{lstlisting}
 evens :: ([a] -> [b]) -> [a] -> [b]
 evens f = chop 2 >-> map f >-> concat
 \end{lstlisting}
 
-This parallel Batcher's bitonic merger plus the \codef{evens} function can be used to build a parallel Batcher's bitonic sorter:
+The \codef{chop 2} combinator breaks a list into sub-lists of length 2. This parallel Batcher's bitonic merger plus the \codef{evens} function can be used to build a parallel Batcher's bitonic sorter:
 
 \begin{lstlisting}
 sortB cmp [x, y] = cmp [x, y]
@@ -43,6 +45,7 @@ sortB cmp input
   = (two (sortB cmp) >-> sndList reverse >-> butterfly cmp) input
 \end{lstlisting}
 
+The \codef{sndList} combinator breaks a list into two halves and applies its argument circuit to the top halve and the identity function to the bottom halve and then concatenates the sub-results into a single list. 
 
 A straight-forward way to perform a semi-explicit parallelization of the \codef{par2} combinator is use \codef{par} to spark off the evaluation of one of the sub-circuits.
 
@@ -68,7 +71,7 @@ This relatively simple change results in a definite performance gain due to para
   Total time    6.04s  (  6.12s elapsed)
 \end{verbatim}
 
-Although many sparks are created non are taken up because there is only one worker thread. The execution trace for this invocation is shown in Figure~\ref{f:bsortpar-n1}.
+Although many sparks are created none are taken up because there is only one worker thread. The execution trace for this invocation is shown in Figure~\ref{f:bsortpar-n1}.
 
 \begin{figure*}
 \begin{center}

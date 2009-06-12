@@ -230,7 +230,7 @@ This type of blocking is often not disastrous, since a thread will become
 unblocked soon after the thunk on which it is blocking is evaluated
 (see the discussion of ``blackholes'' in \citet{multicore-ghc}).  There
 is nevertheless a short delay between the thread becoming runnable
-again and the runtime noticing this and moving the tread to the run
+again and the runtime noticing this and moving the thread to the run
 queue.  Sometimes this delay can be hidden if the program has other
 sparks it can be running in the meantime, but that is not the case
 here.  There are also costs associated with blocking the thread and waking
