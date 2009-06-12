@@ -15,3 +15,6 @@ spell:
 	aspell -c threadring.tex
 	aspell -c bsort.tex
 	aspell -c related-work.tex
+
+clean:
+	rm -rf *.bbl *.blg *.log *.aux *.dvi

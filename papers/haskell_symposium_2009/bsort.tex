@@ -20,7 +20,7 @@ ilv :: ([a] -> [b]) -> [a] -> [b]
 ilv r = unriffle >-> two r >-> riffle
 \end{lstlisting}
 
-These combinators aere in turn used to define a butterfly parallel processing network which describes a merger:
+These combinators are in turn used to define a butterfly parallel processing network which describes a merger:
 
 \begin{lstlisting}
 butterfly circuit [x,y] = circuit [x,y]
