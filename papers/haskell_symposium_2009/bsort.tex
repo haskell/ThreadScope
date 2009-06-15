@@ -92,7 +92,6 @@ Although many sparks are created none are taken up because there is only one wor
  Running with two threads shows a very good performance improvement:
 
 \begin{verbatim}
-$ cat bsortpar-N2.log
 .\bsortpar.exe +RTS -N2 -l -qg0 -qb -sbsortpar-N2.log
   SPARKS: 106859 (49 converted, 106537 pruned)
 
@@ -113,7 +112,7 @@ evens f = chop 2 >-> parMap rwhnf f >-> concat
 
 This results in many more sparks being converted:
 
-\begin{lstlisting}
+\begin{verbatim}
 .\bsortpar2.exe +RTS -N2 -l -qg0 -qb -sbsortpar2-N2.log
   SPARKS: 852737 (91128 converted, 10175 pruned)
 
@@ -122,5 +121,5 @@ This results in many more sparks being converted:
   GC    time    1.29s  (  0.65s elapsed)
   EXIT  time    0.00s  (  0.00s elapsed)
   Total time    6.24s  (  4.55s elapsed)
-\end{lstlisting}
+\end{verbatim}
 
