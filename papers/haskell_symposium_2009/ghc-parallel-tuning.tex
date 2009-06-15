@@ -150,7 +150,7 @@ some of the possibilities in Section~\ref{s:conclusion}.
 \end{figure*}
 
 Soda is a program for solving word-search problems: given a
-rectangular grid of letters, find occurrences of a words from a
+rectangular grid of letters, find occurrences of a word from a
 supplied list, where a word can appear horizontally, vertically, or
 diagonally, in either direction (giving a total of eight possible
 orientations).
@@ -232,7 +232,7 @@ unblocked soon after the thunk on which it is blocking is evaluated
 is nevertheless a short delay between the thread becoming runnable
 again and the runtime noticing this and moving the thread to the run
 queue.  Sometimes this delay can be hidden if the program has other
-sparks it can be running in the meantime, but that is not the case
+sparks it can run in the meantime, but that is not the case
 here.  There are also costs associated with blocking the thread and waking
 it up again, which we would like to avoid if possible.
 
@@ -448,7 +448,7 @@ mise f g (Branch _ l) = foldr f (g OWin XWin)
 However, this will try to parallelize every level of the search,
 leading to some sparks with very fine granularity.  Also it may
 introduce too much speculation: elements in each list after a win do
-not need to be evaluated.  Indeed if we try this we get:
+not need to be evaluated.  Indeed, if we try this we get:
 
 \begin{verbatim}
   22,697,543,448 bytes allocated in the heap

@@ -96,7 +96,7 @@ the flags \texttt{+RTS -s -RTS}) to help understand what went wrong:
 
 The log shows that although a single spark was created, no sparks
 where ``converted'', i.e. executed.  In this case the performance bug
-is due to the fact that the main thread immediately starts to work on
+is because the main thread immediately starts to work on
 the evaluation of \codef{fib 38} itself which causes this spark to
 \emph{fizzle}.  A fizzled spark is one that is found to be under
 evaluation or already evaluated, so there is no profit in evaluating
