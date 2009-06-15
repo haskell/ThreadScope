@@ -50,15 +50,23 @@ create new tools:
 
 \subsection{Fast runtime tracing}
 
-Minimizing the overhead of event logging is critical when designing a system
-to facilitate runtime tracing.  In the GHC runtime, a pre-allocated events buffer is 
-used by each HEC to store generated events.
-By doing so, we prevent any performance delays from dynamic 
-memory allocation, and require no locks since the buffers are
-HEC-local.  Yet, this requires us to flush the buffer
-to the filesystem once it becomes full, but since the buffer is a
-fixed size we pay a near-constant penalty for each flush and a
-deterministic delay on the GHC runtime.
+The runtime system generates trace files that log certain events and
+the time at which they occurred.  The events are typically those
+related to thread activity; for example, ``HEC 0 started to run thread
+3'', or ``thread 5 blocked on an MVar''.  The kinds of events we can
+log are limited only by the extra overhead incurred by the act of
+logging them.  Minimizing the overhead of event logging is something
+we care about: the goal is to profile the actual runtime behaviour of
+the program, so it is important that, as far as possible, we avoid
+disturbing the behaviour that we are trying to profile.
+
+In the GHC runtime, a pre-allocated event buffer is used by each HEC
+to store generated events.  By doing so, we avoid any dynamic memory
+allocation overhead, and require no locks since the buffers are
+HEC-local.  Yet, this requires us to flush the buffer to the
+filesystem once it becomes full, but since the buffer is a fixed size
+we pay a near-constant penalty for each flush and a deterministic
+delay on the GHC runtime.
 
 The HEC-local buffers are flushed independently, which means that
 events in the log file appear out-of-order and have to be sorted.
