@@ -50,7 +50,6 @@ currentView width height hadj_value hadj_pagesize scaleValue
              endPos :: Timestamp
              endPos = fromInteger (truncate ((hadj_value + fromIntegral width) / scaleValue)) `min` lastTx 
              tickAdj = tickScale scaleValue
-         
          selectFontFace "times" FontSlantNormal FontWeightNormal
          setFontSize 12
          setSourceRGBAhex blue 1.0
@@ -58,7 +57,11 @@ currentView width height hadj_value hadj_pagesize scaleValue
          draw_line (ox, oy) 
                    (ox+ scaleIntegerBy (toInteger endPos) scaleValue, oy)
          let widthInPixelsContainingTrace = truncate (fromIntegral (endPos-startPos)*scaleValue)
-         drawTicks height scaleValue (toInteger startPos) (10*tickAdj) (100*tickAdj) (toInteger endPos)
+             nrMinorTicks = widthInPixelsContainingTrace `div` 10 -- pixels
+             minorTickDuration = fromIntegral nrMinorTicks / scaleValue -- nanoseconds
+             snappedTickDuration = 10^(truncate (logBase 10 minorTickDuration))
+             firstTick = snappedTickDuration * (startPos `div` snappedTickDuration)
+         drawTicks height scaleValue (fromIntegral firstTick) (fromIntegral snappedTickDuration)  (fromIntegral (10*snappedTickDuration)) (toInteger endPos)
          sequence_ [hecView c full_detail bw_mode labels_mode widthInPixelsContainingTrace height scaleValue startPos endPos eventTree | (c, eventTree) <- hecs]
          C.translate (-hadj_value) 0
 

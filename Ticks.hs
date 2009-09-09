@@ -18,6 +18,19 @@ import EventlogViewerCommon
 import ViewerColours
 
 -------------------------------------------------------------------------------
+-- Minor, semi-major and major ticks are drawn and the absolute periods of 
+-- the ticks is determined by the zoom level.
+-- There are ten minor ticks to a major tick and a semi-major tick
+-- occurs half way through a major tick (overlapping the corresponding
+-- minor tick). 
+
+-- The timestamp values are in nanos-seconds (1e-9) i.e. 
+-- a timestamp value of 1000000000 represents 1s.
+-- The position on the drawing canvas is in milliseconds (ms) (1e-3).
+
+-- scaleValue is used to multiply a timestamp value to yield a pixel value.
+
+-------------------------------------------------------------------------------
 
 drawTicks :: Int -> Double -> Integer -> Integer -> 
              Integer -> Integer -> Render ()
@@ -51,7 +64,7 @@ drawTicks height scaleValue pos incr majorTick endPos
 showTickTime :: Integer -> String
 showTickTime pos
   = if pos < 1000 then
-      show pos ++ "us" 
+      show pos ++ "us"  -- microsecond (1e-6s).
     else
       if pos < 1000000 then
         reformatMS pos

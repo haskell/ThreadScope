@@ -10,6 +10,7 @@ import Text.Printf
 
 import EventlogViewerCommon
 import ReportEventTree
+import TestEvents
 
 import Graphics.UI.Gtk
 
@@ -93,9 +94,48 @@ registerEventsFromFile debug filename capabilitiesIORef eventArrayIORef scale
             -- Set the status bar
             statusbarPush summarybar summary_ctx (show nrEvents ++ " events. Duration " ++ (printf "%.3f" (((fromIntegral duration)::Double) * 1.0e-9)) ++ " seconds.")   
 
-            ------------------------------------------------------------------------
             --- Set the label for the name of the event log
             profileNameLabel `labelSetText` filename
+
+        Left msg -> putStrLn msg
+       
+-------------------------------------------------------------------------------
+
+
+registerEventsFromTrace :: Bool ->
+                          String -> IORef (Maybe [Int]) -> MaybeHECsIORef ->
+                          IORef Double -> IORef Timestamp ->
+                          Window -> Viewport -> Label -> Statusbar -> ContextId -> IO ()
+registerEventsFromTrace debug traceName capabilitiesIORef eventArrayIORef scale
+                       lastTxIORef window viewport profileNameLabel summarybar
+                       summary_ctx
+  = do let eitherFmt = Right (testTrace traceName)
+       case eitherFmt of
+        Right fmt -> 
+         do let pes = events (dat fmt)
+                sorted = sortBy (Data.Function.on compare time) (reverse pes)
+                hecs = rawEventsToHECs sorted
+                lastTx = time (last sorted) -- Last event time i
+                capabilities = ennumerateCapabilities pes
+            -- Debugging information
+            when debug $ reportEventTrees hecs
+            -- Update the IORefs used for drawing callbacks
+            writeIORef capabilitiesIORef (Just capabilities)
+            writeIORef eventArrayIORef (Just hecs)
+            writeIORef lastTxIORef lastTx
+            writeIORef scale defaultScaleValue
+            let duration = lastTx 
+                nrEvents = length pes
+
+            -- Adjust height to fit capabilities
+            (width, _) <- widgetGetSize window
+            widgetSetSizeRequest window width ((length capabilities)*gapcap+oycap+120)
+
+            -- Set the status bar
+            statusbarPush summarybar summary_ctx (show nrEvents ++ " events. Duration " ++ (printf "%.3f" (((fromIntegral duration)::Double) * 1.0e-9)) ++ " seconds.")   
+
+            --- Set the label for the name of the event log
+            profileNameLabel `labelSetText` traceName
 
         Left msg -> putStrLn msg
        

@@ -43,6 +43,7 @@ import Options
 import ReadEvents
 import Refresh
 import Scrolling
+import TestEvents
 import Ticks
 import ViewerColours
 import Zoom
@@ -56,12 +57,17 @@ main
        args <- getArgs
        let options = parseOptions args
            filenames = [filename | Filename filename <- options]
+           tracenames = [name | TestTrace name <- options]
        when (length filenames > 1)
          (putStrLn "usage: threadscope [eventlog_filename]")
        let filename = if filenames == [] then
                        ""
                       else
                         head filenames
+           traceName = if tracenames == [] then
+                         ""
+                       else
+                         head tracenames
            debug = Debug `elem` options
        filenameRef <- newIORef filename
 
@@ -117,6 +123,16 @@ main
                                      window viewport profileNameLabel 
                                      summarybar
                                      summary_ctx
+
+       -- Likewise for test traces
+       when (traceName /= "") $
+           do registerEventsFromTrace debug traceName capabilitiesIORef
+                                     eventArrayIORef scale lastTxIORef 
+                                     window viewport profileNameLabel 
+                                     summarybar
+                                     summary_ctx
+
+
 
        ------------------------------------------------------------------------
        -- View menu

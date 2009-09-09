@@ -173,7 +173,7 @@ oycap = 60
 gapcap :: Int
 gapcap = 55
 
--- Bar sizes
+-- Bar height
 
 barHeight :: Int
 barHeight = 20
