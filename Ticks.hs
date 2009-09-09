@@ -38,7 +38,7 @@ drawTicks height scaleValue pos incr majorTick endPos
   = if pos <= endPos then
       do draw_line (x0, y0) (x1,y1)
          stroke
-         when (pos `mod` majorTick == 0) $ do
+         when (pos `mod` majorTick == 0 || pos `mod` (majorTick `div` 2) == 0) $ do
                move_to (ox+scaleIntegerBy pos scaleValue - 4, oy-10)
                textPath (showTickTime pos)
                C.fill
@@ -63,13 +63,16 @@ drawTicks height scaleValue pos incr majorTick endPos
 
 showTickTime :: Integer -> String
 showTickTime pos
-  = if pos < 1000 then
+  = if pos == 0 then
+      "0s"
+    else
+    if pos < 1000 then
       show pos ++ "us"  -- microsecond (1e-6s).
     else
       if pos < 1000000 then
         reformatMS pos
       else
-        show (posf / 1000000) ++ "s"
+        show (posf / 1000000000) ++ "s"
     where
     posf :: Double
     posf = fromIntegral pos
