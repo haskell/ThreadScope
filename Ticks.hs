@@ -67,27 +67,21 @@ showTickTime pos
       "0s"
     else
     if pos < 1000 then
-      show pos ++ "us"  -- microsecond (1e-6s).
+      reformatMS  (posf / 1000000) ++ "us"  -- microsecond (1e-6s).
     else
       if pos < 1000000 then
-        reformatMS pos
+        reformatMS (posf / 1000) ++ "ms" -- miliseconds
       else
-        show (posf / 1000000000) ++ "s"
+        reformatMS (posf / 1000000000) ++ "s" 
     where
     posf :: Double
     posf = fromIntegral pos
 
 -------------------------------------------------------------------------------
 
-reformatMS :: Integer -> String
+reformatMS :: Double -> String
 reformatMS pos
-  = if pos >= 10000 then
-      "0." ++ show (pos `div` 100000) ++ "s"
-    else
-      deZero (printf "%f" (posf / 1000)) ++ "ms"
-    where
-    posf :: Double
-    posf = fromIntegral pos
+  = deZero (show pos)
 
 -------------------------------------------------------------------------------
 
