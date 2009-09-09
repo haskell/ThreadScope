@@ -185,6 +185,13 @@ main
                                currentView width height hadj_value hadj_pagesize 
                                scaleValue maybeEventArray maybeCapabilities 
                                full_detail bw_mode labels_mode) >> showPage)
+         withImageSurface C.FormatARGB32 (fromIntegral width) (fromIntegral height) $ \ result ->
+         
+           do  renderWith result (translate (-hadj_value) 0 >> 
+                                  currentView width height hadj_value hadj_pagesize 
+                                  scaleValue maybeEventArray maybeCapabilities 
+                                  full_detail bw_mode labels_mode)
+               surfaceWriteToPNG result (fn++".png")
          statusbarPush statusbar ctx ("Saved " ++ fn ++ ".pdf")
          return ()
 

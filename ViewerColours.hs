@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---- $Id: ViewerColours.hs#1 2009/03/20 13:27:50 REDMOND\\satnams $
+--- $Id: ViewerColours.hs#2 2009/07/18 22:48:30 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/ViewerColours.hs $
 -------------------------------------------------------------------------------
 

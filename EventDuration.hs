@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---- $Id: EventDuration.hs#3 2009/03/25 16:27:24 REDMOND\\satnams $
+--- $Id: EventDuration.hs#4 2009/07/18 22:48:30 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/EventDuration.hs $
 -------------------------------------------------------------------------------
 

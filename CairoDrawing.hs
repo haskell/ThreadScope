@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---- $Id: CairoDrawing.hs#2 2009/03/25 16:27:24 REDMOND\\satnams $
+--- $Id: CairoDrawing.hs#3 2009/07/18 22:48:30 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/CairoDrawing.hs $
 -------------------------------------------------------------------------------
 
