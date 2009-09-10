@@ -60,18 +60,23 @@ drawTicks height scaleValue pos incr majorTick endPos
     oxs = scaleIntegerBy pos scaleValue
 
 -------------------------------------------------------------------------------
+-- This display the nano-second time unit with an appropriate suffix
+-- depending on the actual time value.
+-- For times < 1e-6 the time is shown in micro-seconds.
+-- For times >= 1e-6 and < 0.1 seconds the time is shown in ms
+-- For times >= 0.5 seconds the time is shown in seconds
 
 showTickTime :: Integer -> String
 showTickTime pos
   = if pos == 0 then
       "0s"
     else
-    if pos < 1000 then
-      reformatMS  (posf / 1000000) ++ "us"  -- microsecond (1e-6s).
+      if pos < 1000000 then -- Show time as micro-seconds for times < 1e-6
+        reformatMS  (posf / 1000) ++ "us"  -- microsecond (1e-6s).
     else
-      if pos < 1000000 then
-        reformatMS (posf / 1000) ++ "ms" -- miliseconds
-      else
+      if pos < 100000000 then -- Show miliseonds for time < 0.1s
+        reformatMS (posf / 1000000) ++ "ms" -- miliseconds 1e-3
+      else -- Show time in seconds
         reformatMS (posf / 1000000000) ++ "s" 
     where
     posf :: Double
@@ -79,25 +84,9 @@ showTickTime pos
 
 -------------------------------------------------------------------------------
 
-reformatMS :: Double -> String
+reformatMS :: Num a => a -> String
 reformatMS pos
   = deZero (show pos)
-
--------------------------------------------------------------------------------
-
-
-showTickTime2 :: Double -> Integer -> String
-showTickTime2 scale pos
-  = if scale <= 3.125e-3 then
-      printf "%f" (posf / 1000000) ++ " s"
-    else
-      if scale <= 0.25 then
-        deZero (printf "%f" (posf / 1000)) ++ " ms"
-      else
-        show pos ++ " us"
-    where
-    posf :: Double
-    posf = fromIntegral pos
 
 -------------------------------------------------------------------------------
 
@@ -112,13 +101,3 @@ deZero str
 
 -------------------------------------------------------------------------------
 
-stripTrailingZeros :: String -> String
-stripTrailingZeros s
-  = if head zerosStripped == '.' then
-      reverse (tail zerosStripped)
-    else
-      reverse zerosStripped
-    where
-    zerosStripped = (dropWhile ((==)'0') . reverse) s
-
--------------------------------------------------------------------------------
