@@ -57,11 +57,12 @@ currentView width height hadj_value hadj_pagesize scaleValue
          draw_line (ox, oy) 
                    (ox+ scaleIntegerBy (toInteger endPos) scaleValue, oy)
          let widthInPixelsContainingTrace = truncate (fromIntegral (endPos-startPos)*scaleValue)
-             nrMinorTicks = widthInPixelsContainingTrace `div` 10 -- pixels
-             minorTickDuration = fromIntegral nrMinorTicks / scaleValue -- nanoseconds
-             snappedTickDuration = 10^(truncate (logBase 10 minorTickDuration))
+             timestampFor100Pixels = truncate (100 / scaleValue) -- ns time for 10 pixels
+             snappedTickDuration :: Timestamp
+             snappedTickDuration = 10^truncate(logBase 10 (fromIntegral timestampFor100Pixels))
+             firstTick :: Timestamp
              firstTick = snappedTickDuration * (startPos `div` snappedTickDuration)
-         drawTicks height scaleValue (fromIntegral firstTick) (fromIntegral snappedTickDuration)  (fromIntegral (10*snappedTickDuration)) (toInteger endPos)
+         drawTicks height scaleValue firstTick snappedTickDuration  (10*snappedTickDuration) endPos
          sequence_ [hecView c full_detail bw_mode labels_mode widthInPixelsContainingTrace height scaleValue startPos endPos eventTree | (c, eventTree) <- hecs]
          C.translate (-hadj_value) 0
 

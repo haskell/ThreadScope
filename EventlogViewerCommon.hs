@@ -197,8 +197,9 @@ tsScale t s = scaleIntegerBy (toInteger t) s
 
 -------------------------------------------------------------------------------
 
-scaleIntegerBy :: Integer -> Double -> Int
+scaleIntegerBy :: Integral int => int -> Double -> Int
 scaleIntegerBy i d
   = truncate (fromIntegral i * d)
 
 -------------------------------------------------------------------------------
+

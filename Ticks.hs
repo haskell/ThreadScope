@@ -11,6 +11,10 @@ import Graphics.Rendering.Cairo
 import qualified Graphics.Rendering.Cairo as C
 import Control.Monad
 
+-- Imports for GHC Events
+import qualified GHC.RTS.Events as GHCEvents
+import GHC.RTS.Events hiding (Event)
+
 import Text.Printf 
 
 import CairoDrawing
@@ -32,8 +36,8 @@ import ViewerColours
 
 -------------------------------------------------------------------------------
 
-drawTicks :: Int -> Double -> Integer -> Integer -> 
-             Integer -> Integer -> Render ()
+drawTicks :: Int -> Double -> Timestamp -> Timestamp -> 
+             Timestamp -> Timestamp -> Render ()
 drawTicks height scaleValue pos incr majorTick endPos
   = if pos <= endPos then
       do draw_line (x0, y0) (x1,y1)
@@ -66,7 +70,7 @@ drawTicks height scaleValue pos incr majorTick endPos
 -- For times >= 1e-6 and < 0.1 seconds the time is shown in ms
 -- For times >= 0.5 seconds the time is shown in seconds
 
-showTickTime :: Integer -> String
+showTickTime :: Timestamp -> String
 showTickTime pos
   = if pos == 0 then
       "0s"
