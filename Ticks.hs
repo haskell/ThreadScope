@@ -36,13 +36,13 @@ import ViewerColours
 
 -------------------------------------------------------------------------------
 
-drawTicks :: Int -> Double -> Timestamp -> Timestamp -> 
+drawTicks :: Int -> Int -> Double -> Timestamp -> Timestamp -> 
              Timestamp -> Timestamp -> Render ()
-drawTicks height scaleValue pos incr majorTick endPos
+drawTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
   = if pos <= endPos then
       do draw_line (x0, y0) (x1,y1)
          stroke
-         when (pos `mod` majorTick == 0 || pos `mod` (majorTick `div` 2) == 0) $ do
+         when (pos `mod` majorTick == 0 || pos `mod` (majorTick `div` 2) == 0 || tickWidthInPixels > 30) $ do
                move_to (ox+scaleIntegerBy pos scaleValue - 4, oy-10)
                textPath (showTickTime pos)
                C.fill
@@ -50,7 +50,7 @@ drawTicks height scaleValue pos incr majorTick endPos
                draw_line (x1, y1) (x1, height)
                setSourceRGBAhex blue 1.0
          
-         drawTicks height scaleValue (pos+incr) incr majorTick endPos
+         drawTicks tickWidthInPixels height scaleValue (pos+incr) incr majorTick endPos
     else
       return ()
     where

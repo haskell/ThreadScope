@@ -60,9 +60,11 @@ currentView width height hadj_value hadj_pagesize scaleValue
              timestampFor100Pixels = truncate (100 / scaleValue) -- ns time for 10 pixels
              snappedTickDuration :: Timestamp
              snappedTickDuration = 10^truncate(logBase 10 (fromIntegral timestampFor100Pixels))
+             tickWidthInPixels :: Int
+             tickWidthInPixels = truncate ((fromIntegral snappedTickDuration) * scaleValue)
              firstTick :: Timestamp
              firstTick = snappedTickDuration * (startPos `div` snappedTickDuration)
-         drawTicks height scaleValue firstTick snappedTickDuration  (10*snappedTickDuration) endPos
+         drawTicks tickWidthInPixels height scaleValue firstTick snappedTickDuration  (10*snappedTickDuration) endPos
          sequence_ [hecView c full_detail bw_mode labels_mode widthInPixelsContainingTrace height scaleValue startPos endPos eventTree | (c, eventTree) <- hecs]
          C.translate (-hadj_value) 0
 
