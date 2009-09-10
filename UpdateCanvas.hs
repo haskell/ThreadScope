@@ -17,6 +17,7 @@ import Control.Monad
 import Data.Array
 import Data.IORef
 import Data.Maybe
+import Text.Printf 
 
 -- ThreadScope imports
 import About
@@ -38,7 +39,7 @@ updateCanvas :: Bool -> DrawingArea -> Viewport -> Statusbar ->
                 ToggleButton -> ContextId ->  IORef Double ->
                 IORef (Maybe [Int])  -> MaybeHECsIORef -> Event ->
                 IO Bool
-updateCanvas debug canvas viewport statusbar  full_detail_menu_item 
+updateCanvas debug canvas viewport statusbar full_detail_menu_item 
              bw_button labels_button ctx scale 
              capabilitiesIORef eventArrayIORef
              event@(Expose _ area region count)
@@ -55,24 +56,27 @@ updateCanvas debug canvas viewport statusbar  full_detail_menu_item
               labels_mode <- toggleButtonGetActive labels_button
               win <- widgetGetDrawWindow canvas 
               (width,height) <- widgetGetSize viewport
-              when debug $
+              when debug $ do
+                putStrLn ("\n=== updateCabas") 
                 putStrLn ("width = " ++ show width ++ 
                           " height = " ++ show height)
+              -- Work out what portion of the trace is in view  
+              -- Compute start time of view              
+              let lastTx = findLastTxValue hecs
+              scaleValue <- checkScaleValue scale viewport lastTx
               -- Get the scrollbar settings
               hadj <- viewportGetHAdjustment viewport
               hadj_lower <- adjustmentGetLower hadj
               hadj_upper <- adjustmentGetUpper hadj
               hadj_value <- adjustmentGetValue hadj
               hadj_pagesize <- adjustmentGetPageSize hadj   
-              -- Work out what portion of the trace is in view  
-              -- Compute start time of view              
-              let lastTx = findLastTxValue hecs
-              scaleValue <- checkScaleValue scale viewport lastTx
-              let startTimeOfView = truncate (hadj_value / scaleValue)  
-                  endTimeOfView = truncate ((hadj_value + hadj_pagesize) / scaleValue) `min` lastTx
-              when debug $
+              let startTimeOfView = truncate hadj_value
+                  endTimeOfView = truncate (hadj_value + hadj_pagesize) `min` lastTx
+              when debug $ do
+                putStrLn ("lastTx = " ++ show lastTx)
+                putStrLn ("endTimeOfView' = " ++ show (truncate (hadj_value + hadj_pagesize)))
                 putStrLn ("start time of view = " ++ show startTimeOfView ++ " end time of view = " ++ show endTimeOfView)   
-              statusbarPush statusbar ctx ("Scale: " ++ show scaleValue ++ " width = " ++ show width ++ " height = " ++ show height ++ " hadj_value = " ++ show (truncate hadj_value) ++ " hadj_pagesize = " ++ show hadj_pagesize ++ " hadj_low = " ++ show hadj_lower ++ " hadj_upper = " ++ show hadj_upper)
+              statusbarPush statusbar ctx ("Scale: " ++ show scaleValue ++ " width = " ++ show width ++ " height = " ++ show height ++ " hadj_value = " ++ printf "%1.3f" hadj_value ++ " hadj_pagesize = " ++ show hadj_pagesize ++ " hadj_low = " ++ show hadj_lower ++ " hadj_upper = " ++ show hadj_upper)
               -- widgetSetSizeRequest canvas (truncate (scaleValue * fromIntegral lastTx) + 2*ox) ((length capabilities)*gapcap+oycap)
               renderWithDrawable win (currentView width height hadj_value 
                  hadj_pagesize scaleValue maybeEventArray
@@ -92,12 +96,18 @@ updateCanvas debug _ _ _ _ _ _ _ _ _ _ other
 -- We estimate the width of the vertical scrollbar at 20 pixels
 
 checkScaleValue :: IORef Double -> Viewport -> Timestamp -> IO Double
-checkScaleValue scale viewport largestTimestamp
+checkScaleValue scale viewport largestTimestamp 
   = do scaleValue <- readIORef scale
        if scaleValue < 0.0 then
          do (w, _) <- widgetGetSize viewport
             let newScale = fromIntegral (w - 2*ox - 20 - barHeight) / (fromIntegral (largestTimestamp))
             writeIORef scale newScale
+             -- Configure the horizontal scrollbar units to correspond to
+            -- Timespec values
+            hadj <- viewportGetHAdjustment viewport
+            hadj_upper <- adjustmentGetUpper hadj
+            adjustmentSetUpper hadj (fromIntegral largestTimestamp)
+            adjustmentSetPageSize hadj (fromIntegral largestTimestamp)
             return newScale 
         else
          return scaleValue

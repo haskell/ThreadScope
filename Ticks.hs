@@ -15,7 +15,6 @@ import Control.Monad
 import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
 
-import Text.Printf 
 
 import CairoDrawing
 import EventlogViewerCommon

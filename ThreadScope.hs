@@ -90,7 +90,6 @@ main
        viewport <- xmlGetWidget xml castToViewport "viewport1"
        scale <- newIORef defaultScaleValue -- How to scale ms to pixels
 
-
        ------------------------------------------------------------------------
        -- Status bar functionality
        summarybar <- xmlGetWidget xml castToStatusbar "summary"
@@ -267,9 +266,8 @@ main
 
        ------------------------------------------------------------------------
        -- Set up horizontal scrollbar
-       -- Just hscrollbar <- scrolledWindowGetHScrollbar profile_scrolled_window 
-       -- hscrollbar `onRangeValueChanged` (refresh canvas)
-
+       Just hscrollbar <- scrolledWindowGetHScrollbar profile_scrolled_window 
+       hscrollbar `onRangeValueChanged` (refresh canvas)
 
        ------------------------------------------------------------------------
        -- Quit

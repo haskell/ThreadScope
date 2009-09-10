@@ -49,7 +49,6 @@ currentView width height hadj_value hadj_pagesize scaleValue
              startPos = fromInteger (truncate (hadj_value / scaleValue))
              endPos :: Timestamp
              endPos = fromInteger (truncate ((hadj_value + fromIntegral width) / scaleValue)) `min` lastTx 
-             tickAdj = tickScale scaleValue
          selectFontFace "times" FontSlantNormal FontWeightNormal
          setFontSize 12
          setSourceRGBAhex blue 1.0
@@ -283,24 +282,6 @@ eScale event scaleValue
 
 subscriptThreashold :: Double
 subscriptThreashold = 0.2  
-
--------------------------------------------------------------------------------
--- tickScale adjusts the spacing between ticks to avoid collisions
-
-tickScale :: Double -> Integer
-tickScale scaleValue
-  = if scaleValue <= 2.89e-5 then
-      10000000
-    else if scaleValue <= 2.31e-4 then
-      1000000
-    else if scaleValue <= 3.125e-3 then
-      100000
-    else if scaleValue <= 0.0625 then
-      10000
-    else if scaleValue <= 0.25 then
-      1000
-    else 
-      100
 
 -------------------------------------------------------------------------------
 
