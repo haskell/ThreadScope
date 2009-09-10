@@ -83,6 +83,8 @@ main
        gladePath <- getDataFileName "threadscope.glade"
        Just xml <- xmlNew gladePath
        window   <- xmlGetWidget xml castToWindow "main_window"
+       widgetSetAppPaintable window True
+       windowSetIconFromFile window "threadscope.png"
        profile_scrolled_window 
          <- xmlGetWidget xml castToScrolledWindow "profile_scrolled_window"
        viewport <- xmlGetWidget xml castToViewport "viewport1"

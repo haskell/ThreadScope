@@ -10,7 +10,7 @@ Bug-reports:	     s.singh@ieee.org
 Stability:	     Pre-release version for review.
 Build-Type:          Simple
 Cabal-Version:       >=1.2
-Data-files:	     threadscope.glade
+Data-files:	     threadscope.glade, threadscope.png
 Executable threadscope
   Main-is:           ThreadScope.hs
   Build-Depends:     base, gtk, cairo, binary, array, glade, ghc-events
