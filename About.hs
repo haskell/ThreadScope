@@ -7,20 +7,24 @@ module About where
 
 -- Imports for GTK/Glade
 import Graphics.UI.Gtk
+import Paths_threadscope
 
 -------------------------------------------------------------------------------
 
 showAboutDialog :: Window -> IO ()
 showAboutDialog parent 
  = do aboutDialog <- aboutDialogNew
+      logoPath <- getDataFileName "threadscope.png"
+      logo <- pixbufNewFromFile logoPath
       set aboutDialog [
          aboutDialogName      := "ThreadScope",
-         aboutDialogVersion   := "0.1",
+         aboutDialogVersion   := "0.2",
          aboutDialogCopyright := "Released under the GHC license.",
          aboutDialogComments  := "A GHC eventlog profile viewer",
          aboutDialogAuthors   := ["Donnie Jones (donnie@darthik.com)",
                                   "Simon Marlow (simonm@microsoft.com)",
                                   "Satnam Singh (s.singh@ieee.org)"],
+         aboutDialogLogo := Just logo,
          aboutDialogWebsite   := "http://raintown.org/threadscope"
          ]
       windowSetTransientFor aboutDialog parent
