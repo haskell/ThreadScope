@@ -27,7 +27,7 @@ zoomIn scale viewport statusbar ctx canvas
        let maxVal = 2 * (hadj_upper - hadj_pagesize)
        adjustmentSetPageSize hadj (hadj_pagesize / 2)
        statusbarPush statusbar ctx ("Scale " ++ show (2*scaleValue))           
-       refresh canvas
+       refresh False canvas
 
 -------------------------------------------------------------------------------
 -- Zoom out works by contracting the current view such that the
@@ -47,6 +47,6 @@ zoomOut scale viewport statusbar ctx canvas
        hadj_upper <- adjustmentGetUpper hadj
        adjustmentSetPageSize hadj (hadj_pagesize * 2)
        statusbarPush statusbar ctx ("Scale " ++ show (scaleValue/2))           
-       refresh canvas
+       refresh False canvas
 
 -------------------------------------------------------------------------------

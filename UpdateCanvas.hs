@@ -57,7 +57,7 @@ updateCanvas debug canvas viewport statusbar full_detail_menu_item
               win <- widgetGetDrawWindow canvas 
               (width,height) <- widgetGetSize viewport
               when debug $ do
-                putStrLn ("\n=== updateCabas") 
+                putStrLn ("\n=== updateCanvas") 
                 putStrLn ("width = " ++ show width ++ 
                           " height = " ++ show height)
               -- Work out what portion of the trace is in view  

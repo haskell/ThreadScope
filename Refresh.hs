@@ -6,16 +6,19 @@
 module Refresh
 where
 
+import Control.Monad
+
 -- Imports for GTK/Glade
 import Graphics.UI.Gtk
 
 -------------------------------------------------------------------------------
 
-refresh canvas
-  = do win <- widgetGetDrawWindow canvas 
+refresh debug canvas
+  = do when (debug) (putStrLn "refesh")
+       win <- widgetGetDrawWindow canvas 
        (width,height) <- widgetGetSize canvas
-       -- drawWindowInvalidateRect win (Rectangle 0 0 width height) False
+       drawWindowInvalidateRect win (Rectangle 0 0 width height) False
        drawWindowClearAreaExpose win 0 0 width height
-       -- drawWindowProcessUpdates win False 
+       drawWindowProcessUpdates win False 
 
 -------------------------------------------------------------------------------

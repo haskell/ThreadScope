@@ -109,11 +109,11 @@ main
  
        -- B&W toggle button
        bw_button <- xmlGetWidget xml castToToggleButton "black_and_white"
-       bw_button `onToggled` do refresh canvas
+       bw_button `onToggled` do refresh debug canvas
 
        -- No Labels toggle button
        labels_button <- xmlGetWidget xml castToToggleButton "labels"
-       labels_button `onToggled` do refresh canvas
+       labels_button `onToggled` do refresh debug canvas
 
        -- When a filename for an event log is specified open and
        -- parse the event log file and update the IORefs for 
@@ -139,7 +139,7 @@ main
        -- View menu
        full_detail_menu_item
          <- xmlGetWidget xml castToCheckMenuItem "fullDetail"
-       full_detail_menu_item `onActivateLeaf` do refresh canvas
+       full_detail_menu_item `onActivateLeaf` do refresh debug canvas
  
        ------------------------------------------------------------------------
        -- Porgram the callback for the capability canvas
@@ -167,8 +167,8 @@ main
                                      window viewport profileNameLabel 
                                      summarybar
                                      summary_ctx
-              refresh canvas
-              refresh capability_canvas
+              refresh debug canvas
+              refresh debug capability_canvas
                                      
        ------------------------------------------------------------------------
        -- Zoom in button
@@ -232,7 +232,7 @@ main
              statusbarPush statusbar ctx ("Scale 0.1")
              --hadj <- viewportGetHAdjustment viewport 
              --adjustmentValueChanged hadj
-             refresh canvas
+             refresh debug canvas
 
        ------------------------------------------------------------------------
        -- Reload functionality
@@ -244,7 +244,7 @@ main
                                          eventArrayIORef scale lastTxIORef 
                                          window viewport profileNameLabel summarybar
                                          summary_ctx
-                 refresh canvas
+                 refresh debug canvas
 
        ------------------------------------------------------------------------
        -- Key presses
@@ -267,7 +267,8 @@ main
        ------------------------------------------------------------------------
        -- Set up horizontal scrollbar
        Just hscrollbar <- scrolledWindowGetHScrollbar profile_scrolled_window 
-       hscrollbar `onRangeValueChanged` (refresh canvas)
+       hscrollbar `onRangeValueChanged` (refresh debug canvas)
+       -- rangeSetUpdatePolicy hscrollbar UpdateContinuous 
 
        ------------------------------------------------------------------------
        -- Quit
