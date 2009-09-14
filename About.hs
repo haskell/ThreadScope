@@ -25,7 +25,7 @@ showAboutDialog parent
                                   "Simon Marlow (simonm@microsoft.com)",
                                   "Satnam Singh (s.singh@ieee.org)"],
          aboutDialogLogo := Just logo,
-         aboutDialogWebsite   := "http://raintown.org/threadscope"
+         aboutDialogWebsite   := "http://code.haskell.org/ThreadScope"
          ]
       windowSetTransientFor aboutDialog parent
       afterResponse aboutDialog $ \_ -> widgetDestroy aboutDialog
