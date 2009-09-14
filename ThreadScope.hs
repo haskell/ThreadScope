@@ -267,9 +267,8 @@ main
        ------------------------------------------------------------------------
        -- Set up horizontal scrollbar
        Just hscrollbar <- scrolledWindowGetHScrollbar profile_scrolled_window 
-       hscrollbar `onRangeValueChanged` (refresh debug canvas)
-       -- rangeSetUpdatePolicy hscrollbar UpdateContinuous 
-
+       hscrollbar `onRangeValueChanged` refresh debug canvas
+ 
        ------------------------------------------------------------------------
        -- Quit
        quitMenuItem <- xmlGetWidget xml castToMenuItem "quitMenuItem"
@@ -283,7 +282,7 @@ main
 
        ------------------------------------------------------------------------
        -- Program the callback for the main drawing canvas
-       canvas `onExpose` updateCanvas 
+       canvas `onExposeRect` updateCanvas 
                   debug canvas viewport statusbar full_detail_menu_item 
                   bw_button
                   labels_button ctx scale 

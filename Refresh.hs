@@ -14,11 +14,12 @@ import Graphics.UI.Gtk
 -------------------------------------------------------------------------------
 
 refresh debug canvas
-  = do when (debug) (putStrLn "refesh")
+  = do when debug $ putStrLn "refesh"
        win <- widgetGetDrawWindow canvas 
        (width,height) <- widgetGetSize canvas
-       drawWindowInvalidateRect win (Rectangle 0 0 width height) False
+       drawWindowInvalidateRect win (Rectangle 0 0 width height) True
        drawWindowClearAreaExpose win 0 0 width height
-       drawWindowProcessUpdates win False 
-
+       widgetQueueDraw canvas
+       drawWindowProcessUpdates win True
+       
 -------------------------------------------------------------------------------

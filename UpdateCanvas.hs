@@ -37,13 +37,13 @@ import ViewerColours
 updateCanvas :: Bool -> DrawingArea -> Viewport -> Statusbar -> 
                 CheckMenuItem -> ToggleButton ->
                 ToggleButton -> ContextId ->  IORef Double ->
-                IORef (Maybe [Int])  -> MaybeHECsIORef -> Event ->
-                IO Bool
+                IORef (Maybe [Int])  -> MaybeHECsIORef -> Rectangle ->
+                IO ()
 updateCanvas debug canvas viewport statusbar full_detail_menu_item 
              bw_button labels_button ctx scale 
              capabilitiesIORef eventArrayIORef
-             event@(Expose _ area region count)
-   = do when debug $ putStrLn (show event)
+             rect -- event@(Expose _ area region count)
+   = do when debug $ putStrLn (show rect)
         maybeCapabilities <- readIORef capabilitiesIORef
         maybeEventArray <- readIORef eventArrayIORef
         -- Check to see if an event trace has been loaded
@@ -81,12 +81,10 @@ updateCanvas debug canvas viewport statusbar full_detail_menu_item
               renderWithDrawable win (currentView width height hadj_value 
                  hadj_pagesize scaleValue maybeEventArray
                  maybeCapabilities full_detail bw_mode labels_mode)
-        return True
       where
-      Rectangle x y _ _ = area 
+      Rectangle x y _ _ = rect 
 updateCanvas debug _ _ _ _ _ _ _ _ _ _ other
-   = do when debug $ putStrLn ("Ignorning event " ++ show other) -- Debug rendering errors
-        return True
+   = when debug $ putStrLn ("Ignorning rect " ++ show other) -- Debug rendering errors
 
 -------------------------------------------------------------------------------
 -- This function returns a value which can be used to scale
