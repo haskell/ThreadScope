@@ -268,6 +268,8 @@ main
        -- Set up horizontal scrollbar
        Just hscrollbar <- scrolledWindowGetHScrollbar profile_scrolled_window 
        hscrollbar `onRangeValueChanged` refresh debug canvas
+       hadj <- rangeGetAdjustment  hscrollbar
+       onValueChanged hadj $ widgetQueueDraw canvas
  
        ------------------------------------------------------------------------
        -- Quit
