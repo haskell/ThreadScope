@@ -4,7 +4,7 @@
 # Makefile for ThreadScope
 # Maintainer: satnams@microsoft.com
 
-GHC = /c/ghc/ghc-6.10.3/bin/ghc
+GHC = c:/ghc/ghc-6.10.3/bin/ghc
 
 cabal:	
 	cabal install -w $(GHC) --user --prefix=$(HOME)/haskell

@@ -68,7 +68,7 @@ currentView width height hadj_value hadj_pagesize scaleValue
              firstTick = snappedTickDuration * (startPos `div` snappedTickDuration)
          -- liftIO (putStrLn ("drawTicks: " ++ show tickWidthInPixels ++ " " ++ show height ++ " " ++ show firstTick ++ " " ++ show snappedTickDuration ++ " " ++ show endPos))
          drawTicks tickWidthInPixels height scaleValue firstTick snappedTickDuration  (10*snappedTickDuration) endPos
-         -- sequence_ [hecView c full_detail bw_mode labels_mode widthInPixelsContainingTrace height scaleValue startPos endPos eventTree | (c, eventTree) <- hecs]
+         sequence_ [hecView c full_detail bw_mode labels_mode widthInPixelsContainingTrace height scaleValue startPos endPos eventTree | (c, eventTree) <- hecs]
          C.restore
          -- C.translate (-hadj_value*scaleValue) 0
      where
@@ -135,8 +135,7 @@ drawAverageDuration c bw_mode labels_mode scaleValue
        setSourceRGBAhex black 1.0
        move_to (ox+ tsScale startTime scaleValue, oycap+c*gapcap)
        relMoveTo 4 13
-       textPath (show nrEvents)
-       C.fill  
+       unscaledText scaleValue (show nrEvents)
        setSourceRGBAhex (if not bw_mode then gcColour else black) gcRatio
        draw_rectangle (ox + tsScale startTime scaleValue) -- x
                       (oycap+c*gapcap+barHeight)                    -- y
@@ -163,10 +162,20 @@ nudgeDown n
 
 -------------------------------------------------------------------------------
 
+unscaledText :: Double -> String -> Render ()
+unscaledText scaleValue text
+  = do identityMatrix
+       textPath text
+       C.fill        
+       C.scale scaleValue 1.0
+
+-------------------------------------------------------------------------------
+
 drawDuration :: Bool -> Bool -> Double -> EventDuration -> Render ()
 
 drawDuration bw_mode labels_mode scaleValue (ThreadRun t c s startTime endTime)
   = do setSourceRGBAhex (if not bw_mode then runningColour else black) 0.8
+       setLineWidth (1/scaleValue)
        draw_rectangle_opt False
                       (oxs + startTime)          -- x
                       (oycap+c*gapcap)           -- y
@@ -174,21 +183,19 @@ drawDuration bw_mode labels_mode scaleValue (ThreadRun t c s startTime endTime)
                        barHeight                 -- h
        -- Optionally label the bar with the threadID if there is room
        tExtent <- textExtents tStr
-       when (textExtentsWidth tExtent < fromIntegral rectWidth) 
+       when False 
          $ do move_to (oxs + startTime, oycap+c*gapcap) 
               setSourceRGBAhex labelTextColour 1.0
               relMoveTo 4 13
-              textPath tStr
-              C.fill        
+              unscaledText scaleValue tStr
         -- Optionally write the reason for the thread being stopped
         -- depending on the zoom value
-       when (scaleValue >= subscriptThreashold && not labels_mode)
+       when False
          $ do setSourceRGBAhex black 1.0
               move_to (oxs + endTime, oycap+c*gapcap+barHeight+12)
-              textPath (show t ++ " " ++ showThreadStopStatus s)
-              C.fill
+              unscaledText scaleValue (show t ++ " " ++ showThreadStopStatus s)
     where
-    rectWidth = tsScale (endTime - startTime) scaleValue
+    rectWidth = truncate (fromIntegral (endTime - startTime) * scaleValue) -- as pixels
     tStr = show t
     oxs = truncate (fromIntegral ox / scaleValue) -- x origin as Timestamp 
 
@@ -206,83 +213,79 @@ drawDuration bw_mode _ scaleValue (GC c startTime endTime)
 drawDuration bw_mode labels_mode scaleValue (EV event)
   = case spec event of 
       CreateThread{cap=c, thread=t} -> 
-        when (scaleValue >= 0.25) $ do
-          setSourceRGBAhex lightBlue 0.8 
-          setLineWidth 2.0
-          draw_line (ox+eScale event scaleValue, oycap+c*gapcap-4) (ox+ eScale event scaleValue, oycap+c*gapcap+barHeight+4)
-          when (scaleValue >= 4.0 && not labels_mode)
+        when True $ do
+          setSourceRGBAhex lightBlue 1.0 
+          setLineWidth (3/scaleValue)
+          draw_line (oxs + time event, oycap+c*gapcap-4) (oxs + time event, oycap+c*gapcap+barHeight+4)
+          when (True && labels_mode)
             (do setSourceRGB 0 0.0 0.0
-                move_to (ox+eScale event scaleValue, oycap+c*gapcap+barHeight+12)
-                textPath (show t ++ " created")
-                C.fill
+                move_to (oxs + time event, oycap+c*gapcap+barHeight+12)
+                unscaledText scaleValue (show t ++ " created")
             )
       RunThread{cap=c, thread=t} -> return ()
       RunSpark{cap=c, thread=t} -> 
-           when (scaleValue >= 0.25) $
+           when True $
              do setSourceRGBAhex magenta 0.8 
-                setLineWidth 2.0
-                draw_line (ox+eScale event scaleValue, oycap+c*gapcap-4) (ox+ eScale event scaleValue, oycap+c*gapcap+barHeight+4)
+                setLineWidth (1/scaleValue)
+                draw_line (oxs + time event, oycap+c*gapcap-4) (oxs + time event, oycap+c*gapcap+barHeight+4)
       StopThread{cap=c, thread=t, GHC.RTS.Events.status=s} -> return ()
       ThreadRunnable{cap=c, thread=t} ->
-        when (scaleValue >= 0.1) $ do
+        when True $ do
            setSourceRGBAhex darkGreen 0.8 
-           setLineWidth 2.0
+           setLineWidth (1/scaleValue)
            draw_line (ox+ eScale event scaleValue, oycap+c*gapcap-4) (ox+ eScale event scaleValue, oycap+c*gapcap+barHeight+4)
            when (scaleValue >= 0.2 && not labels_mode)
             (do setSourceRGB 0.0 0.0 0.0
                 move_to (ox+eScale event scaleValue, oycap+c*gapcap-5)
-                textPath (show t ++ " runnable")
-                C.fill
+                unscaledText scaleValue (show t ++ " runnable")
             )
       RequestSeqGC{cap=c} -> 
-        when (scaleValue >= 0.1) $ do
+        when True $ do
            setSourceRGBAhex cyan 0.8 
-           setLineWidth 2.0
-           draw_line (ox+ eScale event scaleValue, oycap+c*gapcap-4) (ox+ eScale event scaleValue, oycap+c*gapcap+barHeight+4)
+           setLineWidth (1/scaleValue)
+           draw_line (oxs + time event, oycap+c*gapcap-4) (oxs + time event, oycap+c*gapcap+barHeight+4)
            when (scaleValue >= subscriptThreashold && not labels_mode)
             (do setSourceRGB 0 0.0 0.0
-                move_to (ox+eScale event scaleValue, oycap+c*gapcap-5)
-                textPath ("seq GC req")
-                C.fill
+                move_to (oxs + time event, oycap+c*gapcap-5)
+                unscaledText scaleValue ("seq GC req")
             )
       RequestParGC{cap=c} -> 
-         when (scaleValue >= 0.1) $ do
+         when True $ do
            setSourceRGBA 1.0 0.0 1.0 0.8 
-           setLineWidth 2.0
-           draw_line (ox+eScale event scaleValue, oycap+c*gapcap-4) (ox+ eScale event scaleValue, oycap+c*gapcap+barHeight+4)
-           when (scaleValue >= subscriptThreashold && not labels_mode)
+           setLineWidth (1/scaleValue)
+           draw_line (oxs + time event, oycap+c*gapcap-4) (oxs + time event, oycap+c*gapcap+barHeight+4)
+           when (True && labels_mode)
             (do setSourceRGB 0 0.0 0.0
-                move_to (ox+eScale event scaleValue, oycap+c*gapcap-5)
-                textPath ("par GC req")
-                C.fill
+                move_to (oxs + time event, oycap+c*gapcap-5)
+                unscaledText scaleValue ("par GC req")
             )
       StartGC _ -> return ()
       MigrateThread {cap=oldc, thread=t, newCap=c}
-        -> when (scaleValue >= 0.1) $ do
+        -> when True $ do
               setSourceRGBAhex darkRed 0.8 
-              setLineWidth 2.0
-              draw_line (ox+ eScale event scaleValue, oycap+c*gapcap-4) (ox+ eScale event scaleValue, oycap+c*gapcap+barHeight+4)
-              when (scaleValue >= subscriptThreashold && not labels_mode)
+              setLineWidth (1/scaleValue)
+              draw_line (oxs + time event, oycap+c*gapcap-4) (oxs + time event, oycap+c*gapcap+barHeight+4)
+              when (True && not labels_mode)
                (do setSourceRGB 0.0 0.0 0.0
-                   move_to (ox+eScale event scaleValue, oycap+c*gapcap+barHeight+12)
-                   textPath (show t ++ " migrated from " ++ show oldc)
-                   C.fill
+                   move_to (oxs + time event, oycap+c*gapcap+barHeight+12)
+                   unscaledText scaleValue (show t ++ " migrated from " ++ show oldc)
                )
       WakeupThread {cap=c, thread=t, otherCap=otherc}
-        -> when (scaleValue >= 0.1) $ do 
+        -> when True $ do 
               setSourceRGBAhex purple 0.8 
-              setLineWidth 2.0
-              draw_line (ox+ eScale event scaleValue, oycap+c*gapcap-4) (ox+ eScale event scaleValue, oycap+c*gapcap+barHeight+4)
-              when (scaleValue >= subscriptThreashold && not labels_mode)
+              setLineWidth (1/scaleValue)
+              draw_line (oxs + time event, oycap+c*gapcap-4) (oxs + time event, oycap+c*gapcap+barHeight+4)
+              when (True && not labels_mode)
                (do setSourceRGB 0.0 0.0 0.0
-                   move_to (ox+eScale event scaleValue, oycap+c*gapcap+barHeight+12)
-                   textPath (show t ++ " woken from " ++ show otherc)
-                   C.fill
+                   move_to (oxs + time event, oycap+c*gapcap+barHeight+12)
+                   unscaledText scaleValue (show t ++ " woken from " ++ show otherc)
                )
       Shutdown{cap=c} ->
          do setSourceRGBAhex shutdownColour 0.8
-            draw_rectangle (ox+ eScale event scaleValue) (oycap+c*gapcap) barHeight barHeight
+            draw_rectangle (oxs + time event) (oycap+c*gapcap) (truncate (fromIntegral barHeight / scaleValue)) barHeight
       _ -> return () 
+    where
+    oxs = truncate (fromIntegral ox / scaleValue) -- x origin as Timestamp
 
 -------------------------------------------------------------------------------
 
@@ -292,7 +295,7 @@ eScale event scaleValue
 -------------------------------------------------------------------------------
 
 subscriptThreashold :: Double
-subscriptThreashold = 0.2  
+subscriptThreashold = 1000000  
 
 -------------------------------------------------------------------------------
 

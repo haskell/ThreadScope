@@ -10,6 +10,7 @@ import Data.Word
 testTrace :: String -> EventLog
 testTrace "small" = eventLog events1
 testTrace "tick"  = eventLog eventsTick
+testTrace "tick2"  = eventLog eventsTick2
 testTrace _  = eventLog events0 -- Return empty trace for unknown trace name
 
 -------------------------------------------------------------------------------
@@ -158,6 +159,17 @@ eventsTick
      Event runThread 2000 (RunThread 2 3),
      Event stop      3000 (StopThread 2 3 ThreadFinished),
      Event shutdown  4000 (Shutdown 2)
+    ]
+
+-------------------------------------------------------------------------------
+
+eventsTick2 :: [Event]
+eventsTick2
+  = [-- A thread from 2s to 3s
+     Event create    1000000000 (CreateThread 0 1),
+     Event runThread 2000000000 (RunThread 0 1),
+     Event stop      3000000000 (StopThread 0 1 ThreadFinished),
+     Event shutdown  4000000000 (Shutdown 0)
     ]
 
 -------------------------------------------------------------------------------
