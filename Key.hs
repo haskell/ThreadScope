@@ -21,8 +21,8 @@ import ViewerColours
 
 -------------------------------------------------------------------------------
 
-updateKeyCanvas :: DrawingArea -> Event -> IO Bool
-updateKeyCanvas canvas _
+updateKeyDrawingArea :: DrawingArea -> Event -> IO Bool
+updateKeyDrawingArea canvas _
   = do win <- widgetGetDrawWindow canvas
        renderWithDrawable win drawKey
        return True

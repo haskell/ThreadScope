@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.3 on Thu May 28 12:45:46 2009 -->
+<?xml version="1.0"?>
 <glade-interface>
+<!-- interface-requires gtk+ 2.16 -->
+<!-- interface-naming-policy toplevel-contextual -->
   <widget class="GtkWindow" id="main_window">
     <property name="width_request">1500</property>
     <property name="height_request">400</property>
@@ -26,24 +26,24 @@
                     <property name="visible">True</property>
                     <child>
                       <widget class="GtkImageMenuItem" id="openMenuItem">
+                        <property name="label">gtk-open</property>
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">gtk-open</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                       </widget>
                     </child>
                     <child>
                       <widget class="GtkImageMenuItem" id="saveMenuItem">
+                        <property name="label">gtk-save</property>
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">gtk-save</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                       </widget>
                     </child>
                     <child>
                       <widget class="GtkImageMenuItem" id="imagemenuitem4">
+                        <property name="label">gtk-save-as</property>
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">gtk-save-as</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                       </widget>
@@ -104,6 +104,7 @@
           </widget>
           <packing>
             <property name="expand">False</property>
+            <property name="position">0</property>
           </packing>
         </child>
         <child>
@@ -112,24 +113,23 @@
             <property name="spacing">4</property>
             <child>
               <widget class="GtkButton" id="zoom_in">
+                <property name="label" translatable="yes">Zoom In</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="label" translatable="yes">Zoom In</property>
-                <property name="response_id">0</property>
               </widget>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">False</property>
+                <property name="position">0</property>
               </packing>
             </child>
             <child>
               <widget class="GtkButton" id="zoom_out">
+                <property name="label" translatable="yes">Zoom Out</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="label" translatable="yes">Zoom Out</property>
-                <property name="response_id">0</property>
               </widget>
               <packing>
                 <property name="expand">False</property>
@@ -139,11 +139,10 @@
             </child>
             <child>
               <widget class="GtkButton" id="default_scale">
+                <property name="label" translatable="yes">1:1</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="label" translatable="yes">1:1</property>
-                <property name="response_id">0</property>
               </widget>
               <packing>
                 <property name="expand">False</property>
@@ -153,11 +152,10 @@
             </child>
             <child>
               <widget class="GtkToggleButton" id="black_and_white">
+                <property name="label" translatable="yes">B&amp;W</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="label" translatable="yes">B&amp;W</property>
-                <property name="response_id">0</property>
               </widget>
               <packing>
                 <property name="expand">False</property>
@@ -167,11 +165,10 @@
             </child>
             <child>
               <widget class="GtkToggleButton" id="labels">
+                <property name="label" translatable="yes">No Labels</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="label" translatable="yes">No Labels</property>
-                <property name="response_id">0</property>
               </widget>
               <packing>
                 <property name="expand">False</property>
@@ -181,11 +178,10 @@
             </child>
             <child>
               <widget class="GtkButton" id="reload_button">
+                <property name="label" translatable="yes">Reload</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="label" translatable="yes">Reload</property>
-                <property name="response_id">0</property>
               </widget>
               <packing>
                 <property name="expand">False</property>
@@ -210,7 +206,7 @@
           </packing>
         </child>
         <child>
-          <widget class="GtkHBox" id="hbox2">
+          <widget class="GtkHBox" id="profileHBox">
             <property name="visible">True</property>
             <child>
               <widget class="GtkDrawingArea" id="capabilities">
@@ -219,28 +215,71 @@
               </widget>
               <packing>
                 <property name="expand">False</property>
+                <property name="position">0</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkScrolledWindow" id="profile_scrolled_window">
+              <widget class="GtkFrame" id="profileFrame">
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="shadow_type">GTK_SHADOW_OUT</property>
+                <property name="label_xalign">0</property>
+                <property name="shadow_type">etched-out</property>
                 <child>
-                  <widget class="GtkViewport" id="viewport1">
+                  <widget class="GtkHBox" id="profileAndVScrollbarHbox">
                     <property name="visible">True</property>
-                    <property name="resize_mode">GTK_RESIZE_QUEUE</property>
                     <child>
-                      <widget class="GtkDrawingArea" id="drawingarea1">
+                      <widget class="GtkVBox" id="profileVBox">
                         <property name="visible">True</property>
+                        <property name="orientation">vertical</property>
+                        <child>
+                          <widget class="GtkDrawingArea" id="profileDrawingArea">
+                            <property name="visible">True</property>
+                          </widget>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <widget class="GtkHScrollbar" id="profileHScrollbar">
+                            <property name="visible">True</property>
+                          </widget>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
                       </widget>
+                      <packing>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkVScrollbar" id="profileHScrollba">
+                        <property name="visible">True</property>
+                        <property name="orientation">vertical</property>
+                      </widget>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="position">1</property>
+                      </packing>
                     </child>
                   </widget>
+                </child>
+                <child>
+                  <placeholder/>
+                  <packing>
+                    <property name="type">label_item</property>
+                  </packing>
                 </child>
               </widget>
               <packing>
                 <property name="position">1</property>
               </packing>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
             </child>
           </widget>
           <packing>
@@ -270,6 +309,7 @@
               </widget>
               <packing>
                 <property name="expand">False</property>
+                <property name="position">0</property>
               </packing>
             </child>
             <child>

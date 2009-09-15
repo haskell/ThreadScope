@@ -16,9 +16,9 @@ import ViewerColours
 
 -------------------------------------------------------------------------------
 
-updateCapabilityCanvas :: DrawingArea -> IORef (Maybe [Int]) -> Event ->
+updateCapabilityDrawingArea :: DrawingArea -> IORef (Maybe [Int]) -> Event ->
                           IO Bool
-updateCapabilityCanvas canvas capabilitiesIORef (Expose { eventArea=rect }) 
+updateCapabilityDrawingArea canvas capabilitiesIORef (Expose { eventArea=rect }) 
    = do maybeCapabilities <- readIORef capabilitiesIORef
         when (maybeCapabilities /= Nothing)
           (do let Just capabilities = maybeCapabilities

@@ -34,12 +34,14 @@ import ViewerColours
 --  occurs. This function redraws the currently visible part of the
 --  main trace canvas plus related canvases.
 
-updateCanvas :: Bool -> DrawingArea -> Viewport -> Statusbar -> 
+updateProfileDrawingArea :: Bool -> DrawingArea -> HScrollbar ->
+                Statusbar -> 
                 CheckMenuItem -> ToggleButton ->
                 ToggleButton -> ContextId ->  IORef Double ->
                 IORef (Maybe [Int])  -> MaybeHECsIORef -> Rectangle ->
                 IO ()
-updateCanvas debug canvas viewport statusbar full_detail_menu_item 
+updateProfileDrawingArea debug profileDrawingArea profileHScrollbar
+             statusbar full_detail_menu_item 
              bw_button labels_button ctx scale 
              capabilitiesIORef eventArrayIORef
              rect -- event@(Expose _ area region count)
@@ -54,8 +56,8 @@ updateCanvas debug canvas viewport statusbar full_detail_menu_item
               bw_mode <- toggleButtonGetActive bw_button
               full_detail <- checkMenuItemGetActive full_detail_menu_item
               labels_mode <- toggleButtonGetActive labels_button
-              win <- widgetGetDrawWindow canvas 
-              (width,height) <- widgetGetSize viewport
+              win <- widgetGetDrawWindow profileDrawingArea
+              (width,height) <- widgetGetSize profileDrawingArea
               when debug $ do
                 putStrLn ("\n=== updateCanvas") 
                 putStrLn ("width = " ++ show width ++ 
@@ -63,9 +65,9 @@ updateCanvas debug canvas viewport statusbar full_detail_menu_item
               -- Work out what portion of the trace is in view  
               -- Compute start time of view              
               let lastTx = findLastTxValue hecs
-              scaleValue <- checkScaleValue scale viewport lastTx
+              scaleValue <- checkScaleValue scale profileDrawingArea profileHScrollbar lastTx
               -- Get the scrollbar settings
-              hadj <- viewportGetHAdjustment viewport
+              hadj <- rangeGetAdjustment profileHScrollbar
               hadj_lower <- adjustmentGetLower hadj
               hadj_upper <- adjustmentGetUpper hadj
               hadj_value <- adjustmentGetValue hadj
@@ -83,7 +85,7 @@ updateCanvas debug canvas viewport statusbar full_detail_menu_item
                  maybeCapabilities full_detail bw_mode labels_mode)
       where
       Rectangle x y _ _ = rect 
-updateCanvas debug _ _ _ _ _ _ _ _ _ _ other
+updateProfileDrawingArea debug _ _ _ _ _ _ _ _ _ _ other
    = when debug $ putStrLn ("Ignorning rect " ++ show other) -- Debug rendering errors
 
 -------------------------------------------------------------------------------
@@ -93,16 +95,16 @@ updateCanvas debug _ _ _ _ _ _ _ _ _ _ other
 -- An "uncomputed" scale value is represetned as -1.0 (defaultScaleValue)
 -- We estimate the width of the vertical scrollbar at 20 pixels
 
-checkScaleValue :: IORef Double -> Viewport -> Timestamp -> IO Double
-checkScaleValue scale viewport largestTimestamp 
+checkScaleValue :: IORef Double -> DrawingArea ->  HScrollbar -> Timestamp -> IO Double
+checkScaleValue scale profileDrawingArea profileHScrollbar largestTimestamp 
   = do scaleValue <- readIORef scale
        if scaleValue < 0.0 then
-         do (w, _) <- widgetGetSize viewport
+         do (w, _) <- widgetGetSize profileDrawingArea
             let newScale = fromIntegral (w - 2*ox - 20 - barHeight) / (fromIntegral (largestTimestamp))
             writeIORef scale newScale
              -- Configure the horizontal scrollbar units to correspond to
             -- Timespec values
-            hadj <- viewportGetHAdjustment viewport
+            hadj <- rangeGetAdjustment profileHScrollbar
             hadj_upper <- adjustmentGetUpper hadj
             adjustmentSetUpper hadj (fromIntegral largestTimestamp)
             adjustmentSetPageSize hadj (fromIntegral largestTimestamp)

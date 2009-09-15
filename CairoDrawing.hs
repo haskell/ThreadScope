@@ -13,11 +13,14 @@ import Control.Monad
 
 -------------------------------------------------------------------------------
 
+draw_line :: (Integral a, Integral b, Integral c, Integral d) =>
+             (a, b) -> (c, d) -> Render ()
 draw_line (x0, y0) (x1, y1)
-  = do move_to (x0,y0)
+  = do move_to (x0, y0)
        lineTo (fromIntegral x1) (fromIntegral y1)
        stroke
 
+move_to :: (Integral a, Integral b) => (a, b) -> Render ()
 move_to (x, y)
   = moveTo (fromIntegral x) (fromIntegral y)
 
@@ -29,10 +32,7 @@ rel_line_to (x, y)
 draw_rectangle x0 y0 w h
   = do rectangle (fromIntegral x0) (fromIntegral y0) (fromIntegral w) (fromIntegral h)
        C.fill
-       -- setLineWidth 1
-       --setSourceRGBA 0 0 0 0.7
-       --stroke
-
+ 
 -------------------------------------------------------------------------------
 
 draw_outlined_rectangle x0 y0 w h

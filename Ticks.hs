@@ -39,12 +39,12 @@ drawTicks :: Int -> Int -> Double -> Timestamp -> Timestamp ->
              Timestamp -> Timestamp -> Render ()
 drawTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
   = if pos <= endPos then
-      do draw_line (x0, y0) (x1,y1)
-         stroke
+      do setLineWidth (1/scaleValue)
+         draw_line (x0, y0) (x1, y1)
          when (pos `mod` majorTick == 0 || pos `mod` (majorTick `div` 2) == 0 || tickWidthInPixels > 30) $ do
-               move_to (ox+scaleIntegerBy pos scaleValue - 4, oy-10)
-               textPath (showTickTime pos)
-               C.fill
+               move_to (oxs + pos - truncate (4.0 / scaleValue), oy - 10)
+               textPath "X" -- (showTickTime pos)
+               stroke
                setSourceRGBAhex blue 0.2
                draw_line (x1, y1) (x1, height)
                setSourceRGBAhex blue 1.0
@@ -54,13 +54,13 @@ drawTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
       return ()
     where
     (x0, y0, x1, y1) = if pos `mod` majorTick == 0 then
-                         (ox+ oxs, oy, ox+oxs, oy+16)
+                         (oxs + pos, oy, oxs + pos, oy+16)
                        else 
                          if pos `mod` (majorTick `div` 2) == 0 then
-                           (ox+oxs, oy, ox+oxs, oy+12)
+                           (oxs + pos, oy, oxs + pos, oy+12)
                          else
-                           (ox+oxs, oy, ox+oxs, oy+8)
-    oxs = scaleIntegerBy pos scaleValue
+                           (oxs + pos, oy, oxs + pos, oy+8)
+    oxs = truncate ((fromIntegral ox) / scaleValue) -- x origin as Timestamp
 
 -------------------------------------------------------------------------------
 -- This display the nano-second time unit with an appropriate suffix

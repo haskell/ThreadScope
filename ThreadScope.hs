@@ -85,10 +85,17 @@ main
        window   <- xmlGetWidget xml castToWindow "main_window"
        widgetSetAppPaintable window True
        windowSetIconFromFile window "threadscope.png"
-       profile_scrolled_window 
-         <- xmlGetWidget xml castToScrolledWindow "profile_scrolled_window"
-       viewport <- xmlGetWidget xml castToViewport "viewport1"
-       scale <- newIORef defaultScaleValue -- How to scale ms to pixels
+       
+       -- profile_scrolled_window 
+       --   <- xmlGetWidget xml castToScrolledWindow "profile_scrolled_window"
+       -- viewport <- xmlGetWidget xml castToViewport "viewport1"
+
+       profileDrawingArea <- xmlGetWidget xml castToDrawingArea "profileDrawingArea"
+       profileHScrollbar <- xmlGetWidget xml castToHScrollbar "profileHScrollbar"
+       hadj <- rangeGetAdjustment profileHScrollbar 
+       onValueChanged hadj $ widgetQueueDraw profileDrawingArea
+
+       scale <- newIORef defaultScaleValue -- How to scale ns to pixels
 
        ------------------------------------------------------------------------
        -- Status bar functionality
@@ -104,16 +111,13 @@ main
        profileNameLabel <- xmlGetWidget xml castToLabel "profile_name"
  
 
-       -- Set-up the drawing canvas.
-       canvas <- xmlGetWidget xml castToDrawingArea "drawingarea1"
- 
        -- B&W toggle button
        bw_button <- xmlGetWidget xml castToToggleButton "black_and_white"
-       bw_button `onToggled` do refresh debug canvas
+       bw_button `onToggled` do refresh debug profileDrawingArea
 
        -- No Labels toggle button
        labels_button <- xmlGetWidget xml castToToggleButton "labels"
-       labels_button `onToggled` do refresh debug canvas
+       labels_button `onToggled` do refresh debug profileDrawingArea
 
        -- When a filename for an event log is specified open and
        -- parse the event log file and update the IORefs for 
@@ -121,7 +125,9 @@ main
        when (filename /= "") $
            do registerEventsFromFile debug filename capabilitiesIORef
                                      eventArrayIORef scale lastTxIORef 
-                                     window viewport profileNameLabel 
+                                     window 
+                                     profileDrawingArea profileHScrollbar  
+                                     profileNameLabel 
                                      summarybar
                                      summary_ctx
 
@@ -129,7 +135,9 @@ main
        when (traceName /= "") $
            do registerEventsFromTrace debug traceName capabilitiesIORef
                                      eventArrayIORef scale lastTxIORef 
-                                     window viewport profileNameLabel 
+                                     window
+                                     profileDrawingArea profileHScrollbar
+                                     profileNameLabel 
                                      summarybar
                                      summary_ctx
 
@@ -139,19 +147,19 @@ main
        -- View menu
        full_detail_menu_item
          <- xmlGetWidget xml castToCheckMenuItem "fullDetail"
-       full_detail_menu_item `onActivateLeaf` do refresh debug canvas
+       full_detail_menu_item `onActivateLeaf` do refresh debug profileDrawingArea
  
        ------------------------------------------------------------------------
-       -- Porgram the callback for the capability canvas
-       capability_canvas <- xmlGetWidget xml castToDrawingArea "capabilities"
-       capability_canvas `onExpose` 
-                  updateCapabilityCanvas capability_canvas capabilitiesIORef
+       -- Porgram the callback for the capability profileDrawingArea
+       capabilityDrawingArea <- xmlGetWidget xml castToDrawingArea "capabilities"
+       capabilityDrawingArea `onExpose` 
+                  updateCapabilityDrawingArea capabilityDrawingArea capabilitiesIORef
 
 
        ------------------------------------------------------------------------
-       -- Set-up the key canvas.
-       key_canvas <- xmlGetWidget xml castToDrawingArea "key"
-       key_canvas `onExpose` updateKeyCanvas key_canvas
+       -- Set-up the key profileDrawingArea.
+       keyDrawingArea <- xmlGetWidget xml castToDrawingArea "key"
+       keyDrawingArea `onExpose` updateKeyDrawingArea keyDrawingArea
  
        -- B&W toggle button
                       
@@ -164,33 +172,35 @@ main
            do registerEventsFromFile debug 
                                      (fromJust filename) capabilitiesIORef
                                      eventArrayIORef scale lastTxIORef 
-                                     window viewport profileNameLabel 
+                                     window 
+                                     profileDrawingArea profileHScrollbar
+                                     profileNameLabel 
                                      summarybar
                                      summary_ctx
-              refresh debug canvas
-              refresh debug capability_canvas
+              refresh debug profileDrawingArea
+              refresh debug capabilityDrawingArea
                                      
        ------------------------------------------------------------------------
        -- Zoom in button
        zoomInButton <- xmlGetWidget xml castToButton "zoom_in"
        zoomInButton `onClicked`
-          zoomIn scale viewport statusbar ctx canvas
+          zoomIn scale profileHScrollbar statusbar ctx profileDrawingArea
                                             
        ------------------------------------------------------------------------
        -- Zoom out button
        zoomOutButton <- xmlGetWidget xml castToButton "zoom_out"
        zoomOutButton `onClicked` 
-          zoomOut scale viewport statusbar ctx canvas
+          zoomOut scale profileHScrollbar statusbar ctx profileDrawingArea
 
        ------------------------------------------------------------------------
        -- Save as PDF functionality
        saveMenuItem <- xmlGetWidget xml castToMenuItem "saveMenuItem"
        saveMenuItem `onActivateLeaf` do
-         (width, height) <- widgetGetSize viewport
+         (width, height) <- widgetGetSize profileDrawingArea
          scaleValue <- readIORef scale
          maybeEventArray <- readIORef eventArrayIORef
          maybeCapabilities <- readIORef capabilitiesIORef
-         hadj <- viewportGetHAdjustment viewport
+         hadj <- rangeGetAdjustment profileHScrollbar
          hadj_value <- adjustmentGetValue hadj
          hadj_pagesize <- adjustmentGetPageSize hadj
          fn <- readIORef filenameRef
@@ -214,13 +224,13 @@ main
 
        ------------------------------------------------------------------------
        -- Allow mouse wheel to be used for zoom in/out
-       onScroll canvas (\(Scroll _ _ _ _ dir _ _ )
+       onScroll profileDrawingArea (\(Scroll _ _ _ _ dir _ _ )
          -> do case dir of
                 ScrollUp -> do -- zoom in
-                               zoomIn scale viewport statusbar ctx canvas
+                               zoomIn scale profileHScrollbar statusbar ctx profileDrawingArea
                                return True
                 ScrollDown -> do -- zoom out
-                               zoomOut scale viewport statusbar ctx canvas
+                               zoomOut scale profileHScrollbar statusbar ctx profileDrawingArea
                                return True
                 _ -> return True)
                       
@@ -232,7 +242,7 @@ main
              statusbarPush statusbar ctx ("Scale 0.1")
              --hadj <- viewportGetHAdjustment viewport 
              --adjustmentValueChanged hadj
-             refresh debug canvas
+             refresh debug profileDrawingArea
 
        ------------------------------------------------------------------------
        -- Reload functionality
@@ -242,9 +252,9 @@ main
              when (filename /= "") $
               do registerEventsFromFile  debug filename capabilitiesIORef
                                          eventArrayIORef scale lastTxIORef 
-                                         window viewport profileNameLabel summarybar
+                                         window profileDrawingArea profileHScrollbar profileNameLabel summarybar
                                          summary_ctx
-                 refresh debug canvas
+                 refresh debug profileDrawingArea
 
        ------------------------------------------------------------------------
        -- Key presses
@@ -252,13 +262,13 @@ main
          -- when debug $ putStrLn ("key " ++ key)
          case key of
            "Escape" -> mainQuit >> return True
-           "Right" -> scrollRight scale viewport statusbar ctx canvas
-           "Left" -> scrollLeft scale viewport statusbar ctx canvas
+           "Right" -> scrollRight scale profileHScrollbar statusbar ctx profileDrawingArea
+           "Left" -> scrollLeft scale profileHScrollbar statusbar ctx profileDrawingArea
            _ -> if isJust mch then
                   case fromJust mch of 
-                    '+' -> do zoomIn scale viewport statusbar ctx canvas
+                    '+' -> do zoomIn scale profileHScrollbar statusbar ctx profileDrawingArea
                               return True
-                    '-' -> do zoomOut scale viewport statusbar ctx canvas
+                    '-' -> do zoomOut scale profileHScrollbar statusbar ctx profileDrawingArea
                               return True
                     _   -> return True
                 else
@@ -266,10 +276,10 @@ main
 
        ------------------------------------------------------------------------
        -- Set up horizontal scrollbar
-       Just hscrollbar <- scrolledWindowGetHScrollbar profile_scrolled_window 
-       hscrollbar `onRangeValueChanged` refresh debug canvas
-       hadj <- rangeGetAdjustment  hscrollbar
-       onValueChanged hadj $ widgetQueueDraw canvas
+       --Just hscrollbar <- scrolledWindowGetHScrollbar profile_scrolled_window 
+       --hscrollbar `onRangeValueChanged` refresh debug profileDrawingArea
+       --hadj <- rangeGetAdjustment  hscrollbar
+       --onValueChanged hadj $ widgetQueueDraw profileDrawingArea
  
        ------------------------------------------------------------------------
        -- Quit
@@ -278,14 +288,14 @@ main
 
        ------------------------------------------------------------------------
        -- Change background colour
-       sty <- widgetGetModifierStyle canvas
-       widgetModifyBg canvas StateNormal profileBackground
-       widgetModifyStyle canvas sty 
+       sty <- widgetGetModifierStyle profileDrawingArea
+       widgetModifyBg profileDrawingArea StateNormal profileBackground
+       widgetModifyStyle profileDrawingArea sty 
 
        ------------------------------------------------------------------------
-       -- Program the callback for the main drawing canvas
-       canvas `onExposeRect` updateCanvas 
-                  debug canvas viewport statusbar full_detail_menu_item 
+       -- Program the callback for the main drawing profileDrawingArea
+       profileDrawingArea `onExposeRect` updateProfileDrawingArea 
+                  debug profileDrawingArea profileHScrollbar statusbar full_detail_menu_item 
                   bw_button
                   labels_button ctx scale 
                   capabilitiesIORef eventArrayIORef

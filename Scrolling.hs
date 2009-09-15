@@ -15,11 +15,11 @@ import Refresh
 
 -------------------------------------------------------------------------------
 
-scrollLeft :: IORef Double -> Viewport -> Statusbar -> ContextId -> DrawingArea
+scrollLeft :: IORef Double -> HScrollbar -> Statusbar -> ContextId -> DrawingArea
            -> IO Bool
-scrollLeft scale viewport statusbar ctx canvas
+scrollLeft scale profileHScrollbar statusbar ctx canvas
   = do scaleValue <- readIORef scale
-       hadj <- viewportGetHAdjustment viewport
+       hadj <- rangeGetAdjustment profileHScrollbar
        hadj_value <- adjustmentGetValue hadj
        hadj_pagesize <- adjustmentGetPageSize hadj
        hadj_upper <- adjustmentGetUpper hadj
@@ -31,11 +31,11 @@ scrollLeft scale viewport statusbar ctx canvas
 
 -------------------------------------------------------------------------------
 
-scrollRight :: IORef Double -> Viewport -> Statusbar -> ContextId -> DrawingArea
+scrollRight :: IORef Double -> HScrollbar -> Statusbar -> ContextId -> DrawingArea
            -> IO Bool
-scrollRight scale viewport statusbar ctx canvas
+scrollRight scale profileHScrollbar statusbar ctx canvas
   = do scaleValue <- readIORef scale
-       hadj <- viewportGetHAdjustment viewport
+       hadj <- rangeGetAdjustment profileHScrollbar
        hadj_value <- adjustmentGetValue hadj
        hadj_pagesize <- adjustmentGetPageSize hadj
        hadj_upper <- adjustmentGetUpper hadj

@@ -15,12 +15,13 @@ import Refresh
 -- For example, zoom into the time range 1.0 3.0
 -- produces a new view with the time range 1.0 2.0
 
-zoomIn :: IORef Double -> Viewport -> Statusbar -> ContextId -> DrawingArea
+zoomIn :: IORef Double -> HScrollbar ->
+           Statusbar -> ContextId -> DrawingArea
            -> IO ()
-zoomIn scale viewport statusbar ctx canvas
+zoomIn scale profileHScrollbar statusbar ctx canvas
   = do scaleValue <- readIORef scale -- Double the scale value
        writeIORef scale (2*scaleValue)
-       hadj <- viewportGetHAdjustment viewport -- Get horizontal scrollbar
+       hadj <- rangeGetAdjustment profileHScrollbar -- Get horizontal scrollbar
        hadj_value <- adjustmentGetValue hadj -- Get position of bar
        hadj_pagesize <- adjustmentGetPageSize hadj -- Get size of bar
        hadj_upper <- adjustmentGetUpper hadj -- Get max value of scrollbar
@@ -36,12 +37,12 @@ zoomIn scale viewport statusbar ctx canvas
 -- For example, zoom out of the time range 1.0 2.0
 -- produces a new view with the time range 1.0 3.0
 
-zoomOut :: IORef Double -> Viewport -> Statusbar -> ContextId -> DrawingArea
+zoomOut :: IORef Double -> HScrollbar -> Statusbar -> ContextId -> DrawingArea
            -> IO ()
-zoomOut scale viewport statusbar ctx canvas
+zoomOut scale profileHScrollbar statusbar ctx canvas
   = do scaleValue <- readIORef scale
        writeIORef scale (scaleValue/2)
-       hadj <- viewportGetHAdjustment viewport
+       hadj <- rangeGetAdjustment profileHScrollbar
        hadj_value <- adjustmentGetValue hadj
        hadj_pagesize <- adjustmentGetPageSize hadj
        hadj_upper <- adjustmentGetUpper hadj
