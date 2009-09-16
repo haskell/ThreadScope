@@ -1,22 +1,28 @@
 name:             ghc-events
 version:          0.0.1
-synopsis:         Parses EventLog files emitted from the GHC EventLog framework.
-                  Also, includes ShowEvents to print to stdout the event types 
-                  and events.
-license:          OtherLicense
+synopsis:         Library and tool for parsing .eventlog files from GHC
+description:      Parses .eventlog files emitted by GHC 6.12.1 and later.
+                  Includes the show-ghc-events tool to dump an event
+                  log file as text.
+category:         Development, GHC, Debug, Profiling, Trace
+license:          BSD3
 license-file:     LICENSE
 author:           Donnie Jones <donnie@darthik.com>, 
                   Simon Marlow <marlowsd@gmail.com>
-maintainer:       Donnie Jones <donnie@darthik.com>, 
-                  Simon Marlow <marlowsd@gmail.com>
+maintainer:       Simon Marlow <marlowsd@gmail.com>
 build-type:       Simple
-build-depends:    base >= 3.0.0.0, 
-                  mtl >= 1.1.0.2, 
-                  containers >= 0.1.0.1, 
-                  binary >= 0.4.4, 
-                  bytestring >= 0.9
-exposed-modules:  GHC.RTS.Events
-tested-with:      GHC == 6.8.2, GHC == 6.11.20090221
-executable:       show-ghc-events
-main-is:          ShowGhcEvents.hs
-ghc-options:      -O2
+tested-with:      GHC == 6.10.2, GHC == 6.11.20090221
+cabal-version:    >= 1.2
+
+library {
+  build-depends:    base       == 4.*,
+                    mtl        == 1.1.*,
+                    containers == 0.2.*,
+                    binary     == 0.5.*,
+                    bytestring == 0.9.*
+  exposed-modules:  GHC.RTS.Events
+}
+
+executable show-ghc-events {
+  main-is:          ShowGhcEvents.hs
+}
