@@ -8,10 +8,7 @@ import Data.Word
 
 
 testTrace :: String -> EventLog
-testTrace "small" = eventLog events1
-testTrace "tick"  = eventLog eventsTick
-testTrace "tick2"  = eventLog eventsTick2
-testTrace _  = eventLog events0 -- Return empty trace for unknown trace name
+testTrace name = eventLog (test name)
 
 -------------------------------------------------------------------------------
 
@@ -123,17 +120,13 @@ testEventTypes
 
 -------------------------------------------------------------------------------
 
-
-
-
-events0 :: [Event]
-events0
+test :: String -> [Event]
+test "test0"
   = [Event shutdown  4000000 (Shutdown 0)
     ]
 -------------------------------------------------------------------------------
 
-events1 :: [Event]
-events1
+test "small"
   = [Event create    1000000 (CreateThread 0 1),
      Event runThread 2000000 (RunThread 0 1),
      Event stop      3000000 (StopThread 0 1 ThreadFinished),
@@ -142,8 +135,7 @@ events1
 
 -------------------------------------------------------------------------------
 
-eventsTick :: [Event]
-eventsTick
+test "tick"
   = [-- A thread from 2s to 3s
      Event create    1000000000 (CreateThread 0 1),
      Event runThread 2000000000 (RunThread 0 1),
@@ -163,13 +155,44 @@ eventsTick
 
 -------------------------------------------------------------------------------
 
-eventsTick2 :: [Event]
-eventsTick2
+test "tick2"
+  = [-- A thread create  but no run
+     Event create    1000000000 (CreateThread 0 1),
+     Event shutdown  4000000000 (Shutdown 0)
+    ]
+
+-------------------------------------------------------------------------------
+
+test "tick3"
   = [-- A thread from 2s to 3s
      Event create    1000000000 (CreateThread 0 1),
      Event runThread 2000000000 (RunThread 0 1),
      Event stop      3000000000 (StopThread 0 1 ThreadFinished),
      Event shutdown  4000000000 (Shutdown 0)
     ]
+
+-------------------------------------------------------------------------------
+
+test "tick4"
+  = [-- A test for scale values close to 1.0
+     Event create    100 (CreateThread 0 1),
+     Event runThread 200 (RunThread 0 1),
+     Event stop      300 (StopThread 0 1 ThreadFinished),
+     Event shutdown  400 (Shutdown 0)
+    ]
+
+-------------------------------------------------------------------------------
+
+test "tick5"
+  = [-- A thread from 2s to 3s
+     Event create    1000000000 (CreateThread 0 1),
+     Event runThread 2000000000 (RunThread 0 1),
+     Event stop      3000000000 (StopThread 0 1 ThreadFinished),
+     Event shutdown  4000000000 (Shutdown 0)
+    ]
+
+-------------------------------------------------------------------------------
+
+test _ = []
 
 -------------------------------------------------------------------------------

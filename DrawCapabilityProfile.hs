@@ -55,9 +55,9 @@ currentView width height hadj_value hadj_pagesize scaleValue
          setSourceRGBAhex blue 1.0
          setLineWidth 1.0
          C.save
+         C.translate (-hadj_value) 0
          C.scale scaleValue 1.0
          draw_line (oxs, oy) (oxs + endPos, oy)
-         -- draw_line (0, 0) (truncate (100 / scaleValue), 100)
          let widthInPixelsContainingTrace = truncate (fromIntegral (endPos-startPos)*scaleValue)
              timestampFor100Pixels = truncate (100 / scaleValue) -- ns time for 100 pixels
              snappedTickDuration :: Timestamp
@@ -65,12 +65,10 @@ currentView width height hadj_value hadj_pagesize scaleValue
              tickWidthInPixels :: Int
              tickWidthInPixels = truncate ((fromIntegral snappedTickDuration) * scaleValue)
              firstTick :: Timestamp
-             firstTick = snappedTickDuration * (startPos `div` snappedTickDuration)
-         -- liftIO (putStrLn ("drawTicks: " ++ show tickWidthInPixels ++ " " ++ show height ++ " " ++ show firstTick ++ " " ++ show snappedTickDuration ++ " " ++ show endPos))
+             firstTick = snappedTickDuration * (startPos `div` snappedTickDuration)        
          drawTicks tickWidthInPixels height scaleValue firstTick snappedTickDuration  (10*snappedTickDuration) endPos
          sequence_ [hecView c full_detail bw_mode labels_mode widthInPixelsContainingTrace height scaleValue startPos endPos eventTree | (c, eventTree) <- hecs]
          C.restore
-         -- C.translate (-hadj_value*scaleValue) 0
      where
      oxs = truncate ((fromIntegral ox) / scaleValue) -- x origin as Timestamp
 
@@ -171,6 +169,15 @@ unscaledText scaleValue text
 
 -------------------------------------------------------------------------------
 
+textWidth :: Double -> String -> Render TextExtents
+textWidth scaleValue text
+  = do identityMatrix
+       tExtent <- textExtents text
+       C.scale scaleValue 1.0
+       return tExtent
+
+-------------------------------------------------------------------------------
+
 drawDuration :: Bool -> Bool -> Double -> EventDuration -> Render ()
 
 drawDuration bw_mode labels_mode scaleValue (ThreadRun t c s startTime endTime)
@@ -182,11 +189,11 @@ drawDuration bw_mode labels_mode scaleValue (ThreadRun t c s startTime endTime)
                       (endTime - startTime)      -- w
                        barHeight                 -- h
        -- Optionally label the bar with the threadID if there is room
-       tExtent <- textExtents tStr
-       when False 
+       tExtent <- textWidth scaleValue tStr
+       when (textExtentsWidth tExtent + 6 < fromIntegral rectWidth)
          $ do move_to (oxs + startTime, oycap+c*gapcap) 
               setSourceRGBAhex labelTextColour 1.0
-              relMoveTo 4 13
+              relMoveTo (4/scaleValue) 13
               unscaledText scaleValue tStr
         -- Optionally write the reason for the thread being stopped
         -- depending on the zoom value
@@ -233,7 +240,7 @@ drawDuration bw_mode labels_mode scaleValue (EV event)
         when True $ do
            setSourceRGBAhex darkGreen 0.8 
            setLineWidth (1/scaleValue)
-           draw_line (ox+ eScale event scaleValue, oycap+c*gapcap-4) (ox+ eScale event scaleValue, oycap+c*gapcap+barHeight+4)
+           draw_line (oxs + time event, oycap+c*gapcap-4) (oxs + time event, oycap+c*gapcap+barHeight+4)
            when (scaleValue >= 0.2 && not labels_mode)
             (do setSourceRGB 0.0 0.0 0.0
                 move_to (ox+eScale event scaleValue, oycap+c*gapcap-5)

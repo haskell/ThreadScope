@@ -86,10 +86,6 @@ main
        widgetSetAppPaintable window True
        windowSetIconFromFile window "threadscope.png"
        
-       -- profile_scrolled_window 
-       --   <- xmlGetWidget xml castToScrolledWindow "profile_scrolled_window"
-       -- viewport <- xmlGetWidget xml castToViewport "viewport1"
-
        profileDrawingArea <- xmlGetWidget xml castToDrawingArea "profileDrawingArea"
        profileHScrollbar <- xmlGetWidget xml castToHScrollbar "profileHScrollbar"
        hadj <- rangeGetAdjustment profileHScrollbar 
@@ -184,13 +180,13 @@ main
        -- Zoom in button
        zoomInButton <- xmlGetWidget xml castToButton "zoom_in"
        zoomInButton `onClicked`
-          zoomIn scale profileHScrollbar statusbar ctx profileDrawingArea
+          zoomIn scale lastTxIORef profileHScrollbar statusbar ctx profileDrawingArea
                                             
        ------------------------------------------------------------------------
        -- Zoom out button
        zoomOutButton <- xmlGetWidget xml castToButton "zoom_out"
        zoomOutButton `onClicked` 
-          zoomOut scale profileHScrollbar statusbar ctx profileDrawingArea
+          zoomOut scale lastTxIORef profileHScrollbar statusbar ctx profileDrawingArea
 
        ------------------------------------------------------------------------
        -- Save as PDF functionality
@@ -227,10 +223,10 @@ main
        onScroll profileDrawingArea (\(Scroll _ _ _ _ dir _ _ )
          -> do case dir of
                 ScrollUp -> do -- zoom in
-                               zoomIn scale profileHScrollbar statusbar ctx profileDrawingArea
+                               zoomIn scale lastTxIORef profileHScrollbar statusbar ctx profileDrawingArea
                                return True
                 ScrollDown -> do -- zoom out
-                               zoomOut scale profileHScrollbar statusbar ctx profileDrawingArea
+                               zoomOut scale lastTxIORef profileHScrollbar statusbar ctx profileDrawingArea
                                return True
                 _ -> return True)
                       
@@ -266,22 +262,15 @@ main
            "Left" -> scrollLeft scale profileHScrollbar statusbar ctx profileDrawingArea
            _ -> if isJust mch then
                   case fromJust mch of 
-                    '+' -> do zoomIn scale profileHScrollbar statusbar ctx profileDrawingArea
+                    '+' -> do zoomIn scale lastTxIORef profileHScrollbar statusbar ctx profileDrawingArea
                               return True
-                    '-' -> do zoomOut scale profileHScrollbar statusbar ctx profileDrawingArea
+                    '-' -> do zoomOut scale lastTxIORef profileHScrollbar statusbar ctx profileDrawingArea
                               return True
                     _   -> return True
                 else
                   return True
 
-       ------------------------------------------------------------------------
-       -- Set up horizontal scrollbar
-       --Just hscrollbar <- scrolledWindowGetHScrollbar profile_scrolled_window 
-       --hscrollbar `onRangeValueChanged` refresh debug profileDrawingArea
-       --hadj <- rangeGetAdjustment  hscrollbar
-       --onValueChanged hadj $ widgetQueueDraw profileDrawingArea
- 
-       ------------------------------------------------------------------------
+     ------------------------------------------------------------------------
        -- Quit
        quitMenuItem <- xmlGetWidget xml castToMenuItem "quitMenuItem"
        quitMenuItem `onActivateLeaf` mainQuit

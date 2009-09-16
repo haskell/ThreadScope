@@ -50,7 +50,7 @@ drawKey
        C.fill
 
        setSourceRGBAhex lightBlue 1.0
-       setLineWidth 2.0
+       setLineWidth 3.0
        moveTo 130 0
        relLineTo 0 25
        C.stroke

@@ -32,7 +32,7 @@ rel_line_to (x, y)
 draw_rectangle x0 y0 w h
   = do rectangle (fromIntegral x0) (fromIntegral y0) (fromIntegral w) (fromIntegral h)
        C.fill
- 
+
 -------------------------------------------------------------------------------
 
 draw_outlined_rectangle x0 y0 w h
