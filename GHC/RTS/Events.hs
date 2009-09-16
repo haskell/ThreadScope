@@ -1,4 +1,5 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP,BangPatterns,PatternGuards #-}
+{-# OPTIONS_GHC -funbox-strict-fields #-}
 {-
  - Author: Donnie Jones, Simon Marlow
  - Events.hs
@@ -6,6 +7,7 @@
  -}
  
 module GHC.RTS.Events (
+       -- * The event log types                       
        EventLog(..),
        EventType(..),
        Event(..),
@@ -15,7 +17,10 @@ module GHC.RTS.Events (
        Data(..),
        Timestamp,
        ThreadId,
+       -- * Reading an event log from a file
        readEventLogFromFile,
+       -- * Utilities
+       CapEvent(..), sortEvents, groupEvents
   ) where
 
 {- Libraries. -}
@@ -28,6 +33,10 @@ import qualified Data.IntMap as M
 import Control.Monad.Reader
 import Control.Monad.Error
 import qualified Data.ByteString.Lazy as L
+import Data.Char
+import Data.Function
+import Data.List
+import Data.Either
 
 #define EVENTLOG_CONSTANTS_ONLY
 #include "EventLogFormat.h"
@@ -77,27 +86,46 @@ data EventType =
 
 data Event = 
   Event {
-    ref  :: EventTypeNum,
-    time :: Timestamp,
+    ref  :: {-# UNPACK #-}!EventTypeNum,
+    time :: {-# UNPACK #-}!Timestamp,
     spec :: EventTypeSpecificInfo
   } deriving Show
 
 data EventTypeSpecificInfo
-  = CreateThread   { cap :: Int, thread :: ThreadId  }
-  | RunThread      { cap :: Int, thread :: ThreadId  }
-  | StopThread     { cap :: Int, thread :: ThreadId, status :: ThreadStopStatus }
-  | ThreadRunnable { cap :: Int, thread :: ThreadId  }
-  | MigrateThread  { cap :: Int, thread :: ThreadId, newCap :: Int }
-  | CreateSpark    { cap :: Int, thread :: ThreadId  }
-  | RunSpark       { cap :: Int, thread :: ThreadId  }
-  | StealSpark     { cap :: Int, thread :: ThreadId, victimCap :: Int }
-  | CreateSparkThread  { cap :: Int, sparkThread :: ThreadId }
-  | WakeupThread   { cap :: Int, thread :: ThreadId, otherCap :: Int }
-  | Shutdown       { cap :: Int }
-  | RequestSeqGC   { cap :: Int }
-  | RequestParGC   { cap :: Int }
-  | StartGC        { cap :: Int }
-  | EndGC          { cap :: Int }
+  = Startup            { n_caps :: Int
+                       }
+  | EventBlock         { end_time     :: Timestamp, 
+                         cap          :: Int, 
+                         block_events :: [Event]
+                       }
+  | CreateThread       { thread :: {-# UNPACK #-}!ThreadId
+                       }
+  | RunThread          { thread :: {-# UNPACK #-}!ThreadId 
+                       }
+  | StopThread         { thread :: {-# UNPACK #-}!ThreadId,
+                         status :: ThreadStopStatus
+                       }
+  | ThreadRunnable     { thread :: {-# UNPACK #-}!ThreadId
+                       }
+  | MigrateThread      { thread :: {-# UNPACK #-}!ThreadId,
+                         newCap :: {-# UNPACK #-}!Int
+                       }
+  | RunSpark           { thread :: {-# UNPACK #-}!ThreadId
+                       }
+  | StealSpark         { thread :: {-# UNPACK #-}!ThreadId,
+                         victimCap :: {-# UNPACK #-}!Int
+                       }
+  | CreateSparkThread  { sparkThread :: {-# UNPACK #-}!ThreadId
+                       }
+  | WakeupThread       { thread :: {-# UNPACK #-}!ThreadId, 
+                         otherCap :: {-# UNPACK #-}!Int
+                       }
+  | Shutdown           { }
+  | RequestSeqGC       { }
+  | RequestParGC       { }
+  | StartGC            { }
+  | EndGC              { }
+  | Message            { msg :: String }
   | UnknownEvent
   deriving Show
 
@@ -176,86 +204,84 @@ getEvent = do
   etRef <- getE
   if (etRef == EVENT_DATA_END) 
      then return Nothing
-     else do ts   <- getE
+     else do !ts   <- getE
              spec <- getEvSpecInfo etRef
              return (Just (Event etRef ts spec))
            
 getEvSpecInfo :: EventTypeNum -> GetEvents EventTypeSpecificInfo
-getEvSpecInfo num = case num of
+getEvSpecInfo num = case fromIntegral num :: Int of
 
- EVENT_CREATE_THREAD -> do  -- (cap, thread)
+ EVENT_STARTUP -> do -- (n_caps)
   c <- getE :: GetEvents CapNo
-  t <- getE
-  return CreateThread{cap=fromIntegral c,thread=t}
+  return Startup{ n_caps = fromIntegral c }
 
- EVENT_RUN_THREAD -> do  --  (cap, thread)
+ EVENT_BLOCK_MARKER -> do -- (size, end_time, cap)
+  block_size <- getE :: GetEvents Word32
+  end_time <- getE :: GetEvents Timestamp
   c <- getE :: GetEvents CapNo
-  t <- getE
-  return RunThread{cap=fromIntegral c,thread=t}
+  lbs <- lift . lift $ getLazyByteString (fromIntegral block_size - 24)
+  etypemap <- ask
+  let e_events = runGet (runErrorT $ runReaderT getEventBlock etypemap) lbs
+  return EventBlock{ end_time=end_time,
+                     cap= fromIntegral c, 
+                     block_events=case e_events of
+                                    Left s -> error s
+                                    Right es -> es }
 
- EVENT_STOP_THREAD -> do  -- (cap, thread, status)
-  c  <- getE :: GetEvents CapNo
+ EVENT_CREATE_THREAD -> do  -- (thread)
+  t <- getE
+  return CreateThread{thread=t}
+
+ EVENT_RUN_THREAD -> do  --  (thread)
+  t <- getE
+  return RunThread{thread=t}
+
+ EVENT_STOP_THREAD -> do  -- (thread, status)
   t <- getE
   s <- getE :: GetEvents Word16
-  return StopThread{cap=fromIntegral c,thread=t, status= toEnum (fromIntegral s)}
+  return StopThread{thread=t, status= toEnum (fromIntegral s)}
 
- EVENT_THREAD_RUNNABLE -> do  -- (cap, thread)
-  c <- getE :: GetEvents CapNo
+ EVENT_THREAD_RUNNABLE -> do  -- (thread)
   t <- getE
-  return ThreadRunnable{cap=fromIntegral c,thread=t}
+  return ThreadRunnable{thread=t}
 
- EVENT_MIGRATE_THREAD -> do  --  (cap, thread, newCap)
-  c  <- getE :: GetEvents CapNo
+ EVENT_MIGRATE_THREAD -> do  --  (thread, newCap)
   t  <- getE
   nc <- getE :: GetEvents CapNo
-  return MigrateThread{cap=fromIntegral c,thread=t,newCap=fromIntegral nc}
+  return MigrateThread{thread=t,newCap=fromIntegral nc}
 
- EVENT_CREATE_SPARK -> do  -- (cap, thread)
-  c  <- getE :: GetEvents CapNo
+ EVENT_RUN_SPARK -> do  -- (thread)
   t <- getE
-  return CreateSpark{cap=fromIntegral c,thread=t}
+  return RunSpark{thread=t}
 
- EVENT_RUN_SPARK -> do  -- (cap, thread)
-  c <- getE :: GetEvents CapNo
-  t <- getE
-  return RunSpark{cap=fromIntegral c,thread=t}
-
- EVENT_STEAL_SPARK -> do  -- (cap, thread, victimCap)
-  c  <- getE :: GetEvents CapNo
+ EVENT_STEAL_SPARK -> do  -- (thread, victimCap)
   t  <- getE
   vc <- getE :: GetEvents CapNo
-  return StealSpark{cap=fromIntegral c,thread=t,victimCap=fromIntegral vc}
+  return StealSpark{thread=t,victimCap=fromIntegral vc}
 
- EVENT_CREATE_SPARK_THREAD -> do  -- (cap, sparkThread)
-  c  <- getE :: GetEvents CapNo
+ EVENT_CREATE_SPARK_THREAD -> do  -- (sparkThread)
   st <- getE :: GetEvents ThreadId
-  return CreateSparkThread{cap=fromIntegral c,sparkThread=st}
+  return CreateSparkThread{sparkThread=st}
 
- EVENT_SHUTDOWN -> do  -- (cap)
-  c  <- getE :: GetEvents CapNo
-  return Shutdown{cap=fromIntegral c}
+ EVENT_SHUTDOWN -> return Shutdown
 
- EVENT_THREAD_WAKEUP -> do  -- (cap, thread, other_cap)
-  c  <- getE :: GetEvents CapNo
+ EVENT_THREAD_WAKEUP -> do  -- (thread, other_cap)
   t <- getE
   oc <- getE :: GetEvents CapNo
-  return WakeupThread{cap=fromIntegral c,thread=t,otherCap=fromIntegral oc}
+  return WakeupThread{thread=t,otherCap=fromIntegral oc}
 
- EVENT_REQUEST_SEQ_GC -> do  -- (cap)
-  c  <- getE :: GetEvents CapNo
-  return RequestSeqGC{cap=fromIntegral c}
+ EVENT_REQUEST_SEQ_GC -> return RequestSeqGC
 
- EVENT_REQUEST_PAR_GC -> do  -- (cap)
-  c  <- getE :: GetEvents CapNo
-  return RequestParGC{cap=fromIntegral c}
+ EVENT_REQUEST_PAR_GC -> return RequestParGC
 
- EVENT_GC_START -> do  -- (cap)
-  c  <- getE :: GetEvents CapNo
-  return StartGC{cap=fromIntegral c}
+ EVENT_GC_START -> return StartGC
 
- EVENT_GC_END -> do  -- (cap)
-  c  <- getE :: GetEvents CapNo
-  return EndGC{cap=fromIntegral c}
+ EVENT_GC_END -> return EndGC
+
+ EVENT_LOG_MSG -> do -- (msg)
+  num <- getE :: GetEvents Word16
+  bytes <- replicateM (fromIntegral num) getE 
+  return Message{ msg = map (chr . fromIntegral) (bytes :: [Word8]) }
 
  other -> do -- unrecognised event, just skip it
   etypes <- ask
@@ -282,6 +308,17 @@ getData = do
                   Nothing -> return (Data events)
                   Just e  -> getEvents (e:events)
 
+getEventBlock :: GetEvents [Event]
+getEventBlock = do
+  b <- lift . lift $ isEmpty
+  if b then return [] else do
+  mb_e <- getEvent
+  case mb_e of
+    Nothing -> return []
+    Just e  -> do
+      es <- getEventBlock
+      return (e:es)
+
 getEventLog :: ErrorT String Get EventLog
 getEventLog = do
     header <- getHeader
@@ -295,3 +332,67 @@ readEventLogFromFile f = do
     return $ runGet (do v <- runErrorT $ getEventLog
                         m <- isEmpty
                         m `seq` return v)  s
+
+-- -----------------------------------------------------------------------------
+-- Utilities
+
+-- | An event annotated with the Capability that generated it, if any
+data CapEvent 
+  = CapEvent { ce_cap   :: Maybe Int,
+               ce_event :: Event
+             }
+
+-- | Sort the raw event stream by time, annotating each event with the
+-- capability that generated it.
+sortEvents :: [Event] -> [CapEvent]
+sortEvents raw = mergesort' (compare `on` (time . ce_event)) $
+                  [ map (CapEvent cap) es | (cap, es) <- groupEvents raw ]
+     -- sorting is made much faster by the way that the event stream is
+     -- divided into blocks of events.  
+     --  - All events in a block belong to a particular capability
+     --  - The events in a block are ordered by time
+     --  - blocks for the same capability appear in time order in the event
+     --    stream and do not overlap.
+     --
+     -- So to sort the events we make one list of events for each
+     -- capability (basically just concat . filter), and then
+     -- merge the resulting lists.
+
+groupEvents :: [Event] -> [(Maybe Int, [Event])]
+groupEvents es = (Nothing, n_events) : 
+                 [ (Just (cap (head blocks)), concat (map block_events blocks))
+                 | blocks <- groups ]
+  where
+   (blocks, anon_events) = partitionEithers (map separate es)
+      where separate e | b@EventBlock{} <- spec e = Left  b
+                       | otherwise                = Right e
+
+   (cap_blocks, gbl_blocks) = partition (is_cap . cap) blocks
+      where is_cap c = fromIntegral c /= ((-1) :: Word16)
+
+   groups = groupBy ((==) `on` cap) $ sortBy (compare `on` cap) cap_blocks
+
+     -- There are two sources of events without a capability: events
+     -- in the raw stream not inside an EventBlock, and EventBlocks
+     -- with cap == -1.  We have to merge those two streams.
+   n_events = merge (compare `on` time) anon_events 
+                 (concatMap block_events gbl_blocks)
+
+mergesort' :: (a -> a -> Ordering) -> [[a]] -> [a]
+mergesort' _   [] = []
+mergesort' _   [xs] = xs
+mergesort' cmp xss = mergesort' cmp (merge_pairs cmp xss)
+
+merge_pairs :: (a -> a -> Ordering) -> [[a]] -> [[a]]
+merge_pairs _   [] = []
+merge_pairs _   [xs] = [xs]
+merge_pairs cmp (xs:ys:xss) = merge cmp xs ys : merge_pairs cmp xss
+
+merge :: (a -> a -> Ordering) -> [a] -> [a] -> [a]
+merge _   [] ys = ys
+merge _   xs [] = xs
+merge cmp (x:xs) (y:ys)
+ = case x `cmp` y of
+        GT -> y : merge cmp (x:xs)   ys
+        _  -> x : merge cmp    xs (y:ys)
+
