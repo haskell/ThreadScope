@@ -39,19 +39,18 @@ eventArrayToDuration' idx eventArray
       []
     else
       case spec event of
-        StopThread{cap=c, thread=t, GHC.RTS.Events.status=s}
-           -> runBar t c s : rest
-        EndGC  {cap=c}  
-           -> GC c (gcStartTime c) (time event) : rest
-        RunThread _ _ -> rest
-        StartGC _ -> rest
-        otherEvent -> EV event : rest
+        StopThread{thread=t, GHC.RTS.Events.status=s}
+                      -> runBar t s : rest
+        EndGC         -> GC gcStartTime (time event) : rest
+        RunThread _   -> rest
+        StartGC       -> rest
+        otherEvent    -> EV event : rest
     where
     event = eventArray!idx
     rest = eventArrayToDuration' (idx+1) eventArray
     (_, lastIdx) = bounds eventArray
     startTime = findRunThreadTime eventArray (idx-1)
-    runBar t c s = ThreadRun t c s startTime (time event)
-    gcStartTime c = findStartGCTime eventArray c (idx-1)
+    runBar t s = ThreadRun t s startTime (time event)
+    gcStartTime = findStartGCTime eventArray (idx-1)
 
 -------------------------------------------------------------------------------

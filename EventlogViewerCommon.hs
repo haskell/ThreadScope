@@ -3,6 +3,7 @@ where
 import Data.Array
 import Data.IORef
 import Data.List
+import Debug.Trace
 
 import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
@@ -13,8 +14,8 @@ import GHC.RTS.Events hiding (Event)
 -- by a single constructor identifying their start and end points.
 
 data EventDuration
-  = ThreadRun ThreadId Int ThreadStopStatus Timestamp Timestamp
-  | GC Int Timestamp Timestamp
+  = ThreadRun ThreadId ThreadStopStatus Timestamp Timestamp
+  | GC Timestamp Timestamp
   | EV GHCEvents.Event
 
 -------------------------------------------------------------------------------
@@ -23,8 +24,8 @@ data EventDuration
 timeOfEventDuration :: EventDuration -> Timestamp
 timeOfEventDuration ed
   = case ed of
-      ThreadRun _ _ _ startTime _ -> startTime
-      GC _ startTime _ -> startTime
+      ThreadRun _ _ startTime _ -> startTime
+      GC startTime _ -> startTime
       EV event -> time event
 
 -------------------------------------------------------------------------------
@@ -33,8 +34,8 @@ timeOfEventDuration ed
 endTimeOfEventDuration :: EventDuration -> Timestamp
 endTimeOfEventDuration ed
   = case ed of
-      ThreadRun _ _ _ _ endTime -> endTime
-      GC _ _ endTime -> endTime
+      ThreadRun _ _ _ endTime -> endTime
+      GC _ endTime -> endTime
       EV event -> time event
 
 -------------------------------------------------------------------------------
@@ -66,7 +67,7 @@ splitEvents :: [EventDuration] -> EventTree
 splitEvents [] = EventTreeLeaf [] -- The case for an empty list of events
 splitEvents [e1] = EventTreeLeaf [e1] -- The case for a singleton list
 splitEvents eventList
-  = if duration > 0 && len > 1000 then -- threshold for leaf size 
+  = if False {-duration > 0 && len > 1000-} then -- threshold for leaf size 
       EventSplit startTime
                  splitTime 
                  endTime 
@@ -103,14 +104,14 @@ splitEvents eventList
 runTimeOf :: EventTree -> Timestamp
 runTimeOf (EventSplit _ _ _ _ _ _ runTime _) = runTime
 runTimeOf (EventTreeLeaf eventList)
-  = sum [e - s | ThreadRun _ _ _ s e <- eventList]
+  = sum [e - s | ThreadRun _ _ s e <- eventList]
 
 -------------------------------------------------------------------------------
 
 gcTimeOf :: EventTree -> Timestamp
 gcTimeOf (EventSplit _ _ _ _ _ _ _ gcTime) = gcTime
 gcTimeOf (EventTreeLeaf eventList)
-  = sum [e - s | GC _ s e <- eventList]
+  = sum [e - s | GC s e <- eventList]
 
 -------------------------------------------------------------------------------
 
@@ -135,8 +136,8 @@ type MaybeHECsIORef = IORef  (Maybe HECs)
 -------------------------------------------------------------------------------
 
 ennumerateCapabilities :: [GHCEvents.Event] -> [Int]
-ennumerateCapabilities events
-  = sort (nub (map (cap . spec) events))
+ennumerateCapabilities events = trace ("ennumerateCapabilities: " ++ show n_caps) $ [0.. n_caps-1]
+  where n_caps = head [ caps | GHCEvents.Event _ _ (GHCEvents.Startup caps) <- events ]
 
 -------------------------------------------------------------------------------
 

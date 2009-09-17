@@ -19,6 +19,7 @@ import GHC.RTS.Events hiding (Event)
 
 -- Imports from Haskell library
 import Control.Monad
+import Debug.Trace
 
 -------------------------------------------------------------------------------
 -- The GHC.RTS.Events library returns the profile information
@@ -38,27 +39,29 @@ import Control.Monad
 
 -------------------------------------------------------------------------------
 
-rawEventsToHECs :: [GHCEvents.Event] -> HECs
+rawEventsToHECs :: [(Maybe Int, [GHCEvents.Event])] -> HECs
 rawEventsToHECs eventList
-  = [filterHEC eventList hec | hec <- capabilities]
-    where
-    capabilities = ennumerateCapabilities eventList
+  = trace (show (map fst r)) $ r
+  where r= [ (hec, eventsToTree events) | (Just hec, events) <- eventList ]
     
 -------------------------------------------------------------------------------
 
-filterHEC :: [GHCEvents.Event] -> Int -> (Int, EventTree)
-filterHEC events hec
-  = (hec, splitEvents (eventArrayToDuration eventsAsArray))
+eventsToTree :: [GHCEvents.Event] -> EventTree
+eventsToTree events
+  = trace ("durations: " ++ show (length durations)) $ splitEvents durations
     where
-    eventsForThisHEC = filter (eventFromHEC hec) events
-    eventsAsArray = listArray (0, nrEvents-1) eventsForThisHEC
-    nrEvents = length eventsForThisHEC
+    durations = eventArrayToDuration eventsAsArray
+    eventsAsArray = listArray (0, nrEvents-1) events
+    nrEvents = length events
 
 -------------------------------------------------------------------------------
 
 eventFromHEC :: Int -> GHCEvents.Event -> Bool
 eventFromHEC hec event 
-  = cap (spec event) == hec
+  = case spec event of
+      UnknownEvent -> False
+      Message{}    -> False
+      _            -> cap (spec event) == hec
 
 -------------------------------------------------------------------------------
 
@@ -111,9 +114,9 @@ registerEvents debug name eitherFmt capabilitiesIORef eventArrayIORef scale
   =   case eitherFmt of
         Right fmt -> 
          do let pes = events (dat fmt)
-                sorted = sortBy (Data.Function.on compare time) (reverse pes)
+                sorted = groupEvents (events (dat fmt))
                 hecs = rawEventsToHECs sorted
-                lastTx = time (last sorted) -- Last event time i
+                lastTx = maximum (map (time.last.snd) sorted) -- Last event time i
                 capabilities = ennumerateCapabilities pes
             -- Debugging information
             when debug $ reportEventTrees hecs
@@ -123,7 +126,7 @@ registerEvents debug name eitherFmt capabilitiesIORef eventArrayIORef scale
             writeIORef lastTxIORef lastTx
             writeIORef scale defaultScaleValue
             let duration = lastTx 
-                nrEvents = length pes
+                nrEvents = length sorted
 
             -- Adjust height to fit capabilities
             (width, _) <- widgetGetSize window

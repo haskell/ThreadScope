@@ -18,19 +18,20 @@ import EventlogViewerCommon
 
 findRunThreadTime :: Array Int GHCEvents.Event -> Int -> Timestamp
 findRunThreadTime eventArray idx
+  | idx < 0 = error "findRunThreadTime"
+  | otherwise
   = case spec (eventArray!idx) of
-      RunThread cap thr -> time (eventArray!idx)
-      _ -> findRunThreadTime eventArray (idx-1)
+      RunThread thr -> time (eventArray!idx)
+      _             -> findRunThreadTime eventArray (idx-1)
 
 -------------------------------------------------------------------------------
 
-findStartGCTime :: Array Int GHCEvents.Event -> Int -> Int -> Timestamp
-findStartGCTime eventArray c idx
+findStartGCTime :: Array Int GHCEvents.Event -> Int -> Timestamp
+findStartGCTime eventArray idx
+  | idx < 0 = error "findStartGCTime"
+  | otherwise
   = case spec (eventArray!idx) of
-      StartGC cap -> if cap == c then
-                       time (eventArray!idx)
-                     else
-                       findStartGCTime eventArray c (idx-1)
-      _ -> findStartGCTime eventArray c (idx-1)
+      StartGC -> time (eventArray!idx)
+      _       -> findStartGCTime eventArray (idx-1)
 
 -------------------------------------------------------------------------------

@@ -83,112 +83,145 @@ reqParGC = 12
 
 ------------------------------------------------------------------------------
 
-createSpark :: Word16
-createSpark = 13
-
-------------------------------------------------------------------------------
-
-sparkToThread :: Word16
-sparkToThread = 14
-
-------------------------------------------------------------------------------
-
 createSparkThread :: Word16
 createSparkThread = 15
 
 ------------------------------------------------------------------------------
 
+logMessage :: Word16
+logMessage = 16
+
+------------------------------------------------------------------------------
+
+startup :: Word16
+startup = 17
+
+------------------------------------------------------------------------------
+
+blockMarker :: Word16
+blockMarker = 18
+
+------------------------------------------------------------------------------
+
 testEventTypes :: [EventType]
 testEventTypes
-  = [EventType create "Create thread" (Just 10),
-     EventType runThread "Run thread" (Just 10),
-     EventType stop "Stop thread" (Just 12),
-     EventType runnable "Thread runnable" (Just 10),
-     EventType migrate "Migrate thread" (Just 12),
-     EventType runSpark "Run spark" (Just 10),
-     EventType stealSpark "Steal spark" (Just 12),
-     EventType shutdown "Shutdown" (Just 2),
-     EventType wakeup "Wakeup thread" (Just 12),
-     EventType startGC "Start GC" (Just 2),
-     EventType finishGC "Finish GC" (Just 2),
-     EventType reqSeqGC "Request sequetial GC" (Just 2),
-     EventType reqParGC "Reqpargc parallel GC" (Just 2),
-     EventType createSpark "Create spark" (Just 10),
-     EventType sparkToThread "Spark to thread" (Just 0),
-     EventType createSparkThread "Create spark thread" (Just 10)
+  = [EventType create "Create thread" (Just 8),
+     EventType runThread "Run thread" (Just 8),
+     EventType stop "Stop thread" (Just 10),
+     EventType runnable "Thread runnable" (Just 8),
+     EventType migrate "Migrate thread" (Just 10),
+     EventType runSpark "Run spark" (Just 8),
+     EventType stealSpark "Steal spark" (Just 10),
+     EventType shutdown "Shutdown" (Just 0),
+     EventType wakeup "Wakeup thread" (Just 10),
+     EventType startGC "Start GC" (Just 0),
+     EventType finishGC "Finish GC" (Just 0),
+     EventType reqSeqGC "Request sequetial GC" (Just 0),
+     EventType reqParGC "Reqpargc parallel GC" (Just 0),
+     EventType createSparkThread "Create spark thread" (Just 8),
+     EventType logMessage "Log message" Nothing,
+     EventType startup "Startup" (Just 0),
+     EventType blockMarker "Block marker" (Just 14)
     ]
 
 -------------------------------------------------------------------------------
 
 test :: String -> [Event]
 test "test0"
-  = [Event shutdown  4000000 (Shutdown 0)
+  = [
+     Event startup 0 (Startup 1),
+     Event blockMarker 0 $ EventBlock 4000000 0 [
+          Event shutdown 4000000 Shutdown
+      ]
     ]
 -------------------------------------------------------------------------------
 
 test "small"
-  = [Event create    1000000 (CreateThread 0 1),
-     Event runThread 2000000 (RunThread 0 1),
-     Event stop      3000000 (StopThread 0 1 ThreadFinished),
-     Event shutdown  4000000 (Shutdown 0)
+  = [
+     Event startup 0 (Startup 1),
+     Event blockMarker 0 $ EventBlock 4000000 0 [
+       Event create    1000000 (CreateThread 1),
+       Event runThread 2000000 (RunThread 1),
+       Event stop      3000000 (StopThread 1 ThreadFinished),
+       Event shutdown  4000000 (Shutdown)
+     ]
     ]
 
 -------------------------------------------------------------------------------
 
 test "tick"
   = [-- A thread from 2s to 3s
-     Event create    1000000000 (CreateThread 0 1),
-     Event runThread 2000000000 (RunThread 0 1),
-     Event stop      3000000000 (StopThread 0 1 ThreadFinished),
-     Event shutdown  4000000000 (Shutdown 0),
+     Event startup 0 (Startup 3),
+     Event blockMarker 0 $ EventBlock 4000000000 0 [
+       Event create    1000000000 (CreateThread 1),
+       Event runThread 2000000000 (RunThread 1),
+       Event stop      3000000000 (StopThread 1 ThreadFinished),
+       Event shutdown  4000000000 (Shutdown)
+     ],
      -- A thread from 0.2ms to 0.3ms
-     Event create    1000000 (CreateThread 1 2),
-     Event runThread 2000000 (RunThread 1 2),
-     Event stop      3000000 (StopThread 1 2 ThreadFinished),
-     Event shutdown  4000000 (Shutdown 1),
+     Event blockMarker 0 $ EventBlock 4000000000 1 [
+       Event create    1000000 (CreateThread 2),
+       Event runThread 2000000 (RunThread 2),
+       Event stop      3000000 (StopThread 2 ThreadFinished),
+       Event shutdown  4000000 (Shutdown)
+    ],
     -- A thread from 0.2us to 0.3us
-     Event create    1000 (CreateThread 2 3),
-     Event runThread 2000 (RunThread 2 3),
-     Event stop      3000 (StopThread 2 3 ThreadFinished),
-     Event shutdown  4000 (Shutdown 2)
+     Event blockMarker 0 $ EventBlock 4000000000 2 [
+       Event create    1000 (CreateThread 3),
+       Event runThread 2000 (RunThread 3),
+       Event stop      3000 (StopThread 3 ThreadFinished),
+       Event shutdown  4000 (Shutdown)
+     ]
     ]
 
 -------------------------------------------------------------------------------
 
 test "tick2"
   = [-- A thread create  but no run
-     Event create    1000000000 (CreateThread 0 1),
-     Event shutdown  4000000000 (Shutdown 0)
+     Event startup 0 (Startup 1),
+       Event blockMarker 0 $ EventBlock 4000000000 0 [
+       Event create    1000000000 (CreateThread 1),
+       Event shutdown  4000000000 (Shutdown)
+     ]
     ]
 
 -------------------------------------------------------------------------------
 
 test "tick3"
   = [-- A thread from 2s to 3s
-     Event create    1000000000 (CreateThread 0 1),
-     Event runThread 2000000000 (RunThread 0 1),
-     Event stop      3000000000 (StopThread 0 1 ThreadFinished),
-     Event shutdown  4000000000 (Shutdown 0)
+     Event startup 0 (Startup 1),
+     Event blockMarker 0 $ EventBlock 4000000000 0 [
+       Event create    1000000000 (CreateThread 1),
+       Event runThread 2000000000 (RunThread 1),
+       Event stop      3000000000 (StopThread 1 ThreadFinished),
+       Event shutdown  4000000000 (Shutdown)
+     ]
     ]
 
 -------------------------------------------------------------------------------
 
 test "tick4"
   = [-- A test for scale values close to 1.0
-     Event create    100 (CreateThread 0 1),
-     Event runThread 200 (RunThread 0 1),
-     Event stop      300 (StopThread 0 1 ThreadFinished),
-     Event shutdown  400 (Shutdown 0)
+     Event startup 0 (Startup 1),
+     Event blockMarker 0 $ EventBlock 4000000000 0 [
+       Event create    100 (CreateThread 1),
+       Event runThread 200 (RunThread 1),
+       Event stop      300 (StopThread 1 ThreadFinished),
+       Event shutdown  400 (Shutdown)
+     ]
     ]
 
 -------------------------------------------------------------------------------
 
 test "tick5"
   = [-- A thread from 2s to 3s
-     Event create    1000000000 (CreateThread 0 1),
-     Event runThread 2000000000 (RunThread 0 1),
-     Event stop      3000000000 (StopThread 0 1 ThreadFinished),
-     Event shutdown  4000000000 (Shutdown 0)
+     Event startup 0 (Startup 1),
+     Event blockMarker 0 $ EventBlock 4000000000 0 [
+       Event create    1000000000 (CreateThread 1),
+       Event runThread 2000000000 (RunThread 1),
+       Event stop      3000000000 (StopThread 1 ThreadFinished),
+       Event shutdown  4000000000 (Shutdown)
+     ]
     ]
 
 -------------------------------------------------------------------------------
