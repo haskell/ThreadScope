@@ -74,10 +74,15 @@ updateProfileDrawingArea debug profileDrawingArea profileHScrollbar
               hadj_pagesize <- adjustmentGetPageSize hadj   
               let startTimeOfView = truncate hadj_value
                   endTimeOfView = truncate (hadj_value + hadj_pagesize) `min` lastTx
+                  -- The pixel duration in nanoseconds. This is used
+                  -- to determine how much detail to draw.
+                  pixelDuration :: Timestamp
+                  pixelDuration = truncate hadj_pagesize `div` fromIntegral width
               when debug $ do
                 putStrLn ("lastTx = " ++ show lastTx)
                 putStrLn ("endTimeOfView' = " ++ show (truncate (hadj_value + hadj_pagesize)))
                 putStrLn ("start time of view = " ++ show startTimeOfView ++ " end time of view = " ++ show endTimeOfView)   
+                putStrLn ("pixel duration = " ++ show pixelDuration)
               statusbarPush statusbar ctx ("Scale: " ++ show scaleValue ++ " width = " ++ show width ++ " height = " ++ show height ++ " hadj_value = " ++ printf "%1.3f" hadj_value ++ " hadj_pagesize = " ++ show hadj_pagesize ++ " hadj_low = " ++ show hadj_lower ++ " hadj_upper = " ++ show hadj_upper)
               -- widgetSetSizeRequest canvas (truncate (scaleValue * fromIntegral lastTx) + 2*ox) ((length capabilities)*gapcap+oycap)
               drawWindowClear win
@@ -103,12 +108,15 @@ checkScaleValue scale profileDrawingArea profileHScrollbar largestTimestamp
          do (w, _) <- widgetGetSize profileDrawingArea
             let newScale = fromIntegral (w - 2*ox - 20 - barHeight) / (fromIntegral (largestTimestamp))
             writeIORef scale newScale
-             -- Configure the horizontal scrollbar units to correspond to
+            -- Configure the horizontal scrollbar units to correspond to
             -- Timespec values
             hadj <- rangeGetAdjustment profileHScrollbar
             hadj_upper <- adjustmentGetUpper hadj
             adjustmentSetUpper hadj (fromIntegral largestTimestamp)
             adjustmentSetPageSize hadj (fromIntegral largestTimestamp)
+            rangeSetIncrements profileHScrollbar
+              ((fromIntegral largestTimestamp) / 100)
+              ((fromIntegral largestTimestamp) / 2)
             return newScale 
         else
          return scaleValue

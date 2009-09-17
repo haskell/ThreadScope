@@ -43,10 +43,11 @@ drawTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
          draw_line (x0, y0) (x1, y1)
          when (pos `mod` majorTick == 0 || pos `mod` (majorTick `div` 2) == 0 || tickWidthInPixels > 30) $ do
                move_to (oxs + pos - truncate (4.0 / scaleValue), oy - 10)
+               m <- getMatrix
                identityMatrix
                textPath (showTickTime pos)
                C.fill
-               C.scale scaleValue 1.0
+               setMatrix m
                setSourceRGBAhex blue 0.2
                draw_line (x1, y1) (x1, height)
                setSourceRGBAhex blue 1.0
