@@ -104,17 +104,20 @@ hecView c full_detail bw_mode labels_mode width height scaleValue pixelDuration
     eventsInView = [e | e <- eventList, inView startPos endPos e]
 
 -------------------------------------------------------------------------------
--- An event is in view if either its start-edge is in view or its end-edge
--- is in view.
+-- An event is in view if one of the following hold:
+-- 1. If the start or points are in view.
+-- 2. If start point < view start AND end point > view end 
 
 inView :: Timestamp -> Timestamp -> EventDuration -> Bool
 inView viewStart viewEnd event
-  = startInView || endInView
+  = (startInView || endInView) || 
+    ((eStart < viewStart) && (eEnd > viewEnd))
     where
     eStart = timeOfEventDuration event
     eEnd   = endTimeOfEventDuration event
     startInView = eStart >= viewStart && eStart <= viewEnd
     endInView   = eEnd   >= viewStart && eEnd   <= viewEnd
+
 
 -------------------------------------------------------------------------------
 -- Check to see if view spans both sub-trees
