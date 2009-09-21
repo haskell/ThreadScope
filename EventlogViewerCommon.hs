@@ -4,6 +4,7 @@ import Data.Array
 import Data.IORef
 import Data.List
 import Debug.Trace
+import Text.Printf
 
 import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
@@ -64,33 +65,43 @@ data EventTree
 -------------------------------------------------------------------------------
 
 splitEvents :: [EventDuration] -> EventTree
-splitEvents [] = EventTreeLeaf [] -- The case for an empty list of events
-splitEvents [e1] = EventTreeLeaf [e1] -- The case for a singleton list
-splitEvents eventList
-  = if False {-duration > 0 && len > 1000-} then -- threshold for leaf size 
-      EventSplit startTime
-                 splitTime 
-                 endTime 
-                 leftSplit
-                 rightSplit
-                 len -- Number of events under this node
-                 runTime
-                 gcTime
-    else -- All events at the same time so don't split or leaf
-         -- size threshold has been reached
-      EventTreeLeaf eventList
+splitEvents es = splitEvents' es (length es) (endTimeOfEventDuration (last es))
+
+splitEvents' :: [EventDuration] -- events
+             -> Int             -- length of list above
+             -> Timestamp       -- end time of last event in the list
+             -> EventTree
+splitEvents' []   len endTime = 
+  -- if len /= 0 then error "splitEvents'0" else
+  EventTreeLeaf []   -- The case for an empty list of events
+splitEvents' es   len endTime
+  | duration == 0 || len < 2
+  = -- if len /= length es then error (printf "splitEvents'3; %d %d" len (length es))  else 
+    -- trace (printf "leaf: len = %d, startTime = %d\n" len startTime) $ 
+    EventTreeLeaf es
+  | otherwise
+  = -- trace (printf "len = %d, startTime = %d, endTime = %d, lhs_len = %d\n" len startTime endTime lhs_len) $
+    -- if len /= length es || length lhs + length rhs /= len then error (printf "splitEvents'3; %d %d %d %d %d" len (length es) (length lhs) lhs_len (length rhs))  else 
+    EventSplit startTime
+               lhs_end
+               endTime 
+               ltree
+               rtree
+               len -- Number of events under this node
+               runTime
+               gcTime
     where
-    startTime = timeOfEventDuration (head eventList)
-    endTime = timeOfEventDuration (last eventList)
+    startTime = timeOfEventDuration (head es)
     splitTime = startTime + (endTime - startTime) `div` 2
-    duration = endTime - startTime
-    len = length eventList
-    lhs = [e | e <- eventList, timeOfEventDuration e <= splitTime]
-    rhs = [e | e <- eventList, timeOfEventDuration e > splitTime]
-    leftSplit = splitEvents lhs
-    rightSplit = splitEvents rhs
-    runTime = runTimeOf leftSplit + runTimeOf rightSplit
-    gcTime = gcTimeOf leftSplit + gcTimeOf rightSplit
+    duration  = endTime - startTime
+
+    (lhs, lhs_len, lhs_end, rhs) = splitEventList es [] splitTime splitTime 0
+
+    ltree = splitEvents' lhs lhs_len lhs_end
+    rtree = splitEvents' rhs (len - lhs_len) endTime
+
+    runTime = runTimeOf ltree + runTimeOf rtree
+    gcTime  = gcTimeOf  ltree + gcTimeOf  rtree
 
 -- Splitting:
 -- [0]         -> [[0], []]
@@ -99,12 +110,37 @@ splitEvents eventList
 -- [0,1,2,3]   -> [[0,1], [2,3]]
 -- [0,1,2,3,4] -> [[0,1,2], [3,4]]
 
+splitEventList :: [EventDuration]
+               -> [EventDuration]
+               -> Timestamp
+               -> Timestamp
+               -> Int
+               -> ([EventDuration], Int, Timestamp, [EventDuration])
+splitEventList []     acc tsplit tlast len = error "splitEventList"
+splitEventList [e]    acc tsplit tlast len
+  = (reverse acc, len, tlast, [e])
+  -- if there's just one event left in the list, put it on the rhs.  This
+  -- ensures that we make some progress; otherwise we can get situations
+  -- where the left subtree is exactly the same as the current subtree,
+  -- and splitting will not terminate.
+splitEventList (e:es) acc tsplit tlast len
+  | timeOfEventDuration e <= tsplit
+  = splitEventList es (e:acc) tsplit (endTimeOfEventDuration e) (len+1)
+  | otherwise
+  = (reverse acc, len, tlast, e:es)
+
 -------------------------------------------------------------------------------
 
 runTimeOf :: EventTree -> Timestamp
 runTimeOf (EventSplit _ _ _ _ _ _ runTime _) = runTime
 runTimeOf (EventTreeLeaf eventList)
   = sum [e - s | ThreadRun _ _ s e <- eventList]
+
+-------------------------------------------------------------------------------
+
+eventTreeEvents :: EventTree -> Int
+eventTreeEvents (EventSplit _ _ _ _ _ len _ _) = len
+eventTreeEvents (EventTreeLeaf eventList) = length eventList
 
 -------------------------------------------------------------------------------
 
