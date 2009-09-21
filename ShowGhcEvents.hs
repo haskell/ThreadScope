@@ -27,7 +27,7 @@ main = do
   let imap = M.fromList [ (fromIntegral (Log.num t),t) | t <- etypes ]
 
   let pes = Log.events (Log.dat log)
-      sorted = sortEvents (reverse pes)
+      sorted = sortEvents pes
               -- the events come out reversed, and we want a stable sort
 
   printf "Events:\n"

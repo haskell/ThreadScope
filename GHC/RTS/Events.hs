@@ -305,7 +305,7 @@ getData = do
               getEvents events = do
                 mb_e <- getEvent
                 case mb_e of
-                  Nothing -> return (Data events)
+                  Nothing -> return (Data (reverse events))
                   Just e  -> getEvents (e:events)
 
 getEventBlock :: GetEvents [Event]
