@@ -12,7 +12,7 @@ author:           Donnie Jones <donnie@darthik.com>,
 maintainer:       Simon Marlow <marlowsd@gmail.com>
 build-type:       Simple
 tested-with:      GHC == 6.10.2, GHC == 6.11.20090221
-cabal-version:    >= 1.2
+cabal-version:    >= 1.6
 
 library {
   build-depends:    base       == 4.*,
