@@ -346,7 +346,8 @@ data CapEvent
 -- capability that generated it.
 sortEvents :: [Event] -> [CapEvent]
 sortEvents raw = mergesort' (compare `on` (time . ce_event)) $
-                  [ map (CapEvent cap) es | (cap, es) <- groupEvents raw ]
+                  [ [ CapEvent cap e | e <- es ] 
+                    | (cap, es) <- groupEvents raw ]
      -- sorting is made much faster by the way that the event stream is
      -- divided into blocks of events.  
      --  - All events in a block belong to a particular capability
@@ -360,7 +361,7 @@ sortEvents raw = mergesort' (compare `on` (time . ce_event)) $
 
 groupEvents :: [Event] -> [(Maybe Int, [Event])]
 groupEvents es = (Nothing, n_events) : 
-                 [ (Just (cap (head blocks)), concat (map block_events blocks))
+                 [ (Just (cap (head blocks)), concatMap block_events blocks)
                  | blocks <- groups ]
   where
    (blocks, anon_events) = partitionEithers (map separate es)
