@@ -1,0 +1,26 @@
+BUGS
+- crash when zooming in too far (negative exponent)
+- divide by zero (test overlap, zoom in, scroll right)
+- "2 events"?
+
+NAVIGATION
+- click to add a marker, zoom to the marker
+- click and drag the view
+- shift-click and drag to zoom to a region
+- draw the detailed view in the background
+- bookmarks
+  - add/remove
+  - save
+
+UI
+- remove buttons (make a toolbar?)
+
+OTHER
+- tabbed view with event list
+- overlay ETW events
+- thread-centric view rather than HEC-centric (in a tab?)
+- colour threads differently
+- thread names rather than numbers
+- live heap graph
+- spark pool size graph
+- summary analysis 
