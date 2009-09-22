@@ -99,9 +99,7 @@ checkScaleValue scale profileDrawingArea profileHScrollbar largestTimestamp
             hadj <- rangeGetAdjustment profileHScrollbar
             adjustmentSetUpper hadj (fromIntegral largestTimestamp)
             adjustmentSetPageSize hadj (fromIntegral largestTimestamp)
-            rangeSetIncrements profileHScrollbar
-              ((fromIntegral largestTimestamp) / 100)
-              ((fromIntegral largestTimestamp) / 2)
+            rangeSetIncrements profileHScrollbar 0 0
             return newScale 
         else
          return scaleValue

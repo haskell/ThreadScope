@@ -171,13 +171,13 @@ main
        -- Zoom in button
        zoomInButton <- xmlGetWidget xml castToButton "zoom_in"
        zoomInButton `onClicked`
-          zoomIn scale lastTxIORef profileHScrollbar statusbar ctx profileDrawingArea
+          zoomIn scale profileHScrollbar statusbar ctx profileDrawingArea
                                             
        ------------------------------------------------------------------------
        -- Zoom out button
        zoomOutButton <- xmlGetWidget xml castToButton "zoom_out"
        zoomOutButton `onClicked` 
-          zoomOut scale lastTxIORef profileHScrollbar statusbar ctx profileDrawingArea
+          zoomOut scale profileHScrollbar statusbar ctx profileDrawingArea
 
        ------------------------------------------------------------------------
        -- Save as PDF functionality
@@ -213,10 +213,10 @@ main
        onScroll profileDrawingArea (\(Scroll _ _ _ _ dir _ _ )
          -> do case dir of
                 ScrollUp -> do -- zoom in
-                               zoomIn scale lastTxIORef profileHScrollbar statusbar ctx profileDrawingArea
+                               zoomIn scale profileHScrollbar statusbar ctx profileDrawingArea
                                return True
                 ScrollDown -> do -- zoom out
-                               zoomOut scale lastTxIORef profileHScrollbar statusbar ctx profileDrawingArea
+                               zoomOut scale profileHScrollbar statusbar ctx profileDrawingArea
                                return True
                 _ -> return True)
                       
@@ -252,9 +252,9 @@ main
            "Left" -> scrollLeft scale profileHScrollbar statusbar ctx profileDrawingArea
            _ -> if isJust mch then
                   case fromJust mch of 
-                    '+' -> do zoomIn scale lastTxIORef profileHScrollbar statusbar ctx profileDrawingArea
+                    '+' -> do zoomIn scale profileHScrollbar statusbar ctx profileDrawingArea
                               return True
-                    '-' -> do zoomOut scale lastTxIORef profileHScrollbar statusbar ctx profileDrawingArea
+                    '-' -> do zoomOut scale profileHScrollbar statusbar ctx profileDrawingArea
                               return True
                     _   -> return True
                 else

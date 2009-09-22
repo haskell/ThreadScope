@@ -6,8 +6,6 @@ import Graphics.UI.Gtk
 
 import Data.IORef
 
-import GHC.RTS.Events 
-
 -------------------------------------------------------------------------------
 -- Zoom in works by expanding the current view such that the 
 -- left hand edge of the original view remains at the same
@@ -15,18 +13,18 @@ import GHC.RTS.Events
 -- For example, zoom into the time range 1.0 3.0
 -- produces a new view with the time range 1.0 2.0
 
-zoomIn :: IORef Double -> IORef Timestamp -> HScrollbar ->
-           Statusbar -> ContextId -> DrawingArea
-           -> IO ()
-zoomIn scale lastTxIORef profileHScrollbar statusbar ctx canvas
+zoomIn :: IORef Double -> HScrollbar ->
+          Statusbar -> ContextId -> DrawingArea
+          -> IO ()
+zoomIn scale profileHScrollbar statusbar ctx canvas
   = do scaleValue <- readIORef scale -- Double the scale value
-       lastTx <- readIORef lastTxIORef
        writeIORef scale (2*scaleValue)
        hadj <- rangeGetAdjustment profileHScrollbar -- Get horizontal scrollbar
-       hadj_value <- adjustmentGetValue hadj -- Get position of bar
        hadj_pagesize <- adjustmentGetPageSize hadj -- Get size of bar
-       hadj_upper <- adjustmentGetUpper hadj -- Get max value of scrollbar
-       adjustmentSetPageSize hadj (hadj_pagesize / 2)
+       let newPageSize = hadj_pagesize / 2
+       adjustmentSetPageSize hadj newPageSize
+       rangeSetIncrements profileHScrollbar 
+        (0.1 * newPageSize) (0.9 * newPageSize)
        statusbarPush statusbar ctx ("Scale " ++ show (2*scaleValue))           
        widgetQueueDraw canvas
 
@@ -37,18 +35,18 @@ zoomIn scale lastTxIORef profileHScrollbar statusbar ctx canvas
 -- For example, zoom out of the time range 1.0 2.0
 -- produces a new view with the time range 1.0 3.0
 
-zoomOut :: IORef Double -> IORef Timestamp -> HScrollbar -> 
+zoomOut :: IORef Double -> HScrollbar -> 
            Statusbar -> ContextId -> DrawingArea
            -> IO ()
-zoomOut scale lastTxIORef profileHScrollbar statusbar ctx canvas
+zoomOut scale profileHScrollbar statusbar ctx canvas
   = do scaleValue <- readIORef scale
-       lastTx <- readIORef lastTxIORef
        writeIORef scale (scaleValue/2)
        hadj <- rangeGetAdjustment profileHScrollbar
-       hadj_value <- adjustmentGetValue hadj
        hadj_pagesize <- adjustmentGetPageSize hadj
-       hadj_upper <- adjustmentGetUpper hadj
-       adjustmentSetPageSize hadj (hadj_pagesize * 2)
+       let newPageSize = hadj_pagesize * 2
+       adjustmentSetPageSize hadj newPageSize
+       rangeSetIncrements profileHScrollbar     
+         (0.1 * newPageSize) (0.9 * newPageSize)   
        statusbarPush statusbar ctx ("Scale " ++ show (scaleValue/2))   
        widgetQueueDraw canvas        
        
