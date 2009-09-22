@@ -74,7 +74,8 @@ main
        Just xml <- xmlNew gladePath
        window   <- xmlGetWidget xml castToWindow "main_window"
        widgetSetAppPaintable window True
-       windowSetIconFromFile window "threadscope.png"
+       logoPath <- getDataFileName "threadscope.png"
+       windowSetIconFromFile window logoPath
        
        profileDrawingArea <- xmlGetWidget xml castToDrawingArea "profileDrawingArea"
        profileHScrollbar <- xmlGetWidget xml castToHScrollbar "profileHScrollbar"

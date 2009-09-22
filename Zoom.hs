@@ -27,7 +27,6 @@ zoomIn scale lastTxIORef profileHScrollbar statusbar ctx canvas
        hadj_pagesize <- adjustmentGetPageSize hadj -- Get size of bar
        hadj_upper <- adjustmentGetUpper hadj -- Get max value of scrollbar
        adjustmentSetPageSize hadj (hadj_pagesize / 2)
-       --adjustmentSetUpper hadj (hadj_upper / 2)
        statusbarPush statusbar ctx ("Scale " ++ show (2*scaleValue))           
        widgetQueueDraw canvas
 
@@ -50,7 +49,6 @@ zoomOut scale lastTxIORef profileHScrollbar statusbar ctx canvas
        hadj_pagesize <- adjustmentGetPageSize hadj
        hadj_upper <- adjustmentGetUpper hadj
        adjustmentSetPageSize hadj (hadj_pagesize * 2)
-       --adjustmentSetUpper hadj (hadj_upper * 2)
        statusbarPush statusbar ctx ("Scale " ++ show (scaleValue/2))   
        widgetQueueDraw canvas        
        

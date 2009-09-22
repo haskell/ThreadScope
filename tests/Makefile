@@ -1,4 +1,4 @@
-GHC = /c/ghc/ghc/inplace/bin/ghc-stage2
+GHC = c:/ghc/ghc/inplace/bin/ghc-stage2
 GHC_OPTS = -O -threaded -eventlog
 
 all:	
@@ -7,20 +7,22 @@ all:
 	$(GHC) $(GHC_OPTS) --make SumEulerPar1.hs
 	$(GHC) -threaded -eventlog --make ParFib.hs
 
+run:	cleanlogs rnull rhello rsep1 rparfib1 
 
 rnull:	
-	./Null +RTS -l
+	./Null +RTS -ls
 
 rhello:	
-	./Hello +RTS -l
+	./Hello +RTS -ls
 
 rsep1:	
-	./SumEulerPar1 +RTS -l -N8
+	./SumEulerPar1 +RTS -ls -N8
 
 rparfib:
-	./ParFib +RTS -l -N2
+	./ParFib +RTS -ls -N2
 
-run:	rnull rhello rsep1
+cleanlogs:	
+		rm -rf *.eventlog
 
 clean:	
-	rm -rf *.o *.hi *.exe
+	rm -rf *.o *.hi *.exe *.eventlog

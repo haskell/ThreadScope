@@ -16,6 +16,7 @@ showAboutDialog parent
  = do aboutDialog <- aboutDialogNew
       logoPath <- getDataFileName "threadscope.png"
       logo <- pixbufNewFromFile logoPath
+      putStrLn ("logoPath = " ++ show logoPath)
       set aboutDialog [
          aboutDialogName      := "ThreadScope",
          aboutDialogVersion   := "0.2",
