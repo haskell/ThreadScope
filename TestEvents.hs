@@ -235,18 +235,18 @@ test "overlap"
        Event create    1200 (CreateThread 2),
        Event stop      1300 (StopThread 1 ThreadFinished),
 
-       Event runThread 140 (RunThread 2),
-       Event create    150 (CreateThread 3),
-       Event create    150 (CreateThread 4),
-       Event stop      150 (StopThread 2 ThreadFinished),
+       Event runThread 1400 (RunThread 2),
+       Event create    1500 (CreateThread 3),
+       Event create    1500 (CreateThread 4),
+       Event stop      1500 (StopThread 2 ThreadFinished),
 
-       Event runThread 160 (RunThread 3),
-       Event create    160 (CreateThread 5),
-       Event stop      160 (StopThread 3 ThreadFinished),
+       Event runThread 1600 (RunThread 3),
+       Event create    1600 (CreateThread 5),
+       Event stop      1600 (StopThread 3 ThreadFinished),
 
-       Event runThread 170 (RunThread 4),
-       Event create    170 (CreateThread 6),
-       Event stop      180 (StopThread 4 ThreadFinished),
+       Event runThread 1700 (RunThread 4),
+       Event create    1700 (CreateThread 6),
+       Event stop      1800 (StopThread 4 ThreadFinished),
 
        Event shutdown  3000 (Shutdown)
      ]

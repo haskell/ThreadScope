@@ -66,75 +66,89 @@ eventFromHEC hec event
 
 -------------------------------------------------------------------------------
 
-registerEventsFromFile :: Bool ->
-                          String -> IORef (Maybe [Int]) -> MaybeHECsIORef ->
-                          IORef Double -> IORef Timestamp ->
-                          Window -> 
-                          Label -> Statusbar -> ContextId -> IO ()
-registerEventsFromFile debug filename capabilitiesIORef eventArrayIORef scale
-                       lastTxIORef window 
+data ViewerState = ViewerState {
+  capabilitiesIORef :: IORef (Maybe [Int]),
+  hecsIORef         :: MaybeHECsIORef,
+  scaleIORef        :: IORef Double,
+  lastTxIORef       :: IORef Timestamp,
+  eventArrayIORef   :: IORef (Array Int GHCEvents.CapEvent)
+  }
+
+registerEventsFromFile :: Bool
+		       -> String
+		       -> ViewerState
+		       -> Window
+		       -> Label
+		       -> Statusbar
+		       -> ContextId
+		       -> IO ()
+
+registerEventsFromFile debug filename state window 
                        profileNameLabel summarybar
                        summary_ctx
   = do eitherFmt <- readEventLogFromFile filename 
        registerEvents debug filename eitherFmt 
-                   capabilitiesIORef eventArrayIORef scale
-                   lastTxIORef window 
+                   state window 
                    profileNameLabel summarybar
                    summary_ctx
        
 -------------------------------------------------------------------------------
 
+registerEventsFromTrace :: Bool
+			-> String
+			-> ViewerState
+			-> Window
+			-> Label
+			-> Statusbar
+			-> ContextId
+			-> IO ()
 
-registerEventsFromTrace :: Bool ->
-                          String -> IORef (Maybe [Int]) -> MaybeHECsIORef ->
-                          IORef Double -> IORef Timestamp ->
-                          Window -> 
-                          Label -> Statusbar -> 
-                          ContextId -> IO ()
-registerEventsFromTrace debug traceName capabilitiesIORef eventArrayIORef scale
-                       lastTxIORef window
-                       profileNameLabel summarybar
-                       summary_ctx
+registerEventsFromTrace debug traceName
   = registerEvents debug traceName (Right (testTrace traceName)) 
-                   capabilitiesIORef eventArrayIORef scale
-                   lastTxIORef window 
-                   profileNameLabel summarybar
-                   summary_ctx
        
 -------------------------------------------------------------------------------
 
-registerEvents :: Bool -> String -> Either String EventLog ->
-                  IORef (Maybe [Int]) -> MaybeHECsIORef ->
-                  IORef Double -> IORef Timestamp ->
-                  Window -> 
-                  Label -> Statusbar -> ContextId -> IO ()
-registerEvents debug name eitherFmt capabilitiesIORef eventArrayIORef scale
-                       lastTxIORef window 
+registerEvents :: Bool
+	       -> String
+	       -> Either String EventLog
+	       -> ViewerState
+	       -> Window
+	       -> Label
+	       -> Statusbar
+	       -> ContextId
+	       -> IO ()
+
+registerEvents debug name eitherFmt state window
                        profileNameLabel summarybar
                        summary_ctx
   =   case eitherFmt of
         Right fmt -> 
          do let pes = events (dat fmt)
-                sorted = groupEvents (events (dat fmt))
-                hecs = rawEventsToHECs sorted
-                lastTx = maximum (map (time.last.snd) sorted) -- Last event time i
+                groups = groupEvents (events (dat fmt))
+                hecs = rawEventsToHECs groups
+                lastTx = maximum (map (time.last.snd) groups) -- Last event time i
                 capabilities = ennumerateCapabilities pes
             -- Debugging information
             when debug $ reportEventTrees hecs
             -- Update the IORefs used for drawing callbacks
-            writeIORef capabilitiesIORef (Just capabilities)
-            writeIORef eventArrayIORef (Just hecs)
-            writeIORef lastTxIORef lastTx
-            writeIORef scale defaultScaleValue
+            writeIORef (capabilitiesIORef state) (Just capabilities)
+            writeIORef (hecsIORef state) (Just hecs)
+            writeIORef (lastTxIORef state) lastTx
+            writeIORef (scaleIORef state) defaultScaleValue
             let duration = lastTx 
-                nrEvents = length sorted
+
+            -- sort the events by time and put them in an array
+            let sorted    = sortGroups groups
+		n_events  = length sorted
+		event_arr = listArray (0, n_events-1) sorted
+            writeIORef (eventArrayIORef state) event_arr
 
             -- Adjust height to fit capabilities
             (width, _) <- widgetGetSize window
             widgetSetSizeRequest window width ((length capabilities)*gapcap+oycap+120)
 
             -- Set the status bar
-            statusbarPush summarybar summary_ctx (show nrEvents ++ " events. Duration " ++ (printf "%.3f" (((fromIntegral duration)::Double) * 1.0e-9)) ++ " seconds.")   
+            statusbarPush summarybar summary_ctx (show n_events ++ " events. Duration " ++ (printf "%.3f" (((fromIntegral duration)::Double) * 1.0e-9)) ++ " seconds.")   
 
             --- Set the label for the name of the event log
             profileNameLabel `labelSetText` name

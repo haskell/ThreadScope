@@ -1,7 +1,7 @@
 BUGS
 - crash when zooming in too far (negative exponent)
 - divide by zero (test overlap, zoom in, scroll right)
-- "2 events"?
+- vertical scrollbar slider is the wrong size
 
 NAVIGATION
 - click to add a marker, zoom to the marker
@@ -11,6 +11,7 @@ NAVIGATION
 - bookmarks
   - add/remove
   - save
+  - measure the time between two markers
 
 UI
 - remove buttons (make a toolbar?)
