@@ -69,16 +69,16 @@ eventFromHEC hec event
 registerEventsFromFile :: Bool ->
                           String -> IORef (Maybe [Int]) -> MaybeHECsIORef ->
                           IORef Double -> IORef Timestamp ->
-                          Window -> DrawingArea -> HScrollbar ->
+                          Window -> 
                           Label -> Statusbar -> ContextId -> IO ()
 registerEventsFromFile debug filename capabilitiesIORef eventArrayIORef scale
-                       lastTxIORef window profileDrawingArea profileHScrollbar
+                       lastTxIORef window 
                        profileNameLabel summarybar
                        summary_ctx
   = do eitherFmt <- readEventLogFromFile filename 
        registerEvents debug filename eitherFmt 
                    capabilitiesIORef eventArrayIORef scale
-                   lastTxIORef window profileDrawingArea profileHScrollbar
+                   lastTxIORef window 
                    profileNameLabel summarybar
                    summary_ctx
        
@@ -88,16 +88,16 @@ registerEventsFromFile debug filename capabilitiesIORef eventArrayIORef scale
 registerEventsFromTrace :: Bool ->
                           String -> IORef (Maybe [Int]) -> MaybeHECsIORef ->
                           IORef Double -> IORef Timestamp ->
-                          Window -> DrawingArea -> HScrollbar ->
+                          Window -> 
                           Label -> Statusbar -> 
                           ContextId -> IO ()
 registerEventsFromTrace debug traceName capabilitiesIORef eventArrayIORef scale
-                       lastTxIORef window profileDrawingArea profileHScrollbar
+                       lastTxIORef window
                        profileNameLabel summarybar
                        summary_ctx
   = registerEvents debug traceName (Right (testTrace traceName)) 
                    capabilitiesIORef eventArrayIORef scale
-                   lastTxIORef window profileDrawingArea profileHScrollbar
+                   lastTxIORef window 
                    profileNameLabel summarybar
                    summary_ctx
        
@@ -106,10 +106,10 @@ registerEventsFromTrace debug traceName capabilitiesIORef eventArrayIORef scale
 registerEvents :: Bool -> String -> Either String EventLog ->
                   IORef (Maybe [Int]) -> MaybeHECsIORef ->
                   IORef Double -> IORef Timestamp ->
-                  Window -> DrawingArea -> HScrollbar ->
+                  Window -> 
                   Label -> Statusbar -> ContextId -> IO ()
 registerEvents debug name eitherFmt capabilitiesIORef eventArrayIORef scale
-                       lastTxIORef window profileDrawingArea profileHScrollbar
+                       lastTxIORef window 
                        profileNameLabel summarybar
                        summary_ctx
   =   case eitherFmt of

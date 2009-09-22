@@ -113,7 +113,6 @@ main
            do registerEventsFromFile debug filename capabilitiesIORef
                                      eventArrayIORef scale lastTxIORef 
                                      window 
-                                     profileDrawingArea profileHScrollbar  
                                      profileNameLabel 
                                      summarybar
                                      summary_ctx
@@ -123,7 +122,6 @@ main
            do registerEventsFromTrace debug traceName capabilitiesIORef
                                      eventArrayIORef scale lastTxIORef 
                                      window
-                                     profileDrawingArea profileHScrollbar
                                      profileNameLabel 
                                      summarybar
                                      summary_ctx
@@ -160,7 +158,6 @@ main
                                      (fromJust filename) capabilitiesIORef
                                      eventArrayIORef scale lastTxIORef 
                                      window 
-                                     profileDrawingArea profileHScrollbar
                                      profileNameLabel 
                                      summarybar
                                      summary_ctx
@@ -238,7 +235,7 @@ main
              when (filename /= "") $
               do registerEventsFromFile  debug filename capabilitiesIORef
                                          eventArrayIORef scale lastTxIORef 
-                                         window profileDrawingArea profileHScrollbar profileNameLabel summarybar
+                                         window profileNameLabel summarybar
                                          summary_ctx
                  refresh debug profileDrawingArea
 
