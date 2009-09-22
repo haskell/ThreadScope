@@ -12,16 +12,9 @@ import Graphics.UI.Gtk.Glade
 import Graphics.Rendering.Cairo 
 import qualified Graphics.Rendering.Cairo as C
 
--- Imports for GHC Events
-import qualified GHC.RTS.Events as GHCEvents
-import GHC.RTS.Events hiding (Event)
-
-
 -- Imports from Haskell library
 import System.Environment
-import Text.Printf
 import Control.Monad
-import Data.Array
 import Data.IORef
 import Data.Maybe
 import qualified Data.Function
@@ -31,11 +24,9 @@ import Paths_threadscope
 
 -- Imports for ThreadScope
 import About
-import CairoDrawing
 import CapabilityLabels
 import DrawCapabilityProfile
 import UpdateCanvas
-import EventDuration
 import EventlogViewerCommon
 import FileDialog
 import Key
@@ -43,13 +34,12 @@ import Options
 import ReadEvents
 import Refresh
 import Scrolling
-import TestEvents
-import Ticks
 import ViewerColours
 import Zoom
 
 -------------------------------------------------------------------------------
 
+main :: IO ()
 main 
   = do -- Deal with command line argument processing.
        -- This application accepts one optional argument specifying 
@@ -195,7 +185,6 @@ main
          (width, height) <- widgetGetSize profileDrawingArea
          scaleValue <- readIORef scale
          maybeEventArray <- readIORef eventArrayIORef
-         maybeCapabilities <- readIORef capabilitiesIORef
          hadj <- rangeGetAdjustment profileHScrollbar
          hadj_value <- adjustmentGetValue hadj
          hadj_pagesize <- adjustmentGetPageSize hadj
@@ -206,13 +195,13 @@ main
          withPDFSurface (fn++".pdf") (fromIntegral width) (fromIntegral height)
            (flip renderWith $ (translate (-hadj_value) 0 >> 
                                currentView width height hadj_value hadj_pagesize 
-                               scaleValue maybeEventArray maybeCapabilities 
+                               scaleValue maybeEventArray
                                full_detail bw_mode labels_mode) >> showPage)
          withImageSurface C.FormatARGB32 (fromIntegral width) (fromIntegral height) $ \ result ->
          
            do  renderWith result (translate (-hadj_value) 0 >> 
                                   currentView width height hadj_value hadj_pagesize 
-                                  scaleValue maybeEventArray maybeCapabilities 
+                                  scaleValue maybeEventArray
                                   full_detail bw_mode labels_mode)
                surfaceWriteToPNG result (fn++".png")
          statusbarPush statusbar ctx ("Saved " ++ fn ++ ".pdf")

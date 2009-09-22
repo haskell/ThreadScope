@@ -2,9 +2,6 @@ module DrawCapabilityProfile
 where
 
 -- Imports for GTK/Glade
-import Graphics.UI.Gtk
-import Graphics.UI.Gtk.Gdk.Events
-import Graphics.UI.Gtk.Glade
 import Graphics.Rendering.Cairo 
 import qualified Graphics.Rendering.Cairo as C
 
@@ -13,22 +10,18 @@ import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
 
 -- Haskell library imports
-import System.Environment
-import Text.Printf
 import Data.List
 import qualified Data.Function
 
 import Control.Monad
-import Data.Array
-import Data.IORef
 import Data.Maybe
 
+-- import Text.Printf
+-- import Debug.Trace
+
 -- ThreadScope imports
-import About
 import CairoDrawing
-import EventDuration
 import EventlogViewerCommon
-import StartTimes
 import Ticks
 import ViewerColours
 
@@ -37,14 +30,12 @@ import ViewerColours
 -- This function draws the current view of all the HECs with Cario
 
 currentView :: Int -> Int -> Double -> Double -> Double -> 
-               Maybe HECs -> Maybe [Int] ->
-               Bool -> Bool -> Bool -> Render ()
+               Maybe HECs -> Bool -> Bool -> Bool -> Render ()
 currentView width height hadj_value hadj_pagesize scaleValue 
-            maybeEventArray maybeCapabilities full_detail bw_mode labels_mode
+            maybeEventArray full_detail bw_mode labels_mode
   = do -- If an event trace has been loaded then render it
        when (isJust maybeEventArray) $ do
          let Just hecs = maybeEventArray
-             Just capabilities = maybeCapabilities
              lastTx :: Timestamp
              lastTx = findLastTxValue hecs
              startPos :: Timestamp
@@ -59,16 +50,16 @@ currentView width height hadj_value hadj_pagesize scaleValue
          C.translate (-hadj_value*scaleValue) 0
          C.scale scaleValue 1.0
          draw_line (oxs, oy) (oxs + endPos, oy)
-         let widthInPixelsContainingTrace = truncate (fromIntegral (endPos-startPos)*scaleValue)
+         let 
              timestampFor100Pixels = truncate (100 / scaleValue) -- ns time for 100 pixels
              snappedTickDuration :: Timestamp
-             snappedTickDuration = 10^truncate(logBase 10 (fromIntegral timestampFor100Pixels))
+             snappedTickDuration = 10 ^ truncate (logBase 10 (fromIntegral timestampFor100Pixels) :: Double)
              tickWidthInPixels :: Int
              tickWidthInPixels = truncate ((fromIntegral snappedTickDuration) * scaleValue)
              firstTick :: Timestamp
              firstTick = snappedTickDuration * (startPos `div` snappedTickDuration)        
          drawTicks tickWidthInPixels height scaleValue firstTick snappedTickDuration  (10*snappedTickDuration) endPos
-         sequence_ [hecView c full_detail bw_mode labels_mode widthInPixelsContainingTrace height scaleValue pixelDuration startPos endPos eventTree | (c, eventTree) <- hecs]
+         sequence_ [hecView c full_detail bw_mode labels_mode scaleValue pixelDuration startPos endPos eventTree | (c, eventTree) <- hecs]
          C.restore
      where
      oxs = truncate ((fromIntegral ox) / scaleValue) -- x origin as Timestamp
@@ -78,64 +69,50 @@ currentView width height hadj_value hadj_pagesize scaleValue
 -------------------------------------------------------------------------------
 -- hecView draws the trace for a single HEC
 
-hecView :: Int -> Bool -> Bool -> Bool -> Int -> Int -> Double -> 
+hecView :: Int -> Bool -> Bool -> Bool -> Double -> 
            Timestamp -> Timestamp -> 
            Timestamp -> EventTree -> Render ()
-hecView c full_detail bw_mode labels_mode width height scaleValue pixelDuration
-        startPos endPos
-        event@(EventSplit s splitTime e lhs rhs nrEvents _ _) 
-        | straddleView startPos endPos s splitTime e && width <= 100 && 
+hecView c full_detail bw_mode labels_mode scale pixelDuration startPos endPos
+        (EventSplit s splitTime e _ _ nrEvents runAv gcAv) 
+        | startPos < splitTime && endPos >= splitTime && 
+	  ((e - s) `quot` pixelDuration) <= 2 && nrEvents > 2 &&
           not full_detail
   = -- View spans both left and right sub-tree.
-    drawAverageDuration c bw_mode labels_mode scaleValue event
-hecView c full_detail bw_mode labels_mode width height scaleValue pixelDuration
-        startPos endPos (EventSplit s splitTime e lhs rhs nrEvents _ _)
-  = do when (startPos <= splitTime)
-         (hecView c full_detail bw_mode labels_mode (width `div` 2) height 
-                  scaleValue pixelDuration startPos endPos lhs)
-       when (endPos > splitTime)
-         (hecView c full_detail bw_mode labels_mode (width `div` 2) height 
-                  scaleValue pixelDuration  startPos endPos rhs)
-hecView c full_detail bw_mode labels_mode width height scaleValue pixelDuration
+    -- trace (printf "hecView (average): start:%d end:%d s:%d e:%d" startPos endPos s e) $
+    drawAverageDuration c bw_mode labels_mode scale s e runAv gcAv
+
+hecView c full_detail bw_mode labels_mode scale pixelDuration startPos endPos
+       (EventSplit _ splitTime _ lhs rhs _ _ _)
+  = -- trace (printf "hecView: start:%d end:%d s:%d e:%d" startPos endPos s e) $
+    do when (startPos < splitTime) $
+         hecView c full_detail bw_mode labels_mode 
+                  scale pixelDuration startPos endPos lhs
+       when (endPos >= splitTime) $
+         hecView c full_detail bw_mode labels_mode 
+                  scale pixelDuration  startPos endPos rhs
+hecView c _full_detail bw_mode labels_mode scale pixelDuration
         startPos endPos  (EventTreeLeaf eventList)
-  = mapM_ (drawDuration c bw_mode labels_mode scaleValue pixelDuration) 
+  = mapM_ (drawDuration c bw_mode labels_mode scale pixelDuration) 
           eventsInView
     where
     eventsInView = [e | e <- eventList, inView startPos endPos e]
 
 -------------------------------------------------------------------------------
--- An event is in view if one of the following hold:
--- 1. If the start or points are in view.
--- 2. If start point < view start AND end point > view end 
+-- An event is in view if it is not outside the view.
 
 inView :: Timestamp -> Timestamp -> EventDuration -> Bool
 inView viewStart viewEnd event
-  = (startInView || endInView) || 
-    ((eStart < viewStart) && (eEnd > viewEnd))
-    where
+  = not (eStart > viewEnd || eEnd <= viewStart)
+  where
     eStart = timeOfEventDuration event
     eEnd   = endTimeOfEventDuration event
-    startInView = eStart >= viewStart && eStart <= viewEnd
-    endInView   = eEnd   >= viewStart && eEnd   <= viewEnd
-
-
--------------------------------------------------------------------------------
--- Check to see if view spans both sub-trees
-
-straddleView :: Timestamp -> Timestamp -> Timestamp -> Timestamp 
-                -> Timestamp ->  Bool
-straddleView viewStart viewEnd eStart splitTime eEnd
-  = startInLHS && endInRHS
-    where
-    startInLHS = eStart >= viewStart && eStart <= splitTime
-    endInRHS   = eEnd   > splitTime
 
 -------------------------------------------------------------------------------
 
-drawAverageDuration :: Int -> Bool -> Bool -> Double -> EventTree -> Render ()
-drawAverageDuration c bw_mode labels_mode scaleValue
-                    (EventSplit startTime splitTime endTime lhs rhs 
-                                nrEvents runAv gcAv)
+drawAverageDuration :: Int -> Bool -> Bool -> Double
+		    -> Timestamp -> Timestamp -> Timestamp -> Timestamp
+		    -> Render ()
+drawAverageDuration c bw_mode _ scaleValue startTime endTime _runAv gcAv
   = do setSourceRGBAhex (if not bw_mode then runningColour else black) 1.0
        draw_outlined_rectangle (oxs + startTime)      -- x
                       (oycap+c*gapcap)                -- y
@@ -153,8 +130,8 @@ drawAverageDuration c bw_mode labels_mode scaleValue
 
     where
     duration = endTime - startTime
-    runRatio :: Double
-    runRatio = (fromIntegral runAv) / (fromIntegral duration)
+--    runRatio :: Double
+--    runRatio = (fromIntegral runAv) / (fromIntegral duration)
     gcRatio :: Double
     gcRatio = (fromIntegral gcAv) / (fromIntegral duration)
     oxs = truncate (fromIntegral ox / scaleValue) -- x origin as Timestamp
@@ -171,7 +148,7 @@ nudgeDown n
 -------------------------------------------------------------------------------
 
 unscaledText :: Double -> String -> Render ()
-unscaledText scaleValue text
+unscaledText _scaleValue text
   = do m <- getMatrix
        identityMatrix
        textPath text
@@ -181,7 +158,7 @@ unscaledText scaleValue text
 -------------------------------------------------------------------------------
 
 textWidth :: Double -> String -> Render TextExtents
-textWidth scaleValue text
+textWidth _scaleValue text
   = do m <- getMatrix
        identityMatrix
        tExtent <- textExtents text
@@ -199,7 +176,7 @@ detailThreshold = 3000
 drawDuration :: Int -> Bool -> Bool -> Double -> Timestamp -> 
                 EventDuration -> Render ()
 
-drawDuration c bw_mode labels_mode scaleValue pixelDuration
+drawDuration c bw_mode _labels_mode scaleValue _pixelDuration
              (ThreadRun t s startTime endTime)
   = do setSourceRGBAhex (if not bw_mode then runningColour else black) 0.8
        setLineWidth (1/scaleValue)
@@ -227,7 +204,7 @@ drawDuration c bw_mode labels_mode scaleValue pixelDuration
     oxs = truncate (fromIntegral ox / scaleValue) -- x origin as Timestamp 
 
 
-drawDuration c bw_mode _ scaleValue pixelDuration (GC startTime endTime)
+drawDuration c bw_mode _ scaleValue _pixelDuration (GC startTime endTime)
   = do setSourceRGBAhex (if not bw_mode then gcColour else black) 1.0
        draw_rectangle_opt False
                       (oxs + startTime)              -- x
@@ -237,7 +214,7 @@ drawDuration c bw_mode _ scaleValue pixelDuration (GC startTime endTime)
     where
     oxs = truncate (fromIntegral ox / scaleValue) -- x origin as Timestamp
 
-drawDuration c bw_mode labels_mode scaleValue pixelDuration (EV event)
+drawDuration c _bw_mode labels_mode scaleValue pixelDuration (EV event)
   = case spec event of 
       CreateThread{thread=t} -> 
         when (pixelDuration <= detailThreshold) $ do
@@ -249,13 +226,13 @@ drawDuration c bw_mode labels_mode scaleValue pixelDuration (EV event)
                 move_to (oxs + time event, oycap+c*gapcap+barHeight+12)
                 unscaledText scaleValue (show t ++ " created")
             )
-      RunThread{thread=t} -> return ()
-      RunSpark{thread=t} -> 
+      RunThread{}  -> return ()
+      StopThread{} -> return ()
+      RunSpark{} -> 
            when (pixelDuration <= detailThreshold) $
              do setSourceRGBAhex magenta 0.8 
                 setLineWidth (3/scaleValue)
                 draw_line (oxs + time event, oycap+c*gapcap-4) (oxs + time event, oycap+c*gapcap+barHeight+4)
-      StopThread{thread=t, GHC.RTS.Events.status=s} -> return ()
       ThreadRunnable{thread=t} ->
         when (pixelDuration <= detailThreshold) $ do
            setSourceRGBAhex darkGreen 0.8 
@@ -309,13 +286,14 @@ drawDuration c bw_mode labels_mode scaleValue pixelDuration (EV event)
                )
       Shutdown{} ->
          do setSourceRGBAhex shutdownColour 0.8
-            draw_rectangle (oxs + time event) (oycap+c*gapcap) (truncate (fromIntegral barHeight / scaleValue)) barHeight
+            draw_rectangle (oxs + time event) (oycap+c*gapcap) (truncate (fromIntegral barHeight / scaleValue) :: Int) barHeight
       _ -> return () 
     where
     oxs = truncate (fromIntegral ox / scaleValue) -- x origin as Timestamp
 
 -------------------------------------------------------------------------------
 
+eScale :: GHCEvents.Event -> Double -> Int
 eScale event scaleValue
   = truncate ((fromIntegral (time event) * scaleValue))
 
@@ -333,5 +311,6 @@ showThreadStopStatus ThreadYielding = "yielding"
 showThreadStopStatus ThreadBlocked  = "blocked"
 showThreadStopStatus ThreadFinished = "finished"
 showThreadStopStatus ForeignCall    = "foreign call"
+showThreadStopStatus _              = "unknown status"
 
 -------------------------------------------------------------------------------

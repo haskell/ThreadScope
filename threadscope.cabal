@@ -5,8 +5,8 @@ License:             BSD3
 License-file:        LICENSE
 Copyright:           Released under the GHC license
 Author:              Donnie Jones, Simon Marlow, Satnam Singh
-Maintainer:          s.singh@ieee.org
-Bug-reports:	     s.singh@ieee.org
+Maintainer:          Satnam Singh <s.singh@ieee.org>
+Bug-reports:	     Satnam Singh <s.singh@ieee.org>
 Stability:	     Pre-release version for review.
 Build-Type:          Simple
 Cabal-Version:       >=1.2
@@ -14,7 +14,7 @@ Data-files:	     threadscope.glade, threadscope.png
 Executable threadscope
   Main-is:           ThreadScope.hs
   Build-Depends:     base, gtk, cairo, binary, array, glade, ghc-events
+  ghc-options:         -Wall -fno-warn-type-defaults -fno-warn-name-shadowing
 source-repository head
   type:     darcs
-  location: http://darcs.haskell.org/ThreadScope/
-
+  location: http://code.haskell.org/ThreadScope/

@@ -18,6 +18,7 @@ data EventDuration
   = ThreadRun ThreadId ThreadStopStatus Timestamp Timestamp
   | GC Timestamp Timestamp
   | EV GHCEvents.Event
+  deriving Show
 
 -------------------------------------------------------------------------------
 -- The start time of an event.
@@ -61,11 +62,12 @@ data EventTree
                Timestamp -- The total amount of time spent running a thread
                Timestamp -- The total amount of time spend in GC
   | EventTreeLeaf [EventDuration]
+  deriving Show
 
 -------------------------------------------------------------------------------
 
 splitEvents :: [EventDuration] -> EventTree
-splitEvents es = splitEvents' es (length es) (endTimeOfEventDuration (last es))
+splitEvents es = let tree = splitEvents' es (length es) (endTimeOfEventDuration (last es)) in {- trace (show tree) $ -} tree
 
 splitEvents' :: [EventDuration] -- events
              -> Int             -- length of list above
@@ -83,7 +85,7 @@ splitEvents' es   len endTime
   = -- trace (printf "len = %d, startTime = %d, endTime = %d, lhs_len = %d\n" len startTime endTime lhs_len) $
     -- if len /= length es || length lhs + length rhs /= len then error (printf "splitEvents'3; %d %d %d %d %d" len (length es) (length lhs) lhs_len (length rhs))  else 
     EventSplit startTime
-               lhs_end
+               lhs_end -- or timeOfEventDuration (head rhs)?
                endTime 
                ltree
                rtree

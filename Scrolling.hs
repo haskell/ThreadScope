@@ -23,7 +23,7 @@ scrollLeft scale profileHScrollbar statusbar ctx canvas
        hadj_value <- adjustmentGetValue hadj
        hadj_pagesize <- adjustmentGetPageSize hadj
        hadj_upper <- adjustmentGetUpper hadj
-       let newValue = 0 `max` (hadj_value - hadj_pagesize)
+       let newValue = 0 `max` (hadj_value - hadj_pagesize/2)
        adjustmentSetValue hadj newValue  
        adjustmentValueChanged hadj       
        -- refresh canvas
@@ -39,7 +39,7 @@ scrollRight scale profileHScrollbar statusbar ctx canvas
        hadj_value <- adjustmentGetValue hadj
        hadj_pagesize <- adjustmentGetPageSize hadj
        hadj_upper <- adjustmentGetUpper hadj
-       let newValue = (hadj_upper - hadj_pagesize) `min` (hadj_value + hadj_pagesize)
+       let newValue = (hadj_upper - hadj_pagesize) `min` (hadj_value + hadj_pagesize/2)
        adjustmentSetValue hadj newValue 
        adjustmentValueChanged hadj        
        -- refresh canvas

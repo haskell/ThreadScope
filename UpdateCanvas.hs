@@ -5,8 +5,6 @@ where
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Gdk.Events
 import Graphics.UI.Gtk.Glade
-import Graphics.Rendering.Cairo 
-import qualified Graphics.Rendering.Cairo as C
 
 -- Imports for GHC Events
 import qualified GHC.RTS.Events as GHCEvents
@@ -14,20 +12,13 @@ import GHC.RTS.Events hiding (Event)
 
 -- Haskell library imports
 import Control.Monad
-import Data.Array
 import Data.IORef
 import Data.Maybe
 import Text.Printf 
 
 -- ThreadScope imports
-import About
 import DrawCapabilityProfile
-import CairoDrawing
-import EventDuration
 import EventlogViewerCommon
-import StartTimes
-import Ticks
-import ViewerColours
 
 -------------------------------------------------------------------------------
 -- |The 'updateCanvas' function is called when an expose event
@@ -46,12 +37,10 @@ updateProfileDrawingArea debug profileDrawingArea profileHScrollbar
              capabilitiesIORef eventArrayIORef
              rect -- event@(Expose _ area region count)
    = do when debug $ putStrLn (show rect)
-        maybeCapabilities <- readIORef capabilitiesIORef
         maybeEventArray <- readIORef eventArrayIORef
         -- Check to see if an event trace has been loaded
         when (isJust maybeEventArray) $
-           do let Just capabilities = maybeCapabilities
-                  Just hecs = maybeEventArray
+           do let Just hecs = maybeEventArray
               -- Get state information from user-interface components
               bw_mode <- toggleButtonGetActive bw_button
               full_detail <- checkMenuItemGetActive full_detail_menu_item
@@ -88,9 +77,7 @@ updateProfileDrawingArea debug profileDrawingArea profileHScrollbar
               drawWindowClear win
               renderWithDrawable win (currentView width height hadj_value 
                  hadj_pagesize scaleValue maybeEventArray
-                 maybeCapabilities full_detail bw_mode labels_mode)
-      where
-      Rectangle x y _ _ = rect 
+                 full_detail bw_mode labels_mode)
 updateProfileDrawingArea debug _ _ _ _ _ _ _ _ _ _ other
    = when debug $ putStrLn ("Ignorning rect " ++ show other) -- Debug rendering errors
 
@@ -111,7 +98,6 @@ checkScaleValue scale profileDrawingArea profileHScrollbar largestTimestamp
             -- Configure the horizontal scrollbar units to correspond to
             -- Timespec values
             hadj <- rangeGetAdjustment profileHScrollbar
-            hadj_upper <- adjustmentGetUpper hadj
             adjustmentSetUpper hadj (fromIntegral largestTimestamp)
             adjustmentSetPageSize hadj (fromIntegral largestTimestamp)
             rangeSetIncrements profileHScrollbar
