@@ -16,10 +16,9 @@ showAboutDialog parent
  = do aboutDialog <- aboutDialogNew
       logoPath <- getDataFileName "threadscope.png"
       logo <- pixbufNewFromFile logoPath
-      putStrLn ("logoPath = " ++ show logoPath)
       set aboutDialog [
          aboutDialogName      := "ThreadScope",
-         aboutDialogVersion   := "0.2",
+         aboutDialogVersion   := "0.1",
          aboutDialogCopyright := "Released under the GHC license.",
          aboutDialogComments  := "A GHC eventlog profile viewer",
          aboutDialogAuthors   := ["Donnie Jones (donnie@darthik.com)",
