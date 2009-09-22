@@ -226,6 +226,34 @@ test "tick5"
 
 -------------------------------------------------------------------------------
 
+test "overlap"
+  = [-- A thread from 2s to 3s
+     Event startup 0 (Startup 1),
+     Event blockMarker 0 $ EventBlock 3000 0 [
+       Event create    1000 (CreateThread 1),
+       Event runThread 1100 (RunThread 1),
+       Event create    1200 (CreateThread 2),
+       Event stop      1300 (StopThread 1 ThreadFinished),
+
+       Event runThread 140 (RunThread 2),
+       Event create    150 (CreateThread 3),
+       Event create    150 (CreateThread 4),
+       Event stop      150 (StopThread 2 ThreadFinished),
+
+       Event runThread 160 (RunThread 3),
+       Event create    160 (CreateThread 5),
+       Event stop      160 (StopThread 3 ThreadFinished),
+
+       Event runThread 170 (RunThread 4),
+       Event create    170 (CreateThread 6),
+       Event stop      180 (StopThread 4 ThreadFinished),
+
+       Event shutdown  3000 (Shutdown)
+     ]
+    ]
+
+-------------------------------------------------------------------------------
+
 test _ = []
 
 -------------------------------------------------------------------------------

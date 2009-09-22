@@ -16,7 +16,6 @@ import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
 
 import EventlogViewerCommon
-import StartTimes
 
 -------------------------------------------------------------------------------
 
@@ -39,18 +38,45 @@ eventArrayToDuration' idx eventArray
       []
     else
       case spec event of
-        StopThread{thread=t, GHC.RTS.Events.status=s}
-                      -> runBar t s : rest
-        EndGC         -> GC gcStartTime (time event) : rest
-        RunThread _   -> rest
-        StartGC       -> rest
-        otherEvent    -> EV event : rest
+        RunThread{thread=t} -> runDuration t : rest
+        StopThread{}  -> rest
+        StartGC       -> gcDuration : rest
+        EndGC{}       -> rest
+        _otherEvent   -> EV event : rest
     where
     event = eventArray!idx
     rest = eventArrayToDuration' (idx+1) eventArray
     (_, lastIdx) = bounds eventArray
-    startTime = findRunThreadTime eventArray (idx-1)
-    runBar t s = ThreadRun t s startTime (time event)
-    gcStartTime = findStartGCTime eventArray (idx-1)
+
+    runDuration t = ThreadRun t s (time event) endTime
+       where (endTime, s) = findRunThreadTime eventArray (idx+1)
+
+    gcDuration = GC (time event) endTime
+       where endTime = findGCEndTime eventArray (idx+1)
+
+-------------------------------------------------------------------------------
+
+findRunThreadTime :: Array Int GHCEvents.Event -> Int
+		  -> (Timestamp, ThreadStopStatus)
+findRunThreadTime eventArray idx
+  | idx >= lastIdx = error "findRunThreadTime"
+  | otherwise
+  = case spec (eventArray!idx) of
+      StopThread{status=s} -> (time (eventArray!idx), s)
+      _                    -> findRunThreadTime eventArray (idx+1)
+  where
+   (_, lastIdx) = bounds eventArray
+
+-------------------------------------------------------------------------------
+
+findGCEndTime :: Array Int GHCEvents.Event -> Int -> Timestamp
+findGCEndTime eventArray idx
+  | idx >= lastIdx = error "findRunThreadTime"
+  | otherwise
+  = case spec (eventArray!idx) of
+      EndGC -> time (eventArray!idx)
+      _     -> findGCEndTime eventArray (idx+1)
+  where
+   (_, lastIdx) = bounds eventArray
 
 -------------------------------------------------------------------------------

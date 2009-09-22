@@ -4,7 +4,6 @@ where
 -- Imports for GTK/Glade
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Gdk.Events
-import Graphics.UI.Gtk.Glade
 
 -- Imports for GHC Events
 import qualified GHC.RTS.Events as GHCEvents

@@ -5,7 +5,6 @@
 
 module Ticks
 where
-import Graphics.UI.Gtk
 import EventlogViewerCommon
 import Graphics.Rendering.Cairo 
 import qualified Graphics.Rendering.Cairo as C
