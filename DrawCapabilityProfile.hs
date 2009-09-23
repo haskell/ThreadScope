@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 module DrawCapabilityProfile
 where
 
@@ -72,7 +73,7 @@ currentView width height hadj_value hadj_pagesize scaleValue
 hecView :: Int -> Bool -> Bool -> Bool -> Double -> 
            Timestamp -> Timestamp -> 
            Timestamp -> EventTree -> Render ()
-hecView c full_detail bw_mode labels_mode scale pixelDuration startPos endPos
+hecView !c full_detail bw_mode labels_mode scale pixelDuration !startPos !endPos
         (EventSplit s splitTime e _ _ nrEvents runAv gcAv) 
         | startPos < splitTime && endPos >= splitTime && 
 	  ((e - s) `quot` pixelDuration) <= 2 && nrEvents > 2 &&
