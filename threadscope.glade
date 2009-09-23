@@ -191,7 +191,7 @@
 	      <property name="visible">True</property>
 	      <property name="label" translatable="yes">100%</property>
 	      <property name="use_underline">True</property>
-	      <property name="stock_id">gtk-fullscreen</property>
+	      <property name="stock_id">gtk-zoom-fit</property>
 	      <property name="visible_horizontal">True</property>
 	      <property name="visible_vertical">True</property>
 	      <property name="is_important">False</property>
