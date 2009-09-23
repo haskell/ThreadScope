@@ -51,9 +51,7 @@ eventsToTree events
   = trace ("durations: " ++ show (length durations) ++ "\n" ++ "countNodes: " ++ show (countNodes tree)) $ tree
     where
     tree = splitEvents durations
-    durations = eventArrayToDuration eventsAsArray
-    eventsAsArray = listArray (0, nrEvents-1) events
-    nrEvents = length events
+    durations = eventsToDurations events
 
 -------------------------------------------------------------------------------
 

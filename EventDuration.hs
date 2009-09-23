@@ -6,10 +6,7 @@
 -- This module supports a duration-based data-type to represent thread
 -- execution and GC information.
 
-module EventDuration
-where
-
-import Data.Array
+module EventDuration ( eventsToDurations ) where
 
 -- Imports for GHC Events
 import qualified GHC.RTS.Events as GHCEvents
@@ -19,64 +16,37 @@ import EventlogViewerCommon
 
 -------------------------------------------------------------------------------
 
-eventArrayToDurationArray :: Array Int GHCEvents.Event -> EventArray
-eventArrayToDurationArray eventArray
-  = listArray (0, length durationList-1)   durationList
-    where
-    durationList =  eventArrayToDuration eventArray
-
--------------------------------------------------------------------------------
-
-eventArrayToDuration :: Array Int GHCEvents.Event -> [EventDuration]
-eventArrayToDuration = eventArrayToDuration' 0
-
--------------------------------------------------------------------------------
-
-eventArrayToDuration' :: Int -> Array Int GHCEvents.Event -> [EventDuration]
-eventArrayToDuration' idx eventArray 
-  = if idx > lastIdx then
-      []
-    else
-      case spec event of
-        RunThread{thread=t} -> runDuration t : rest
-        StopThread{}  -> rest
-        StartGC       -> gcDuration : rest
-        EndGC{}       -> rest
-        _otherEvent   -> EV event : rest
-    where
-    event = eventArray!idx
-    rest = eventArrayToDuration' (idx+1) eventArray
-    (_, lastIdx) = bounds eventArray
+eventsToDurations :: [GHCEvents.Event] -> [EventDuration]
+eventsToDurations []     = []
+eventsToDurations (event : events) =
+  case spec event of
+     RunThread{thread=t} -> runDuration t : rest
+     StopThread{}  -> rest
+     StartGC       -> GC (time event) (findGCEndTime events) : rest
+     EndGC{}       -> rest
+     _otherEvent   -> EV event : rest
+  where
+    rest = eventsToDurations events
 
     runDuration t = ThreadRun t s (time event) endTime
-       where (endTime, s) = findRunThreadTime eventArray (idx+1)
-
-    gcDuration = GC (time event) endTime
-       where endTime = findGCEndTime eventArray (idx+1)
+       where (endTime, s) = findRunThreadTime events
 
 -------------------------------------------------------------------------------
 
-findRunThreadTime :: Array Int GHCEvents.Event -> Int
-		  -> (Timestamp, ThreadStopStatus)
-findRunThreadTime eventArray idx
-  | idx >= lastIdx = error "findRunThreadTime"
-  | otherwise
-  = case spec (eventArray!idx) of
-      StopThread{status=s} -> (time (eventArray!idx), s)
-      _                    -> findRunThreadTime eventArray (idx+1)
-  where
-   (_, lastIdx) = bounds eventArray
+findRunThreadTime :: [GHCEvents.Event] -> (Timestamp, ThreadStopStatus)
+findRunThreadTime [] = error "findRunThreadTime"
+findRunThreadTime (e : es)
+  = case spec e of
+      StopThread{status=s} -> (time e, s)
+      _                    -> findRunThreadTime es
 
 -------------------------------------------------------------------------------
 
-findGCEndTime :: Array Int GHCEvents.Event -> Int -> Timestamp
-findGCEndTime eventArray idx
-  | idx >= lastIdx = error "findRunThreadTime"
-  | otherwise
-  = case spec (eventArray!idx) of
-      EndGC -> time (eventArray!idx)
-      _     -> findGCEndTime eventArray (idx+1)
-  where
-   (_, lastIdx) = bounds eventArray
+findGCEndTime :: [GHCEvents.Event] -> Timestamp
+findGCEndTime [] = error "findRunThreadTime"
+findGCEndTime (e : es)
+  = case spec e of
+      EndGC -> time e
+      _     -> findGCEndTime es
 
 -------------------------------------------------------------------------------
