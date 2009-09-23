@@ -2,6 +2,7 @@ BUGS
 - crash when zooming in too far (negative exponent)
 - divide by zero (test overlap, zoom in, scroll right)
 - vertical scrollbar slider is the wrong size
+- when there are no events, we crash in last
 
 NAVIGATION
 - click to add a marker, zoom to the marker
@@ -15,9 +16,14 @@ NAVIGATION
 
 UI
 - remove buttons (make a toolbar?)
+- move filename into the title bar
+- render averaged areas properly
+- event list view
+  - respond to mouse wheel
+  - respond to page up / page down / arrows
+  - interact with bookmarks  
 
 OTHER
-- tabbed view with event list
 - overlay ETW events
 - thread-centric view rather than HEC-centric (in a tab?)
 - colour threads differently
