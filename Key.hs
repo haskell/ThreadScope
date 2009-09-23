@@ -15,7 +15,6 @@ import Graphics.UI.Gtk.Gdk.Events
 import Graphics.Rendering.Cairo 
 import qualified Graphics.Rendering.Cairo as C
 
-import CairoDrawing
 import EventlogViewerCommon
 import ViewerColours
 
