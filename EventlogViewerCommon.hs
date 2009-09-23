@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 module EventlogViewerCommon
 where
 import Data.IORef
@@ -15,8 +16,14 @@ import GHC.RTS.Events hiding (Event)
 -- by a single constructor identifying their start and end points.
 
 data EventDuration
-  = ThreadRun ThreadId ThreadStopStatus Timestamp Timestamp
-  | GC Timestamp Timestamp
+  = ThreadRun {-#UNPACK#-}!ThreadId 
+              ThreadStopStatus
+              {-#UNPACK#-}!Timestamp
+              {-#UNPACK#-}!Timestamp
+
+  | GC {-#UNPACK#-}!Timestamp
+       {-#UNPACK#-}!Timestamp
+
   | EV GHCEvents.Event
   deriving Show
 
@@ -57,16 +64,16 @@ endTimeOfEventDuration ed
 
 data EventTree
   = EventSplit
-        Timestamp -- The start time of this run-span
-	Timestamp -- The time used to split the events into two parts
-	Timestamp -- The end time of this run-span
+        {-#UNPACK#-}!Timestamp -- The start time of this run-span
+	{-#UNPACK#-}!Timestamp -- The time used to split the events into two parts
+	{-#UNPACK#-}!Timestamp -- The end time of this run-span
 	EventTree -- The LHS split; all events lie completely between
                   -- start and split
         EventTree -- The RHS split; all events lie completely between
 	          -- split and end
-        Int       -- The number of events under this node
-        Timestamp -- The total amount of time spent running a thread
-        Timestamp -- The total amount of time spend in GC
+        {-#UNPACK#-}!Int       -- The number of events under this node
+        {-#UNPACK#-}!Timestamp -- The total amount of time spent running a thread
+        {-#UNPACK#-}!Timestamp -- The total amount of time spend in GC
 
   | EventTreeLeaf
         [EventDuration]
@@ -137,7 +144,7 @@ splitEventList :: [EventDuration]
                -> ([EventDuration], Int, Timestamp, [EventDuration])
 splitEventList []     acc _tsplit tmax _tright len 
   = (reverse acc, len, tmax, [])
-splitEventList (e:es) acc tsplit tmax tright len
+splitEventList (e:es) acc !tsplit !tmax !tright !len
   | tend == tright
   = (reverse acc, len, tmax, e:es)
       -- if the end of this event touches the right-hand boundary, then
