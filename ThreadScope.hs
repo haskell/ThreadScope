@@ -19,7 +19,6 @@ import Data.IORef
 import Data.Maybe
 import qualified Data.Function
 import Data.List
-import Data.Array
 
 import Paths_threadscope
 
