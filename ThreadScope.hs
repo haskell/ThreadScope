@@ -88,16 +88,14 @@ main
 
        ------------------------------------------------------------------------
        --- Get the label for the name of the event log
-       profileNameLabel <- xmlGetWidget xml castToLabel "profile_name"
- 
 
        -- B&W toggle button
-       bw_button <- xmlGetWidget xml castToToggleButton "black_and_white"
-       bw_button `onToggled` do refresh debug profileDrawingArea
+       bw_button <- xmlGetWidget xml castToCheckMenuItem "black_and_white"
+       bw_button `onToggle` do refresh debug profileDrawingArea
 
        -- No Labels toggle button
-       labels_button <- xmlGetWidget xml castToToggleButton "labels"
-       labels_button `onToggled` do refresh debug profileDrawingArea
+       labels_button <- xmlGetWidget xml castToToggleToolButton "labels"
+       labels_button `onToolButtonToggled` do refresh debug profileDrawingArea
 
        -- IORefs are used to communicate informaiton about the eventlog
        -- to the callback functions for windows, buttons etc.
@@ -119,7 +117,6 @@ main
        when (filename /= "") $
            do registerEventsFromFile debug filename state
                                      window 
-                                     profileNameLabel 
                                      summarybar
                                      summary_ctx
 
@@ -127,7 +124,6 @@ main
        when (traceName /= "") $
            do registerEventsFromTrace debug traceName state
                                      window
-                                     profileNameLabel 
                                      summarybar
                                      summary_ctx
 
@@ -162,7 +158,6 @@ main
            do registerEventsFromFile debug 
                                      (fromJust filename) state
                                      window 
-                                     profileNameLabel 
                                      summarybar
                                      summary_ctx
               refresh debug profileDrawingArea
@@ -170,14 +165,14 @@ main
                                      
        ------------------------------------------------------------------------
        -- Zoom in button
-       zoomInButton <- xmlGetWidget xml castToButton "zoom_in"
-       zoomInButton `onClicked`
+       zoomInButton <- xmlGetWidget xml castToToolButton "zoom_in"
+       zoomInButton `onToolButtonClicked`
           zoomIn scale_ref profileHScrollbar statusbar ctx profileDrawingArea
                                             
        ------------------------------------------------------------------------
        -- Zoom out button
-       zoomOutButton <- xmlGetWidget xml castToButton "zoom_out"
-       zoomOutButton `onClicked` 
+       zoomOutButton <- xmlGetWidget xml castToToolButton "zoom_out"
+       zoomOutButton `onToolButtonClicked`
           zoomOut scale_ref profileHScrollbar statusbar ctx profileDrawingArea
 
        ------------------------------------------------------------------------
@@ -191,9 +186,9 @@ main
          hadj_value <- adjustmentGetValue hadj
          hadj_pagesize <- adjustmentGetPageSize hadj
          fn <- readIORef filenameRef
-         bw_mode <- toggleButtonGetActive bw_button
+         bw_mode <- checkMenuItemGetActive bw_button
          full_detail <- checkMenuItemGetActive full_detail_menu_item
-         labels_mode <- toggleButtonGetActive labels_button
+         labels_mode <- toggleToolButtonGetActive labels_button
          withPDFSurface (fn++".pdf") (fromIntegral width) (fromIntegral height)
            (flip renderWith $ (translate (-hadj_value) 0 >> 
                                currentView width height hadj_value hadj_pagesize 
@@ -223,8 +218,8 @@ main
                       
        ------------------------------------------------------------------------
        -- Default scale functionality
-       defaultScaleButton <- xmlGetWidget xml castToButton "default_scale"
-       onClicked defaultScaleButton $
+       defaultScaleButton <- xmlGetWidget xml castToToolButton "default_zoom"
+       onToolButtonClicked defaultScaleButton $
           do writeIORef scale_ref 0.1 
              statusbarPush statusbar ctx ("Scale 0.1")
              --hadj <- viewportGetHAdjustment viewport 
@@ -233,12 +228,12 @@ main
 
        ------------------------------------------------------------------------
        -- Reload functionality
-       reloadButton <- xmlGetWidget xml castToButton "reload_button"
-       onClicked reloadButton $
+       reloadButton <- xmlGetWidget xml castToToolButton "reload_button"
+       onToolButtonClicked reloadButton $
           do filename <- readIORef filenameRef
              when (filename /= "") $
               do registerEventsFromFile  debug filename state
-                                         window profileNameLabel summarybar
+                                         window summarybar
                                          summary_ctx
                  refresh debug profileDrawingArea
 

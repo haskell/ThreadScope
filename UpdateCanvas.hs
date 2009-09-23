@@ -26,8 +26,8 @@ import EventlogViewerCommon
 
 updateProfileDrawingArea :: Bool -> DrawingArea -> HScrollbar ->
                 Statusbar -> 
-                CheckMenuItem -> ToggleButton ->
-                ToggleButton -> ContextId ->  IORef Double ->
+                CheckMenuItem -> CheckMenuItem ->
+                ToggleToolButton -> ContextId ->  IORef Double ->
                 IORef (Maybe [Int])  -> MaybeHECsIORef -> Rectangle ->
                 IO ()
 updateProfileDrawingArea debug profileDrawingArea profileHScrollbar
@@ -41,9 +41,9 @@ updateProfileDrawingArea debug profileDrawingArea profileHScrollbar
         when (isJust maybeEventArray) $
            do let Just hecs = maybeEventArray
               -- Get state information from user-interface components
-              bw_mode <- toggleButtonGetActive bw_button
+              bw_mode <- checkMenuItemGetActive bw_button
               full_detail <- checkMenuItemGetActive full_detail_menu_item
-              labels_mode <- toggleButtonGetActive labels_button
+              labels_mode <- toggleToolButtonGetActive labels_button
               win <- widgetGetDrawWindow profileDrawingArea
               (width,height) <- widgetGetSize profileDrawingArea
               when debug $ do

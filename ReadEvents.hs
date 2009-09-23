@@ -1,5 +1,7 @@
-module ReadEvents
-where
+module ReadEvents ( 
+    ViewerState(..), 
+    registerEventsFromFile, registerEventsFromTrace
+  ) where
 
 import Data.Array
 import qualified Data.Function
@@ -7,6 +9,7 @@ import Data.IORef
 import Data.List
 import EventDuration
 import Text.Printf
+import System.FilePath
 
 import EventlogViewerCommon
 import ReportEventTree
@@ -41,26 +44,18 @@ import Debug.Trace
 
 rawEventsToHECs :: [(Maybe Int, [GHCEvents.Event])] -> HECs
 rawEventsToHECs eventList
-  = trace (show (map fst r)) $ r
+  = -- trace (show eventList) $
+    r
   where r= [ (hec, eventsToTree events) | (Just hec, events) <- eventList ]
     
 -------------------------------------------------------------------------------
 
 eventsToTree :: [GHCEvents.Event] -> EventTree
 eventsToTree events
-  = trace ("durations: " ++ show (length durations) ++ "\n" ++ "countNodes: " ++ show (countNodes tree)) $ tree
+  = trace ("events: " ++ show (length events) ++ "\ndurations: " ++ show (length durations)) $ tree
     where
     tree = splitEvents durations
     durations = eventsToDurations events
-
--------------------------------------------------------------------------------
-
-eventFromHEC :: Int -> GHCEvents.Event -> Bool
-eventFromHEC hec event 
-  = case spec event of
-      UnknownEvent -> False
-      Message{}    -> False
-      _            -> cap (spec event) == hec
 
 -------------------------------------------------------------------------------
 
@@ -76,18 +71,17 @@ registerEventsFromFile :: Bool
 		       -> String
 		       -> ViewerState
 		       -> Window
-		       -> Label
 		       -> Statusbar
 		       -> ContextId
 		       -> IO ()
 
 registerEventsFromFile debug filename state window 
-                       profileNameLabel summarybar
+                       summarybar
                        summary_ctx
   = do eitherFmt <- readEventLogFromFile filename 
        registerEvents debug filename eitherFmt 
-                   state window 
-                   profileNameLabel summarybar
+                   state window
+                   summarybar
                    summary_ctx
        
 -------------------------------------------------------------------------------
@@ -96,7 +90,6 @@ registerEventsFromTrace :: Bool
 			-> String
 			-> ViewerState
 			-> Window
-			-> Label
 			-> Statusbar
 			-> ContextId
 			-> IO ()
@@ -111,13 +104,12 @@ registerEvents :: Bool
 	       -> Either String EventLog
 	       -> ViewerState
 	       -> Window
-	       -> Label
 	       -> Statusbar
 	       -> ContextId
 	       -> IO ()
 
 registerEvents debug name eitherFmt state window
-                       profileNameLabel summarybar
+                       summarybar
                        summary_ctx
   =   case eitherFmt of
         Right fmt -> 
@@ -147,9 +139,7 @@ registerEvents debug name eitherFmt state window
 
             -- Set the status bar
             statusbarPush summarybar summary_ctx (show n_events ++ " events. Duration " ++ (printf "%.3f" (((fromIntegral duration)::Double) * 1.0e-9)) ++ " seconds.")   
-
-            --- Set the label for the name of the event log
-            profileNameLabel `labelSetText` name
+            windowSetTitle window ("ThreadScope - " ++ takeFileName name)
 
         Left msg -> putStrLn msg
        

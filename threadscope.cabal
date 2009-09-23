@@ -13,7 +13,9 @@ Cabal-Version:       >=1.2
 Data-files:	     threadscope.glade, threadscope.png
 Executable threadscope
   Main-is:           ThreadScope.hs
-  Build-Depends:     base, gtk, cairo, binary, array, glade, ghc-events
+  Build-Depends:     base, 
+                     gtk, cairo, glade,
+                     binary, array, ghc-events, mtl, filepath
   ghc-options:         -Wall -fno-warn-type-defaults -fno-warn-name-shadowing
 source-repository head
   type:     darcs

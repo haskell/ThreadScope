@@ -3,6 +3,7 @@ BUGS
 - divide by zero (test overlap, zoom in, scroll right)
 - vertical scrollbar slider is the wrong size
 - when there are no events, we crash in last
+- 100% button doesn't work
 
 NAVIGATION
 - click to add a marker, zoom to the marker
@@ -15,13 +16,15 @@ NAVIGATION
   - measure the time between two markers
 
 UI
-- remove buttons (make a toolbar?)
-- move filename into the title bar
 - render averaged areas properly
+- indicate why a thread stopped somehow
+- indicate when one thread wakes up another thread
 - event list view
-  - respond to mouse wheel
   - respond to page up / page down / arrows
   - interact with bookmarks  
+- left pane for (bookmarks, list of threads)
+  - click on thread(s) to narrow the display to just those threads
+  - right-button menu on thread allows to jump to thread creation/completion
 
 OTHER
 - overlay ETW events
