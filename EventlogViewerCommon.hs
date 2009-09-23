@@ -1,6 +1,5 @@
 module EventlogViewerCommon
 where
-import Data.Array
 import Data.IORef
 import Data.List
 
@@ -191,10 +190,6 @@ lastEventTime (EventTreeLeaf eventList)
   = endTimeOfEventDuration (last eventList)
 
 -------------------------------------------------------------------------------
-
-
--- An EventArray stores events for a single HEC
-type EventArray = Array Int EventDuration
 
 -- The HEC data structure is a list of pairs where each pair records
 -- the unqiue ID of a HEC and its event information represented
