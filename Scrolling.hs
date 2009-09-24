@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS -fno-warn-unused-matches #-}
 -------------------------------------------------------------------------------
 --- $Id: Scrolling.hs#2 2009/03/30 13:46:44 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/Scrolling.hs $
@@ -11,14 +13,13 @@ import Graphics.UI.Gtk
 
 import Data.IORef
 
-import Refresh
+import State
 
 -------------------------------------------------------------------------------
 
-scrollLeft :: IORef Double -> HScrollbar -> Statusbar -> ContextId -> DrawingArea
-           -> IO Bool
-scrollLeft scale profileHScrollbar statusbar ctx canvas
-  = do scaleValue <- readIORef scale
+scrollLeft :: ViewerState -> IO Bool
+scrollLeft state@ViewerState{..}
+  = do scaleValue <- readIORef scaleIORef
        hadj <- rangeGetAdjustment profileHScrollbar
        hadj_value <- adjustmentGetValue hadj
        hadj_pagesize <- adjustmentGetPageSize hadj
@@ -26,15 +27,13 @@ scrollLeft scale profileHScrollbar statusbar ctx canvas
        let newValue = 0 `max` (hadj_value - hadj_pagesize/2)
        adjustmentSetValue hadj newValue  
        adjustmentValueChanged hadj       
-       -- refresh canvas
        return True
 
 -------------------------------------------------------------------------------
 
-scrollRight :: IORef Double -> HScrollbar -> Statusbar -> ContextId -> DrawingArea
-           -> IO Bool
-scrollRight scale profileHScrollbar statusbar ctx canvas
-  = do scaleValue <- readIORef scale
+scrollRight :: ViewerState -> IO Bool
+scrollRight state@ViewerState{..}
+  = do scaleValue <- readIORef scaleIORef
        hadj <- rangeGetAdjustment profileHScrollbar
        hadj_value <- adjustmentGetValue hadj
        hadj_pagesize <- adjustmentGetPageSize hadj
@@ -42,7 +41,6 @@ scrollRight scale profileHScrollbar statusbar ctx canvas
        let newValue = (hadj_upper - hadj_pagesize) `min` (hadj_value + hadj_pagesize/2)
        adjustmentSetValue hadj newValue 
        adjustmentValueChanged hadj        
-       -- refresh canvas
        return True
 
 -------------------------------------------------------------------------------

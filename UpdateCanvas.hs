@@ -30,10 +30,9 @@ import Zoom
 --  occurs. This function redraws the currently visible part of the
 --  main trace canvas plus related canvases.
 
-updateProfileDrawingArea :: ViewerState -> ContextId -> Rectangle -> IO ()
-updateProfileDrawingArea state@ViewerState{..} ctx rect
-   = do when debug $ putStrLn (show rect)
-        maybeEventArray <- readIORef hecsIORef
+updateProfileDrawingArea :: ViewerState -> Rectangle -> IO ()
+updateProfileDrawingArea state@ViewerState{..} rect
+   = do maybeEventArray <- readIORef hecsIORef
         -- Check to see if an event trace has been loaded
         case maybeEventArray of
           Nothing -> return ()
@@ -45,6 +44,7 @@ updateProfileDrawingArea state@ViewerState{..} ctx rect
               (width,height) <- widgetGetSize profileDrawingArea
               when debug $ do
                 putStrLn ("\n=== updateCanvas") 
+                putStrLn (show rect)
                 putStrLn ("width = " ++ show width ++ 
                           " height = " ++ show height)
               -- Work out what portion of the trace is in view  
@@ -67,6 +67,8 @@ updateProfileDrawingArea state@ViewerState{..} ctx rect
                 putStrLn ("lastTx = " ++ show lastTx)
                 putStrLn ("start time of view = " ++ show startTimeOfView ++ " end time of view = " ++ show endTimeOfView)   
                 putStrLn ("pixel duration = " ++ show pixelDuration)
+
+              ctx <- statusbarGetContextId statusBar "state"
               statusbarPush statusBar ctx ("Scale: " ++ show scaleValue ++ " width = " ++ show width ++ " height = " ++ show height ++ " hadj_value = " ++ printf "%1.3f" hadj_value ++ " hadj_pagesize = " ++ show hadj_pagesize ++ " hadj_low = " ++ show hadj_lower ++ " hadj_upper = " ++ show hadj_upper)
               -- widgetSetSizeRequest canvas (truncate (scaleValue * fromIntegral lastTx) + 2*ox) ((length capabilities)*gapcap+oycap)
 
@@ -135,7 +137,7 @@ clearWhite = do
 drawCursor :: Timestamp -> ViewParameters -> Render ()
 drawCursor cursor_t param@ViewParameters{..} = do
   withViewScale param $ do
-    setLineWidth 2
+    setLineWidth (3*scaleValue)
     setOperator OperatorOver
     setSourceRGBAhex blue 1.0
     moveTo (fromIntegral cursor_t) 0

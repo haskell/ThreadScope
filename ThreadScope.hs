@@ -103,18 +103,6 @@ startup options state@ViewerState{..}
        when (traceName /= "") $
            registerEventsFromTrace traceName state summary_ctx
 
-       ------------------------------------------------------------------------
-       -- View menu
-       fullDetailToggle `onActivateLeaf` do refresh debug profileDrawingArea
- 
-       ------------------------------------------------------------------------
-       -- Porgram the callback for the capability profileDrawingArea
-       capDrawingArea `onExpose` updateCapabilityDrawingArea state
-
-       ------------------------------------------------------------------------
-       -- Set-up the key profileDrawingArea.
-       keyDrawingArea `onExpose` updateKeyDrawingArea keyDrawingArea
- 
        -- B&W toggle button
                       
        -- The File:Open menu option can be used to specify an
@@ -126,19 +114,6 @@ startup options state@ViewerState{..}
               refresh debug profileDrawingArea
               refresh debug capDrawingArea
                                      
-       ------------------------------------------------------------------------
-       -- zoom buttons
-
-       zoomInButton `onToolButtonClicked`
-          zoomIn scaleIORef profileHScrollbar statusBar ctx profileDrawingArea
-                                            
-       zoomOutButton `onToolButtonClicked`
-          zoomOut scaleIORef profileHScrollbar statusBar ctx profileDrawingArea
-
-       zoomFitButton `onToolButtonClicked`
-          do zoomToFit state
-             refresh debug profileDrawingArea
-
        ------------------------------------------------------------------------
        -- Save as PDF functionality
        saveMenuItem `onActivateLeaf` do
@@ -178,21 +153,6 @@ startup options state@ViewerState{..}
            _other -> return ()
 
        ------------------------------------------------------------------------
-       -- Allow mouse wheel to be used for zoom in/out
-       onScroll profileDrawingArea (\(Scroll _ _ _ _ dir _ _ )
-         -> do case dir of
-                ScrollUp -> do -- zoom in
-                               zoomIn scaleIORef profileHScrollbar statusBar ctx profileDrawingArea
-                               return True
-                ScrollDown -> do -- zoom out
-                               zoomOut scaleIORef profileHScrollbar statusBar ctx profileDrawingArea
-                               return True
-                _ -> return True)
-                      
-       ------------------------------------------------------------------------
-       -- Default scale functionality
-
-       ------------------------------------------------------------------------
        -- Reload functionality
        onActivateLeaf reloadMenuItem $
           do mb_filename <- readIORef filenameIORef
@@ -203,22 +163,9 @@ startup options state@ViewerState{..}
                  refresh debug profileDrawingArea
 
        ------------------------------------------------------------------------
-       -- Key presses
-       onKeyPress mainWindow $ \Key { eventKeyName = key, eventKeyChar = mch } -> do
-         -- when debug $ putStrLn ("key " ++ key)
-         case key of
-           "Escape" -> mainQuit >> return True
-           "Right" -> scrollRight scaleIORef profileHScrollbar statusBar ctx profileDrawingArea
-           "Left" -> scrollLeft scaleIORef profileHScrollbar statusBar ctx profileDrawingArea
-           _ -> if isJust mch then
-                  case fromJust mch of 
-                    '+' -> do zoomIn scaleIORef profileHScrollbar statusBar ctx profileDrawingArea
-                              return True
-                    '-' -> do zoomOut scaleIORef profileHScrollbar statusBar ctx profileDrawingArea
-                              return True
-                    _   -> return True
-                else
-                  return True
+       -- CPUs view
+
+       setupCPUsView state
 
        ------------------------------------------------------------------------
        -- Event view
@@ -234,10 +181,6 @@ startup options state@ViewerState{..}
        sty <- widgetGetModifierStyle profileDrawingArea
        widgetModifyBg profileDrawingArea StateNormal profileBackground
        widgetModifyStyle profileDrawingArea sty 
-
-       ------------------------------------------------------------------------
-       -- Program the callback for the main drawing profileDrawingArea
-       profileDrawingArea `onExposeRect` updateProfileDrawingArea state ctx
 
        ------------------------------------------------------------------------
        -- About dialog
@@ -306,3 +249,76 @@ buildInitialState options = do
        eventsDrawingArea  <- xmlGetWidget xml castToDrawingArea "eventsDrawingArea"
 
        return ViewerState { .. }
+
+-----------------------------------------------------------------------------
+-- The CPUs view
+
+setupCPUsView :: ViewerState -> IO ()
+setupCPUsView state@ViewerState{..} = do
+
+  ------------------------------------------------------------------------
+  -- Key presses
+  onKeyPress mainWindow $ \Key { eventKeyName = key, eventKeyChar = mch } -> do
+    -- when debug $ putStrLn ("key " ++ key)
+    case key of
+      "Escape" -> mainQuit >> return True
+      "Right"  -> scrollRight state
+      "Left"   -> scrollLeft  state
+      _ -> if isJust mch then
+             case fromJust mch of 
+               '+' -> do zoomIn  state; return True
+               '-' -> do zoomOut state; return True
+               _   -> return True
+           else
+             return True
+
+  ------------------------------------------------------------------------
+  -- Porgram the callback for the capability profileDrawingArea
+  capDrawingArea `onExpose` updateCapabilityDrawingArea state
+
+  ------------------------------------------------------------------------
+  -- Set-up the key profileDrawingArea.
+  keyDrawingArea `onExpose` updateKeyDrawingArea keyDrawingArea
+
+  ------------------------------------------------------------------------
+  -- zoom buttons
+
+  zoomInButton  `onToolButtonClicked` zoomIn    state
+  zoomOutButton `onToolButtonClicked` zoomOut   state
+  zoomFitButton `onToolButtonClicked` zoomToFit state
+
+  ------------------------------------------------------------------------
+  -- Allow mouse wheel to be used for zoom in/out
+  onScroll profileDrawingArea $ \(Scroll _ _ _ _ dir _ _ )
+    -> do case dir of
+           ScrollUp   -> do zoomIn state;  return True
+           ScrollDown -> do zoomOut state; return True
+           _          -> return True
+                 
+  ------------------------------------------------------------------------
+  -- Mouse button
+
+  onButtonPress profileDrawingArea $ \button -> do
+     when debug $ putStrLn ("button pressed: " ++ show button)
+     case button of
+       Button{ eventButton = LeftButton, eventClick = SingleClick,
+               -- eventModifier = [],  -- contains [Alt2] for me
+               eventX = x } -> do
+           setCursor state x
+           return True
+       _other -> do
+           return False
+
+  ------------------------------------------------------------------------
+  -- Program the callback for the main drawing profileDrawingArea
+  profileDrawingArea `onExposeRect` updateProfileDrawingArea state
+
+  return ()
+
+
+setCursor :: ViewerState -> Double -> IO ()
+setCursor ViewerState{..} x = do
+  hadjValue <- adjustmentGetValue profileAdj
+  scaleValue <- readIORef scaleIORef
+  writeIORef cursorIORef (round (hadjValue + x * scaleValue))
+  widgetQueueDraw profileDrawingArea
