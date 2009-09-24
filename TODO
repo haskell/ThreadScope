@@ -7,8 +7,6 @@ BUGS
 
 NAVIGATION
 - button to center the view on the cursor
-- click to add a cursor
-- zoom to the cursor if in view
 - click and drag the view
 - shift-click and drag to zoom to a region
 - draw the detailed view in the background
