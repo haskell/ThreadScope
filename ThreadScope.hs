@@ -228,8 +228,8 @@ main
 
        ------------------------------------------------------------------------
        -- Reload functionality
-       reloadButton <- xmlGetWidget xml castToToolButton "reload_button"
-       onToolButtonClicked reloadButton $
+       reloadButton <- xmlGetWidget xml castToMenuItem "view_reload"
+       onActivateLeaf reloadButton $
           do filename <- readIORef filenameRef
              when (filename /= "") $
               do registerEventsFromFile  debug filename state
