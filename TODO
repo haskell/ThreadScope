@@ -14,6 +14,7 @@ NAVIGATION
   - add/remove
   - save
   - measure the time between two markers
+- search for events in the event window
 
 UI
 - render averaged areas properly
@@ -27,6 +28,7 @@ UI
   - right-button menu on thread allows to jump to thread creation/completion
 
 OTHER
+- add a way to programmatically generate an event from user code
 - overlay ETW events
 - thread-centric view rather than HEC-centric (in a tab?)
 - colour threads differently

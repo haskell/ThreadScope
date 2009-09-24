@@ -1,26 +1,26 @@
+{-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS_GHC -fno-warn-unused-matches #-}
 module ReadEvents ( 
-    ViewerState(..), 
     registerEventsFromFile, registerEventsFromTrace
   ) where
 
-import Data.Array
-import qualified Data.Function
-import Data.IORef
-import Data.List
-import EventDuration
-import Text.Printf
-import System.FilePath
-
+import State
 import EventlogViewerCommon
 import ReportEventTree
 import TestEvents
+import EventDuration
 
 import Graphics.UI.Gtk
 
 import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
 
--- Imports from Haskell library
+import Data.Array
+import qualified Data.Function
+import Data.IORef
+import Data.List
+import Text.Printf
+import System.FilePath
 import Control.Monad
 import Debug.Trace
 
@@ -59,58 +59,34 @@ eventsToTree events
 
 -------------------------------------------------------------------------------
 
-data ViewerState = ViewerState {
-  capabilitiesIORef :: IORef (Maybe [Int]),
-  hecsIORef         :: MaybeHECsIORef,
-  scaleIORef        :: IORef Double,
-  lastTxIORef       :: IORef Timestamp,
-  eventArrayIORef   :: IORef (Array Int GHCEvents.CapEvent)
-  }
-
-registerEventsFromFile :: Bool
-		       -> String
+registerEventsFromFile :: String
 		       -> ViewerState
-		       -> Window
-		       -> Statusbar
 		       -> ContextId
 		       -> IO ()
 
-registerEventsFromFile debug filename state window 
-                       summarybar
-                       summary_ctx
+registerEventsFromFile filename state summary_ctx
   = do eitherFmt <- readEventLogFromFile filename 
-       registerEvents debug filename eitherFmt 
-                   state window
-                   summarybar
-                   summary_ctx
+       registerEvents filename eitherFmt state summary_ctx
        
 -------------------------------------------------------------------------------
 
-registerEventsFromTrace :: Bool
-			-> String
+registerEventsFromTrace :: String
 			-> ViewerState
-			-> Window
-			-> Statusbar
 			-> ContextId
 			-> IO ()
 
-registerEventsFromTrace debug traceName
-  = registerEvents debug traceName (Right (testTrace traceName)) 
+registerEventsFromTrace traceName
+  = registerEvents traceName (Right (testTrace traceName)) 
        
 -------------------------------------------------------------------------------
 
-registerEvents :: Bool
-	       -> String
+registerEvents :: String
 	       -> Either String EventLog
 	       -> ViewerState
-	       -> Window
-	       -> Statusbar
 	       -> ContextId
 	       -> IO ()
 
-registerEvents debug name eitherFmt state window
-                       summarybar
-                       summary_ctx
+registerEvents name eitherFmt ViewerState{..} summary_ctx
   =   case eitherFmt of
         Right fmt -> 
          do let pes = events (dat fmt)
@@ -121,25 +97,25 @@ registerEvents debug name eitherFmt state window
             -- Debugging information
             when debug $ reportEventTrees hecs
             -- Update the IORefs used for drawing callbacks
-            writeIORef (capabilitiesIORef state) (Just capabilities)
-            writeIORef (hecsIORef state) (Just hecs)
-            writeIORef (lastTxIORef state) lastTx
-            writeIORef (scaleIORef state) defaultScaleValue
+            writeIORef capabilitiesIORef (Just capabilities)
+            writeIORef hecsIORef (Just hecs)
+            writeIORef lastTxIORef lastTx
+            writeIORef scaleIORef defaultScaleValue
             let duration = lastTx 
 
             -- sort the events by time and put them in an array
             let sorted    = sortGroups groups
 		n_events  = length sorted
 		event_arr = listArray (0, n_events-1) sorted
-            writeIORef (eventArrayIORef state) event_arr
+            writeIORef eventArrayIORef event_arr
 
             -- Adjust height to fit capabilities
-            (width, _) <- widgetGetSize window
-            widgetSetSizeRequest window width ((length capabilities)*gapcap+oycap+120)
+            (width, _) <- widgetGetSize mainWindow
+            widgetSetSizeRequest mainWindow width ((length capabilities)*gapcap+oycap+120)
 
             -- Set the status bar
-            statusbarPush summarybar summary_ctx (show n_events ++ " events. Duration " ++ (printf "%.3f" (((fromIntegral duration)::Double) * 1.0e-9)) ++ " seconds.")   
-            windowSetTitle window ("ThreadScope - " ++ takeFileName name)
+            statusbarPush summaryBar summary_ctx (show n_events ++ " events. Duration " ++ (printf "%.3f" (((fromIntegral duration)::Double) * 1.0e-9)) ++ " seconds.")   
+            windowSetTitle mainWindow ("ThreadScope - " ++ takeFileName name)
 
         Left msg -> putStrLn msg
        

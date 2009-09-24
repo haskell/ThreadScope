@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS -fno-warn-unused-matches #-}
 
 -- ThreadScope: a graphical viewer for Haskell event log information.
 -- Maintainer: satnams@microsoft.com, s.singh@ieee.org
@@ -23,6 +24,7 @@ import Data.List
 import Paths_threadscope
 
 -- Imports for ThreadScope
+import State
 import About
 import CapabilityLabels
 import DrawCapabilityProfile
@@ -47,6 +49,16 @@ main
        -- the event log.
        args <- getArgs
        let options = parseOptions args
+
+       initGUI
+       state <- buildInitialState options
+
+       startup options state
+
+startup :: [Option] -> ViewerState -> IO ()
+startup options state@ViewerState{..} 
+  = do
+       let
            filenames = [filename | Filename filename <- options]
            tracenames = [name | TestTrace name <- options]
        when (length filenames > 1)
@@ -59,197 +71,145 @@ main
                          ""
                        else
                          head tracenames
-           debug = Debug `elem` options
-       filenameRef <- newIORef filename
 
-       ------------------------------------------------------------------------
-       -- Get main window and viewport
-       initGUI
-       gladePath <- getDataFileName "threadscope.glade"
-       Just xml <- xmlNew gladePath
-       window   <- xmlGetWidget xml castToWindow "main_window"
-       widgetSetAppPaintable window True
+       widgetSetAppPaintable mainWindow True
        logoPath <- getDataFileName "threadscope.png"
-       windowSetIconFromFile window logoPath
-       
-       profileDrawingArea <- xmlGetWidget xml castToDrawingArea "profileDrawingArea"
-       profileHScrollbar <- xmlGetWidget xml castToHScrollbar "profileHScrollbar"
-       hadj <- rangeGetAdjustment profileHScrollbar 
-       onValueChanged hadj $ widgetQueueDraw profileDrawingArea
+       windowSetIconFromFile mainWindow logoPath
+       onValueChanged profileAdj $ widgetQueueDraw profileDrawingArea
 
        ------------------------------------------------------------------------
        -- Status bar functionality
-       summarybar <- xmlGetWidget xml castToStatusbar "summary"
-       summary_ctx <- statusbarGetContextId summarybar "state"
-       statusbarPush summarybar summary_ctx "No eventlog loaded."
-       statusbar <- xmlGetWidget xml castToStatusbar "statusbar"
-       ctx <- statusbarGetContextId statusbar "state"
-       statusbarPush statusbar ctx ("Scale " ++ show defaultScaleValue)
+       summary_ctx <- statusbarGetContextId summaryBar "state"
+       statusbarPush summaryBar summary_ctx "No eventlog loaded."
+       ctx <- statusbarGetContextId statusBar "state"
+       statusbarPush statusBar ctx ("Scale " ++ show defaultScaleValue)
 
        ------------------------------------------------------------------------
        --- Get the label for the name of the event log
 
        -- B&W toggle button
-       bw_button <- xmlGetWidget xml castToCheckMenuItem "black_and_white"
-       bw_button `onToggle` do refresh debug profileDrawingArea
+       bwToggle `onToggle` do refresh debug profileDrawingArea
 
        -- No Labels toggle button
-       labels_button <- xmlGetWidget xml castToToggleToolButton "labels"
-       labels_button `onToolButtonToggled` do refresh debug profileDrawingArea
-
-       -- IORefs are used to communicate informaiton about the eventlog
-       -- to the callback functions for windows, buttons etc.
-       caps_ref <- newIORef Nothing
-       hecs_ref <- newIORef Nothing
-       lasttx_ref <- newIORef 0
-       arr_ref <- newIORef (error "eventArrayIORef")
-       scale_ref <- newIORef defaultScaleValue -- How to scale ns to pixels
-
-       let state = ViewerState { capabilitiesIORef = caps_ref,
-				 hecsIORef         = hecs_ref,
-				 scaleIORef        = scale_ref,
-				 lastTxIORef       = lasttx_ref,
-				 eventArrayIORef   = arr_ref }
+       showLabelsToggle `onToolButtonToggled` do refresh debug profileDrawingArea
 
        -- When a filename for an event log is specified open and
        -- parse the event log file and update the IORefs for 
        -- the capabilities and event array.
        when (filename /= "") $
-           do registerEventsFromFile debug filename state
-                                     window 
-                                     summarybar
-                                     summary_ctx
+           registerEventsFromFile filename state summary_ctx
 
        -- Likewise for test traces
        when (traceName /= "") $
-           do registerEventsFromTrace debug traceName state
-                                     window
-                                     summarybar
-                                     summary_ctx
-
-
+           registerEventsFromTrace traceName state summary_ctx
 
        ------------------------------------------------------------------------
        -- View menu
-       full_detail_menu_item
-         <- xmlGetWidget xml castToCheckMenuItem "fullDetail"
-       full_detail_menu_item `onActivateLeaf` do refresh debug profileDrawingArea
+       fullDetailToggle `onActivateLeaf` do refresh debug profileDrawingArea
  
        ------------------------------------------------------------------------
        -- Porgram the callback for the capability profileDrawingArea
-       capabilityDrawingArea <- xmlGetWidget xml castToDrawingArea "capabilities"
-       capabilityDrawingArea `onExpose` 
-                  updateCapabilityDrawingArea capabilityDrawingArea caps_ref
-
+       capDrawingArea `onExpose` updateCapabilityDrawingArea state
 
        ------------------------------------------------------------------------
        -- Set-up the key profileDrawingArea.
-       keyDrawingArea <- xmlGetWidget xml castToDrawingArea "key"
        keyDrawingArea `onExpose` updateKeyDrawingArea keyDrawingArea
  
        -- B&W toggle button
                       
        -- The File:Open menu option can be used to specify an
        -- eventlog file.
-       openMenuItem <- xmlGetWidget xml castToMenuItem "openMenuItem"
        openMenuItem `onActivateLeaf` do
-         filename <- openFileDialog window
+         filename <- openFileDialog mainWindow
          when (isJust filename) $
-           do registerEventsFromFile debug 
-                                     (fromJust filename) state
-                                     window 
-                                     summarybar
-                                     summary_ctx
+           do registerEventsFromFile (fromJust filename) state summary_ctx
               refresh debug profileDrawingArea
-              refresh debug capabilityDrawingArea
+              refresh debug capDrawingArea
                                      
        ------------------------------------------------------------------------
        -- Zoom in button
-       zoomInButton <- xmlGetWidget xml castToToolButton "zoom_in"
        zoomInButton `onToolButtonClicked`
-          zoomIn scale_ref profileHScrollbar statusbar ctx profileDrawingArea
+          zoomIn scaleIORef profileHScrollbar statusBar ctx profileDrawingArea
                                             
        ------------------------------------------------------------------------
        -- Zoom out button
-       zoomOutButton <- xmlGetWidget xml castToToolButton "zoom_out"
        zoomOutButton `onToolButtonClicked`
-          zoomOut scale_ref profileHScrollbar statusbar ctx profileDrawingArea
+          zoomOut scaleIORef profileHScrollbar statusBar ctx profileDrawingArea
 
        ------------------------------------------------------------------------
        -- Save as PDF functionality
-       saveMenuItem <- xmlGetWidget xml castToMenuItem "saveMenuItem"
        saveMenuItem `onActivateLeaf` do
          (width, height) <- widgetGetSize profileDrawingArea
-         scaleValue <- readIORef scale_ref
-         maybeEventArray <- readIORef hecs_ref
-         hadj <- rangeGetAdjustment profileHScrollbar
-         hadj_value <- adjustmentGetValue hadj
-         hadj_pagesize <- adjustmentGetPageSize hadj
-         fn <- readIORef filenameRef
-         bw_mode <- checkMenuItemGetActive bw_button
-         full_detail <- checkMenuItemGetActive full_detail_menu_item
-         labels_mode <- toggleToolButtonGetActive labels_button
-         withPDFSurface (fn++".pdf") (fromIntegral width) (fromIntegral height)
-           (flip renderWith $ (translate (-hadj_value) 0 >> 
-                               currentView width height hadj_value hadj_pagesize 
-                               scaleValue maybeEventArray
-                               full_detail bw_mode labels_mode) >> showPage)
-         withImageSurface C.FormatARGB32 (fromIntegral width) (fromIntegral height) $ \ result ->
-         
-           do  renderWith result (translate (-hadj_value) 0 >> 
-                                  currentView width height hadj_value hadj_pagesize 
-                                  scaleValue maybeEventArray
-                                  full_detail bw_mode labels_mode)
-               surfaceWriteToPNG result (fn++".png")
-         statusbarPush statusbar ctx ("Saved " ++ fn ++ ".pdf")
-         return ()
+         scaleValue <- readIORef scaleIORef
+         maybeEventArray <- readIORef hecsIORef
+         hadj_value <- adjustmentGetValue profileAdj
+         hadj_pagesize <- adjustmentGetPageSize profileAdj
+         mfn <- readIORef filenameIORef
+         case mfn of
+           Nothing -> return ()
+           Just fn -> do
+             bw_mode <- checkMenuItemGetActive bwToggle
+             full_detail <- checkMenuItemGetActive fullDetailToggle
+             labels_mode <- toggleToolButtonGetActive showLabelsToggle
+             withPDFSurface (fn++".pdf") (fromIntegral width) (fromIntegral height)
+               (flip renderWith $ (translate (-hadj_value) 0 >> 
+                                   currentView width height hadj_value hadj_pagesize 
+                                   scaleValue maybeEventArray
+                                   full_detail bw_mode labels_mode) >> showPage)
+             withImageSurface C.FormatARGB32 (fromIntegral width) (fromIntegral height) $ \ result ->
+             
+               do  renderWith result (translate (-hadj_value) 0 >> 
+                                      currentView width height hadj_value hadj_pagesize 
+                                      scaleValue maybeEventArray
+                                      full_detail bw_mode labels_mode)
+                   surfaceWriteToPNG result (fn++".png")
+             statusbarPush statusBar ctx ("Saved " ++ fn ++ ".pdf")
+             return ()
 
        ------------------------------------------------------------------------
        -- Allow mouse wheel to be used for zoom in/out
        onScroll profileDrawingArea (\(Scroll _ _ _ _ dir _ _ )
          -> do case dir of
                 ScrollUp -> do -- zoom in
-                               zoomIn scale_ref profileHScrollbar statusbar ctx profileDrawingArea
+                               zoomIn scaleIORef profileHScrollbar statusBar ctx profileDrawingArea
                                return True
                 ScrollDown -> do -- zoom out
-                               zoomOut scale_ref profileHScrollbar statusbar ctx profileDrawingArea
+                               zoomOut scaleIORef profileHScrollbar statusBar ctx profileDrawingArea
                                return True
                 _ -> return True)
                       
        ------------------------------------------------------------------------
        -- Default scale functionality
-       defaultScaleButton <- xmlGetWidget xml castToToolButton "default_zoom"
-       onToolButtonClicked defaultScaleButton $
-          do writeIORef scale_ref 0.1 
-             statusbarPush statusbar ctx ("Scale 0.1")
+       onToolButtonClicked zoomFitButton $
+          do writeIORef scaleIORef 0.1 
+             statusbarPush statusBar ctx ("Scale 0.1")
              --hadj <- viewportGetHAdjustment viewport 
              --adjustmentValueChanged hadj
              refresh debug profileDrawingArea
 
        ------------------------------------------------------------------------
        -- Reload functionality
-       reloadButton <- xmlGetWidget xml castToMenuItem "view_reload"
-       onActivateLeaf reloadButton $
-          do filename <- readIORef filenameRef
-             when (filename /= "") $
-              do registerEventsFromFile  debug filename state
-                                         window summarybar
-                                         summary_ctx
+       onActivateLeaf reloadMenuItem $
+          do mb_filename <- readIORef filenameIORef
+             case mb_filename of
+               Nothing -> return ()
+               Just filename -> do
+                 registerEventsFromFile filename state summary_ctx
                  refresh debug profileDrawingArea
 
        ------------------------------------------------------------------------
        -- Key presses
-       onKeyPress window $ \Key { eventKeyName = key, eventKeyChar = mch } -> do
+       onKeyPress mainWindow $ \Key { eventKeyName = key, eventKeyChar = mch } -> do
          -- when debug $ putStrLn ("key " ++ key)
          case key of
            "Escape" -> mainQuit >> return True
-           "Right" -> scrollRight scale_ref profileHScrollbar statusbar ctx profileDrawingArea
-           "Left" -> scrollLeft scale_ref profileHScrollbar statusbar ctx profileDrawingArea
+           "Right" -> scrollRight scaleIORef profileHScrollbar statusBar ctx profileDrawingArea
+           "Left" -> scrollLeft scaleIORef profileHScrollbar statusBar ctx profileDrawingArea
            _ -> if isJust mch then
                   case fromJust mch of 
-                    '+' -> do zoomIn scale_ref profileHScrollbar statusbar ctx profileDrawingArea
+                    '+' -> do zoomIn scaleIORef profileHScrollbar statusBar ctx profileDrawingArea
                               return True
-                    '-' -> do zoomOut scale_ref profileHScrollbar statusbar ctx profileDrawingArea
+                    '-' -> do zoomOut scaleIORef profileHScrollbar statusBar ctx profileDrawingArea
                               return True
                     _   -> return True
                 else
@@ -258,11 +218,10 @@ main
        ------------------------------------------------------------------------
        -- Event view
 
-       setupEventsWindow debug state xml
+       setupEventsWindow state
 
        ------------------------------------------------------------------------
        -- Quit
-       quitMenuItem <- xmlGetWidget xml castToMenuItem "quitMenuItem"
        quitMenuItem `onActivateLeaf` mainQuit
 
        ------------------------------------------------------------------------
@@ -273,24 +232,19 @@ main
 
        ------------------------------------------------------------------------
        -- Program the callback for the main drawing profileDrawingArea
-       profileDrawingArea `onExposeRect` updateProfileDrawingArea 
-                  debug profileDrawingArea profileHScrollbar statusbar full_detail_menu_item 
-                  bw_button
-                  labels_button ctx scale_ref
-		  caps_ref hecs_ref
+       profileDrawingArea `onExposeRect` updateProfileDrawingArea state ctx
 
        ------------------------------------------------------------------------
        -- About dialog
-       aboutMenuItem <- xmlGetWidget xml castToMenuItem "aboutMenuItem"
-       aboutMenuItem `onActivateLeaf` showAboutDialog window
+       aboutMenuItem `onActivateLeaf` showAboutDialog mainWindow
 
        ------------------------------------------------------------------------
        -- Quit behaviour
-       onDestroy window mainQuit
+       onDestroy mainWindow mainQuit
 
        ------------------------------------------------------------------------
        -- Show all windows
-       widgetShowAll window
+       widgetShowAll mainWindow
 
        ------------------------------------------------------------------------
        -- Enter main event loop for GUI.
@@ -298,3 +252,50 @@ main
 
 -------------------------------------------------------------------------------
 
+buildInitialState :: [Option] -> IO ViewerState
+buildInitialState options = do
+
+       gladePath <- getDataFileName "threadscope.glade"
+       Just xml <- xmlNew gladePath
+       
+       let debug = Debug `elem` options
+
+       filenameIORef <- newIORef Nothing
+
+       -- IORefs are used to communicate informaiton about the eventlog
+       -- to the callback functions for windows, buttons etc.
+       capabilitiesIORef <- newIORef Nothing
+       hecsIORef         <- newIORef Nothing
+       lastTxIORef       <- newIORef 0
+       eventArrayIORef   <- newIORef (error "eventArrayIORef")
+       scaleIORef        <- newIORef defaultScaleValue
+                               -- How to scale ns to pixels
+
+       mainWindow         <- xmlGetWidget xml castToWindow "main_window"
+       summaryBar         <- xmlGetWidget xml castToStatusbar "summary"
+       statusBar          <- xmlGetWidget xml castToStatusbar "statusbar"
+
+       bwToggle           <- xmlGetWidget xml castToCheckMenuItem "black_and_white"
+       fullDetailToggle   <- xmlGetWidget xml castToCheckMenuItem "fullDetail"
+       openMenuItem       <- xmlGetWidget xml castToMenuItem "openMenuItem"
+       saveMenuItem       <- xmlGetWidget xml castToMenuItem "saveMenuItem"
+       saveAsMenuItem     <- xmlGetWidget xml castToMenuItem "saveAsMenuItem"
+       reloadMenuItem     <- xmlGetWidget xml castToMenuItem "view_reload"
+       quitMenuItem       <- xmlGetWidget xml castToMenuItem "quitMenuItem"
+       aboutMenuItem      <- xmlGetWidget xml castToMenuItem "aboutMenuItem"
+
+       profileDrawingArea <- xmlGetWidget xml castToDrawingArea "profileDrawingArea"
+       profileHScrollbar  <- xmlGetWidget xml castToHScrollbar "profileHScrollbar"
+       profileAdj         <- rangeGetAdjustment profileHScrollbar 
+       zoomInButton       <- xmlGetWidget xml castToToolButton "zoom_in"
+       zoomOutButton      <- xmlGetWidget xml castToToolButton "zoom_out"
+       zoomFitButton      <- xmlGetWidget xml castToToolButton "default_zoom"
+
+       showLabelsToggle   <- xmlGetWidget xml castToToggleToolButton "labels"
+       capDrawingArea     <- xmlGetWidget xml castToDrawingArea "capabilities"
+       keyDrawingArea     <- xmlGetWidget xml castToDrawingArea "key"
+
+       eventsVScrollbar   <- xmlGetWidget xml castToVScrollbar "eventsVScroll"
+       eventsDrawingArea  <- xmlGetWidget xml castToDrawingArea "eventsDrawingArea"
+
+       return ViewerState { .. }

@@ -1,5 +1,6 @@
-module CapabilityLabels
-where
+{-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS -fno-warn-unused-matches #-}
+module CapabilityLabels where
 
 -- Imports for GTK/Glade
 import Graphics.UI.Gtk
@@ -11,22 +12,23 @@ import Data.IORef
 import Data.Maybe
 
 -- Imports for ThreadScope
+import State
 import EventlogViewerCommon
 import ViewerColours
 
 -------------------------------------------------------------------------------
 
-updateCapabilityDrawingArea :: DrawingArea -> IORef (Maybe [Int]) -> Event ->
-                          IO Bool
-updateCapabilityDrawingArea canvas capabilitiesIORef (Expose { eventArea=rect }) 
+updateCapabilityDrawingArea :: ViewerState -> Event -> IO Bool
+updateCapabilityDrawingArea ViewerState{..} (Expose { eventArea=rect }) 
    = do maybeCapabilities <- readIORef capabilitiesIORef
         when (maybeCapabilities /= Nothing)
           (do let Just capabilities = maybeCapabilities
-              win <- widgetGetDrawWindow canvas 
+              win <- widgetGetDrawWindow capDrawingArea
               gc <- gcNew win
-              mapM_ (labelCapability canvas gc) capabilities
+              mapM_ (labelCapability capDrawingArea gc) capabilities
           )
         return True
+updateCapabilityDrawingArea _ _ = error "updateCapabilityDrawingArea"
 
 -------------------------------------------------------------------------------
 

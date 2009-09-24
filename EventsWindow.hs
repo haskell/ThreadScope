@@ -1,15 +1,16 @@
+{-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS -fno-warn-unused-matches #-}
 module EventsWindow (
     setupEventsWindow,
     updateEventsWindow,
     eventsWindowResize
   ) where
 
-import ReadEvents (ViewerState(..))
+import State
 
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Gdk.EventM
 import Graphics.Rendering.Cairo 
-import Graphics.UI.Gtk.Glade
 
 import GHC.RTS.Events as GHC
 
@@ -18,54 +19,49 @@ import Data.Array
 import Data.IORef
 import Text.Printf
 
-setupEventsWindow :: Bool -> ViewerState -> GladeXML -> IO ()
-setupEventsWindow debug state xml = do
-  drawingArea <- xmlGetWidget xml castToDrawingArea
-		      "eventsDrawingArea"
+setupEventsWindow :: ViewerState -> IO ()
+setupEventsWindow state@ViewerState{..} = do
 
   -- make the background white
-  widgetModifyBg drawingArea StateNormal (Color 0xffff 0xffff 0xffff)
+  widgetModifyBg eventsDrawingArea StateNormal (Color 0xffff 0xffff 0xffff)
 
-  events_sb <- xmlGetWidget xml castToVScrollbar
-		      "eventsVScroll"
-
-  adj <- rangeGetAdjustment events_sb
+  adj <- rangeGetAdjustment eventsVScrollbar
   adjustmentSetLower adj 0
   adjustmentSetStepIncrement adj 4
 
-  widgetSetCanFocus drawingArea True
+  widgetSetCanFocus eventsDrawingArea True
 
-  on drawingArea configureEvent $ 
-     eventsWindowResize state adj drawingArea
+  on eventsDrawingArea configureEvent $ 
+     eventsWindowResize state adj eventsDrawingArea
 
-  on drawingArea exposeEvent $
-     updateEventsWindow state adj drawingArea
+  on eventsDrawingArea exposeEvent $
+     updateEventsWindow state adj eventsDrawingArea
 
-  on drawingArea buttonPressEvent $ do
+  on eventsDrawingArea buttonPressEvent $ do
       button <- eventButton
       liftIO $ do
         when debug $ putStrLn ("button " ++ show button)
-        widgetGrabFocus drawingArea
+        widgetGrabFocus eventsDrawingArea
         return True
 
-  on drawingArea focusInEvent $ liftIO $ do
-     f <- get drawingArea widgetHasFocus
+  on eventsDrawingArea focusInEvent $ liftIO $ do
+     f <- get eventsDrawingArea widgetHasFocus
      when debug $ putStrLn ("focus in: " ++ show f)
---     set drawingArea [widgetHasFocus := True]
+--     set eventsDrawingArea [widgetHasFocus := True]
      return False
 
-  on drawingArea focusOutEvent $ liftIO $ do
-     f <- get drawingArea widgetHasFocus
+  on eventsDrawingArea focusOutEvent $ liftIO $ do
+     f <- get eventsDrawingArea widgetHasFocus
      when debug $ putStrLn ("focus out: " ++ show f)
---     set drawingArea [widgetHasFocus := False]
+--     set eventsDrawingArea [widgetHasFocus := False]
      return False
 
-  on drawingArea keyPressEvent $ do
+  on eventsDrawingArea keyPressEvent $ do
       key <- eventKeyName
       when debug $ liftIO $ putStrLn ("key " ++ key)
       return True
 
-  on drawingArea scrollEvent $ do
+  on eventsDrawingArea scrollEvent $ do
       dir <- eventScrollDirection
       liftIO $ do
         val  <- adjustmentGetValue adj
@@ -77,16 +73,16 @@ setupEventsWindow debug state xml = do
         return True
 
   onValueChanged adj $
-     widgetQueueDraw drawingArea
+     widgetQueueDraw eventsDrawingArea
 
   return ()
 
 
 eventsWindowResize :: ViewerState -> Adjustment -> DrawingArea
 		   -> EventM EConfigure Bool
-eventsWindowResize state adj drawingArea = liftIO $ do
-  (_,h) <- widgetGetSize drawingArea
-  win <- widgetGetDrawWindow drawingArea
+eventsWindowResize state adj eventsDrawingArea = liftIO $ do
+  (_,h) <- widgetGetSize eventsDrawingArea
+  win <- widgetGetDrawWindow eventsDrawingArea
   exts <- renderWithDrawable win $ eventsFont
   let page = fromIntegral (truncate (fromIntegral h / fontExtentsHeight exts))
   arr <- readIORef (eventArrayIORef state)
@@ -99,11 +95,11 @@ eventsWindowResize state adj drawingArea = liftIO $ do
 
 updateEventsWindow :: ViewerState -> Adjustment -> DrawingArea
 		   -> EventM EExpose Bool
-updateEventsWindow state adj drawingArea = liftIO $ do
+updateEventsWindow state adj eventsDrawingArea = liftIO $ do
   value <- adjustmentGetValue adj
   arr <- readIORef (eventArrayIORef state)
-  win <- widgetGetDrawWindow drawingArea
-  (w,h) <- widgetGetSize drawingArea
+  win <- widgetGetDrawWindow eventsDrawingArea
+  (w,h) <- widgetGetSize eventsDrawingArea
   renderWithDrawable win (drawEvents value arr w h)
   return True
 
