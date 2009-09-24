@@ -237,11 +237,15 @@ buildInitialState options = do
        profileDrawingArea <- xmlGetWidget xml castToDrawingArea "profileDrawingArea"
        profileHScrollbar  <- xmlGetWidget xml castToHScrollbar "profileHScrollbar"
        profileAdj         <- rangeGetAdjustment profileHScrollbar 
-       zoomInButton       <- xmlGetWidget xml castToToolButton "zoom_in"
-       zoomOutButton      <- xmlGetWidget xml castToToolButton "zoom_out"
-       zoomFitButton      <- xmlGetWidget xml castToToolButton "default_zoom"
+       zoomInButton       <- xmlGetWidget xml castToToolButton "cpus_zoomin"
+       zoomOutButton      <- xmlGetWidget xml castToToolButton "cpus_zoomout"
+       zoomFitButton      <- xmlGetWidget xml castToToolButton "cpus_zoomfit"
 
-       showLabelsToggle   <- xmlGetWidget xml castToToggleToolButton "labels"
+       showLabelsToggle   <- xmlGetWidget xml castToToggleToolButton "cpus_showlabels"
+       firstButton        <- xmlGetWidget xml castToToolButton "cpus_first"
+       lastButton         <- xmlGetWidget xml castToToolButton "cpus_last"
+       centreButton       <- xmlGetWidget xml castToToolButton "cpus_centre"
+
        capDrawingArea     <- xmlGetWidget xml castToDrawingArea "capabilities"
        keyDrawingArea     <- xmlGetWidget xml castToDrawingArea "key"
 
@@ -262,8 +266,8 @@ setupCPUsView state@ViewerState{..} = do
     -- when debug $ putStrLn ("key " ++ key)
     case key of
       "Escape" -> mainQuit >> return True
-      "Right"  -> scrollRight state
-      "Left"   -> scrollLeft  state
+      "Right"  -> do scrollRight state; return True
+      "Left"   -> do scrollLeft  state; return True
       _ -> if isJust mch then
              case fromJust mch of 
                '+' -> do zoomIn  state; return True
@@ -286,6 +290,10 @@ setupCPUsView state@ViewerState{..} = do
   zoomInButton  `onToolButtonClicked` zoomIn    state
   zoomOutButton `onToolButtonClicked` zoomOut   state
   zoomFitButton `onToolButtonClicked` zoomToFit state
+
+  firstButton  `onToolButtonClicked` scrollToBeginning state
+  lastButton   `onToolButtonClicked` scrollToEnd state
+  centreButton `onToolButtonClicked` centreOnCursor state
 
   ------------------------------------------------------------------------
   -- Allow mouse wheel to be used for zoom in/out

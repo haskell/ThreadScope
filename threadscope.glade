@@ -373,7 +373,66 @@ Threads
 			  <property name="show_arrow">False</property>
 
 			  <child>
-			    <widget class="GtkToolButton" id="zoom_in">
+			    <widget class="GtkToolButton" id="cpus_first">
+			      <property name="visible">True</property>
+			      <property name="label" translatable="yes"></property>
+			      <property name="use_underline">True</property>
+			      <property name="stock_id">gtk-goto-first</property>
+			      <property name="visible_horizontal">True</property>
+			      <property name="visible_vertical">True</property>
+			      <property name="is_important">False</property>
+			    </widget>
+			    <packing>
+			      <property name="expand">False</property>
+			      <property name="homogeneous">True</property>
+			    </packing>
+			  </child>
+
+			  <child>
+			    <widget class="GtkToolButton" id="cpus_centre">
+			      <property name="visible">True</property>
+			      <property name="stock_id">gtk-home</property>
+			      <property name="visible_horizontal">True</property>
+			      <property name="visible_vertical">True</property>
+			      <property name="is_important">False</property>
+			    </widget>
+			    <packing>
+			      <property name="expand">False</property>
+			      <property name="homogeneous">True</property>
+			    </packing>
+			  </child>
+
+			  <child>
+			    <widget class="GtkToolButton" id="cpus_last">
+			      <property name="visible">True</property>
+			      <property name="label" translatable="yes"></property>
+			      <property name="use_underline">True</property>
+			      <property name="stock_id">gtk-goto-last</property>
+			      <property name="visible_horizontal">True</property>
+			      <property name="visible_vertical">True</property>
+			      <property name="is_important">False</property>
+			    </widget>
+			    <packing>
+			      <property name="expand">False</property>
+			      <property name="homogeneous">True</property>
+			    </packing>
+			  </child>
+
+			  <child>
+			    <widget class="GtkSeparatorToolItem" id="separatortoolitem5">
+			      <property name="visible">True</property>
+			      <property name="draw">True</property>
+			      <property name="visible_horizontal">True</property>
+			      <property name="visible_vertical">True</property>
+			    </widget>
+			    <packing>
+			      <property name="expand">False</property>
+			      <property name="homogeneous">False</property>
+			    </packing>
+			  </child>
+
+			  <child>
+			    <widget class="GtkToolButton" id="cpus_zoomin">
 			      <property name="visible">True</property>
 			      <property name="stock_id">gtk-zoom-in</property>
 			      <property name="visible_horizontal">True</property>
@@ -387,7 +446,7 @@ Threads
 			  </child>
 
 			  <child>
-			    <widget class="GtkToolButton" id="zoom_out">
+			    <widget class="GtkToolButton" id="cpus_zoomout">
 			      <property name="visible">True</property>
 			      <property name="stock_id">gtk-zoom-out</property>
 			      <property name="visible_horizontal">True</property>
@@ -401,7 +460,7 @@ Threads
 			  </child>
 
 			  <child>
-			    <widget class="GtkToolButton" id="default_zoom">
+			    <widget class="GtkToolButton" id="cpus_zoomfit">
 			      <property name="visible">True</property>
 			      <property name="stock_id">gtk-zoom-fit</property>
 			      <property name="visible_horizontal">True</property>
@@ -428,7 +487,7 @@ Threads
 			  </child>
 
 			  <child>
-			    <widget class="GtkToggleToolButton" id="labels">
+			    <widget class="GtkToggleToolButton" id="cpus_showlabels">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Show labels</property>
 			      <property name="use_underline">True</property>

@@ -5,42 +5,40 @@
 --- $Source: //depot/satnams/haskell/ThreadScope/Scrolling.hs $
 -------------------------------------------------------------------------------
 
-module Scrolling
-where
+module Scrolling (
+    scrollLeft, scrollRight, scrollToBeginning, scrollToEnd, centreOnCursor
+  ) where
+
+import State
 
 -- Imports for GTK/Glade
 import Graphics.UI.Gtk
 
 import Data.IORef
 
-import State
-
 -------------------------------------------------------------------------------
 
-scrollLeft :: ViewerState -> IO Bool
-scrollLeft state@ViewerState{..}
-  = do scaleValue <- readIORef scaleIORef
-       hadj <- rangeGetAdjustment profileHScrollbar
-       hadj_value <- adjustmentGetValue hadj
-       hadj_pagesize <- adjustmentGetPageSize hadj
-       hadj_upper <- adjustmentGetUpper hadj
-       let newValue = 0 `max` (hadj_value - hadj_pagesize/2)
-       adjustmentSetValue hadj newValue  
-       adjustmentValueChanged hadj       
-       return True
+scrollLeft, scrollRight, scrollToBeginning, scrollToEnd, centreOnCursor
+  :: ViewerState -> IO ()
 
--------------------------------------------------------------------------------
+scrollLeft  = scroll (\val page upper -> 0 `max` (val - page/2))
+scrollRight = scroll (\val page upper -> (upper - page) `min` (val + page/2))
+scrollToBeginning = scroll (\_ _ _ -> 0)
+scrollToEnd       = scroll (\_ _ upper -> upper)
 
-scrollRight :: ViewerState -> IO Bool
-scrollRight state@ViewerState{..}
+centreOnCursor state@ViewerState{..} = do
+  cursor <- readIORef cursorIORef
+  hadj_pagesize <- adjustmentGetPageSize profileAdj
+  scroll (\_ _ _ -> max 0 (fromIntegral cursor - hadj_pagesize/2)) state
+
+scroll :: (Double -> Double -> Double -> Double) -> ViewerState -> IO ()
+scroll adjust state@ViewerState{..}
   = do scaleValue <- readIORef scaleIORef
-       hadj <- rangeGetAdjustment profileHScrollbar
-       hadj_value <- adjustmentGetValue hadj
-       hadj_pagesize <- adjustmentGetPageSize hadj
-       hadj_upper <- adjustmentGetUpper hadj
-       let newValue = (hadj_upper - hadj_pagesize) `min` (hadj_value + hadj_pagesize/2)
-       adjustmentSetValue hadj newValue 
-       adjustmentValueChanged hadj        
-       return True
+       hadj_value <- adjustmentGetValue profileAdj
+       hadj_pagesize <- adjustmentGetPageSize profileAdj
+       hadj_upper <- adjustmentGetUpper profileAdj
+       let newValue = adjust hadj_value hadj_pagesize hadj_upper
+       adjustmentSetValue profileAdj newValue  
+       adjustmentValueChanged profileAdj       
 
 -------------------------------------------------------------------------------

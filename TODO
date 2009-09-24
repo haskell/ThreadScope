@@ -6,7 +6,6 @@ BUGS
 - 100% button doesn't work
 
 NAVIGATION
-- button to center the view on the cursor
 - click and drag the view
 - shift-click and drag to zoom to a region
 - draw the detailed view in the background
