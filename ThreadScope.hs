@@ -20,6 +20,7 @@ import Data.IORef
 import Data.Maybe
 import qualified Data.Function
 import Data.List
+import Text.Printf
 
 import Paths_threadscope
 
@@ -328,5 +329,7 @@ setCursor :: ViewerState -> Double -> IO ()
 setCursor ViewerState{..} x = do
   hadjValue <- adjustmentGetValue profileAdj
   scaleValue <- readIORef scaleIORef
-  writeIORef cursorIORef (round (hadjValue + x * scaleValue))
+  let cursor = round (hadjValue + (x - fromIntegral ox) * scaleValue)
+  when debug $ printf "cursor set to: %d" cursor
+  writeIORef cursorIORef cursor
   widgetQueueDraw profileDrawingArea

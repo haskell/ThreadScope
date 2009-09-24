@@ -114,7 +114,7 @@ locateCursor arr cursor = search l r
   (l,r) = bounds arr
 
   search l r
-    | r - l <= 1 = l
+    | r - l <= 1 = r
     | cursor < tmid = search l mid
     | otherwise     = search mid r
     where
@@ -144,7 +144,7 @@ drawEvents value arr width height cursor = do
     setLineWidth 3
     setOperator OperatorOver
     setSourceRGBAhex blue 1.0
-    let cursory = fromIntegral (cursor - val) * h
+    let cursory = fromIntegral (cursor - val) * h + 3
     moveTo 0                    cursory
     lineTo (fromIntegral width) cursory
     stroke

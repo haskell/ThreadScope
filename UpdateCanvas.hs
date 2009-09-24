@@ -140,8 +140,8 @@ drawCursor cursor_t param@ViewParameters{..} = do
     setLineWidth (3*scaleValue)
     setOperator OperatorOver
     setSourceRGBAhex blue 1.0
-    moveTo (fromIntegral cursor_t) 0
-    lineTo (fromIntegral cursor_t) (fromIntegral height)
+    moveTo (fromIntegral ox*scaleValue + fromIntegral cursor_t) 0
+    lineTo (fromIntegral ox*scaleValue + fromIntegral cursor_t) (fromIntegral height)
     stroke
 
 -------------------------------------------------------------------------------

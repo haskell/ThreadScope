@@ -3,7 +3,6 @@ BUGS
 - divide by zero (test overlap, zoom in, scroll right)
 - vertical scrollbar slider is the wrong size
 - when there are no events, we crash in last
-- cursor not accurate?
 
 NAVIGATION
 - click and drag the view
@@ -16,6 +15,7 @@ NAVIGATION
 - search for events in the event window
 
 UI
+- get rid of oxs, use translation
 - clip to expose region
 - when the view has scrolled, use the previous rendered surface to render the
   scrolled part that is still in view
