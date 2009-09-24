@@ -58,7 +58,11 @@ currentView width height hadj_value hadj_pagesize scaleValue
              tickWidthInPixels :: Int
              tickWidthInPixels = truncate ((fromIntegral snappedTickDuration) * scaleValue)
              firstTick :: Timestamp
-             firstTick = snappedTickDuration * (startPos `div` snappedTickDuration)        
+             firstTick = snappedTickDuration * (startPos `div` snappedTickDuration)
+         --liftIO $
+         --  do putStrLn ("timestampFor100Pixels = " ++ show timestampFor100Pixels)
+         --     putStrLn ("tickWidthInPixels     = " ++ show tickWidthInPixels)
+         --     putStrLn ("snappedTickDuration   = " ++ show snappedTickDuration)       
          drawTicks tickWidthInPixels height scaleValue firstTick snappedTickDuration  (10*snappedTickDuration) endPos
          sequence_ [hecView c full_detail bw_mode labels_mode scaleValue pixelDuration startPos endPos eventTree | (c, eventTree) <- hecs]
          C.restore
