@@ -3,7 +3,7 @@ BUGS
 - divide by zero (test overlap, zoom in, scroll right)
 - vertical scrollbar slider is the wrong size
 - when there are no events, we crash in last
-- 100% button doesn't work
+- cursor not accurate?
 
 NAVIGATION
 - click and drag the view

@@ -7,6 +7,7 @@ module EventsWindow (
   ) where
 
 import State
+import ViewerColours
 
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Gdk.EventM
@@ -32,10 +33,10 @@ setupEventsWindow state@ViewerState{..} = do
   widgetSetCanFocus eventsDrawingArea True
 
   on eventsDrawingArea configureEvent $ 
-     eventsWindowResize state adj eventsDrawingArea
+     eventsWindowResize state adj
 
   on eventsDrawingArea exposeEvent $
-     updateEventsWindow state adj eventsDrawingArea
+     updateEventsWindow state adj
 
   on eventsDrawingArea buttonPressEvent $ do
       button <- eventButton
@@ -78,14 +79,14 @@ setupEventsWindow state@ViewerState{..} = do
   return ()
 
 
-eventsWindowResize :: ViewerState -> Adjustment -> DrawingArea
+eventsWindowResize :: ViewerState -> Adjustment
 		   -> EventM EConfigure Bool
-eventsWindowResize state adj eventsDrawingArea = liftIO $ do
+eventsWindowResize state@ViewerState{..} adj = liftIO $ do
   (_,h) <- widgetGetSize eventsDrawingArea
   win <- widgetGetDrawWindow eventsDrawingArea
   exts <- renderWithDrawable win $ eventsFont
   let page = fromIntegral (truncate (fromIntegral h / fontExtentsHeight exts))
-  arr <- readIORef (eventArrayIORef state)
+  arr <- readIORef eventArrayIORef
   let (_, n_events) = bounds arr
   adjustmentSetPageIncrement adj page
   adjustmentSetPageSize adj page
@@ -93,15 +94,32 @@ eventsWindowResize state adj eventsDrawingArea = liftIO $ do
   -- printf "eventsWindowResize: %f" page
   return True
 
-updateEventsWindow :: ViewerState -> Adjustment -> DrawingArea
+updateEventsWindow :: ViewerState -> Adjustment
 		   -> EventM EExpose Bool
-updateEventsWindow state adj eventsDrawingArea = liftIO $ do
+updateEventsWindow state@ViewerState{..} adj  = liftIO $ do
   value <- adjustmentGetValue adj
-  arr <- readIORef (eventArrayIORef state)
+  arr <- readIORef eventArrayIORef
   win <- widgetGetDrawWindow eventsDrawingArea
   (w,h) <- widgetGetSize eventsDrawingArea
-  renderWithDrawable win (drawEvents value arr w h)
+  cursor <- readIORef cursorIORef
+  let cursorpos = locateCursor arr cursor
+  when debug $ printf "cursorpos: %d\n" cursorpos
+  renderWithDrawable win $ do
+    drawEvents value arr w h cursorpos
   return True
+
+locateCursor :: Array Int GHC.CapEvent -> Timestamp -> Int
+locateCursor arr cursor = search l r
+  where
+  (l,r) = bounds arr
+
+  search l r
+    | r - l <= 1 = l
+    | cursor < tmid = search l mid
+    | otherwise     = search mid r
+    where
+    mid  = l + (r - l) `quot` 2
+    tmid = time (ce_event (arr!mid))
 
 eventsFont :: Render FontExtents
 eventsFont = do
@@ -109,8 +127,8 @@ eventsFont = do
   setFontSize 12
   fontExtents
 
-drawEvents :: Double -> Array Int GHC.CapEvent -> Int -> Int -> Render ()
-drawEvents value arr _width height = do
+drawEvents :: Double -> Array Int GHC.CapEvent -> Int -> Int -> Int -> Render ()
+drawEvents value arr width height cursor = do
   let val = truncate value :: Int
   exts <- eventsFont
   let h = fontExtentsHeight exts
@@ -121,6 +139,16 @@ drawEvents value arr _width height = do
       draw y ev = do moveTo 0 y; showText (ppEvent ev)
 
   zipWithM_ draw [ h, h*2 .. ] [ arr ! n | n <- [ val .. end ] ]
+
+  when (val <= cursor && cursor <= end) $ do
+    setLineWidth 3
+    setOperator OperatorOver
+    setSourceRGBAhex blue 1.0
+    let cursory = fromIntegral (cursor - val) * h
+    moveTo 0                    cursory
+    lineTo (fromIntegral width) cursory
+    stroke
+
 
 ppEvent :: CapEvent -> String
 ppEvent (CapEvent cap (GHC.Event ref time spec)) =
