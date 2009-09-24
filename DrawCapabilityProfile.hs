@@ -1,4 +1,5 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, RecordWildCards #-}
+{-# OPTIONS -fno-warn-unused-matches #-}
 module DrawCapabilityProfile
 where
 
@@ -21,6 +22,7 @@ import Data.Maybe
 -- import Debug.Trace
 
 -- ThreadScope imports
+import State
 import CairoDrawing
 import EventlogViewerCommon
 import Ticks
@@ -30,25 +32,23 @@ import ViewerColours
 -------------------------------------------------------------------------------
 -- This function draws the current view of all the HECs with Cario
 
-currentView :: Int -> Int -> Double -> Double -> Double -> 
-               Maybe HECs -> Bool -> Bool -> Bool -> Render ()
-currentView width height hadj_value hadj_pagesize scaleValue 
-            maybeEventArray full_detail bw_mode labels_mode
+currentView :: ViewParameters -> Maybe HECs -> Render ()
+currentView params@ViewParameters{..} maybeEventArray
   = do -- If an event trace has been loaded then render it
        when (isJust maybeEventArray) $ do
          let Just hecs = maybeEventArray
              lastTx :: Timestamp
              lastTx = findLastTxValue hecs
              startPos :: Timestamp
-             startPos = truncate hadj_value
+             startPos = truncate hadjValue
              endPos :: Timestamp
-             endPos = truncate (hadj_value + hadj_pagesize) `min` lastTx 
+             endPos = truncate (hadjValue + hadjPagesize) `min` lastTx 
          selectFontFace "times" FontSlantNormal FontWeightNormal
          setFontSize 12
          setSourceRGBAhex blue 1.0
          setLineWidth 1.0
          C.save
-         C.translate (-hadj_value*scaleValue) 0
+         C.translate (-hadjValue*scaleValue) 0
          C.scale scaleValue 1.0
          draw_line (oxs, oy) (oxs + endPos, oy)
          let 
@@ -64,41 +64,39 @@ currentView width height hadj_value hadj_pagesize scaleValue
          --     putStrLn ("tickWidthInPixels     = " ++ show tickWidthInPixels)
          --     putStrLn ("snappedTickDuration   = " ++ show snappedTickDuration)       
          drawTicks tickWidthInPixels height scaleValue firstTick snappedTickDuration  (10*snappedTickDuration) endPos
-         sequence_ [hecView c full_detail bw_mode labels_mode scaleValue pixelDuration startPos endPos eventTree | (c, eventTree) <- hecs]
+
+         sequence_ [ hecView c params pixelDuration startPos endPos eventTree
+                   | (c, eventTree) <- hecs]
          C.restore
      where
      oxs = truncate ((fromIntegral ox) / scaleValue) -- x origin as Timestamp
      pixelDuration :: Timestamp
-     pixelDuration = truncate hadj_pagesize `div` fromIntegral width
+     pixelDuration = truncate hadjPagesize `div` fromIntegral width
 
 -------------------------------------------------------------------------------
 -- hecView draws the trace for a single HEC
 
-hecView :: Int -> Bool -> Bool -> Bool -> Double -> 
+hecView :: Int -> ViewParameters -> 
            Timestamp -> Timestamp -> 
            Timestamp -> EventTree -> Render ()
-hecView !c full_detail bw_mode labels_mode scale pixelDuration !startPos !endPos
+hecView !c params@ViewParameters{..} pixelDuration !startPos !endPos
         (EventSplit s splitTime e _ _ nrEvents runAv gcAv) 
         | startPos < splitTime && endPos >= splitTime && 
-	  ((e - s) `quot` pixelDuration) <= 2 && nrEvents > 2 &&
-          not full_detail
+	  ((e - s) `quot` pixelDuration) <= fromIntegral detail && nrEvents > 2
   = -- View spans both left and right sub-tree.
     -- trace (printf "hecView (average): start:%d end:%d s:%d e:%d" startPos endPos s e) $
-    drawAverageDuration c bw_mode labels_mode scale s e runAv gcAv
+    drawAverageDuration c params s e runAv gcAv
 
-hecView c full_detail bw_mode labels_mode scale pixelDuration startPos endPos
+hecView c params@ViewParameters{..} pixelDuration startPos endPos
        (EventSplit _ splitTime _ lhs rhs _ _ _)
   = -- trace (printf "hecView: start:%d end:%d s:%d e:%d" startPos endPos s e) $
     do when (startPos < splitTime) $
-         hecView c full_detail bw_mode labels_mode 
-                  scale pixelDuration startPos endPos lhs
+         hecView c params pixelDuration startPos endPos lhs
        when (endPos >= splitTime) $
-         hecView c full_detail bw_mode labels_mode 
-                  scale pixelDuration  startPos endPos rhs
-hecView c _full_detail bw_mode labels_mode scale pixelDuration
+         hecView c params pixelDuration  startPos endPos rhs
+hecView c  params@ViewParameters{..} pixelDuration
         startPos endPos  (EventTreeLeaf eventList)
-  = mapM_ (drawDuration c bw_mode labels_mode scale pixelDuration) 
-          eventsInView
+  = mapM_ (drawDuration c params pixelDuration) eventsInView
     where
     eventsInView = [e | e <- eventList, inView startPos endPos e]
 
@@ -114,11 +112,11 @@ inView viewStart viewEnd event
 
 -------------------------------------------------------------------------------
 
-drawAverageDuration :: Int -> Bool -> Bool -> Double
+drawAverageDuration :: Int -> ViewParameters
 		    -> Timestamp -> Timestamp -> Timestamp -> Timestamp
 		    -> Render ()
-drawAverageDuration c bw_mode _ scaleValue startTime endTime _runAv gcAv
-  = do setSourceRGBAhex (if not bw_mode then runningColour else black) 1.0
+drawAverageDuration c ViewParameters{..} startTime endTime _runAv gcAv
+  = do setSourceRGBAhex (if not bwMode then runningColour else black) 1.0
        draw_outlined_rectangle (oxs + startTime)      -- x
                       (oycap+c*gapcap)                -- y
                       (endTime - startTime)           -- w
@@ -127,7 +125,7 @@ drawAverageDuration c bw_mode _ scaleValue startTime endTime _runAv gcAv
        --move_to (oxs + startTime, oycap+c*gapcap)
        --relMoveTo (4/scaleValue) 13
        --unscaledText scaleValue (show nrEvents)
-       setSourceRGBAhex (if not bw_mode then gcColour else black) gcRatio
+       setSourceRGBAhex (if not bwMode then gcColour else black) gcRatio
        draw_rectangle (oxs + startTime)               -- x
                       (oycap+c*gapcap+barHeight)      -- y
                       (endTime - startTime)           -- w
@@ -178,12 +176,11 @@ detailThreshold = 3000
 
 -------------------------------------------------------------------------------
 
-drawDuration :: Int -> Bool -> Bool -> Double -> Timestamp -> 
-                EventDuration -> Render ()
+drawDuration :: Int -> ViewParameters -> Timestamp -> EventDuration -> Render ()
 
-drawDuration c bw_mode _labels_mode scaleValue _pixelDuration
-             (ThreadRun t s startTime endTime)
-  = do setSourceRGBAhex (if not bw_mode then runningColour else black) 0.8
+drawDuration c ViewParameters{..} _pixelDuration 
+                (ThreadRun t s startTime endTime)
+  = do setSourceRGBAhex (if not bwMode then runningColour else black) 0.8
        setLineWidth (1/scaleValue)
        draw_rectangle_opt False
                       (oxs + startTime)          -- x
@@ -209,8 +206,8 @@ drawDuration c bw_mode _labels_mode scaleValue _pixelDuration
     oxs = truncate (fromIntegral ox / scaleValue) -- x origin as Timestamp 
 
 
-drawDuration c bw_mode _ scaleValue _pixelDuration (GC startTime endTime)
-  = do setSourceRGBAhex (if not bw_mode then gcColour else black) 1.0
+drawDuration c ViewParameters{..} _pixelDuration (GC startTime endTime)
+  = do setSourceRGBAhex (if not bwMode then gcColour else black) 1.0
        draw_rectangle_opt False
                       (oxs + startTime)              -- x
                       (oycap+c*gapcap+barHeight)     -- y
@@ -219,14 +216,14 @@ drawDuration c bw_mode _ scaleValue _pixelDuration (GC startTime endTime)
     where
     oxs = truncate (fromIntegral ox / scaleValue) -- x origin as Timestamp
 
-drawDuration c _bw_mode labels_mode scaleValue pixelDuration (EV event)
+drawDuration c ViewParameters{..} pixelDuration (EV event)
   = case spec event of 
       CreateThread{thread=t} -> 
         when (pixelDuration <= detailThreshold) $ do
           setSourceRGBAhex lightBlue 1.0 
           setLineWidth (3/scaleValue)
           draw_line (oxs + time event, oycap+c*gapcap-4) (oxs + time event, oycap+c*gapcap+barHeight+4)
-          when (True && labels_mode)
+          when (True && labelsMode)
             (do setSourceRGB 0 0.0 0.0
                 move_to (oxs + time event, oycap+c*gapcap+barHeight+12)
                 unscaledText scaleValue (show t ++ " created")
@@ -243,7 +240,7 @@ drawDuration c _bw_mode labels_mode scaleValue pixelDuration (EV event)
            setSourceRGBAhex darkGreen 0.8 
            setLineWidth (3/scaleValue)
            draw_line (oxs + time event, oycap+c*gapcap-4) (oxs + time event, oycap+c*gapcap+barHeight+4)
-           when (scaleValue >= 0.2 && not labels_mode)
+           when (scaleValue >= 0.2 && not labelsMode)
             (do setSourceRGB 0.0 0.0 0.0
                 move_to (ox+eScale event scaleValue, oycap+c*gapcap-5)
                 unscaledText scaleValue (show t ++ " runnable")
@@ -253,7 +250,7 @@ drawDuration c _bw_mode labels_mode scaleValue pixelDuration (EV event)
            setSourceRGBAhex cyan 0.8 
            setLineWidth (3/scaleValue)
            draw_line (oxs + time event, oycap+c*gapcap-4) (oxs + time event, oycap+c*gapcap+barHeight+4)
-           when (scaleValue >= subscriptThreashold && not labels_mode)
+           when (scaleValue >= subscriptThreashold && not labelsMode)
             (do setSourceRGB 0 0.0 0.0
                 move_to (oxs + time event, oycap+c*gapcap-5)
                 unscaledText scaleValue ("seq GC req")
@@ -263,7 +260,7 @@ drawDuration c _bw_mode labels_mode scaleValue pixelDuration (EV event)
            setSourceRGBA 1.0 0.0 1.0 0.8 
            setLineWidth (3/scaleValue)
            draw_line (oxs + time event, oycap+c*gapcap-4) (oxs + time event, oycap+c*gapcap+barHeight+4)
-           when (labels_mode)
+           when (labelsMode)
             (do setSourceRGB 0 0.0 0.0
                 move_to (oxs + time event, oycap+c*gapcap-5)
                 unscaledText scaleValue ("par GC req")
@@ -274,7 +271,7 @@ drawDuration c _bw_mode labels_mode scaleValue pixelDuration (EV event)
               setSourceRGBAhex darkRed 0.8 
               setLineWidth (3/scaleValue)
               draw_line (oxs + time event, oycap+newc*gapcap-4) (oxs + time event, oycap+newc*gapcap+barHeight+4)
-              when (labels_mode)
+              when (labelsMode)
                (do setSourceRGB 0.0 0.0 0.0
                    move_to (oxs + time event, oycap+newc*gapcap+barHeight+12)
                    unscaledText scaleValue (show t ++ " migrated from " ++ show c)
@@ -284,7 +281,7 @@ drawDuration c _bw_mode labels_mode scaleValue pixelDuration (EV event)
               setSourceRGBAhex purple 0.8 
               setLineWidth (3/scaleValue)
               draw_line (oxs + time event, oycap+c*gapcap-4) (oxs + time event, oycap+c*gapcap+barHeight+4)
-              when (labels_mode)
+              when (labelsMode)
                (do setSourceRGB 0.0 0.0 0.0
                    move_to (oxs + time event, oycap+c*gapcap+barHeight+12)
                    unscaledText scaleValue (show t ++ " woken from " ++ show otherc)

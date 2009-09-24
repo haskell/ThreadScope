@@ -151,17 +151,26 @@ startup options state@ViewerState{..}
              bw_mode <- checkMenuItemGetActive bwToggle
              full_detail <- checkMenuItemGetActive fullDetailToggle
              labels_mode <- toggleToolButtonGetActive showLabelsToggle
+
+             let params = ViewParameters {
+                                width     = width,
+                                height    = height,
+                                hadjValue = hadj_value,
+                                hadjPagesize = hadj_pagesize,
+                                scaleValue = scaleValue,
+                                detail = 2, -- for now
+                                bwMode = bw_mode,
+                                labelsMode = labels_mode
+                            }
+
              withPDFSurface (fn++".pdf") (fromIntegral width) (fromIntegral height)
                (flip renderWith $ (translate (-hadj_value) 0 >> 
-                                   currentView width height hadj_value hadj_pagesize 
-                                   scaleValue maybeEventArray
-                                   full_detail bw_mode labels_mode) >> showPage)
+                                   currentView params maybeEventArray
+                                   ) >> showPage)
              withImageSurface C.FormatARGB32 (fromIntegral width) (fromIntegral height) $ \ result ->
              
                do  renderWith result (translate (-hadj_value) 0 >> 
-                                      currentView width height hadj_value hadj_pagesize 
-                                      scaleValue maybeEventArray
-                                      full_detail bw_mode labels_mode)
+                                      currentView params maybeEventArray)
                    surfaceWriteToPNG result (fn++".png")
              statusbarPush statusBar ctx ("Saved " ++ fn ++ ".pdf")
              return ()
@@ -284,6 +293,7 @@ buildInitialState options = do
        quitMenuItem       <- xmlGetWidget xml castToMenuItem "quitMenuItem"
        aboutMenuItem      <- xmlGetWidget xml castToMenuItem "aboutMenuItem"
 
+       profileIORef       <- newIORef Nothing
        profileDrawingArea <- xmlGetWidget xml castToDrawingArea "profileDrawingArea"
        profileHScrollbar  <- xmlGetWidget xml castToHScrollbar "profileHScrollbar"
        profileAdj         <- rangeGetAdjustment profileHScrollbar 

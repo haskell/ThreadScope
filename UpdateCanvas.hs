@@ -68,9 +68,19 @@ updateProfileDrawingArea state@ViewerState{..} ctx rect
               statusbarPush statusBar ctx ("Scale: " ++ show scaleValue ++ " width = " ++ show width ++ " height = " ++ show height ++ " hadj_value = " ++ printf "%1.3f" hadj_value ++ " hadj_pagesize = " ++ show hadj_pagesize ++ " hadj_low = " ++ show hadj_lower ++ " hadj_upper = " ++ show hadj_upper)
               -- widgetSetSizeRequest canvas (truncate (scaleValue * fromIntegral lastTx) + 2*ox) ((length capabilities)*gapcap+oycap)
               drawWindowClear win
-              renderWithDrawable win (currentView width height hadj_value 
-                 hadj_pagesize scaleValue maybeEventArray
-                 full_detail bw_mode labels_mode)
+
+              let params = ViewParameters {
+                                width     = width,
+                                height    = height,
+                                hadjValue = hadj_value,
+                                hadjPagesize = hadj_pagesize,
+                                scaleValue = scaleValue,
+                                detail = 2, -- for now
+                                bwMode = bw_mode,
+                                labelsMode = labels_mode
+                            }
+
+              renderWithDrawable win $ currentView params maybeEventArray
 
 -------------------------------------------------------------------------------
 -- This function returns a value which can be used to scale

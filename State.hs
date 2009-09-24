@@ -1,4 +1,4 @@
-module State ( ViewerState(..) ) where
+module State ( ViewerState(..), ViewParameters(..) ) where
 
 import EventlogViewerCommon
 
@@ -6,6 +6,7 @@ import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
 
 import Graphics.UI.Gtk
+import Graphics.Rendering.Cairo 
 
 import Data.IORef
 import Data.Array
@@ -43,6 +44,9 @@ data ViewerState = ViewerState {
   aboutMenuItem      :: MenuItem,
 
   -- CPUs view
+  profileIORef       :: IORef (Maybe (ViewParameters, Surface)),
+    -- the currently rendered surface, if any
+
   profileDrawingArea :: DrawingArea,
   profileHScrollbar  :: HScrollbar,
   profileAdj         :: Adjustment,
@@ -59,3 +63,12 @@ data ViewerState = ViewerState {
 
   }
 
+data ViewParameters = ViewParameters {
+    width, height :: Int,
+    hadjValue     :: Double,
+    hadjPagesize  :: Double,  -- ToDo: need this?
+    scaleValue    :: Double,
+    detail        :: Int,
+    bwMode, labelsMode :: Bool
+  }
+  deriving Eq
