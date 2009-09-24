@@ -20,7 +20,7 @@ module GHC.RTS.Events (
        -- * Reading an event log from a file
        readEventLogFromFile,
        -- * Utilities
-       CapEvent(..), sortEvents, groupEvents
+       CapEvent(..), sortEvents, groupEvents, sortGroups
   ) where
 
 {- Libraries. -}
@@ -342,12 +342,15 @@ data CapEvent
                ce_event :: Event
              }
 
+sortEvents :: [Event] -> [CapEvent]
+sortEvents = sortGroups . groupEvents
+
 -- | Sort the raw event stream by time, annotating each event with the
 -- capability that generated it.
-sortEvents :: [Event] -> [CapEvent]
-sortEvents raw = mergesort' (compare `on` (time . ce_event)) $
-                  [ [ CapEvent cap e | e <- es ] 
-                    | (cap, es) <- groupEvents raw ]
+sortGroups :: [(Maybe Int, [Event])] -> [CapEvent]
+sortGroups groups = mergesort' (compare `on` (time . ce_event)) $
+                      [ [ CapEvent cap e | e <- es ] 
+                      | (cap, es) <- groups ]
      -- sorting is made much faster by the way that the event stream is
      -- divided into blocks of events.  
      --  - All events in a block belong to a particular capability
