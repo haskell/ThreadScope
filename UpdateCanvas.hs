@@ -22,6 +22,8 @@ import Text.Printf
 import State
 import DrawCapabilityProfile
 import EventlogViewerCommon
+import ViewerColours
+import Zoom
 
 -------------------------------------------------------------------------------
 -- |The 'updateCanvas' function is called when an expose event
@@ -48,7 +50,7 @@ updateProfileDrawingArea state@ViewerState{..} ctx rect
               -- Work out what portion of the trace is in view  
               -- Compute start time of view              
               let lastTx = findLastTxValue hecs
-              scaleValue <- checkScaleValue scaleIORef profileDrawingArea profileHScrollbar lastTx
+              scaleValue <- checkScaleValue state
               -- Get the scrollbar settings
               hadj <- rangeGetAdjustment profileHScrollbar
               hadj_lower <- adjustmentGetLower hadj
@@ -116,10 +118,11 @@ renderView state@ViewerState{..} params hecs = do
   writeIORef profileIORef (Just (params, surface))
 
   win <- widgetGetDrawWindow profileDrawingArea
+  cursor_t <- readIORef cursorIORef
   renderWithDrawable win $ do
       setSourceSurface surface 0 0
       paint
---      drawCursor state params
+      drawCursor cursor_t params
 
 clearWhite :: Render ()
 clearWhite = do
@@ -129,10 +132,15 @@ clearWhite = do
   paint
   restore
 
---drawCursor :: ViewerState -> ViewParameters -> Render ()
---drawCursor ViewerState{..} ViewParameters{..} = do
---  cursor_t <- readIORef cursor      
---  -- turn this value into pixels
+drawCursor :: Timestamp -> ViewParameters -> Render ()
+drawCursor cursor_t param@ViewParameters{..} = do
+  withViewScale param $ do
+    setLineWidth 2
+    setOperator OperatorOver
+    setSourceRGBAhex blue 1.0
+    moveTo (fromIntegral cursor_t) 0
+    lineTo (fromIntegral cursor_t) (fromIntegral height)
+    stroke
 
 -------------------------------------------------------------------------------
 -- This function returns a value which can be used to scale
@@ -141,22 +149,12 @@ clearWhite = do
 -- An "uncomputed" scale value is represetned as -1.0 (defaultScaleValue)
 -- We estimate the width of the vertical scrollbar at 20 pixels
 
-checkScaleValue :: IORef Double -> DrawingArea ->  HScrollbar -> Timestamp -> IO Double
-checkScaleValue scale profileDrawingArea profileHScrollbar largestTimestamp 
-  = do scaleValue <- readIORef scale
-       if scaleValue < 0.0 then
-         do (w, _) <- widgetGetSize profileDrawingArea
-            let newScale = fromIntegral largestTimestamp / 
-                           fromIntegral (w - 2*ox - 20 - barHeight)
-            writeIORef scale newScale
-            -- Configure the horizontal scrollbar units to correspond to
-            -- Timespec values
-            hadj <- rangeGetAdjustment profileHScrollbar
-            adjustmentSetUpper hadj (fromIntegral largestTimestamp)
-            adjustmentSetPageSize hadj (fromIntegral largestTimestamp)
-            rangeSetIncrements profileHScrollbar 0 0
-            return newScale 
-        else
-         return scaleValue
+checkScaleValue :: ViewerState -> IO Double
+checkScaleValue state@ViewerState{..}
+  = do scaleValue <- readIORef scaleIORef
+       if scaleValue < 0.0 
+          then do zoomToFit state
+                  readIORef scaleIORef
+          else return scaleValue
 
 -------------------------------------------------------------------------------

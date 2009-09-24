@@ -127,14 +127,17 @@ startup options state@ViewerState{..}
               refresh debug capDrawingArea
                                      
        ------------------------------------------------------------------------
-       -- Zoom in button
+       -- zoom buttons
+
        zoomInButton `onToolButtonClicked`
           zoomIn scaleIORef profileHScrollbar statusBar ctx profileDrawingArea
                                             
-       ------------------------------------------------------------------------
-       -- Zoom out button
        zoomOutButton `onToolButtonClicked`
           zoomOut scaleIORef profileHScrollbar statusBar ctx profileDrawingArea
+
+       zoomFitButton `onToolButtonClicked`
+          do zoomToFit state
+             refresh debug profileDrawingArea
 
        ------------------------------------------------------------------------
        -- Save as PDF functionality
@@ -188,12 +191,6 @@ startup options state@ViewerState{..}
                       
        ------------------------------------------------------------------------
        -- Default scale functionality
-       onToolButtonClicked zoomFitButton $
-          do writeIORef scaleIORef 0.1 
-             statusbarPush statusBar ctx ("Scale 0.1")
-             --hadj <- viewportGetHAdjustment viewport 
-             --adjustmentValueChanged hadj
-             refresh debug profileDrawingArea
 
        ------------------------------------------------------------------------
        -- Reload functionality

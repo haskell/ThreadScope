@@ -1,7 +1,6 @@
 {-# LANGUAGE BangPatterns, RecordWildCards #-}
 {-# OPTIONS -fno-warn-unused-matches #-}
-module DrawCapabilityProfile
-where
+module DrawCapabilityProfile (withViewScale, currentView) where
 
 -- Imports for GTK/Glade
 import Graphics.Rendering.Cairo 
@@ -27,6 +26,15 @@ import EventlogViewerCommon
 import Ticks
 import ViewerColours
 
+-------------------------------------------------------------------------------
+
+withViewScale :: ViewParameters -> Render () -> Render ()
+withViewScale params@ViewParameters{..} inner = do
+   save
+   translate (-hadjValue/scaleValue) 0
+   scale (1/scaleValue) 1.0
+   inner
+   restore
 
 -------------------------------------------------------------------------------
 -- This function draws the current view of all the HECs with Cario
@@ -34,7 +42,6 @@ import ViewerColours
 currentView :: ViewParameters -> HECs -> Render ()
 currentView params@ViewParameters{..} hecs
   = do   
-         -- If an event trace has been loaded then render it
          let lastTx :: Timestamp
              lastTx = findLastTxValue hecs
 
@@ -52,9 +59,7 @@ currentView params@ViewParameters{..} hecs
          setFontSize 12
          setSourceRGBAhex blue 1.0
          setLineWidth 1.0
-         C.save
-         C.translate (-hadjValue/scaleValue) 0
-         C.scale (1/scaleValue) 1.0
+         withViewScale params $ do
          draw_line (oxs, oy) (oxs + endPos, oy)
          let 
              timestampFor100Pixels = truncate (100 * scaleValue) -- ns time for 100 pixels
@@ -72,7 +77,6 @@ currentView params@ViewParameters{..} hecs
 
          sequence_ [ hecView c params startPos endPos eventTree
                    | (c, eventTree) <- hecs]
-         C.restore
 
 -------------------------------------------------------------------------------
 -- hecView draws the trace for a single HEC

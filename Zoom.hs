@@ -1,5 +1,11 @@
-module Zoom
-where
+{-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS -fno-warn-unused-matches #-}
+module Zoom (
+     zoomIn, zoomOut, zoomToFit
+  ) where
+
+import State
+import EventlogViewerCommon
 
 -- Imports for GTK/Glade
 import Graphics.UI.Gtk
@@ -53,3 +59,21 @@ zoomOut scale profileHScrollbar statusbar ctx canvas
        widgetQueueDraw canvas        
        
 -------------------------------------------------------------------------------
+
+zoomToFit :: ViewerState -> IO ()
+zoomToFit ViewerState{..} = do
+  mb_hecs <- readIORef hecsIORef
+  case mb_hecs of
+    Nothing   -> writeIORef scaleIORef (-1.0)
+    Just hecs -> do
+       let lastTx = findLastTxValue hecs
+       (w, _) <- widgetGetSize profileDrawingArea
+       let newScale = fromIntegral lastTx / 
+                      fromIntegral (w - 2*ox - 20 - barHeight)
+       writeIORef scaleIORef newScale
+       -- Configure the horizontal scrollbar units to correspond to
+       -- Timespec values
+       hadj <- rangeGetAdjustment profileHScrollbar
+       adjustmentSetUpper hadj (fromIntegral lastTx)
+       adjustmentSetPageSize hadj (fromIntegral lastTx)
+       rangeSetIncrements profileHScrollbar 0 0
