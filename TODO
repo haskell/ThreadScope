@@ -6,7 +6,9 @@ BUGS
 - 100% button doesn't work
 
 NAVIGATION
-- click to add a marker, zoom to the marker
+- button to center the view on the cursor
+- click to add a cursor
+- zoom to the cursor if in view
 - click and drag the view
 - shift-click and drag to zoom to a region
 - draw the detailed view in the background
@@ -17,6 +19,9 @@ NAVIGATION
 - search for events in the event window
 
 UI
+- clip to expose region
+- when the view has scrolled, use the previous rendered surface to render the
+  scrolled part that is still in view
 - render averaged areas properly
 - indicate why a thread stopped somehow
 - indicate when one thread wakes up another thread

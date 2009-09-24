@@ -6,6 +6,7 @@ where
 -- Imports for GTK/Glade
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Gdk.Events
+import Graphics.Rendering.Cairo 
 
 -- Imports for GHC Events
 import qualified GHC.RTS.Events as GHCEvents
@@ -32,13 +33,13 @@ updateProfileDrawingArea state@ViewerState{..} ctx rect
    = do when debug $ putStrLn (show rect)
         maybeEventArray <- readIORef hecsIORef
         -- Check to see if an event trace has been loaded
-        when (isJust maybeEventArray) $
-           do let Just hecs = maybeEventArray
+        case maybeEventArray of
+          Nothing -> return ()
+          Just hecs -> do
               -- Get state information from user-interface components
               bw_mode <- checkMenuItemGetActive bwToggle
               full_detail <- checkMenuItemGetActive fullDetailToggle
               labels_mode <- toggleToolButtonGetActive showLabelsToggle
-              win <- widgetGetDrawWindow profileDrawingArea
               (width,height) <- widgetGetSize profileDrawingArea
               when debug $ do
                 putStrLn ("\n=== updateCanvas") 
@@ -62,25 +63,76 @@ updateProfileDrawingArea state@ViewerState{..} ctx rect
                   pixelDuration = truncate hadj_pagesize `div` fromIntegral width
               when debug $ do
                 putStrLn ("lastTx = " ++ show lastTx)
-                putStrLn ("endTimeOfView' = " ++ show (truncate (hadj_value + hadj_pagesize)))
                 putStrLn ("start time of view = " ++ show startTimeOfView ++ " end time of view = " ++ show endTimeOfView)   
                 putStrLn ("pixel duration = " ++ show pixelDuration)
               statusbarPush statusBar ctx ("Scale: " ++ show scaleValue ++ " width = " ++ show width ++ " height = " ++ show height ++ " hadj_value = " ++ printf "%1.3f" hadj_value ++ " hadj_pagesize = " ++ show hadj_pagesize ++ " hadj_low = " ++ show hadj_lower ++ " hadj_upper = " ++ show hadj_upper)
               -- widgetSetSizeRequest canvas (truncate (scaleValue * fromIntegral lastTx) + 2*ox) ((length capabilities)*gapcap+oycap)
-              drawWindowClear win
 
               let params = ViewParameters {
                                 width     = width,
                                 height    = height,
                                 hadjValue = hadj_value,
-                                hadjPagesize = hadj_pagesize,
                                 scaleValue = scaleValue,
                                 detail = 2, -- for now
                                 bwMode = bw_mode,
                                 labelsMode = labels_mode
                             }
 
-              renderWithDrawable win $ currentView params maybeEventArray
+              renderView state params hecs
+
+renderView :: ViewerState -> ViewParameters -> HECs -> IO ()
+renderView state@ViewerState{..} params hecs = do
+  
+  prev_view <- readIORef profileIORef
+  
+  surface <- 
+    case prev_view of
+      Just (old_params, surface)
+         | old_params == params
+         -> do when debug $ putStrLn "using previously rendered view"
+               return surface
+
+         | width  old_params == width  params &&
+           height old_params == height params
+         -> do when debug $ putStrLn "using old surface"
+               renderWith surface $ do clearWhite; currentView params hecs
+               return surface
+
+         | otherwise
+         -> do when debug $ putStrLn "old surface no good"
+               surfaceFinish surface
+               new_surface <- createImageSurface FormatARGB32
+                                  (width params) (height params)
+               renderWith new_surface $ do clearWhite; currentView params hecs
+               return new_surface
+
+      Nothing -> do
+        when debug $ putStrLn "no old surface"
+        new_surface <- createImageSurface FormatARGB32
+                           (width params) (height params)
+        renderWith new_surface $ do clearWhite; currentView params hecs
+        return new_surface
+
+  writeIORef profileIORef (Just (params, surface))
+
+  win <- widgetGetDrawWindow profileDrawingArea
+  renderWithDrawable win $ do
+      setSourceSurface surface 0 0
+      paint
+--      drawCursor state params
+
+clearWhite :: Render ()
+clearWhite = do
+  save
+  setOperator OperatorSource
+  setSourceRGBA 0xffff 0xffff 0xffff 0xffff
+  paint
+  restore
+
+--drawCursor :: ViewerState -> ViewParameters -> Render ()
+--drawCursor ViewerState{..} ViewParameters{..} = do
+--  cursor_t <- readIORef cursor      
+--  -- turn this value into pixels
 
 -------------------------------------------------------------------------------
 -- This function returns a value which can be used to scale
@@ -94,7 +146,8 @@ checkScaleValue scale profileDrawingArea profileHScrollbar largestTimestamp
   = do scaleValue <- readIORef scale
        if scaleValue < 0.0 then
          do (w, _) <- widgetGetSize profileDrawingArea
-            let newScale = fromIntegral (w - 2*ox - 20 - barHeight) / (fromIntegral (largestTimestamp))
+            let newScale = fromIntegral largestTimestamp / 
+                           fromIntegral (w - 2*ox - 20 - barHeight)
             writeIORef scale newScale
             -- Configure the horizontal scrollbar units to correspond to
             -- Timespec values

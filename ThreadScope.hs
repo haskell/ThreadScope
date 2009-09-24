@@ -145,9 +145,8 @@ startup options state@ViewerState{..}
          hadj_value <- adjustmentGetValue profileAdj
          hadj_pagesize <- adjustmentGetPageSize profileAdj
          mfn <- readIORef filenameIORef
-         case mfn of
-           Nothing -> return ()
-           Just fn -> do
+         case (mfn, maybeEventArray) of
+           (Just fn, Just hecs) -> do
              bw_mode <- checkMenuItemGetActive bwToggle
              full_detail <- checkMenuItemGetActive fullDetailToggle
              labels_mode <- toggleToolButtonGetActive showLabelsToggle
@@ -156,7 +155,6 @@ startup options state@ViewerState{..}
                                 width     = width,
                                 height    = height,
                                 hadjValue = hadj_value,
-                                hadjPagesize = hadj_pagesize,
                                 scaleValue = scaleValue,
                                 detail = 2, -- for now
                                 bwMode = bw_mode,
@@ -165,15 +163,16 @@ startup options state@ViewerState{..}
 
              withPDFSurface (fn++".pdf") (fromIntegral width) (fromIntegral height)
                (flip renderWith $ (translate (-hadj_value) 0 >> 
-                                   currentView params maybeEventArray
-                                   ) >> showPage)
+                                   currentView params hecs) >> showPage)
              withImageSurface C.FormatARGB32 (fromIntegral width) (fromIntegral height) $ \ result ->
              
                do  renderWith result (translate (-hadj_value) 0 >> 
-                                      currentView params maybeEventArray)
+                                      currentView params hecs)
                    surfaceWriteToPNG result (fn++".png")
              statusbarPush statusBar ctx ("Saved " ++ fn ++ ".pdf")
              return ()
+
+           _other -> return ()
 
        ------------------------------------------------------------------------
        -- Allow mouse wheel to be used for zoom in/out
@@ -269,6 +268,7 @@ buildInitialState options = do
        
        let debug = Debug `elem` options
 
+
        filenameIORef <- newIORef Nothing
 
        -- IORefs are used to communicate informaiton about the eventlog
@@ -278,7 +278,7 @@ buildInitialState options = do
        lastTxIORef       <- newIORef 0
        eventArrayIORef   <- newIORef (error "eventArrayIORef")
        scaleIORef        <- newIORef defaultScaleValue
-                               -- How to scale ns to pixels
+       cursorIORef       <- newIORef 0
 
        mainWindow         <- xmlGetWidget xml castToWindow "main_window"
        summaryBar         <- xmlGetWidget xml castToStatusbar "summary"

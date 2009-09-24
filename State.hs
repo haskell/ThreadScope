@@ -22,9 +22,8 @@ data ViewerState = ViewerState {
   hecsIORef         :: MaybeHECsIORef,
   lastTxIORef       :: IORef Timestamp,
   eventArrayIORef   :: IORef (Array Int GHCEvents.CapEvent),
-
-  -- current scale factor
-  scaleIORef        :: IORef Double,
+  scaleIORef        :: IORef Double, -- in ns/pixel
+  cursorIORef       :: IORef Timestamp,
 
   -- WIDGETS
   
@@ -66,7 +65,6 @@ data ViewerState = ViewerState {
 data ViewParameters = ViewParameters {
     width, height :: Int,
     hadjValue     :: Double,
-    hadjPagesize  :: Double,  -- ToDo: need this?
     scaleValue    :: Double,
     detail        :: Int,
     bwMode, labelsMode :: Bool

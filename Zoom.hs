@@ -17,15 +17,16 @@ zoomIn :: IORef Double -> HScrollbar ->
           Statusbar -> ContextId -> DrawingArea
           -> IO ()
 zoomIn scale profileHScrollbar statusbar ctx canvas
-  = do scaleValue <- readIORef scale -- Double the scale value
-       writeIORef scale (2*scaleValue)
+  = do scaleValue <- readIORef scale -- Halve the scale value
+       let newScaleValue = scaleValue/2
+       writeIORef scale newScaleValue
        hadj <- rangeGetAdjustment profileHScrollbar -- Get horizontal scrollbar
        hadj_pagesize <- adjustmentGetPageSize hadj -- Get size of bar
        let newPageSize = hadj_pagesize / 2
        adjustmentSetPageSize hadj newPageSize
        rangeSetIncrements profileHScrollbar 
         (0.1 * newPageSize) (0.9 * newPageSize)
-       statusbarPush statusbar ctx ("Scale " ++ show (2*scaleValue))           
+       statusbarPush statusbar ctx ("Scale " ++ show newScaleValue)
        widgetQueueDraw canvas
 
 -------------------------------------------------------------------------------
@@ -40,14 +41,15 @@ zoomOut :: IORef Double -> HScrollbar ->
            -> IO ()
 zoomOut scale profileHScrollbar statusbar ctx canvas
   = do scaleValue <- readIORef scale
-       writeIORef scale (scaleValue/2)
+       let newScaleValue = scaleValue*2
+       writeIORef scale newScaleValue
        hadj <- rangeGetAdjustment profileHScrollbar
        hadj_pagesize <- adjustmentGetPageSize hadj
        let newPageSize = hadj_pagesize * 2
        adjustmentSetPageSize hadj newPageSize
        rangeSetIncrements profileHScrollbar     
          (0.1 * newPageSize) (0.9 * newPageSize)   
-       statusbarPush statusbar ctx ("Scale " ++ show (scaleValue/2))   
+       statusbarPush statusbar ctx ("Scale " ++ show newScaleValue)
        widgetQueueDraw canvas        
        
 -------------------------------------------------------------------------------

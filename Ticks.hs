@@ -30,7 +30,7 @@ import ViewerColours
 -- a timestamp value of 1000000000 represents 1s.
 -- The position on the drawing canvas is in milliseconds (ms) (1e-3).
 
--- scaleValue is used to multiply a timestamp value to yield a pixel value.
+-- scaleValue is used to divide a timestamp value to yield a pixel value.
 
 -------------------------------------------------------------------------------
 
@@ -38,10 +38,10 @@ drawTicks :: Int -> Int -> Double -> Timestamp -> Timestamp ->
              Timestamp -> Timestamp -> Render ()
 drawTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
   = if pos <= endPos then
-      do setLineWidth (1/scaleValue)
+      do setLineWidth scaleValue
          draw_line (x0, y0) (x1, y1)
          when (pos `mod` majorTick == 0 || pos `mod` (majorTick `div` 2) == 0 || tickWidthInPixels > 30) $ do
-               move_to (oxs + pos - truncate (4.0 / scaleValue), oy - 10)
+               move_to (oxs + pos - truncate (scaleValue * 4.0), oy - 10)
                m <- getMatrix
                identityMatrix
                textPath (showTickTime pos)
@@ -62,7 +62,7 @@ drawTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
                            (oxs + pos, oy, oxs + pos, oy+12)
                          else
                            (oxs + pos, oy, oxs + pos, oy+8)
-    oxs = truncate ((fromIntegral ox) / scaleValue) -- x origin as Timestamp
+    oxs = truncate ((fromIntegral ox) * scaleValue) -- x origin as Timestamp
 
 -------------------------------------------------------------------------------
 -- This display the nano-second time unit with an appropriate suffix
