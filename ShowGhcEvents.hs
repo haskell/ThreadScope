@@ -57,5 +57,6 @@ ppEvent imap (CapEvent cap (Event ref time spec)) =
       printf (Log.desc (fromJust (M.lookup (fromIntegral ref) imap)))
 
     Message msg -> msg
+    UserMessage msg -> msg
 
     other -> showEventTypeSpecificInfo spec

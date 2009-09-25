@@ -132,6 +132,7 @@ data EventTypeSpecificInfo
   | StartGC            { }
   | EndGC              { }
   | Message            { msg :: String }
+  | UserMessage        { msg :: String }
   | UnknownEvent
   deriving Show
 
@@ -288,6 +289,11 @@ getEvSpecInfo num = case fromIntegral num :: Int of
   num <- getE :: GetEvents Word16
   bytes <- replicateM (fromIntegral num) getE 
   return Message{ msg = map (chr . fromIntegral) (bytes :: [Word8]) }
+
+ EVENT_USER_MSG -> do -- (msg)
+  num <- getE :: GetEvents Word16
+  bytes <- replicateM (fromIntegral num) getE 
+  return UserMessage{ msg = map (chr . fromIntegral) (bytes :: [Word8]) }
 
  other -> do -- unrecognised event, just skip it
   etypes <- ask
