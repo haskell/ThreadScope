@@ -14,8 +14,8 @@ import qualified Data.Function
 
 import Control.Monad
 
-import Text.Printf
-import Debug.Trace
+-- import Text.Printf
+-- import Debug.Trace
 
 -- ThreadScope imports
 import State
@@ -298,16 +298,5 @@ eScale event scaleValue = truncate (fromIntegral (time event))
 
 subscriptThreashold :: Double
 subscriptThreashold = 1000000  
-
--------------------------------------------------------------------------------
-
-showThreadStopStatus :: ThreadStopStatus -> String
-showThreadStopStatus HeapOverflow   = "heap overflow"
-showThreadStopStatus StackOverflow  = "stack overflow"
-showThreadStopStatus ThreadYielding = "yielding"
-showThreadStopStatus ThreadBlocked  = "blocked"
-showThreadStopStatus ThreadFinished = "finished"
-showThreadStopStatus ForeignCall    = "foreign call"
-showThreadStopStatus _              = "unknown status"
 
 -------------------------------------------------------------------------------

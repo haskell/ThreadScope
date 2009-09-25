@@ -244,5 +244,10 @@ buildInitialState options = do
 
        eventsVScrollbar   <- xmlGetWidget xml castToVScrollbar "eventsVScroll"
        eventsDrawingArea  <- xmlGetWidget xml castToDrawingArea "eventsDrawingArea"
+       eventsTextEntry    <- xmlGetWidget xml castToEntry "events_entry"
+       eventsFindButton   <- xmlGetWidget xml castToToolButton "events_find"
+       eventsFirstButton  <- xmlGetWidget xml castToToolButton "events_first"
+       eventsHomeButton   <- xmlGetWidget xml castToToolButton "events_home"
+       eventsLastButton   <- xmlGetWidget xml castToToolButton "events_last"
 
        return ViewerState { .. }

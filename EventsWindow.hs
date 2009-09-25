@@ -106,13 +106,14 @@ updateEventsWindow state@ViewerState{..} adj  = liftIO $ do
     drawEvents value arr w h cursorpos
   return True
 
+-- find the line that corresponds to the next event after the cursor
 locateCursor :: Array Int GHC.CapEvent -> Timestamp -> Int
-locateCursor arr cursor = search l r
+locateCursor arr cursor = search l (r+1)
   where
   (l,r) = bounds arr
 
-  search l r
-    | r - l <= 1 = r
+  search !l !r
+    | (r - l) <= 1  = if cursor > time (ce_event (arr!l)) then r else l
     | cursor < tmid = search l mid
     | otherwise     = search mid r
     where
@@ -160,48 +161,4 @@ ppEvent (CapEvent cap (GHC.Event ref time spec)) =
 
     Message msg -> msg
 
-    _other ->
-      case spec of
-        Startup n_caps ->
-          printf "startup: %d capabilities" n_caps
-        EventBlock end_time cap _block_events ->
-          printf "event block: cap %d, end time: %d\n" cap end_time
-        CreateThread thread -> 
-          printf "creating thread %d" thread
-        RunThread thread -> 
-          printf "running thread %d" thread
-        StopThread thread status -> 
-          printf "stopping thread %d (%s)" thread (showThreadStopStatus status)
-        ThreadRunnable thread -> 
-          printf "thread %d is runnable" thread
-        MigrateThread thread newCap  -> 
-          printf "migrating thread %d to cap %d" thread newCap
-        RunSpark thread -> 
-          printf "running a local spark (thread %d)" thread
-        StealSpark thread victimCap -> 
-          printf "thread %d stealing a spark from cap %d" thread victimCap 
-        CreateSparkThread sparkThread -> 
-          printf "creating spark thread %d" sparkThread
-        Shutdown -> 
-          printf "shutting down"
-        WakeupThread thread otherCap -> 
-          printf "waking up thread %d on cap %d" thread otherCap
-        RequestSeqGC -> 
-          printf "requesting sequential GC"
-        RequestParGC -> 
-          printf "requesting parallel GC"
-        StartGC -> 
-          printf "starting GC"
-        EndGC -> 
-          printf "finished GC"
-	_ -> 
-          printf "unknown event type"
-
-showThreadStopStatus :: ThreadStopStatus -> String
-showThreadStopStatus HeapOverflow   = "heap overflow"
-showThreadStopStatus StackOverflow  = "stack overflow"
-showThreadStopStatus ThreadYielding = "thread yielding"
-showThreadStopStatus ThreadBlocked  = "thread blocked"
-showThreadStopStatus ThreadFinished = "thread finished"
-showThreadStopStatus ForeignCall    = "making a foreign call"
-showThreadStopStatus _              = "unknown thread status"
+    _other -> showEventTypeSpecificInfo spec

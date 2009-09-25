@@ -15,7 +15,8 @@ Executable threadscope
   Main-is:           ThreadScope.hs
   Build-Depends:     base, 
                      gtk, cairo, glade,
-                     binary, array, ghc-events, mtl, filepath
+                     binary, array, mtl, filepath,
+                     ghc-events==0.1.*
   extensions:        RecordWildCards, BangPatterns
 
   if impl(ghc < 6.12)

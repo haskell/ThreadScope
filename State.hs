@@ -61,8 +61,12 @@ data ViewerState = ViewerState {
 
   -- Events view
   eventsVScrollbar   :: VScrollbar,
-  eventsDrawingArea  :: DrawingArea
-
+  eventsDrawingArea  :: DrawingArea,
+  eventsTextEntry    :: Entry,
+  eventsFindButton   :: ToolButton,
+  eventsFirstButton  :: ToolButton,
+  eventsHomeButton   :: ToolButton,
+  eventsLastButton   :: ToolButton
   }
 
 data ViewParameters = ViewParameters {
