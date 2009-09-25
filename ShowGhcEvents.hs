@@ -58,45 +58,4 @@ ppEvent imap (CapEvent cap (Event ref time spec)) =
 
     Message msg -> msg
 
-    other ->
-      case spec of
-        Startup n_caps ->
-          printf "startup: %d capabilities" n_caps
-        EventBlock end_time cap block_events ->
-          printf "event block: cap %d, end time: %d\n" cap end_time
-        CreateThread thread -> 
-          printf "creating thread %d" thread
-        RunThread thread -> 
-          printf "running thread %d" thread
-        StopThread thread status -> 
-          printf "stopping thread %d (%s)" thread (showThreadStopStatus status)
-        ThreadRunnable thread -> 
-          printf "thread %d is runnable" thread
-        MigrateThread thread newCap  -> 
-          printf "migrating thread %d to cap %d" thread newCap
-        RunSpark thread -> 
-          printf "running a local spark (thread %d)" thread
-        StealSpark thread victimCap -> 
-          printf "thread %d stealing a spark from cap %d" thread victimCap 
-        CreateSparkThread sparkThread -> 
-          printf "creating spark thread %d" sparkThread
-        Shutdown -> 
-          printf "shutting down"
-        WakeupThread thread otherCap -> 
-          printf "waking up thread %d on cap %d" thread otherCap
-        RequestSeqGC -> 
-          printf "requesting sequential GC"
-        RequestParGC -> 
-          printf "requesting parallel GC"
-        StartGC -> 
-          printf "starting GC"
-        EndGC -> 
-          printf "finished GC"
-
-showThreadStopStatus :: ThreadStopStatus -> String
-showThreadStopStatus HeapOverflow   = "heap overflow"
-showThreadStopStatus StackOverflow  = "stack overflow"
-showThreadStopStatus ThreadYielding = "thread yielding"
-showThreadStopStatus ThreadBlocked  = "thread blocked"
-showThreadStopStatus ThreadFinished = "thread finished"
-showThreadStopStatus ForeignCall    = "making a foreign call"
+    other -> showEventTypeSpecificInfo spec
