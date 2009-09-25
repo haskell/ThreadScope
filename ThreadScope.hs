@@ -242,7 +242,10 @@ buildInitialState options = do
        capDrawingArea     <- xmlGetWidget xml castToDrawingArea "capabilities"
        keyDrawingArea     <- xmlGetWidget xml castToDrawingArea "key"
 
+       eventsFontExtents  <- newIORef (error "eventsFontExtents")
+       eventsCursorIORef  <- newIORef Nothing
        eventsVScrollbar   <- xmlGetWidget xml castToVScrollbar "eventsVScroll"
+       eventsAdj          <- rangeGetAdjustment eventsVScrollbar
        eventsDrawingArea  <- xmlGetWidget xml castToDrawingArea "eventsDrawingArea"
        eventsTextEntry    <- xmlGetWidget xml castToEntry "events_entry"
        eventsFindButton   <- xmlGetWidget xml castToToolButton "events_find"

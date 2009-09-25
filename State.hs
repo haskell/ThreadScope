@@ -60,7 +60,10 @@ data ViewerState = ViewerState {
   keyDrawingArea     :: DrawingArea,
 
   -- Events view
+  eventsFontExtents  :: IORef FontExtents,
+  eventsCursorIORef  :: IORef (Maybe (Timestamp, Int)),
   eventsVScrollbar   :: VScrollbar,
+  eventsAdj          :: Adjustment,
   eventsDrawingArea  :: DrawingArea,
   eventsTextEntry    :: Entry,
   eventsFindButton   :: ToolButton,

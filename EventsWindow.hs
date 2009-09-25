@@ -30,18 +30,16 @@ setupEventsWindow state@ViewerState{..} = do
 
   widgetSetCanFocus eventsDrawingArea True
 
-  on eventsDrawingArea configureEvent $ 
-     eventsWindowResize state adj
+  on eventsDrawingArea configureEvent $ eventsWindowResize state
 
-  on eventsDrawingArea exposeEvent $
-     updateEventsWindow state adj
+  on eventsDrawingArea exposeEvent $ updateEventsWindow state
 
-  on eventsDrawingArea buttonPressEvent $ do
+  on eventsDrawingArea buttonPressEvent $ tryEvent $ do
       button <- eventButton
+      (_,y)  <- eventCoordinates
       liftIO $ do
-        when debug $ putStrLn ("button " ++ show button)
         widgetGrabFocus eventsDrawingArea
-        return True
+        setCursor state y
 
   on eventsDrawingArea focusInEvent $ liftIO $ do
      f <- get eventsDrawingArea widgetHasFocus
@@ -74,37 +72,78 @@ setupEventsWindow state@ViewerState{..} = do
   onValueChanged adj $
      widgetQueueDraw eventsDrawingArea
 
+  onToolButtonClicked eventsFirstButton $ do
+     putStrLn "eventsFirstButton"
+     adjustmentSetValue adj 0
+
+  onToolButtonClicked eventsLastButton $ do
+     upper <- adjustmentGetUpper adj
+     adjustmentSetValue adj upper
+
+  onToolButtonClicked eventsHomeButton $ do
+     cursorpos <- getCursorLine state
+     page  <- adjustmentGetPageSize adj
+     adjustmentSetValue adj (fromIntegral (max 0 (cursorpos - round page `quot` 2)))
+
+  exts <- withImageSurface FormatARGB32 0 0 $ \s -> renderWith s eventsFont
+  writeIORef eventsFontExtents exts
+
   return ()
 
 
-eventsWindowResize :: ViewerState -> Adjustment
-		   -> EventM EConfigure Bool
-eventsWindowResize state@ViewerState{..} adj = liftIO $ do
+eventsWindowResize :: ViewerState -> EventM EConfigure Bool
+eventsWindowResize state@ViewerState{..} = liftIO $ do
   (_,h) <- widgetGetSize eventsDrawingArea
   win <- widgetGetDrawWindow eventsDrawingArea
-  exts <- renderWithDrawable win $ eventsFont
+  exts <- readIORef eventsFontExtents
   let page = fromIntegral (truncate (fromIntegral h / fontExtentsHeight exts))
   arr <- readIORef eventArrayIORef
   let (_, n_events) = bounds arr
-  adjustmentSetPageIncrement adj page
-  adjustmentSetPageSize adj page
-  adjustmentSetUpper adj (fromIntegral n_events)
+  adjustmentSetPageIncrement eventsAdj page
+  adjustmentSetPageSize eventsAdj page
+  adjustmentSetUpper eventsAdj (fromIntegral n_events + 1)
   -- printf "eventsWindowResize: %f" page
   return True
 
-updateEventsWindow :: ViewerState -> Adjustment
-		   -> EventM EExpose Bool
-updateEventsWindow state@ViewerState{..} adj  = liftIO $ do
-  value <- adjustmentGetValue adj
+updateEventsWindow :: ViewerState -> EventM EExpose Bool
+updateEventsWindow state@ViewerState{..} = liftIO $ do
+  value <- adjustmentGetValue eventsAdj
   arr <- readIORef eventArrayIORef
   win <- widgetGetDrawWindow eventsDrawingArea
   (w,h) <- widgetGetSize eventsDrawingArea
-  cursor <- readIORef cursorIORef
-  let cursorpos = locateCursor arr cursor
+
+  cursorpos <- getCursorLine state
   when debug $ printf "cursorpos: %d\n" cursorpos
   renderWithDrawable win $ do
     drawEvents value arr w h cursorpos
   return True
+
+getCursorLine :: ViewerState -> IO Int
+getCursorLine state@ViewerState{..} = do
+  -- locate the cursor position as a line number
+  current_cursor <- readIORef cursorIORef
+  eventsCursor <- readIORef eventsCursorIORef
+  arr <- readIORef eventArrayIORef
+  case eventsCursor of
+        Just (cursort, cursorpos) | cursort == current_cursor ->
+          return cursorpos
+        _other -> do
+          let cursorpos = locateCursor arr current_cursor
+          writeIORef eventsCursorIORef (Just (current_cursor, cursorpos))
+          return cursorpos
+  
+setCursor :: ViewerState -> Double -> IO ()
+setCursor state@ViewerState{..} eventY = do
+  val <- adjustmentGetValue eventsAdj
+  arr <- readIORef eventArrayIORef
+  exts <- readIORef eventsFontExtents
+  let 
+      line = truncate (val + eventY / fontExtentsHeight exts)
+      t    = time (ce_event (arr!line))
+  --
+  writeIORef cursorIORef t
+  writeIORef eventsCursorIORef (Just (t,line))
+  widgetQueueDraw eventsDrawingArea
 
 -- find the line that corresponds to the next event after the cursor
 locateCursor :: Array Int GHC.CapEvent -> Timestamp -> Int
