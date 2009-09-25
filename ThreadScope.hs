@@ -1,5 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS -fno-warn-unused-matches #-}
 
 -- ThreadScope: a graphical viewer for Haskell event log information.
 -- Maintainer: satnams@microsoft.com, s.singh@ieee.org

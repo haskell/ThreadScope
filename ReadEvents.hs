@@ -1,5 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -fno-warn-unused-matches #-}
 module ReadEvents ( 
     registerEventsFromFile, registerEventsFromTrace
   ) where

@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
 module EventlogViewerCommon
 where
 import Data.IORef

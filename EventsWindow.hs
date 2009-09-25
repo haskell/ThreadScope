@@ -1,5 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS -fno-warn-unused-matches #-}
 module EventsWindow (
     setupEventsWindow,
     updateEventsWindow,

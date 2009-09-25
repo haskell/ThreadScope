@@ -1,5 +1,3 @@
-{-# LANGUAGE BangPatterns, RecordWildCards #-}
-{-# OPTIONS -fno-warn-unused-matches #-}
 module DrawCapabilityProfile (withViewScale, currentView) where
 
 -- Imports for GTK/Glade

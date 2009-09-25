@@ -1,4 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
 --- $Id: Events2VCD.hs#1 2009/03/20 13:27:50 REDMOND\\satnams $
 --- $Source: //depot/satnams/haskell/ThreadScope/Events2VCD.hs $
 

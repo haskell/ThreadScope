@@ -16,7 +16,16 @@ Executable threadscope
   Build-Depends:     base, 
                      gtk, cairo, glade,
                      binary, array, ghc-events, mtl, filepath
-  ghc-options:         -Wall -fno-warn-type-defaults -fno-warn-name-shadowing
+  extensions:        RecordWildCards, BangPatterns
+
+  if impl(ghc < 6.12)
+     -- GHC before 6.12 gave spurious warnings for RecordWildCards
+     ghc-options:  -Wall -fno-warn-unused-matches
+  else
+     ghc-options:  -Wall
+
+  ghc-options:  -fno-warn-type-defaults -fno-warn-name-shadowing
+
 source-repository head
   type:     darcs
   location: http://code.haskell.org/ThreadScope/
