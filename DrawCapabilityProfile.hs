@@ -16,8 +16,8 @@ import qualified Data.Function
 
 import Control.Monad
 
--- import Text.Printf
--- import Debug.Trace
+import Text.Printf
+import Debug.Trace
 
 -- ThreadScope imports
 import State
@@ -46,21 +46,21 @@ currentView params@ViewParameters{..} hecs
              lastTx = findLastTxValue hecs
 
              startPos :: Timestamp
-             startPos = truncate hadjValue
+             startPos = fromIntegral (max 0 (truncate hadjValue))
+                        -- hadj_value might be negative, as we leave a
+                        -- small gap before the trace starts at the beginning
 
              endPos :: Timestamp
              endPos = (startPos + ceiling (fromIntegral width * scaleValue)) 
                         `min` lastTx
-
-             oxs = truncate ((fromIntegral ox) * scaleValue)
-                      -- x origin as Timestamp
 
          selectFontFace "times" FontSlantNormal FontWeightNormal
          setFontSize 12
          setSourceRGBAhex blue 1.0
          setLineWidth 1.0
          withViewScale params $ do
-         draw_line (oxs, oy) (oxs + endPos, oy)
+         -- trace (printf "startPos: %d, endPos: %d" startPos endPos) $ do
+         draw_line (startPos, oy) (endPos, oy)
          let 
              timestampFor100Pixels = truncate (100 * scaleValue) -- ns time for 100 pixels
              snappedTickDuration :: Timestamp
@@ -124,7 +124,7 @@ drawAverageDuration :: Int -> ViewParameters
 		    -> Render ()
 drawAverageDuration c ViewParameters{..} startTime endTime _runAv gcAv
   = do setSourceRGBAhex (if not bwMode then runningColour else black) 1.0
-       draw_outlined_rectangle (oxs + startTime)      -- x
+       draw_outlined_rectangle startTime              -- x
                       (oycap+c*gapcap)                -- y
                       (endTime - startTime)           -- w
                        barHeight
@@ -133,7 +133,7 @@ drawAverageDuration c ViewParameters{..} startTime endTime _runAv gcAv
        --relMoveTo (4/scaleValue) 13
        --unscaledText scaleValue (show nrEvents)
        setSourceRGBAhex (if not bwMode then gcColour else black) gcRatio
-       draw_rectangle (oxs + startTime)               -- x
+       draw_rectangle startTime                       -- x
                       (oycap+c*gapcap+barHeight)      -- y
                       (endTime - startTime)           -- w
                       (barHeight `div` 2)             -- h
@@ -144,16 +144,6 @@ drawAverageDuration c ViewParameters{..} startTime endTime _runAv gcAv
 --    runRatio = (fromIntegral runAv) / (fromIntegral duration)
     gcRatio :: Double
     gcRatio = (fromIntegral gcAv) / (fromIntegral duration)
-    oxs = truncate (fromIntegral ox * scaleValue) -- x origin as Timestamp
-
--------------------------------------------------------------------------------
-
-nudgeDown :: Integer -> Integer
-nudgeDown n
-  = if n == 0 then
-      0
-    else
-      n-1
 
 -------------------------------------------------------------------------------
 
@@ -190,14 +180,14 @@ drawDuration c ViewParameters{..}
   = do setSourceRGBAhex (if not bwMode then runningColour else black) 0.8
        setLineWidth (1/scaleValue)
        draw_rectangle_opt False
-                      (oxs + startTime)          -- x
+                      startTime                  -- x
                       (oycap+c*gapcap)           -- y
                       (endTime - startTime)      -- w
                        barHeight                 -- h
        -- Optionally label the bar with the threadID if there is room
        tExtent <- textWidth scaleValue tStr
        when (textExtentsWidth tExtent + 6 < fromIntegral rectWidth)
-         $ do move_to (oxs + startTime, oycap+c*gapcap) 
+         $ do move_to (startTime, oycap+c*gapcap) 
               setSourceRGBAhex labelTextColour 1.0
               relMoveTo (4/scaleValue) 13
               unscaledText scaleValue tStr
@@ -205,23 +195,20 @@ drawDuration c ViewParameters{..}
         -- depending on the zoom value
        when False
          $ do setSourceRGBAhex black 1.0
-              move_to (oxs + endTime, oycap+c*gapcap+barHeight+12)
+              move_to (endTime, oycap+c*gapcap+barHeight+12)
               unscaledText scaleValue (show t ++ " " ++ showThreadStopStatus s)
     where
     rectWidth = truncate (fromIntegral (endTime - startTime) / scaleValue) -- as pixels
     tStr = show t
-    oxs = truncate (fromIntegral ox * scaleValue) -- x origin as Timestamp 
 
 
 drawDuration c ViewParameters{..} (GC startTime endTime)
   = do setSourceRGBAhex (if not bwMode then gcColour else black) 1.0
        draw_rectangle_opt False
-                      (oxs + startTime)              -- x
+                      startTime                      -- x
                       (oycap+c*gapcap+barHeight)     -- y
                       (endTime - startTime)          -- w
                       (barHeight `div` 2)            -- h
-    where
-    oxs = truncate (fromIntegral ox * scaleValue) -- x origin as Timestamp
 
 drawDuration c ViewParameters{..} (EV event)
   = case spec event of 
@@ -229,10 +216,10 @@ drawDuration c ViewParameters{..} (EV event)
         when (scaleValue <= detailThreshold) $ do
           setSourceRGBAhex lightBlue 1.0 
           setLineWidth (3 * scaleValue)
-          draw_line (oxs + time event, oycap+c*gapcap-4) (oxs + time event, oycap+c*gapcap+barHeight+4)
+          draw_line (time event, oycap+c*gapcap-4) (time event, oycap+c*gapcap+barHeight+4)
           when (True && labelsMode)
             (do setSourceRGB 0 0.0 0.0
-                move_to (oxs + time event, oycap+c*gapcap+barHeight+12)
+                move_to (time event, oycap+c*gapcap+barHeight+12)
                 unscaledText scaleValue (show t ++ " created")
             )
       RunThread{}  -> return ()
@@ -241,35 +228,39 @@ drawDuration c ViewParameters{..} (EV event)
            when (scaleValue <= detailThreshold) $
              do setSourceRGBAhex magenta 0.8 
                 setLineWidth (3/scaleValue)
-                draw_line (oxs + time event, oycap+c*gapcap-4) (oxs + time event, oycap+c*gapcap+barHeight+4)
+                draw_line (time event, oycap+c*gapcap-4)
+                          (time event, oycap+c*gapcap+barHeight+4)
       ThreadRunnable{thread=t} ->
         when (scaleValue <= detailThreshold) $ do
            setSourceRGBAhex darkGreen 0.8 
            setLineWidth (3*scaleValue)
-           draw_line (oxs + time event, oycap+c*gapcap-4) (oxs + time event, oycap+c*gapcap+barHeight+4)
+           draw_line (time event, oycap+c*gapcap-4)
+                     (time event, oycap+c*gapcap+barHeight+4)
            when (scaleValue < 200 && not labelsMode)
             (do setSourceRGB 0.0 0.0 0.0
-                move_to (ox+eScale event scaleValue, oycap+c*gapcap-5)
+                move_to (eScale event scaleValue, oycap+c*gapcap-5)
                 unscaledText scaleValue (show t ++ " runnable")
             )
       RequestSeqGC{} -> 
         when (scaleValue <= detailThreshold) $ do
            setSourceRGBAhex cyan 0.8 
            setLineWidth (3*scaleValue)
-           draw_line (oxs + time event, oycap+c*gapcap-4) (oxs + time event, oycap+c*gapcap+barHeight+4)
+           draw_line (time event, oycap+c*gapcap-4)
+                     (time event, oycap+c*gapcap+barHeight+4)
            when (scaleValue >= subscriptThreashold && not labelsMode)
             (do setSourceRGB 0 0.0 0.0
-                move_to (oxs + time event, oycap+c*gapcap-5)
+                move_to (time event, oycap+c*gapcap-5)
                 unscaledText scaleValue ("seq GC req")
             )
       RequestParGC{} -> 
          when (scaleValue <= detailThreshold) $ do
            setSourceRGBA 1.0 0.0 1.0 0.8 
            setLineWidth (3*scaleValue)
-           draw_line (oxs + time event, oycap+c*gapcap-4) (oxs + time event, oycap+c*gapcap+barHeight+4)
+           draw_line (time event, oycap+c*gapcap-4)
+                     (time event, oycap+c*gapcap+barHeight+4)
            when (labelsMode)
             (do setSourceRGB 0 0.0 0.0
-                move_to (oxs + time event, oycap+c*gapcap-5)
+                move_to (time event, oycap+c*gapcap-5)
                 unscaledText scaleValue ("par GC req")
             )
       StartGC -> return ()
@@ -277,28 +268,28 @@ drawDuration c ViewParameters{..} (EV event)
         -> when (scaleValue <= detailThreshold) $ do
               setSourceRGBAhex darkRed 0.8 
               setLineWidth (3*scaleValue)
-              draw_line (oxs + time event, oycap+newc*gapcap-4) (oxs + time event, oycap+newc*gapcap+barHeight+4)
+              draw_line (time event, oycap+newc*gapcap-4)
+                        (time event, oycap+newc*gapcap+barHeight+4)
               when (labelsMode)
                (do setSourceRGB 0.0 0.0 0.0
-                   move_to (oxs + time event, oycap+newc*gapcap+barHeight+12)
+                   move_to (time event, oycap+newc*gapcap+barHeight+12)
                    unscaledText scaleValue (show t ++ " migrated from " ++ show c)
                )
       WakeupThread {thread=t, otherCap=otherc}
         -> when (scaleValue <= detailThreshold) $ do 
               setSourceRGBAhex purple 0.8 
               setLineWidth (3*scaleValue)
-              draw_line (oxs + time event, oycap+c*gapcap-4) (oxs + time event, oycap+c*gapcap+barHeight+4)
+              draw_line (time event, oycap+c*gapcap-4)
+                        (time event, oycap+c*gapcap+barHeight+4)
               when (labelsMode)
                (do setSourceRGB 0.0 0.0 0.0
-                   move_to (oxs + time event, oycap+c*gapcap+barHeight+12)
+                   move_to (time event, oycap+c*gapcap+barHeight+12)
                    unscaledText scaleValue (show t ++ " woken from " ++ show otherc)
                )
       Shutdown{} ->
          do setSourceRGBAhex shutdownColour 0.8
-            draw_rectangle (oxs + time event) (oycap+c*gapcap) (truncate (fromIntegral barHeight * scaleValue) :: Int) barHeight
+            draw_rectangle (time event) (oycap+c*gapcap) (truncate (fromIntegral barHeight * scaleValue) :: Int) barHeight
       _ -> return () 
-    where
-    oxs = truncate (fromIntegral ox * scaleValue) -- x origin as Timestamp
 
 -------------------------------------------------------------------------------
 

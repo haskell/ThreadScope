@@ -41,7 +41,7 @@ drawTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
       do setLineWidth scaleValue
          draw_line (x0, y0) (x1, y1)
          when (pos `mod` majorTick == 0 || pos `mod` (majorTick `div` 2) == 0 || tickWidthInPixels > 30) $ do
-               move_to (oxs + pos - truncate (scaleValue * 4.0), oy - 10)
+               move_to (pos - truncate (scaleValue * 4.0), oy - 10)
                m <- getMatrix
                identityMatrix
                textPath (showTickTime pos)
@@ -56,13 +56,12 @@ drawTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
       return ()
     where
     (x0, y0, x1, y1) = if pos `mod` majorTick == 0 then
-                         (oxs + pos, oy, oxs + pos, oy+16)
+                         (pos, oy, pos, oy+16)
                        else 
                          if pos `mod` (majorTick `div` 2) == 0 then
-                           (oxs + pos, oy, oxs + pos, oy+12)
+                           (pos, oy, pos, oy+12)
                          else
-                           (oxs + pos, oy, oxs + pos, oy+8)
-    oxs = truncate ((fromIntegral ox) * scaleValue) -- x origin as Timestamp
+                           (pos, oy, pos, oy+8)
 
 -------------------------------------------------------------------------------
 -- This display the nano-second time unit with an appropriate suffix

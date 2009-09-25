@@ -8,7 +8,6 @@ module Main where
 
 -- Imports for GTK/Glade
 import Graphics.UI.Gtk
-import Graphics.UI.Gtk.Gdk.Events
 import Graphics.UI.Gtk.Glade
 import Graphics.Rendering.Cairo 
 import qualified Graphics.Rendering.Cairo as C
@@ -20,26 +19,21 @@ import Data.IORef
 import Data.Maybe
 import qualified Data.Function
 import Data.List
-import Text.Printf
 
 import Paths_threadscope
 
 -- Imports for ThreadScope
 import State
 import About
-import CapabilityLabels
 import DrawCapabilityProfile
-import UpdateCanvas
 import EventlogViewerCommon
 import FileDialog
-import Key
 import Options
 import ReadEvents
 import Refresh
-import Scrolling
 import ViewerColours
-import Zoom
 import EventsWindow
+import CPUTimeline
 
 -------------------------------------------------------------------------------
 
@@ -254,82 +248,3 @@ buildInitialState options = do
        eventsDrawingArea  <- xmlGetWidget xml castToDrawingArea "eventsDrawingArea"
 
        return ViewerState { .. }
-
------------------------------------------------------------------------------
--- The CPUs view
-
-setupCPUsView :: ViewerState -> IO ()
-setupCPUsView state@ViewerState{..} = do
-
-  ------------------------------------------------------------------------
-  -- Key presses
-  onKeyPress mainWindow $ \Key { eventKeyName = key, eventKeyChar = mch } -> do
-    -- when debug $ putStrLn ("key " ++ key)
-    case key of
-      "Escape" -> mainQuit >> return True
-      "Right"  -> do scrollRight state; return True
-      "Left"   -> do scrollLeft  state; return True
-      _ -> if isJust mch then
-             case fromJust mch of 
-               '+' -> do zoomIn  state; return True
-               '-' -> do zoomOut state; return True
-               _   -> return True
-           else
-             return True
-
-  ------------------------------------------------------------------------
-  -- Porgram the callback for the capability profileDrawingArea
-  capDrawingArea `onExpose` updateCapabilityDrawingArea state
-
-  ------------------------------------------------------------------------
-  -- Set-up the key profileDrawingArea.
-  keyDrawingArea `onExpose` updateKeyDrawingArea keyDrawingArea
-
-  ------------------------------------------------------------------------
-  -- zoom buttons
-
-  zoomInButton  `onToolButtonClicked` zoomIn    state
-  zoomOutButton `onToolButtonClicked` zoomOut   state
-  zoomFitButton `onToolButtonClicked` zoomToFit state
-
-  firstButton  `onToolButtonClicked` scrollToBeginning state
-  lastButton   `onToolButtonClicked` scrollToEnd state
-  centreButton `onToolButtonClicked` centreOnCursor state
-
-  ------------------------------------------------------------------------
-  -- Allow mouse wheel to be used for zoom in/out
-  onScroll profileDrawingArea $ \(Scroll _ _ _ _ dir _ _ )
-    -> do case dir of
-           ScrollUp   -> do zoomIn state;  return True
-           ScrollDown -> do zoomOut state; return True
-           _          -> return True
-                 
-  ------------------------------------------------------------------------
-  -- Mouse button
-
-  onButtonPress profileDrawingArea $ \button -> do
-     when debug $ putStrLn ("button pressed: " ++ show button)
-     case button of
-       Button{ eventButton = LeftButton, eventClick = SingleClick,
-               -- eventModifier = [],  -- contains [Alt2] for me
-               eventX = x } -> do
-           setCursor state x
-           return True
-       _other -> do
-           return False
-
-  ------------------------------------------------------------------------
-  -- Program the callback for the main drawing profileDrawingArea
-  profileDrawingArea `onExposeRect` updateProfileDrawingArea state
-
-  return ()
-
-
-setCursor :: ViewerState -> Double -> IO ()
-setCursor ViewerState{..} x = do
-  hadjValue <- adjustmentGetValue profileAdj
-  scaleValue <- readIORef scaleIORef
-  let cursor = round (hadjValue + (x - fromIntegral ox) * scaleValue)
-  when debug $ printf "cursor set to: %d" cursor
-  writeIORef cursorIORef cursor
-  widgetQueueDraw profileDrawingArea
