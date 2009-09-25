@@ -15,7 +15,6 @@ NAVIGATION
 - search for events in the event window
 
 UI
-- get rid of oxs, use translation
 - clip to expose region
 - when the view has scrolled, use the previous rendered surface to render the
   scrolled part that is still in view
@@ -30,7 +29,6 @@ UI
   - right-button menu on thread allows to jump to thread creation/completion
 
 OTHER
-- add a way to programmatically generate an event from user code
 - overlay ETW events
 - thread-centric view rather than HEC-centric (in a tab?)
 - colour threads differently

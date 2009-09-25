@@ -199,5 +199,6 @@ ppEvent (CapEvent cap (GHC.Event ref time spec)) =
       printf "unknown event; %d" ref
 
     Message msg -> msg
+    UserMessage msg -> msg
 
     _other -> showEventTypeSpecificInfo spec
