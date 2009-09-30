@@ -31,7 +31,7 @@ import ReadEvents
 import Refresh
 import ViewerColours
 import EventsWindow
-import CPUTimeline
+import Timeline
 
 -------------------------------------------------------------------------------
 

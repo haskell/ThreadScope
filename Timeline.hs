@@ -1,4 +1,4 @@
-module CPUTimeline ( setupCPUsView ) where
+module Timeline ( setupCPUsView ) where
 
 import State
 import ViewerColours
@@ -132,13 +132,10 @@ zoom factor state@ViewerState{..} = do
 
        let cursord = fromIntegral cursor
        when (cursord >= hadj_value && cursord < hadj_value + hadj_pagesize) $
-         adjustmentSetValue hadj $
-           toWholePixels scaleValue (cursord - factor (cursord - hadj_value))
+         adjustmentSetValue hadj (cursord - factor (cursord - hadj_value))
 
-       -- truncate so we're shifting by a whole number of pixels, so that
-       -- we can scroll the view without blurring the image.
-       let pageshift = toWholePixels scaleValue (0.9 * newPageSize)
-       let nudge     = toWholePixels scaleValue (0.1 * newPageSize)
+       let pageshift = 0.9 * newPageSize
+       let nudge     = 0.1 * newPageSize
 
        rangeSetIncrements profileHScrollbar  nudge pageshift
 
@@ -205,15 +202,9 @@ scroll adjust state@ViewerState{..}
        hadj_pagesize <- adjustmentGetPageSize profileAdj
        hadj_lower <- adjustmentGetLower profileAdj
        hadj_upper <- adjustmentGetUpper profileAdj
-       -- always scroll by whole pixels, so that we don't blur the image
-       -- when we copy it.
-       let newValue = toWholePixels scaleValue $
-                      adjust hadj_value hadj_pagesize hadj_lower hadj_upper
+       let newValue = adjust hadj_value hadj_pagesize hadj_lower hadj_upper
        adjustmentSetValue profileAdj newValue  
        adjustmentValueChanged profileAdj       
-
-toWholePixels :: Double -> Double -> Double
-toWholePixels scale x = fromIntegral (truncate (x / scale)) * scale
 
 -------------------------------------------------------------------------------
 -- |The 'updateProfileDrawingArea' function is called when an expose event
@@ -221,57 +212,56 @@ toWholePixels scale x = fromIntegral (truncate (x / scale)) * scale
 --  main trace canvas plus related canvases.
 
 updateProfileDrawingArea :: ViewerState -> Region -> IO ()
-updateProfileDrawingArea state@ViewerState{..} exposeRegion
-   = do maybeEventArray <- readIORef hecsIORef
-        -- Check to see if an event trace has been loaded
-        case maybeEventArray of
-          Nothing -> return ()
-          Just hecs -> do
-              -- Get state information from user-interface components
-              bw_mode <- checkMenuItemGetActive bwToggle
-              full_detail <- checkMenuItemGetActive fullDetailToggle
-              labels_mode <- toggleToolButtonGetActive showLabelsToggle
-              (width,height) <- widgetGetSize profileDrawingArea
-              when debug $ do
-                putStrLn ("\n=== updateCanvas") 
-                putStrLn (show exposeRegion)
-                putStrLn ("width = " ++ show width ++ 
-                          " height = " ++ show height)
-              -- Work out what portion of the trace is in view  
-              -- Compute start time of view              
-              let lastTx = findLastTxValue hecs
-              scaleValue <- checkScaleValue state
-              -- Get the scrollbar settings
-              hadj <- rangeGetAdjustment profileHScrollbar
-              hadj_lower <- adjustmentGetLower hadj
-              hadj_upper <- adjustmentGetUpper hadj
-              hadj_value <- adjustmentGetValue hadj
-              hadj_pagesize <- adjustmentGetPageSize hadj   
-              let startTimeOfView = truncate hadj_value
-                  endTimeOfView = truncate (hadj_value + hadj_pagesize) `min` lastTx
-                  -- The pixel duration in nanoseconds. This is used
-                  -- to determine how much detail to draw.
-                  pixelDuration :: Timestamp
-                  pixelDuration = truncate hadj_pagesize `div` fromIntegral width
-              when debug $ do
-                putStrLn ("lastTx = " ++ show lastTx)
-                putStrLn ("start time of view = " ++ show startTimeOfView ++ " end time of view = " ++ show endTimeOfView)   
-                putStrLn ("pixel duration = " ++ show pixelDuration)
+updateProfileDrawingArea state@ViewerState{..} exposeRegion = do
+  maybeEventArray <- readIORef hecsIORef
+  
+  -- Check to see if an event trace has been loaded
+  case maybeEventArray of
+    Nothing   -> return ()
+    Just hecs -> do
+      -- Get state information from user-interface components
+      bw_mode <- checkMenuItemGetActive bwToggle
+      full_detail <- checkMenuItemGetActive fullDetailToggle
+      labels_mode <- toggleToolButtonGetActive showLabelsToggle
+      (width,height) <- widgetGetSize profileDrawingArea
+      when debug $ do
+        putStrLn ("\n=== updateCanvas") 
+        putStrLn (show exposeRegion)
+        putStrLn ("width = " ++ show width ++ 
+                  " height = " ++ show height)
 
-              ctx <- statusbarGetContextId statusBar "state"
-              statusbarPush statusBar ctx ("Scale: " ++ show scaleValue ++ " width = " ++ show width ++ " height = " ++ show height ++ " hadj_value = " ++ printf "%1.3f" hadj_value ++ " hadj_pagesize = " ++ show hadj_pagesize ++ " hadj_low = " ++ show hadj_lower ++ " hadj_upper = " ++ show hadj_upper)
+      let lastTx = findLastTxValue hecs
+      scaleValue <- checkScaleValue state
+      -- Get the scrollbar settings
+      hadj_lower <- adjustmentGetLower profileAdj
+      hadj_upper <- adjustmentGetUpper profileAdj
+      hadj_value0 <- adjustmentGetValue profileAdj
 
-              let params = ViewParameters {
-                                width     = width,
-                                height    = height,
-                                hadjValue = hadj_value,
-                                scaleValue = scaleValue,
-                                detail = 2, -- for now
-                                bwMode = bw_mode,
-                                labelsMode = labels_mode
-                            }
+      -- snap the view to whole pixels, to avoid blurring
+      let hadj_value = toWholePixels scaleValue hadj_value0
 
-              renderView state params exposeRegion hecs
+      hadj_pagesize <- adjustmentGetPageSize profileAdj   
+      let startTimeOfView = truncate hadj_value
+          endTimeOfView = truncate (hadj_value + hadj_pagesize) `min` lastTx
+
+      when debug $ do
+        putStrLn ("lastTx = " ++ show lastTx)
+        putStrLn ("start time of view = " ++ show startTimeOfView ++ " end time of view = " ++ show endTimeOfView)   
+
+      ctx <- statusbarGetContextId statusBar "state"
+      statusbarPush statusBar ctx ("Scale: " ++ show scaleValue ++ " width = " ++ show width ++ " height = " ++ show height ++ " hadj_value = " ++ printf "%1.3f" hadj_value ++ " hadj_pagesize = " ++ show hadj_pagesize ++ " hadj_low = " ++ show hadj_lower ++ " hadj_upper = " ++ show hadj_upper)
+
+      let params = ViewParameters {
+                            width     = width,
+                            height    = height,
+                            hadjValue = hadj_value,
+                            scaleValue = scaleValue,
+                            detail = 2, -- for now
+                            bwMode = bw_mode,
+                            labelsMode = labels_mode
+                        }
+
+      renderView state params exposeRegion hecs
 
 renderView :: ViewerState -> ViewParameters -> Region -> HECs -> IO ()
 renderView state@ViewerState{..} params exposeRegion hecs = do
@@ -378,6 +368,9 @@ scrollView surface old new hecs = do
 
    surfaceFinish surface
    return new_surface
+
+toWholePixels :: Double -> Double -> Double
+toWholePixels scale x = fromIntegral (truncate (x / scale)) * scale
 
 -------------------------------------------------------------------------------
 -- This function returns a value which can be used to scale

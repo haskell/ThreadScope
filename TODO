@@ -1,7 +1,6 @@
 TODO ------------------------------------------------------------------------
 
 - change the timeline window
-  - snap to pixels at rendering time
   - make it a vbox, render each timeline independently
 
 BUGS ------------------------------------------------------------------------
@@ -11,11 +10,11 @@ BUGS ------------------------------------------------------------------------
 - when there are no events, we crash in last
 - scrolling to the right, we get some over-rendering at the boundary
   causing a thick line
-- dragging the scrollbar leads to blurring due to scrolling by partial pixels
 - scrolling when event labels are on chops off some labels
 - fix event colours (key doesn't match)
 - scrolling to the right at the end of the trace leaves an extra blue
   line at the top.
+- fix the ticks: labels overlap sometimes
 
 IDEAS ------------------------------------------------------------------------
 

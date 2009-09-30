@@ -43,7 +43,7 @@ data ViewerState = ViewerState {
   quitMenuItem       :: MenuItem,
   aboutMenuItem      :: MenuItem,
 
-  -- CPUs view
+  -- Timeline view
   profileIORef       :: IORef (Maybe (ViewParameters, Surface)),
     -- the currently rendered surface, if any
 
