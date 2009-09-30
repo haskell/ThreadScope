@@ -3,6 +3,7 @@ module DrawCapabilityProfile (withViewScale, currentView) where
 -- Imports for GTK/Glade
 import Graphics.Rendering.Cairo 
 import qualified Graphics.Rendering.Cairo as C
+import Graphics.UI.Gtk
 
 -- Imports for GHC Events
 import qualified GHC.RTS.Events as GHCEvents
@@ -14,8 +15,8 @@ import qualified Data.Function
 
 import Control.Monad
 
--- import Text.Printf
--- import Debug.Trace
+import Text.Printf
+import Debug.Trace
 
 -- ThreadScope imports
 import State
@@ -37,20 +38,27 @@ withViewScale params@ViewParameters{..} inner = do
 -------------------------------------------------------------------------------
 -- This function draws the current view of all the HECs with Cario
 
-currentView :: ViewParameters -> HECs -> Render ()
-currentView params@ViewParameters{..} hecs
+currentView :: ViewParameters -> Rectangle -> HECs -> Render ()
+currentView params@ViewParameters{..} (Rectangle rx ry rw rh) hecs
   = do   
          let lastTx :: Timestamp
              lastTx = findLastTxValue hecs
 
+             scale_rx    = fromIntegral rx * scaleValue
+             scale_rw    = fromIntegral rw * scaleValue
+             scale_width = fromIntegral width * scaleValue
+
              startPos :: Timestamp
-             startPos = fromIntegral (max 0 (truncate hadjValue))
+             startPos = fromIntegral (max 0 (truncate (scale_rx + hadjValue)))
                         -- hadj_value might be negative, as we leave a
                         -- small gap before the trace starts at the beginning
 
              endPos :: Timestamp
-             endPos = (startPos + ceiling (fromIntegral width * scaleValue)) 
+             endPos = ceiling (hadjValue + scale_width)
+                        `min` ceiling (hadjValue + scale_rx + scale_rw)
                         `min` lastTx
+
+         trace (printf "rx = %d, scale_rx = %f, scale_rw = %f, hadjValue = %f, startPos = %d, endPos = %d" rx scale_rx scale_rw hadjValue startPos endPos) $ do
 
          selectFontFace "times" FontSlantNormal FontWeightNormal
          setFontSize 12

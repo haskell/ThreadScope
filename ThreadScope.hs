@@ -132,13 +132,15 @@ startup options state@ViewerState{..}
                                 labelsMode = labels_mode
                             }
 
+                 rect = Rectangle 0 0 width height
+
              withPDFSurface (fn++".pdf") (fromIntegral width) (fromIntegral height)
                (flip renderWith $ (translate (-hadj_value) 0 >> 
-                                   currentView params hecs) >> showPage)
+                                   currentView params rect hecs) >> showPage)
              withImageSurface C.FormatARGB32 (fromIntegral width) (fromIntegral height) $ \ result ->
              
                do  renderWith result (translate (-hadj_value) 0 >> 
-                                      currentView params hecs)
+                                      currentView params rect hecs)
                    surfaceWriteToPNG result (fn++".png")
              statusbarPush statusBar ctx ("Saved " ++ fn ++ ".pdf")
              return ()
@@ -219,6 +221,7 @@ buildInitialState options = do
 
        bwToggle           <- xmlGetWidget xml castToCheckMenuItem "black_and_white"
        fullDetailToggle   <- xmlGetWidget xml castToCheckMenuItem "fullDetail"
+       sidebarToggle      <- xmlGetWidget xml castToCheckMenuItem "view_sidebar"
        openMenuItem       <- xmlGetWidget xml castToMenuItem "openMenuItem"
        saveMenuItem       <- xmlGetWidget xml castToMenuItem "saveMenuItem"
        saveAsMenuItem     <- xmlGetWidget xml castToMenuItem "saveAsMenuItem"
@@ -252,5 +255,10 @@ buildInitialState options = do
        eventsFirstButton  <- xmlGetWidget xml castToToolButton "events_first"
        eventsHomeButton   <- xmlGetWidget xml castToToolButton "events_home"
        eventsLastButton   <- xmlGetWidget xml castToToolButton "events_last"
+
+       sidebarVBox        <- xmlGetWidget xml castToVBox "sidebar_vbox"
+       sidebarHBox        <- xmlGetWidget xml castToHBox "sidebar_hbox"
+       sidebarCombo       <- xmlGetWidget xml castToComboBox "sidebar_combobox"
+       sidebarCloseButton <- xmlGetWidget xml castToButton "sidebar_close_button"
 
        return ViewerState { .. }

@@ -1,8 +1,26 @@
-BUGS
+TODO ------------------------------------------------------------------------
+
+- change the timeline window
+  - snap to pixels at rendering time
+  - make it a vbox, render each timeline independently
+
+BUGS ------------------------------------------------------------------------
+
 - crash when zooming in too far (negative exponent)
-- divide by zero (test overlap, zoom in, scroll right)
 - vertical scrollbar slider is the wrong size
 - when there are no events, we crash in last
+- scrolling to the right, we get some over-rendering at the boundary
+  causing a thick line
+- dragging the scrollbar leads to blurring due to scrolling by partial pixels
+- scrolling when event labels are on chops off some labels
+- fix event colours (key doesn't match)
+- scrolling to the right at the end of the trace leaves an extra blue
+  line at the top.
+
+IDEAS ------------------------------------------------------------------------
+
+RENDERING
+- Draw event descriptions diagonally
 
 NAVIGATION
 - click and drag the view
@@ -15,22 +33,37 @@ NAVIGATION
 - search for events in the event window
 
 UI
-- clip to expose region
-- when the view has scrolled, use the previous rendered surface to render the
-  scrolled part that is still in view
 - render averaged areas properly
 - indicate why a thread stopped somehow
 - indicate when one thread wakes up another thread
 - event list view
   - respond to page up / page down / arrows
   - interact with bookmarks  
-- left pane for (bookmarks, list of threads)
-  - click on thread(s) to narrow the display to just those threads
-  - right-button menu on thread allows to jump to thread creation/completion
+- left pane for 
+  - bookmarks
+  - list of traces
+    - traces would be a tree-view, e.g.
+      * CPUS
+        * 0
+        * 1 etc.
+      * Threads
+        * 0
+        * 1 etc.
+      * Runtime
+        * live heap
+        * sparks
+      * ETW / Linux Performance counters
+        * cache misses
+        * stalls
+        * etc.
+     - clicking on a trace adds that trace to the view, clicking again
+       removes it
+     - some way to reorder the traces?
+     - when rendering threads, we want some way to indicate the time
+       between creation and death - colour grey?
 
 OTHER
 - overlay ETW events
-- thread-centric view rather than HEC-centric (in a tab?)
 - colour threads differently
 - thread names rather than numbers
 - live heap graph

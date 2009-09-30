@@ -35,6 +35,7 @@ data ViewerState = ViewerState {
   -- menu items
   bwToggle           :: CheckMenuItem,
   fullDetailToggle   :: CheckMenuItem,
+  sidebarToggle      :: CheckMenuItem,
   openMenuItem       :: MenuItem,
   saveMenuItem       :: MenuItem,
   saveAsMenuItem     :: MenuItem,
@@ -69,7 +70,13 @@ data ViewerState = ViewerState {
   eventsFindButton   :: ToolButton,
   eventsFirstButton  :: ToolButton,
   eventsHomeButton   :: ToolButton,
-  eventsLastButton   :: ToolButton
+  eventsLastButton   :: ToolButton,
+
+  -- sidebar
+  sidebarVBox        :: VBox,
+  sidebarHBox        :: HBox,
+  sidebarCombo       :: ComboBox,
+  sidebarCloseButton :: Button
   }
 
 data ViewParameters = ViewParameters {
