@@ -23,13 +23,11 @@ import Paths_threadscope
 -- Imports for ThreadScope
 import State
 import About
-import EventlogViewerCommon
 import FileDialog
 import Options
 import ReadEvents
 import EventsWindow
 import Timeline
-import Timeline.HEC
 
 -------------------------------------------------------------------------------
 
@@ -78,10 +76,10 @@ startup options state@ViewerState{..}
        --- Get the label for the name of the event log
 
        -- B&W toggle button
-       bwToggle `onToggle` queueRedrawTimelines state
+       bwToggle `onToggle` timelineParamsChanged state
 
        -- No Labels toggle button
-       showLabelsToggle `onToolButtonToggled` queueRedrawTimelines state
+       showLabelsToggle `onToolButtonToggled` timelineParamsChanged state
 
        -- When a filename for an event log is specified open and
        -- parse the event log file and update the IORefs for 
@@ -100,8 +98,7 @@ startup options state@ViewerState{..}
        openMenuItem `onActivateLeaf` do
          filename <- openFileDialog mainWindow
          when (isJust filename) $
-           do registerEventsFromFile (fromJust filename) state summary_ctx
-              queueRedrawTimelines state
+           registerEventsFromFile (fromJust filename) state summary_ctx
                                      
        ------------------------------------------------------------------------
        -- Save as PDF functionality
@@ -133,11 +130,11 @@ startup options state@ViewerState{..}
              traces <- readIORef timelineTraces
              withPDFSurface (fn++".pdf") (fromIntegral width) (fromIntegral height)
                (flip renderWith $ (translate (-hadj_value) 0 >> 
-                                   renderTraces params traces hecs rect) >> showPage)
+                                   renderTraces state params traces hecs rect) >> showPage)
              withImageSurface C.FormatARGB32 (fromIntegral width) (fromIntegral height) $ \ result ->
              
                do  renderWith result (translate (-hadj_value) 0 >> 
-                                      renderTraces params traces hecs rect)
+                                      renderTraces state params traces hecs rect)
                    surfaceWriteToPNG result (fn++".png")
              statusbarPush statusBar ctx ("Saved " ++ fn ++ ".pdf")
              return ()
@@ -150,9 +147,8 @@ startup options state@ViewerState{..}
           do mb_filename <- readIORef filenameIORef
              case mb_filename of
                Nothing -> return ()
-               Just filename -> do
+               Just filename -> 
                  registerEventsFromFile filename state summary_ctx
-                 queueRedrawTimelines state
 
        ------------------------------------------------------------------------
        -- CPUs view
@@ -222,8 +218,6 @@ buildInitialState options = do
 
        timelineDrawingArea      <- xmlGetWidget xml castToDrawingArea
                                         "timeline_drawingarea"
-       timelineTicksDrawingArea <- xmlGetWidget xml castToDrawingArea
-                                        "timeline_ticks_drawingarea"
        timelineLabelDrawingArea <- xmlGetWidget xml castToDrawingArea
                                         "timeline_labels_drawingarea"
        timelineKeyDrawingArea   <- xmlGetWidget xml castToDrawingArea
@@ -232,7 +226,8 @@ buildInitialState options = do
                                         "timeline_hscroll"
        timelineVScrollbar       <- xmlGetWidget xml castToVScrollbar
                                         "timeline_vscroll"
-       timelineAdj         <- rangeGetAdjustment timelineHScrollbar 
+       timelineAdj         <- rangeGetAdjustment timelineHScrollbar
+       timelineVAdj        <- rangeGetAdjustment timelineVScrollbar
 
        timelineTraces     <- newIORef []
        timelinePrevView   <- newIORef Nothing

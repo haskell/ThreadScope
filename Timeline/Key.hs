@@ -1,13 +1,6 @@
--------------------------------------------------------------------------------
---- $Id: Key.hs#2 2009/07/18 22:48:30 REDMOND\\satnams $
---- $Source: //depot/satnams/haskell/ThreadScope/Key.hs $
--------------------------------------------------------------------------------
+module Timeline.Key ( updateKeyDrawingArea )  where
 
-
-
-
-module Key
-where
+import Timeline.Render.Constants
 
 -- Imports for GTK/Glade
 import Graphics.UI.Gtk
@@ -15,7 +8,6 @@ import Graphics.UI.Gtk.Gdk.Events
 import Graphics.Rendering.Cairo 
 import qualified Graphics.Rendering.Cairo as C
 
-import EventlogViewerCommon
 import ViewerColours
 
 -------------------------------------------------------------------------------
@@ -30,10 +22,10 @@ updateKeyDrawingArea canvas _
 
 drawKey :: Render ()
 drawKey
-  = do selectFontFace "times" FontSlantNormal FontWeightNormal
+  = do selectFontFace "sans serif" FontSlantNormal FontWeightNormal
        setFontSize 12
        setSourceRGBAhex runningColour 1.0
-       rectangle 10 0 50 (fromIntegral (barHeight `div` 2))
+       rectangle 10 0 50 (fromIntegral (hecBarHeight `div` 2))
        C.fill
        setSourceRGBA 0.0 0.0 0.0 1.0
        moveTo 15 22
@@ -41,7 +33,7 @@ drawKey
        C.fill
 
        setSourceRGBAhex orange 1.0
-       rectangle 70 0 50 (fromIntegral (barHeight `div` 2))
+       rectangle 70 0 50 (fromIntegral (hecBarHeight `div` 2))
        C.fill
        setSourceRGBA 0.0 0.0 0.0 1.0
        moveTo 80 22
@@ -113,7 +105,7 @@ drawKey
        C.fill
 
        setSourceRGBAhex shutdownColour 1.0
-       rectangle 670 0 (fromIntegral barHeight) (fromIntegral barHeight)
+       rectangle 670 0 (fromIntegral hecBarHeight) (fromIntegral hecBarHeight)
        C.fill
        moveTo 695 15
        setSourceRGBA 0.0 0.0 0.0 1.0

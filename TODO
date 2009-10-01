@@ -1,10 +1,8 @@
 TODO ------------------------------------------------------------------------
 
-- move the ticks to the right drawing area
-- get the vertical scrollbar working
-- draw the background white when scrolling
-- use createSimilarSurface?
-- render each timeline independently, using translation
+- fix the status bar
+- why does hitting |<- take forever?
+- move the text entents stuff out of drawing ThreadRuns
 
 BUGS ------------------------------------------------------------------------
 
@@ -17,6 +15,7 @@ BUGS ------------------------------------------------------------------------
 - scrolling to the right at the end of the trace leaves an extra blue
   line at the top.
 - fix the ticks: labels overlap sometimes
+- don't draw overlapping labels
 
 IDEAS ------------------------------------------------------------------------
 

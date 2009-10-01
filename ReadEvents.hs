@@ -4,7 +4,6 @@ module ReadEvents (
 
 import EventTree
 import State
-import EventlogViewerCommon
 import TestEvents
 import EventDuration
 import Timeline

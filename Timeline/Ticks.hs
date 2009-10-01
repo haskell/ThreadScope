@@ -3,21 +3,22 @@
 --- $Source: //depot/satnams/haskell/ThreadScope/Ticks.hs $
 -------------------------------------------------------------------------------
 
-module Ticks
-where
-import EventlogViewerCommon
+module Timeline.Ticks (
+    renderTicks
+  ) where
+
+import Timeline.Render.Constants
+import CairoDrawing
+import ViewerColours
+
 import Graphics.Rendering.Cairo 
 import qualified Graphics.Rendering.Cairo as C
-import Control.Monad
 
 -- Imports for GHC Events
 import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
 
-
-import CairoDrawing
-import EventlogViewerCommon
-import ViewerColours
+import Control.Monad
 
 -------------------------------------------------------------------------------
 -- Minor, semi-major and major ticks are drawn and the absolute periods of 
@@ -33,6 +34,31 @@ import ViewerColours
 -- scaleValue is used to divide a timestamp value to yield a pixel value.
 
 -------------------------------------------------------------------------------
+
+renderTicks :: Timestamp -> Timestamp -> Double -> Int -> Render()
+renderTicks startPos endPos scaleValue height
+  = do
+    selectFontFace "sans serif" FontSlantNormal FontWeightNormal
+    setFontSize 12
+    setSourceRGBAhex blue 1.0
+    setLineWidth 1.0
+    -- trace (printf "startPos: %d, endPos: %d" startPos endPos) $ do
+    draw_line (startPos, oy) (endPos, oy)
+    let 
+        timestampFor100Pixels = truncate (100 * scaleValue) -- ns time for 100 pixels
+        snappedTickDuration :: Timestamp
+        snappedTickDuration = 10 ^ truncate (logBase 10 (fromIntegral timestampFor100Pixels) :: Double)
+        tickWidthInPixels :: Int
+        tickWidthInPixels = truncate ((fromIntegral snappedTickDuration) / scaleValue)
+        firstTick :: Timestamp
+        firstTick = snappedTickDuration * (startPos `div` snappedTickDuration)        
+  --liftIO $
+  --  do putStrLn ("timestampFor100Pixels = " ++ show timestampFor100Pixels)
+  --     putStrLn ("tickWidthInPixels     = " ++ show tickWidthInPixels)
+  --     putStrLn ("snappedTickDuration   = " ++ show snappedTickDuration)       
+    drawTicks tickWidthInPixels height scaleValue firstTick 
+              snappedTickDuration  (10*snappedTickDuration) endPos
+  
 
 drawTicks :: Int -> Int -> Double -> Timestamp -> Timestamp -> 
              Timestamp -> Timestamp -> Render ()
