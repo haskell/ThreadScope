@@ -3,6 +3,7 @@ TODO ------------------------------------------------------------------------
 - fix the status bar
 - why does hitting |<- take forever?
 - move the text entents stuff out of drawing ThreadRuns
+- key is messed up
 
 BUGS ------------------------------------------------------------------------
 
@@ -18,9 +19,6 @@ BUGS ------------------------------------------------------------------------
 - don't draw overlapping labels
 
 IDEAS ------------------------------------------------------------------------
-
-RENDERING
-- Draw event descriptions diagonally
 
 NAVIGATION
 - click and drag the view

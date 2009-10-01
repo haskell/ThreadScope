@@ -13,7 +13,7 @@ import Timeline.Key
 import State
 
 import Graphics.UI.Gtk
-import Graphics.UI.Gtk.Gdk.Events as Old
+import Graphics.UI.Gtk.Gdk.Events as Old hiding (eventModifier)
 import Graphics.UI.Gtk.Gdk.EventM as New
 import Graphics.Rendering.Cairo  as C
 
@@ -66,11 +66,16 @@ setupTimelineView state@ViewerState{..} = do
 
   ------------------------------------------------------------------------
   -- Allow mouse wheel to be used for zoom in/out
-  onScroll timelineDrawingArea $ \(Scroll _ _ _ _ dir _ _ )
-    -> do case dir of
-           ScrollUp   -> do zoomIn state;  return True
-           ScrollDown -> do zoomOut state; return True
-           _          -> return True
+  on timelineDrawingArea scrollEvent $ tryEvent $ do
+    dir <- eventScrollDirection
+    mods <- eventModifier
+    liftIO $ do
+    case (dir,mods) of
+      (ScrollUp,   [Control]) -> zoomIn state
+      (ScrollDown, [Control]) -> zoomOut state
+      (ScrollUp,   [])        -> vscrollUp state
+      (ScrollDown, [])        -> vscrollDown state
+      _ -> return ()
                  
   ------------------------------------------------------------------------
   -- Mouse button
@@ -126,7 +131,6 @@ updateTimelineVScroll state@ViewerState{..} = do
 
   val <- adjustmentGetValue timelineVAdj
   when (val > h') $ adjustmentSetValue timelineVAdj h'
-  when debug $ printf "val: %f, winh: %d, h': %f" val winh h'
 
   adjustmentSetPageSize timelineVAdj winh'
   rangeSetIncrements timelineVScrollbar (0.1 * winh') (0.9 * winh')
@@ -139,7 +143,7 @@ setCursor state@ViewerState{..} x = do
   hadjValue <- adjustmentGetValue timelineAdj
   scaleValue <- readIORef scaleIORef
   let cursor = round (hadjValue + x * scaleValue)
-  when debug $ printf "cursor set to: %d" cursor
+  when debug $ printf "cursor set to: %d\n" cursor
   writeIORef cursorIORef cursor
   queueRedrawTimelines state
 
