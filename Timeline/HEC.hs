@@ -12,8 +12,9 @@ import ViewerColours
 
 import Graphics.Rendering.Cairo 
 import qualified Graphics.Rendering.Cairo as C
+import Graphics.UI.Gtk
 
-import qualified GHC.RTS.Events as GHCEvents
+import qualified GHC.RTS.Events as GHC
 import GHC.RTS.Events hiding (Event)
 
 import Control.Monad
@@ -150,77 +151,31 @@ drawDuration c ViewParameters{..} (GC startTime endTime)
                       (endTime - startTime)          -- w
                       (hecBarHeight `div` 2)         -- h
 
-drawDuration c ViewParameters{..} (EV event)
+drawDuration c params@ViewParameters{..} (EV event)
   = case spec event of 
-      CreateThread{thread=t} -> 
-        when (scaleValue <= detailThreshold) $ do
-          setSourceRGBAhex lightBlue 1.0 
-          setLineWidth (3 * scaleValue)
-          let t = time event
-          draw_line (t, hecBarOff-4) (t, hecBarOff+hecBarHeight+4)
-          labelAt labelsMode t $ show t ++ " created"
+      CreateThread{}   -> renderInstantEvent params event lightBlue
+      RunSpark{}       -> renderInstantEvent params event magenta
+      ThreadRunnable{} -> renderInstantEvent params event darkGreen
+      RequestSeqGC{}   -> renderInstantEvent params event cyan
+      RequestParGC{}   -> renderInstantEvent params event yellow
+      MigrateThread{}  -> renderInstantEvent params event darkRed
+      WakeupThread{}   -> renderInstantEvent params event purple
+      Shutdown{}       -> renderInstantEvent params event shutdownColour
 
       RunThread{}  -> return ()
       StopThread{} -> return ()
+      StartGC{}    -> return ()
 
-      RunSpark{} -> 
-        when (scaleValue <= detailThreshold) $ do
-           setSourceRGBAhex magenta 0.8 
-           setLineWidth (3*scaleValue)
-           let t = time event
-           draw_line (t, hecBarOff-4) (t, hecBarOff+hecBarHeight+4)
-           labelAt labelsMode t $ "run spark"
-
-      ThreadRunnable{thread=thr} ->
-        when (scaleValue <= detailThreshold) $ do
-           setSourceRGBAhex darkGreen 0.8 
-           setLineWidth (3*scaleValue)
-           let t = time event
-           draw_line (t, hecBarOff-4) (t, hecBarOff+hecBarHeight+4)
-           labelAt labelsMode t $ show thr ++ " runnable"
-
-      RequestSeqGC{} -> 
-        when (scaleValue <= detailThreshold) $ do
-           setSourceRGBAhex cyan 0.8 
-           setLineWidth (3*scaleValue)
-           let t = time event
-           draw_line (t, hecBarOff-4) (t, hecBarOff+hecBarHeight+4)
-           labelAt labelsMode t $ "seq GC req"
-
-      RequestParGC{} -> 
-         when (scaleValue <= detailThreshold) $ do
-           setSourceRGBA 1.0 0.0 1.0 0.8 
-           setLineWidth (3*scaleValue)
-           let t = time event
-           draw_line (t, hecBarOff-4) (t, hecBarOff+hecBarHeight+4)
-           labelAt labelsMode t $ "par GC req"
-
-      StartGC -> return ()
-
-      MigrateThread {thread=t, newCap=newc} ->
-         when (scaleValue <= detailThreshold) $ do
-            setSourceRGBAhex darkRed 0.8 
-            setLineWidth (3*scaleValue)
-            let t = time event
-            draw_line (t, hecBarOff-4) (t, hecBarOff+hecBarHeight+4)
-            labelAt labelsMode t $
-                show t ++ " migrated from " ++ show c
-
-      WakeupThread {thread=t, otherCap=otherc}
-        -> when (scaleValue <= detailThreshold) $ do 
-              setSourceRGBAhex purple 0.8 
-              setLineWidth (3*scaleValue)
-              let t = time event
-              draw_line (t, hecBarOff-4) (t, hecBarOff+hecBarHeight+4)
-              labelAt labelsMode t $
-                  show t ++ " woken from " ++ show otherc
-
-      Shutdown{} ->
-         do setSourceRGBAhex shutdownColour 0.8
-            draw_rectangle (time event) hecBarOff 
-                      (truncate (fromIntegral hecBarHeight * scaleValue) :: Int)
-                      hecBarHeight
       _ -> return () 
+
+renderInstantEvent :: ViewParameters -> GHC.Event -> Color -> Render ()
+renderInstantEvent ViewParameters{..} event color = 
+  when (scaleValue <= detailThreshold) $ do
+     setSourceRGBAhex color 1.0 
+     setLineWidth (3 * scaleValue)
+     let t = time event
+     draw_line (t, hecBarOff-4) (t, hecBarOff+hecBarHeight+4)
+     labelAt labelsMode t $ showEventTypeSpecificInfo (spec event)
 
 labelAt :: Bool -> Timestamp -> String -> Render ()
 labelAt labelsMode t str

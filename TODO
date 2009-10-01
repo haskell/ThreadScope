@@ -1,7 +1,6 @@
 TODO ------------------------------------------------------------------------
 
 - fix the status bar
-- why does hitting |<- take forever?
 - move the text entents stuff out of drawing ThreadRuns
 - key is messed up
 
@@ -62,6 +61,7 @@ UI
 
 OTHER
 - overlay ETW events
+- integrate strace events in the event view on Linux
 - colour threads differently
 - thread names rather than numbers
 - live heap graph
