@@ -2,13 +2,14 @@ module ReadEvents (
     registerEventsFromFile, registerEventsFromTrace
   ) where
 
+import EventTree
 import State
 import EventlogViewerCommon
-import ReportEventTree
 import TestEvents
 import EventDuration
+import Timeline
 
-import Graphics.UI.Gtk
+import Graphics.UI.Gtk hiding (on)
 
 import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
@@ -21,6 +22,7 @@ import Text.Printf
 import System.FilePath
 import Control.Monad
 import Debug.Trace
+import Data.Function
 
 -------------------------------------------------------------------------------
 -- The GHC.RTS.Events library returns the profile information
@@ -40,11 +42,14 @@ import Debug.Trace
 
 -------------------------------------------------------------------------------
 
-rawEventsToHECs :: [(Maybe Int, [GHCEvents.Event])] -> HECs
+rawEventsToHECs :: [(Maybe Int, [GHCEvents.Event])] -> [EventTree]
 rawEventsToHECs eventList
-  = -- trace (show eventList) $
-    r
-  where r= [ (hec, eventsToTree events) | (Just hec, events) <- eventList ]
+  = map (toTree . flip lookup heclists)  [0 .. maximum (map fst heclists)]
+  where
+    heclists = [ (h,events) | (Just h,events) <- eventList ]
+
+    toTree Nothing    = EventTreeLeaf []
+    toTree (Just evs) = eventsToTree evs
     
 -------------------------------------------------------------------------------
 
@@ -52,7 +57,7 @@ eventsToTree :: [GHCEvents.Event] -> EventTree
 eventsToTree events
   = trace ("events: " ++ show (length events) ++ "\ndurations: " ++ show (length durations)) $ tree
     where
-    tree = splitEvents durations
+    tree = mkEventTree durations
     durations = eventsToDurations events
 
 -------------------------------------------------------------------------------
@@ -84,37 +89,45 @@ registerEvents :: String
 	       -> ContextId
 	       -> IO ()
 
-registerEvents name eitherFmt ViewerState{..} summary_ctx
-  =   case eitherFmt of
-        Right fmt -> 
-         do let pes = events (dat fmt)
-                groups = groupEvents (events (dat fmt))
-                hecs = rawEventsToHECs groups
-                lastTx = maximum (map (time.last.snd) groups) -- Last event time i
-                capabilities = ennumerateCapabilities pes
-            -- Debugging information
-            when debug $ reportEventTrees hecs
-            -- Update the IORefs used for drawing callbacks
-            writeIORef capabilitiesIORef (Just capabilities)
-            writeIORef hecsIORef (Just hecs)
-            writeIORef lastTxIORef lastTx
-            writeIORef scaleIORef defaultScaleValue
-            let duration = lastTx 
+registerEvents _name (Left msg) _ _ = 
+  putStrLn msg
+registerEvents name (Right fmt) state@ViewerState{..} summary_ctx = do
+  let 
+      groups = groupEvents (events (dat fmt))
+      trees = rawEventsToHECs groups
+      lastTx = maximum (map (time.last.snd) groups) -- Last event time i
 
-            -- sort the events by time and put them in an array
-            let sorted    = sortGroups groups
-		n_events  = length sorted
-		event_arr = listArray (0, n_events-1) sorted
-            writeIORef eventArrayIORef event_arr
+      -- sort the events by time and put them in an array
+      sorted    = sortGroups groups
+      n_events  = length sorted
+      event_arr = listArray (0, n_events-1) sorted
 
-            -- Adjust height to fit capabilities
-            (width, _) <- widgetGetSize mainWindow
-            widgetSetSizeRequest mainWindow width ((length capabilities)*gapcap+oycap+120)
+      hecs = HECs {
+               hecCount         = length trees,
+               hecTrees         = trees,
+               hecEventArray    = event_arr,
+               hecLastEventTime = lastTx
+            }
+  --
+  writeIORef hecsIORef (Just hecs)
 
-            -- Set the status bar
-            statusbarPush summaryBar summary_ctx (show n_events ++ " events. Duration " ++ (printf "%.3f" (((fromIntegral duration)::Double) * 1.0e-9)) ++ " seconds.")   
-            windowSetTitle mainWindow ("ThreadScope - " ++ takeFileName name)
+  -- Debugging information
+  when debug $ zipWithM_ reportEventTree [0..] trees
 
-        Left msg -> putStrLn msg
+  -- Update the IORefs used for drawing callbacks
+  writeIORef scaleIORef defaultScaleValue
+
+  -- Adjust height to fit capabilities
+--  (width, _) <- widgetGetSize mainWindow
+--  widgetSetSizeRequest mainWindow width ((length capabilities)*gapcap+oycap+120)
+
+  -- Set the status bar
+  statusbarPush summaryBar summary_ctx $
+    printf "%d events, %.3fs" n_events 
+                              ((fromIntegral lastTx :: Double) * 1.0e-9)
+
+  windowSetTitle mainWindow ("ThreadScope - " ++ takeFileName name)
+
+  updateTimelines state [ TraceHEC n | n <- [0..hecCount hecs-1] ]
        
 -------------------------------------------------------------------------------

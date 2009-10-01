@@ -23,15 +23,13 @@ import Paths_threadscope
 -- Imports for ThreadScope
 import State
 import About
-import DrawCapabilityProfile
 import EventlogViewerCommon
 import FileDialog
 import Options
 import ReadEvents
-import Refresh
-import ViewerColours
 import EventsWindow
 import Timeline
+import Timeline.HEC
 
 -------------------------------------------------------------------------------
 
@@ -68,7 +66,6 @@ startup options state@ViewerState{..}
        widgetSetAppPaintable mainWindow True
        logoPath <- getDataFileName "threadscope.png"
        windowSetIconFromFile mainWindow logoPath
-       onValueChanged profileAdj $ widgetQueueDraw profileDrawingArea
 
        ------------------------------------------------------------------------
        -- Status bar functionality
@@ -81,10 +78,10 @@ startup options state@ViewerState{..}
        --- Get the label for the name of the event log
 
        -- B&W toggle button
-       bwToggle `onToggle` do refresh debug profileDrawingArea
+       bwToggle `onToggle` queueRedrawTimelines state
 
        -- No Labels toggle button
-       showLabelsToggle `onToolButtonToggled` do refresh debug profileDrawingArea
+       showLabelsToggle `onToolButtonToggled` queueRedrawTimelines state
 
        -- When a filename for an event log is specified open and
        -- parse the event log file and update the IORefs for 
@@ -104,17 +101,16 @@ startup options state@ViewerState{..}
          filename <- openFileDialog mainWindow
          when (isJust filename) $
            do registerEventsFromFile (fromJust filename) state summary_ctx
-              refresh debug profileDrawingArea
-              refresh debug capDrawingArea
+              queueRedrawTimelines state
                                      
        ------------------------------------------------------------------------
        -- Save as PDF functionality
        saveMenuItem `onActivateLeaf` do
-         (width, height) <- widgetGetSize profileDrawingArea
+         (width, height) <- widgetGetSize timelineDrawingArea
          scaleValue <- readIORef scaleIORef
          maybeEventArray <- readIORef hecsIORef
-         hadj_value <- adjustmentGetValue profileAdj
-         hadj_pagesize <- adjustmentGetPageSize profileAdj
+         hadj_value <- adjustmentGetValue timelineAdj
+         hadj_pagesize <- adjustmentGetPageSize timelineAdj
          mfn <- readIORef filenameIORef
          case (mfn, maybeEventArray) of
            (Just fn, Just hecs) -> do
@@ -134,13 +130,14 @@ startup options state@ViewerState{..}
 
                  rect = Rectangle 0 0 width height
 
+             traces <- readIORef timelineTraces
              withPDFSurface (fn++".pdf") (fromIntegral width) (fromIntegral height)
                (flip renderWith $ (translate (-hadj_value) 0 >> 
-                                   currentView params rect hecs) >> showPage)
+                                   renderTraces params traces hecs rect) >> showPage)
              withImageSurface C.FormatARGB32 (fromIntegral width) (fromIntegral height) $ \ result ->
              
                do  renderWith result (translate (-hadj_value) 0 >> 
-                                      currentView params rect hecs)
+                                      renderTraces params traces hecs rect)
                    surfaceWriteToPNG result (fn++".png")
              statusbarPush statusBar ctx ("Saved " ++ fn ++ ".pdf")
              return ()
@@ -155,12 +152,12 @@ startup options state@ViewerState{..}
                Nothing -> return ()
                Just filename -> do
                  registerEventsFromFile filename state summary_ctx
-                 refresh debug profileDrawingArea
+                 queueRedrawTimelines state
 
        ------------------------------------------------------------------------
        -- CPUs view
 
-       setupCPUsView state
+       setupTimelineView state
 
        ------------------------------------------------------------------------
        -- Event view
@@ -170,12 +167,6 @@ startup options state@ViewerState{..}
        ------------------------------------------------------------------------
        -- Quit
        quitMenuItem `onActivateLeaf` mainQuit
-
-       ------------------------------------------------------------------------
-       -- Change background colour
-       sty <- widgetGetModifierStyle profileDrawingArea
-       widgetModifyBg profileDrawingArea StateNormal profileBackground
-       widgetModifyStyle profileDrawingArea sty 
 
        ------------------------------------------------------------------------
        -- About dialog
@@ -229,10 +220,23 @@ buildInitialState options = do
        quitMenuItem       <- xmlGetWidget xml castToMenuItem "quitMenuItem"
        aboutMenuItem      <- xmlGetWidget xml castToMenuItem "aboutMenuItem"
 
-       profileIORef       <- newIORef Nothing
-       profileDrawingArea <- xmlGetWidget xml castToDrawingArea "profileDrawingArea"
-       profileHScrollbar  <- xmlGetWidget xml castToHScrollbar "profileHScrollbar"
-       profileAdj         <- rangeGetAdjustment profileHScrollbar 
+       timelineDrawingArea      <- xmlGetWidget xml castToDrawingArea
+                                        "timeline_drawingarea"
+       timelineTicksDrawingArea <- xmlGetWidget xml castToDrawingArea
+                                        "timeline_ticks_drawingarea"
+       timelineLabelDrawingArea <- xmlGetWidget xml castToDrawingArea
+                                        "timeline_labels_drawingarea"
+       timelineKeyDrawingArea   <- xmlGetWidget xml castToDrawingArea
+                                        "timeline_key_drawingarea"
+       timelineHScrollbar       <- xmlGetWidget xml castToHScrollbar
+                                        "timeline_hscroll"
+       timelineVScrollbar       <- xmlGetWidget xml castToVScrollbar
+                                        "timeline_vscroll"
+       timelineAdj         <- rangeGetAdjustment timelineHScrollbar 
+
+       timelineTraces     <- newIORef []
+       timelinePrevView   <- newIORef Nothing
+
        zoomInButton       <- xmlGetWidget xml castToToolButton "cpus_zoomin"
        zoomOutButton      <- xmlGetWidget xml castToToolButton "cpus_zoomout"
        zoomFitButton      <- xmlGetWidget xml castToToolButton "cpus_zoomfit"
@@ -241,9 +245,6 @@ buildInitialState options = do
        firstButton        <- xmlGetWidget xml castToToolButton "cpus_first"
        lastButton         <- xmlGetWidget xml castToToolButton "cpus_last"
        centreButton       <- xmlGetWidget xml castToToolButton "cpus_centre"
-
-       capDrawingArea     <- xmlGetWidget xml castToDrawingArea "capabilities"
-       keyDrawingArea     <- xmlGetWidget xml castToDrawingArea "key"
 
        eventsFontExtents  <- newIORef (error "eventsFontExtents")
        eventsCursorIORef  <- newIORef Nothing

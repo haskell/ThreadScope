@@ -1,18 +1,53 @@
--------------------------------------------------------------------------------
---- $Id: EventDuration.hs#4 2009/07/18 22:48:30 REDMOND\\satnams $
---- $Source: //depot/satnams/haskell/ThreadScope/EventDuration.hs $
--------------------------------------------------------------------------------
-
 -- This module supports a duration-based data-type to represent thread
 -- execution and GC information.
 
-module EventDuration ( eventsToDurations ) where
+module EventDuration ( 
+    EventDuration(..),
+    timeOfEventDuration,
+    endTimeOfEventDuration,
+    eventsToDurations
+  ) where
 
 -- Imports for GHC Events
 import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
 
-import EventlogViewerCommon
+-------------------------------------------------------------------------------
+-- This datastructure is a duration-based representation of the event
+-- loginformation where thread-runs and GCs are explicitly represented
+-- by a single constructor identifying their start and end points.
+
+data EventDuration
+  = ThreadRun {-#UNPACK#-}!ThreadId 
+              ThreadStopStatus
+              {-#UNPACK#-}!Timestamp
+              {-#UNPACK#-}!Timestamp
+
+  | GC {-#UNPACK#-}!Timestamp
+       {-#UNPACK#-}!Timestamp
+
+  | EV GHCEvents.Event
+  deriving Show
+
+-------------------------------------------------------------------------------
+-- The start time of an event.
+
+timeOfEventDuration :: EventDuration -> Timestamp
+timeOfEventDuration ed
+  = case ed of
+      ThreadRun _ _ startTime _ -> startTime
+      GC startTime _            -> startTime
+      EV event                  -> time event
+
+-------------------------------------------------------------------------------
+-- The emd time of an event.
+
+endTimeOfEventDuration :: EventDuration -> Timestamp
+endTimeOfEventDuration ed
+  = case ed of
+      ThreadRun _ _ _ endTime -> endTime
+      GC _ endTime            -> endTime
+      EV event                -> time event
 
 -------------------------------------------------------------------------------
 

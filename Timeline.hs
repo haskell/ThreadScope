@@ -1,10 +1,13 @@
-module Timeline ( setupCPUsView ) where
+module Timeline ( 
+    setupTimelineView,
+    updateTimelines,
+    queueRedrawTimelines
+ ) where
 
+import Timeline.HEC
 import State
 import ViewerColours
-import DrawCapabilityProfile
 import EventlogViewerCommon
-import CapabilityLabels
 import Key
 
 import GHC.RTS.Events hiding (Event)
@@ -23,8 +26,8 @@ import Debug.Trace
 -----------------------------------------------------------------------------
 -- The CPUs view
 
-setupCPUsView :: ViewerState -> IO ()
-setupCPUsView state@ViewerState{..} = do
+setupTimelineView :: ViewerState -> IO ()
+setupTimelineView state@ViewerState{..} = do
 
   ------------------------------------------------------------------------
   -- Key presses
@@ -43,12 +46,12 @@ setupCPUsView state@ViewerState{..} = do
              return True
 
   ------------------------------------------------------------------------
-  -- Porgram the callback for the capability profileDrawingArea
-  capDrawingArea `onExpose` updateCapabilityDrawingArea state
+  -- Porgram the callback for the capability drawingArea
+  timelineLabelDrawingArea `onExpose` updateCapabilityDrawingArea state
 
   ------------------------------------------------------------------------
-  -- Set-up the key profileDrawingArea.
-  keyDrawingArea `onExpose` updateKeyDrawingArea keyDrawingArea
+  -- Set-up the key timelineDrawingArea.
+  timelineKeyDrawingArea `onExpose` updateKeyDrawingArea timelineKeyDrawingArea
 
   ------------------------------------------------------------------------
   -- zoom buttons
@@ -63,7 +66,7 @@ setupCPUsView state@ViewerState{..} = do
 
   ------------------------------------------------------------------------
   -- Allow mouse wheel to be used for zoom in/out
-  onScroll profileDrawingArea $ \(Scroll _ _ _ _ dir _ _ )
+  onScroll timelineDrawingArea $ \(Scroll _ _ _ _ dir _ _ )
     -> do case dir of
            ScrollUp   -> do zoomIn state;  return True
            ScrollDown -> do zoomOut state; return True
@@ -72,7 +75,7 @@ setupCPUsView state@ViewerState{..} = do
   ------------------------------------------------------------------------
   -- Mouse button
 
-  onButtonPress profileDrawingArea $ \button -> do
+  onButtonPress timelineDrawingArea $ \button -> do
      when debug $ putStrLn ("button pressed: " ++ show button)
      case button of
        Button{ Old.eventButton = LeftButton, Old.eventClick = SingleClick,
@@ -83,25 +86,40 @@ setupCPUsView state@ViewerState{..} = do
        _other -> do
            return False
 
-  ------------------------------------------------------------------------
-  -- Program the callback for the main drawing profileDrawingArea
-  on profileDrawingArea exposeEvent $ tryEvent $ do
+  onValueChanged timelineAdj $ queueRedrawTimelines state
+
+  on timelineDrawingArea exposeEvent $ tryEvent $ do
      exposeRegion <- New.eventRegion
-     liftIO $ updateProfileDrawingArea state exposeRegion
+     liftIO $ exposeTraceView state exposeRegion
 
   return ()
+
+-------------------------------------------------------------------------------
+-- Update the internal state and the timemline view after changing which
+-- traces are displayed, or the order of traces.
+
+updateTimelines :: ViewerState -> [Trace] -> IO ()
+updateTimelines state@ViewerState{..} traces = do
+  writeIORef timelineTraces traces
+  queueRedrawTimelines state
+
+queueRedrawTimelines :: ViewerState -> IO ()
+queueRedrawTimelines state = do
+  widgetQueueDraw (timelineDrawingArea state)
+  widgetQueueDraw (timelineTicksDrawingArea state)
+  widgetQueueDraw (timelineLabelDrawingArea state)
 
 -------------------------------------------------------------------------------
 -- Set the cursor to a new position
 
 setCursor :: ViewerState -> Double -> IO ()
-setCursor ViewerState{..} x = do
-  hadjValue <- adjustmentGetValue profileAdj
+setCursor state@ViewerState{..} x = do
+  hadjValue <- adjustmentGetValue timelineAdj
   scaleValue <- readIORef scaleIORef
   let cursor = round (hadjValue + x * scaleValue)
   when debug $ printf "cursor set to: %d" cursor
   writeIORef cursorIORef cursor
-  widgetQueueDraw profileDrawingArea
+  queueRedrawTimelines state
 
 -------------------------------------------------------------------------------
 -- Zoom in works by expanding the current view such that the 
@@ -123,7 +141,7 @@ zoom factor state@ViewerState{..} = do
        writeIORef scaleIORef newScaleValue
 
        cursor <- readIORef cursorIORef
-       hadj <- rangeGetAdjustment profileHScrollbar -- Get horizontal scrollbar
+       hadj <- rangeGetAdjustment timelineHScrollbar -- Get horizontal scrollbar
        hadj_value <- adjustmentGetValue hadj
        hadj_pagesize <- adjustmentGetPageSize hadj -- Get size of bar
 
@@ -137,10 +155,10 @@ zoom factor state@ViewerState{..} = do
        let pageshift = 0.9 * newPageSize
        let nudge     = 0.1 * newPageSize
 
-       rangeSetIncrements profileHScrollbar  nudge pageshift
+       rangeSetIncrements timelineHScrollbar  nudge pageshift
 
        scaleUpdateStatus state newScaleValue
-       widgetQueueDraw profileDrawingArea
+       queueRedrawTimelines state
 
 -------------------------------------------------------------------------------
 
@@ -150,8 +168,8 @@ zoomToFit state@ViewerState{..} = do
   case mb_hecs of
     Nothing   -> writeIORef scaleIORef (-1.0)
     Just hecs -> do
-       let lastTx = findLastTxValue hecs
-       (w, _) <- widgetGetSize profileDrawingArea
+       let lastTx = hecLastEventTime hecs
+       (w, _) <- widgetGetSize timelineDrawingArea
        let newScaleValue = fromIntegral lastTx / fromIntegral (w - 2*ox)
                            -- leave a gap of ox pixels at each end
        writeIORef scaleIORef newScaleValue
@@ -163,14 +181,14 @@ zoomToFit state@ViewerState{..} = do
            upper = fromIntegral lastTx + gap
            page  = upper + gap
            
-       adjustmentSetLower    profileAdj lower
-       adjustmentSetValue    profileAdj lower
-       adjustmentSetUpper    profileAdj upper
-       adjustmentSetPageSize profileAdj page
-       rangeSetIncrements profileHScrollbar 0 0
+       adjustmentSetLower    timelineAdj lower
+       adjustmentSetValue    timelineAdj lower
+       adjustmentSetUpper    timelineAdj upper
+       adjustmentSetPageSize timelineAdj page
+       rangeSetIncrements timelineHScrollbar 0 0
 
        scaleUpdateStatus state newScaleValue
-       widgetQueueDraw profileDrawingArea
+       queueRedrawTimelines state
 
 -------------------------------------------------------------------------------
 
@@ -198,21 +216,21 @@ scroll :: (Double -> Double -> Double -> Double -> Double)
        -> ViewerState -> IO ()
 scroll adjust state@ViewerState{..}
   = do scaleValue <- readIORef scaleIORef
-       hadj_value <- adjustmentGetValue profileAdj
-       hadj_pagesize <- adjustmentGetPageSize profileAdj
-       hadj_lower <- adjustmentGetLower profileAdj
-       hadj_upper <- adjustmentGetUpper profileAdj
+       hadj_value <- adjustmentGetValue timelineAdj
+       hadj_pagesize <- adjustmentGetPageSize timelineAdj
+       hadj_lower <- adjustmentGetLower timelineAdj
+       hadj_upper <- adjustmentGetUpper timelineAdj
        let newValue = adjust hadj_value hadj_pagesize hadj_lower hadj_upper
-       adjustmentSetValue profileAdj newValue  
-       adjustmentValueChanged profileAdj       
+       adjustmentSetValue timelineAdj newValue  
+       adjustmentValueChanged timelineAdj       
 
 -------------------------------------------------------------------------------
 -- |The 'updateProfileDrawingArea' function is called when an expose event
 --  occurs. This function redraws the currently visible part of the
 --  main trace canvas plus related canvases.
 
-updateProfileDrawingArea :: ViewerState -> Region -> IO ()
-updateProfileDrawingArea state@ViewerState{..} exposeRegion = do
+exposeTraceView :: ViewerState -> Region -> IO ()
+exposeTraceView state@ViewerState{..} exposeRegion = do
   maybeEventArray <- readIORef hecsIORef
   
   -- Check to see if an event trace has been loaded
@@ -223,24 +241,24 @@ updateProfileDrawingArea state@ViewerState{..} exposeRegion = do
       bw_mode <- checkMenuItemGetActive bwToggle
       full_detail <- checkMenuItemGetActive fullDetailToggle
       labels_mode <- toggleToolButtonGetActive showLabelsToggle
-      (width,height) <- widgetGetSize profileDrawingArea
+      (width,height) <- widgetGetSize timelineDrawingArea
       when debug $ do
         putStrLn ("\n=== updateCanvas") 
         putStrLn (show exposeRegion)
         putStrLn ("width = " ++ show width ++ 
                   " height = " ++ show height)
 
-      let lastTx = findLastTxValue hecs
+      let lastTx = hecLastEventTime hecs
       scaleValue <- checkScaleValue state
       -- Get the scrollbar settings
-      hadj_lower <- adjustmentGetLower profileAdj
-      hadj_upper <- adjustmentGetUpper profileAdj
-      hadj_value0 <- adjustmentGetValue profileAdj
+      hadj_lower <- adjustmentGetLower timelineAdj
+      hadj_upper <- adjustmentGetUpper timelineAdj
+      hadj_value0 <- adjustmentGetValue timelineAdj
 
       -- snap the view to whole pixels, to avoid blurring
       let hadj_value = toWholePixels scaleValue hadj_value0
 
-      hadj_pagesize <- adjustmentGetPageSize profileAdj   
+      hadj_pagesize <- adjustmentGetPageSize timelineAdj   
       let startTimeOfView = truncate hadj_value
           endTimeOfView = truncate (hadj_value + hadj_pagesize) `min` lastTx
 
@@ -261,20 +279,40 @@ updateProfileDrawingArea state@ViewerState{..} exposeRegion = do
                             labelsMode = labels_mode
                         }
 
-      renderView state params exposeRegion hecs
+      traces <- readIORef timelineTraces
+      renderView state params traces hecs exposeRegion
 
-renderView :: ViewerState -> ViewParameters -> Region -> HECs -> IO ()
-renderView state@ViewerState{..} params exposeRegion hecs = do
-  
-  prev_view <- readIORef profileIORef
-  
+
+renderView :: ViewerState -> ViewParameters -> [Trace] -> HECs -> Region
+           -> IO ()
+
+renderView state@ViewerState{..} params traces hecs exposeRegion
+ = do
+  prev_view <- readIORef timelinePrevView
+  cursor_t <- readIORef cursorIORef
   rect <- regionGetClipbox exposeRegion
+
+  win <- widgetGetDrawWindow timelineDrawingArea
+  renderWithDrawable win $ do
+
+  let renderToNewSurface = do
+        new_surface <- withTargetSurface $ \surface -> 
+                         liftIO $ createSimilarSurface surface ContentColor
+                                    (width params) (height params)
+        renderWith new_surface $ do 
+             clearWhite
+             renderTraces params traces hecs rect
+        return new_surface
 
   surface <- 
     case prev_view of
+      Nothing -> do
+        when debug $ liftIO $ putStrLn "no old surface"
+        renderToNewSurface
+
       Just (old_params, surface)
          | old_params == params
-         -> do when debug $ putStrLn "using previously rendered view"
+         -> do when debug $ liftIO $ putStrLn "using previously rendered view"
                return surface
 
          | width  old_params == width  params &&
@@ -282,42 +320,29 @@ renderView state@ViewerState{..} params exposeRegion hecs = do
          -> do 
                if old_params { hadjValue = hadjValue params } == params
                   then do 
-                       when debug $ putStrLn "scrolling"
-                       scrollView surface old_params params hecs
+                       when debug $ liftIO $ putStrLn "scrolling"
+                       scrollView surface old_params params traces hecs
                        
                   else do 
-                       when debug $ putStrLn "using old surface"
+                       when debug $ liftIO $ putStrLn "using old surface"
                        renderWith surface $ do 
-                          clearWhite; currentView params rect hecs
+                          clearWhite; renderTraces params traces hecs rect
                        return surface
 
          | otherwise
-         -> do when debug $ putStrLn "old surface no good"
+         -> do when debug $ liftIO $ putStrLn "old surface no good"
                surfaceFinish surface
-               new_surface <- createImageSurface FormatARGB32
-                                  (width params) (height params)
-               renderWith new_surface $ do clearWhite
-                                           currentView params rect hecs
-               return new_surface
+               renderToNewSurface
 
-      Nothing -> do
-        when debug $ putStrLn "no old surface"
-        new_surface <- createImageSurface FormatARGB32
-                           (width params) (height params)
-        renderWith new_surface $ do clearWhite
-                                    currentView params rect hecs
-        return new_surface
+  liftIO $ writeIORef timelinePrevView (Just (params, surface))
 
-  writeIORef profileIORef (Just (params, surface))
-
-  win <- widgetGetDrawWindow profileDrawingArea
-  cursor_t <- readIORef cursorIORef
-  renderWithDrawable win $ do
-      region exposeRegion
-      clip
-      setSourceSurface surface 0 0
-      paint
-      drawCursor cursor_t params
+  region exposeRegion
+  clip
+  clearWhite
+  setSourceSurface surface 0 0
+  setOperator OperatorSource
+  paint
+  drawCursor cursor_t params
 
 clearWhite :: Render ()
 clearWhite = do
@@ -339,32 +364,50 @@ drawCursor cursor_t param@ViewParameters{..} = do
 
 
 -- parameters differ only in the hadjValue, we can scroll ...
-scrollView :: Surface -> ViewParameters -> ViewParameters -> HECs -> IO Surface
-scrollView surface old new hecs = do
-   new_surface <- createImageSurface FormatARGB32 (width new) (height new)
-   let 
-       scale    = scaleValue new
-       old_hadj = hadjValue old
-       new_hadj = hadjValue new
-       w        = fromIntegral (width new)
-       h        = fromIntegral (height new)
-       off      = (old_hadj - new_hadj) / scale
-   --
-   printf "scrollView: old: %f, new %f, dist = %f (%f pixels)\n"
-            old_hadj new_hadj (old_hadj - new_hadj) off
+scrollView :: Surface -> ViewParameters -> ViewParameters -> [Trace] -> HECs
+           -> Render Surface
+scrollView surface old new traces hecs = do
 
-   let rect | old_hadj > new_hadj
-            = Rectangle 0 0 (ceiling off) (height new)
-            | otherwise
-            = Rectangle (truncate (w + off)) 0 (ceiling (-off)) (height new)
+--   scrolling on the same surface seems not to work, I get garbled results.
+--   Not sure what the best way to do this is.
+--   let new_surface = surface
+   new_surface <- withTargetSurface $ \surface -> 
+                    liftIO $ createSimilarSurface surface ContentColor
+                                (width new) (height new)
 
    renderWith new_surface $ do
+
+       let 
+           scale    = scaleValue new
+           old_hadj = hadjValue old
+           new_hadj = hadjValue new
+           w        = fromIntegral (width new)
+           h        = fromIntegral (height new)
+           off      = (old_hadj - new_hadj) / scale
+
+--   liftIO $ printf "scrollView: old: %f, new %f, dist = %f (%f pixels)\n"
+--              old_hadj new_hadj (old_hadj - new_hadj) off
+
+       -- copy the content from the old surface to the new surface, 
+       -- shifted by the appropriate amount.
        setSourceSurface surface off 0
        if old_hadj > new_hadj 
           then do rectangle off 0 (w - off) h -- scroll right.
           else do rectangle 0   0 (w + off) h -- scroll left.
        C.fill
-       currentView new rect hecs
+
+       let rect | old_hadj > new_hadj
+                = Rectangle 0 0 (ceiling off) (height new)
+                | otherwise
+                = Rectangle (truncate (w + off)) 0 (ceiling (-off)) (height new)
+
+       case rect of 
+         Rectangle x y w h -> rectangle (fromIntegral x) (fromIntegral y) 
+                                        (fromIntegral w) (fromIntegral h)
+       setSourceRGBA 0xffff 0xffff 0xffff 0xffff
+       C.fill
+
+       renderTraces new traces hecs rect
 
    surfaceFinish surface
    return new_surface
@@ -388,3 +431,23 @@ checkScaleValue state@ViewerState{..}
           else return scaleValue
 
 -------------------------------------------------------------------------------
+
+updateCapabilityDrawingArea :: ViewerState -> Event -> IO Bool
+updateCapabilityDrawingArea ViewerState{..} (Expose { Old.eventArea=rect }) 
+   = do mb_hecs <- readIORef hecsIORef
+        case mb_hecs of
+          Nothing -> return ()
+          Just hecs -> do
+              win <- widgetGetDrawWindow timelineLabelDrawingArea
+              gc <- gcNew win
+              mapM_ (labelCapability timelineLabelDrawingArea gc) [0..hecCount hecs]
+        return True
+updateCapabilityDrawingArea _ _ = error "updateCapabilityDrawingArea"
+
+-------------------------------------------------------------------------------
+
+labelCapability :: DrawingArea -> GC -> Int -> IO ()
+labelCapability canvas gc n
+  = do win <- widgetGetDrawWindow canvas
+       txt <- canvas `widgetCreateLayout` ("HEC " ++ show n)
+       drawLayoutWithColors win gc 10 (oycap+6+tracePad*n) txt (Just black) Nothing

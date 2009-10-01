@@ -97,53 +97,69 @@ eventsWindowResize state@ViewerState{..} = liftIO $ do
   win <- widgetGetDrawWindow eventsDrawingArea
   exts <- readIORef eventsFontExtents
   let page = fromIntegral (truncate (fromIntegral h / fontExtentsHeight exts))
-  arr <- readIORef eventArrayIORef
-  let (_, n_events) = bounds arr
-  adjustmentSetPageIncrement eventsAdj page
-  adjustmentSetPageSize eventsAdj page
-  adjustmentSetUpper eventsAdj (fromIntegral n_events + 1)
-  -- printf "eventsWindowResize: %f" page
-  return True
+  mb_hecs <- readIORef hecsIORef
+  case mb_hecs of
+    Nothing   -> return True
+    Just hecs -> do
+      let arr = hecEventArray hecs
+      let (_, n_events) = bounds arr
+      adjustmentSetPageIncrement eventsAdj page
+      adjustmentSetPageSize eventsAdj page
+      adjustmentSetUpper eventsAdj (fromIntegral n_events + 1)
+      -- printf "eventsWindowResize: %f" page
+      return True
 
 updateEventsWindow :: ViewerState -> EventM EExpose Bool
 updateEventsWindow state@ViewerState{..} = liftIO $ do
   value <- adjustmentGetValue eventsAdj
-  arr <- readIORef eventArrayIORef
-  win <- widgetGetDrawWindow eventsDrawingArea
-  (w,h) <- widgetGetSize eventsDrawingArea
-
-  cursorpos <- getCursorLine state
-  when debug $ printf "cursorpos: %d\n" cursorpos
-  renderWithDrawable win $ do
-    drawEvents value arr w h cursorpos
-  return True
+  mb_hecs <- readIORef hecsIORef
+  case mb_hecs of
+    Nothing   -> return True
+    Just hecs -> do
+      let arr = hecEventArray hecs
+      win <- widgetGetDrawWindow eventsDrawingArea
+      (w,h) <- widgetGetSize eventsDrawingArea
+    
+      cursorpos <- getCursorLine state
+      when debug $ printf "cursorpos: %d\n" cursorpos
+      renderWithDrawable win $ do
+        drawEvents value arr w h cursorpos
+      return True
 
 getCursorLine :: ViewerState -> IO Int
 getCursorLine state@ViewerState{..} = do
   -- locate the cursor position as a line number
   current_cursor <- readIORef cursorIORef
   eventsCursor <- readIORef eventsCursorIORef
-  arr <- readIORef eventArrayIORef
-  case eventsCursor of
+  mb_hecs <- readIORef hecsIORef
+  case mb_hecs of
+    Nothing   -> return 0
+    Just hecs -> do
+      let arr = hecEventArray hecs
+      case eventsCursor of
         Just (cursort, cursorpos) | cursort == current_cursor ->
-          return cursorpos
+              return cursorpos
         _other -> do
-          let cursorpos = locateCursor arr current_cursor
-          writeIORef eventsCursorIORef (Just (current_cursor, cursorpos))
-          return cursorpos
+              let cursorpos = locateCursor arr current_cursor
+              writeIORef eventsCursorIORef (Just (current_cursor, cursorpos))
+              return cursorpos
   
 setCursor :: ViewerState -> Double -> IO ()
 setCursor state@ViewerState{..} eventY = do
   val <- adjustmentGetValue eventsAdj
-  arr <- readIORef eventArrayIORef
-  exts <- readIORef eventsFontExtents
-  let 
-      line = truncate (val + eventY / fontExtentsHeight exts)
-      t    = time (ce_event (arr!line))
-  --
-  writeIORef cursorIORef t
-  writeIORef eventsCursorIORef (Just (t,line))
-  widgetQueueDraw eventsDrawingArea
+  mb_hecs <- readIORef hecsIORef
+  case mb_hecs of
+    Nothing   -> return ()
+    Just hecs -> do
+      let arr = hecEventArray hecs
+      exts <- readIORef eventsFontExtents
+      let 
+          line = truncate (val + eventY / fontExtentsHeight exts)
+          t    = time (ce_event (arr!line))
+      --
+      writeIORef cursorIORef t
+      writeIORef eventsCursorIORef (Just (t,line))
+      widgetQueueDraw eventsDrawingArea
 
 -- find the line that corresponds to the next event after the cursor
 locateCursor :: Array Int GHC.CapEvent -> Timestamp -> Int

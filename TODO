@@ -1,7 +1,10 @@
 TODO ------------------------------------------------------------------------
 
-- change the timeline window
-  - make it a vbox, render each timeline independently
+- move the ticks to the right drawing area
+- get the vertical scrollbar working
+- draw the background white when scrolling
+- use createSimilarSurface?
+- render each timeline independently, using translation
 
 BUGS ------------------------------------------------------------------------
 
