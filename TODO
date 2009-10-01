@@ -9,7 +9,6 @@ TODO ------------------------------------------------------------------------
 BUGS ------------------------------------------------------------------------
 
 - crash when zooming in too far (negative exponent)
-- vertical scrollbar slider is the wrong size
 - when there are no events, we crash in last
 - scrolling to the right, we get some over-rendering at the boundary
   causing a thick line
