@@ -31,8 +31,8 @@ NAVIGATION
 
 UI
 - render averaged areas properly
-- indicate why a thread stopped somehow
-- indicate when one thread wakes up another thread
+- indicate when one thread wakes up another thread, or a thread is migrated
+  - draw lines/arrows between the events?
 - event list view
   - respond to page up / page down / arrows
   - interact with bookmarks  
@@ -40,15 +40,15 @@ UI
   - bookmarks
   - list of traces
     - traces would be a tree-view, e.g.
-      * CPUS
+      * HECs
         * 0
         * 1 etc.
       * Threads
         * 0
         * 1 etc.
-      * Runtime
+      * RTS
         * live heap
-        * sparks
+        * sparks (per HEC ..)
       * ETW / Linux Performance counters
         * cache misses
         * stalls
