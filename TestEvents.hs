@@ -253,7 +253,57 @@ test "overlap"
     ]
 
 -------------------------------------------------------------------------------
+-- These tests are for chequered patterns to help check for rendering
+-- problems and also to help test the performance of scrolling etc.
+-- Each line has a fixed frequency of a thread running and then performing GC.
+-- Each successive HEC runs thread at half the frequency of the previous HEC.
+
+test "ch1" = chequered 1 100 100000
+test "ch2" = chequered 2 100 100000
+test "ch3" = chequered 3 100 100000
+test "ch4" = chequered 4 100 100000
+test "ch5" = chequered 5 100 100000
+test "ch6" = chequered 6 100 100000
+test "ch7" = chequered 7 100 100000
+test "ch8" = chequered 8 100 100000
+
+-------------------------------------------------------------------------------
 
 test _ = []
 
 -------------------------------------------------------------------------------
+
+chequered :: ThreadId -> Timestamp -> Timestamp -> [Event]
+chequered numThreads basicDuration runLength
+  = Event startup 0 (Startup (fromIntegral numThreads)) : 
+    makeChequered 1 numThreads basicDuration runLength
+
+-------------------------------------------------------------------------------
+
+makeChequered :: ThreadId -> ThreadId -> Timestamp -> Timestamp -> [Event]
+makeChequered currentThread numThreads basicDuration runLength
+              | currentThread > numThreads = [] -- All threads rendered
+makeChequered currentThread numThreads basicDuration runLength
+  = Event blockMarker 0 eventBlock :
+    makeChequered (currentThread+1) numThreads (2*basicDuration) runLength
+    where
+    eventBlock :: EventTypeSpecificInfo
+    eventBlock = EventBlock runLength (fromIntegral (currentThread-1))
+                 (Event create 0 (CreateThread currentThread) 
+                 : chequeredPattern currentThread 0 basicDuration runLength)
+
+-------------------------------------------------------------------------------
+
+chequeredPattern :: ThreadId -> Timestamp -> Timestamp -> Timestamp -> [Event]
+chequeredPattern currentThread currentPos basicDuration runLength
+  = if currentPos + 2*basicDuration > runLength then
+      [Event shutdown runLength (Shutdown)]
+    else
+      [Event runThread currentPos (RunThread currentThread),
+       Event stop      (currentPos+basicDuration) (StopThread currentThread ThreadYielding),
+       Event startGC (currentPos+basicDuration) StartGC,
+       Event finishGC (currentPos+2*basicDuration) EndGC
+      ] ++ chequeredPattern currentThread (currentPos+2*basicDuration) basicDuration runLength     
+
+-------------------------------------------------------------------------------
+
