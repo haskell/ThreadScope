@@ -67,12 +67,14 @@ drawTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
   = if pos <= endPos then
       do setLineWidth scaleValue
          draw_line (x0, y0) (x1, y1)
-         when (pos `mod` majorTick == 0 || pos `mod` (majorTick `div` 2) == 0 || tickWidthInPixels > 30) $ do
+         when (atMajorTick || atMidTick || tickWidthInPixels > 30) $ do
                move_to (pos - truncate (scaleValue * 4.0), oy - 10)
                m <- getMatrix
                identityMatrix
-               textPath (showTickTime pos)
-               C.fill
+               tExtent <- textExtents tickTimeText
+               when (textExtentsWidth tExtent < fromIntegral tickWidthInPixels || atMidTick || atMajorTick) $ do
+                 textPath tickTimeText
+                 C.fill
                setMatrix m
                setSourceRGBAhex blue 0.2
                draw_line (x1, y1) (x1, height)
@@ -82,6 +84,9 @@ drawTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
     else
       return ()
     where
+    tickTimeText = showTickTime pos
+    atMidTick = pos `mod` (majorTick `div` 2) == 0
+    atMajorTick = pos `mod` majorTick == 0 
     (x0, y0, x1, y1) = if pos `mod` majorTick == 0 then
                          (pos, oy, pos, oy+16)
                        else 

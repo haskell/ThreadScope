@@ -14,8 +14,8 @@ DONE: - crash when zooming in too far (negative exponent)
 DONE: - fix event colours (key doesn't match)
 - scrolling to the right at the end of the trace leaves an extra blue
   line at the top.
-- fix the ticks: labels overlap sometimes
-- don't draw overlapping labels
+DONE: - fix the ticks: labels overlap sometimes
+DONE: - don't draw overlapping labels
 
 IDEAS ------------------------------------------------------------------------
 
