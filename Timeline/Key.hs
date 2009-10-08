@@ -51,63 +51,64 @@ drawKey
        C.fill
 
        setSourceRGBAhex magenta 1.0
-       moveTo 210 0
+       moveTo 220 0
        relLineTo 0 25
        C.stroke
        setSourceRGBA 0.0 0.0 0.0 1.0
-       moveTo 215 15
+       moveTo 225 15
        textPath "run spark"
        C.fill
 
        setSourceRGBAhex darkGreen 1.0
-       moveTo 270 0
+       moveTo 290 0
        relLineTo 0 25
        C.stroke
        setSourceRGBA 0.0 0.0 0.0 1.0
-       moveTo 275 15
+       moveTo 295 15
        textPath "thread runnable"
        C.fill
 
        setSourceRGBAhex cyan 1.0
-       moveTo 360 0
+       moveTo 390 0
        relLineTo 0 25
        C.stroke
        setSourceRGBA 0.0 0.0 0.0 1.0
-       moveTo 365 15
+       moveTo 395 15
        textPath "seq GC req"
        C.fill
 
        setSourceRGBAhex darkBlue 1.0
-       moveTo 430 0
+       moveTo 470 0
        relLineTo 0 25
        C.stroke
        setSourceRGBA 0.0 0.0 0.0 1.0
-       moveTo 435 15
+       moveTo 475 15
        textPath "par GC req"
        C.fill
 
        setSourceRGBAhex darkRed 1.0
-       moveTo 500 0
+       moveTo 550 0
        relLineTo 0 25
        C.stroke
        setSourceRGBA 0.0 0.0 0.0 1.0
-       moveTo 505 15
+       moveTo 555 15
        textPath "migrate thread"
        C.fill
 
        setSourceRGBAhex purple 1.0
-       moveTo 580 0
+       moveTo 650 0
        relLineTo 0 25
        C.stroke
        setSourceRGBA 0.0 0.0 0.0 1.0
-       moveTo 585 15
+       moveTo 655 15
        textPath "thread wakeup"
        C.fill
 
        setSourceRGBAhex shutdownColour 1.0
-       rectangle 670 0 (fromIntegral hecBarHeight) (fromIntegral hecBarHeight)
-       C.fill
-       moveTo 695 15
+       moveTo 750 0
+       relLineTo 0 25
+       C.stroke
+       moveTo 755 15
        setSourceRGBA 0.0 0.0 0.0 1.0
        textPath "shutdown"
        C.fill

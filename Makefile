@@ -12,3 +12,6 @@ cabal:
 
 haddock:
 	cabal haddock --executables
+
+clean:	
+	cabal clean 
