@@ -153,13 +153,13 @@ drawDuration c ViewParameters{..} (GC startTime endTime)
 
 drawDuration c params@ViewParameters{..} (EV event)
   = case spec event of 
-      CreateThread{}   -> renderInstantEvent params event lightBlue
-      RunSpark{}       -> renderInstantEvent params event magenta
-      ThreadRunnable{} -> renderInstantEvent params event darkGreen
-      RequestSeqGC{}   -> renderInstantEvent params event cyan
-      RequestParGC{}   -> renderInstantEvent params event yellow
-      MigrateThread{}  -> renderInstantEvent params event darkRed
-      WakeupThread{}   -> renderInstantEvent params event purple
+      CreateThread{}   -> renderInstantEvent params event createThreadColour
+      RunSpark{}       -> renderInstantEvent params event runSparkColour
+      ThreadRunnable{} -> renderInstantEvent params event threadRunnableColour
+      RequestSeqGC{}   -> renderInstantEvent params event seqGCReqColour
+      RequestParGC{}   -> renderInstantEvent params event parGCReqColour
+      MigrateThread{}  -> renderInstantEvent params event migrateThreadColour
+      WakeupThread{}   -> renderInstantEvent params event threadRunnableColour
       Shutdown{}       -> renderInstantEvent params event shutdownColour
 
       RunThread{}  -> return ()
