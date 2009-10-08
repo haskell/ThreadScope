@@ -1,8 +1,3 @@
--------------------------------------------------------------------------------
---- $Id: Ticks.hs#2 2009/07/18 22:48:30 REDMOND\\satnams $
---- $Source: //depot/satnams/haskell/ThreadScope/Ticks.hs $
--------------------------------------------------------------------------------
-
 module Timeline.Ticks (
     renderTicks
   ) where
@@ -20,6 +15,9 @@ import GHC.RTS.Events hiding (Event)
 
 import Control.Monad
 
+--import Debug.Trace
+--import Text.Printf 
+
 -------------------------------------------------------------------------------
 -- Minor, semi-major and major ticks are drawn and the absolute periods of 
 -- the ticks is determined by the zoom level.
@@ -32,6 +30,9 @@ import Control.Monad
 -- The position on the drawing canvas is in milliseconds (ms) (1e-3).
 
 -- scaleValue is used to divide a timestamp value to yield a pixel value.
+
+-- NOTE: the code below will crash if the timestampFor100Pixels is 0.
+-- The zoom factor should be controlled to ensure that this never happens.
 
 -------------------------------------------------------------------------------
 
@@ -52,10 +53,10 @@ renderTicks startPos endPos scaleValue height
         tickWidthInPixels = truncate ((fromIntegral snappedTickDuration) / scaleValue)
         firstTick :: Timestamp
         firstTick = snappedTickDuration * (startPos `div` snappedTickDuration)        
-  --liftIO $
-  --  do putStrLn ("timestampFor100Pixels = " ++ show timestampFor100Pixels)
-  --     putStrLn ("tickWidthInPixels     = " ++ show tickWidthInPixels)
-  --     putStrLn ("snappedTickDuration   = " ++ show snappedTickDuration)       
+    -- liftIO $
+    --   do putStrLn ("timestampFor100Pixels = " ++ show timestampFor100Pixels)
+    --     putStrLn ("tickWidthInPixels     = " ++ show tickWidthInPixels)
+    --     putStrLn ("snappedTickDuration   = " ++ show snappedTickDuration)       
     drawTicks tickWidthInPixels height scaleValue firstTick 
               snappedTickDuration  (10*snappedTickDuration) endPos
   

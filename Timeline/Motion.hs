@@ -32,7 +32,9 @@ zoomOut  = zoom (*2)
 zoom :: (Double->Double) -> ViewerState -> IO ()
 zoom factor state@ViewerState{..} = do
        scaleValue <- readIORef scaleIORef -- Halve the scale value
-       let newScaleValue = factor scaleValue
+       -- We use `max` 1 below to ensure we don't zoom past 1 pixel for
+       -- for 1 Timespec
+       let newScaleValue = factor scaleValue `max` 1 
        writeIORef scaleIORef newScaleValue
 
        cursor <- readIORef cursorIORef

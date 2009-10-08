@@ -6,7 +6,7 @@ DONE: - key is messed up
 
 BUGS ------------------------------------------------------------------------
 
-- crash when zooming in too far (negative exponent)
+DONE: - crash when zooming in too far (negative exponent)
 - when there are no events, we crash in last
 - scrolling to the right, we get some over-rendering at the boundary
   causing a thick line
