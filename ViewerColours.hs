@@ -15,6 +15,30 @@ import Graphics.Rendering.Cairo
 runningColour :: Color
 runningColour = green
 
+gcColour :: Color
+gcColour = orange
+
+createThreadColour :: Color
+createThreadColour = lightBlue
+
+runSparkColour :: Color
+runSparkColour = magenta
+
+threadRunnableColour :: Color
+threadRunnableColour = darkGreen
+
+seqGCReqColour :: Color
+seqGCReqColour = cyan
+
+parGCReqColour :: Color
+parGCReqColour = darkBlue
+
+migrateThreadColour :: Color
+migrateThreadColour = darkRed
+
+threadWakeupColour :: Color
+threadWakeupColour = purple
+
 shutdownColour :: Color
 shutdownColour = darkBrown
 
@@ -59,9 +83,6 @@ darkRed = Color 0xcc00 0x0000 0x0000
 orange :: Color
 orange = Color 0xFFFF 0x9900 0x0000 -- orange
 
-gcColour :: Color
-gcColour = orange
-
 profileBackground :: Color
 profileBackground = Color 0xFFFF 0xFFFF 0xFFFF
 
@@ -78,6 +99,7 @@ white :: Color
 white = Color 0xffff 0xffff 0xffff
 
 -------------------------------------------------------------------------------      
+setSourceRGBAhex :: Color -> Double -> Render ()
 setSourceRGBAhex (Color r g b) t
   = setSourceRGBA (fromIntegral r/0xFFFF) (fromIntegral g/0xFFFF)
                   (fromIntegral b/0xFFFF) t

@@ -2,7 +2,7 @@ TODO ------------------------------------------------------------------------
 
 - fix the status bar
 - move the text entents stuff out of drawing ThreadRuns
-- key is messed up
+DONE: - key is messed up
 
 BUGS ------------------------------------------------------------------------
 
@@ -11,7 +11,7 @@ BUGS ------------------------------------------------------------------------
 - scrolling to the right, we get some over-rendering at the boundary
   causing a thick line
 - scrolling when event labels are on chops off some labels
-- fix event colours (key doesn't match)
+DONE: - fix event colours (key doesn't match)
 - scrolling to the right at the end of the trace leaves an extra blue
   line at the top.
 - fix the ticks: labels overlap sometimes

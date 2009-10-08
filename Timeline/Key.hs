@@ -32,7 +32,7 @@ drawKey
        textPath "running"
        C.fill
 
-       setSourceRGBAhex orange 1.0
+       setSourceRGBAhex gcColour 1.0
        rectangle 70 0 50 (fromIntegral (hecBarHeight `div` 2))
        C.fill
        setSourceRGBA 0.0 0.0 0.0 1.0
@@ -40,7 +40,7 @@ drawKey
        textPath "GC"
        C.fill
 
-       setSourceRGBAhex lightBlue 1.0
+       setSourceRGBAhex createThreadColour 1.0
        setLineWidth 3.0
        moveTo 130 0
        relLineTo 0 25
@@ -50,7 +50,7 @@ drawKey
        textPath "create thread"
        C.fill
 
-       setSourceRGBAhex magenta 1.0
+       setSourceRGBAhex runSparkColour  1.0
        moveTo 220 0
        relLineTo 0 25
        C.stroke
@@ -59,7 +59,7 @@ drawKey
        textPath "run spark"
        C.fill
 
-       setSourceRGBAhex darkGreen 1.0
+       setSourceRGBAhex threadRunnableColour 1.0
        moveTo 290 0
        relLineTo 0 25
        C.stroke
@@ -68,7 +68,7 @@ drawKey
        textPath "thread runnable"
        C.fill
 
-       setSourceRGBAhex cyan 1.0
+       setSourceRGBAhex seqGCReqColour 1.0
        moveTo 390 0
        relLineTo 0 25
        C.stroke
@@ -77,7 +77,7 @@ drawKey
        textPath "seq GC req"
        C.fill
 
-       setSourceRGBAhex darkBlue 1.0
+       setSourceRGBAhex parGCReqColour 1.0
        moveTo 470 0
        relLineTo 0 25
        C.stroke
@@ -86,7 +86,7 @@ drawKey
        textPath "par GC req"
        C.fill
 
-       setSourceRGBAhex darkRed 1.0
+       setSourceRGBAhex migrateThreadColour 1.0
        moveTo 550 0
        relLineTo 0 25
        C.stroke
@@ -95,7 +95,7 @@ drawKey
        textPath "migrate thread"
        C.fill
 
-       setSourceRGBAhex purple 1.0
+       setSourceRGBAhex threadWakeupColour 1.0
        moveTo 650 0
        relLineTo 0 25
        C.stroke
