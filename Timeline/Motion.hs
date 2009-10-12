@@ -32,9 +32,11 @@ zoomOut  = zoom (*2)
 zoom :: (Double->Double) -> ViewerState -> IO ()
 zoom factor state@ViewerState{..} = do
        scaleValue <- readIORef scaleIORef -- Halve the scale value
-       -- We use `max` 1 below to ensure we don't zoom past 1 pixel for
-       -- for 1 Timespec
-       let newScaleValue = factor scaleValue `max` 1 
+       let clampedFactor = if factor scaleValue < 1 then
+                             id
+                           else
+                             factor
+       let newScaleValue = clampedFactor scaleValue
        writeIORef scaleIORef newScaleValue
 
        cursor <- readIORef cursorIORef
@@ -42,12 +44,12 @@ zoom factor state@ViewerState{..} = do
        hadj_value <- adjustmentGetValue hadj
        hadj_pagesize <- adjustmentGetPageSize hadj -- Get size of bar
 
-       let newPageSize = factor hadj_pagesize
+       let newPageSize = clampedFactor hadj_pagesize
        adjustmentSetPageSize hadj newPageSize
 
        let cursord = fromIntegral cursor
        when (cursord >= hadj_value && cursord < hadj_value + hadj_pagesize) $
-         adjustmentSetValue hadj (cursord - factor (cursord - hadj_value))
+         adjustmentSetValue hadj (cursord - clampedFactor (cursord - hadj_value))
 
        let pageshift = 0.9 * newPageSize
        let nudge     = 0.1 * newPageSize
@@ -56,7 +58,7 @@ zoom factor state@ViewerState{..} = do
 
        scaleUpdateStatus state newScaleValue
        queueRedrawTimelines state
-
+  
 -------------------------------------------------------------------------------
 
 zoomToFit :: ViewerState -> IO ()
