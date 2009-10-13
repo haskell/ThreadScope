@@ -31,7 +31,7 @@ zoomOut  = zoom (*2)
 
 zoom :: (Double->Double) -> ViewerState -> IO ()
 zoom factor state@ViewerState{..} = do
-       scaleValue <- readIORef scaleIORef -- Halve the scale value
+       scaleValue <- readIORef scaleIORef
        let clampedFactor = if factor scaleValue < 1 then
                              id
                            else
@@ -40,16 +40,16 @@ zoom factor state@ViewerState{..} = do
        writeIORef scaleIORef newScaleValue
 
        cursor <- readIORef cursorIORef
-       hadj <- rangeGetAdjustment timelineHScrollbar -- Get horizontal scrollbar
-       hadj_value <- adjustmentGetValue hadj
-       hadj_pagesize <- adjustmentGetPageSize hadj -- Get size of bar
+       hadj_value <- adjustmentGetValue timelineAdj
+       hadj_pagesize <- adjustmentGetPageSize timelineAdj -- Get size of bar
 
        let newPageSize = clampedFactor hadj_pagesize
-       adjustmentSetPageSize hadj newPageSize
+       adjustmentSetPageSize timelineAdj newPageSize
 
        let cursord = fromIntegral cursor
        when (cursord >= hadj_value && cursord < hadj_value + hadj_pagesize) $
-         adjustmentSetValue hadj (cursord - clampedFactor (cursord - hadj_value))
+         adjustmentSetValue timelineAdj $
+             cursord - clampedFactor (cursord - hadj_value)
 
        let pageshift = 0.9 * newPageSize
        let nudge     = 0.1 * newPageSize
