@@ -26,6 +26,9 @@ Executable threadscope
      ghc-options:  -Wall
 
   ghc-options:  -fno-warn-type-defaults -fno-warn-name-shadowing
+  ghc-options: -threaded
+
+  c-sources: ghcrts.c
 
 source-repository head
   type:     darcs

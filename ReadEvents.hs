@@ -13,6 +13,7 @@ import Graphics.UI.Gtk hiding (on)
 import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
 
+import System.IO
 import Data.Array
 import qualified Data.Function
 import Data.IORef
@@ -22,6 +23,8 @@ import System.FilePath
 import Control.Monad
 import Debug.Trace
 import Data.Function
+import Control.Concurrent
+import Control.Exception
 
 -------------------------------------------------------------------------------
 -- The GHC.RTS.Events library returns the profile information
@@ -61,70 +64,115 @@ eventsToTree events
 
 -------------------------------------------------------------------------------
 
-registerEventsFromFile :: String
-		       -> ViewerState
-		       -> IO ()
-
-registerEventsFromFile filename state
-  = do eitherFmt <- readEventLogFromFile filename 
-       registerEvents filename eitherFmt state
+registerEventsFromFile :: String -> ViewerState -> IO ()
+registerEventsFromFile filename state = registerEvents (Left filename) state
        
--------------------------------------------------------------------------------
-
-registerEventsFromTrace :: String
-			-> ViewerState
-			-> IO ()
-
-registerEventsFromTrace traceName
-  = registerEvents traceName (Right (testTrace traceName)) 
+registerEventsFromTrace :: String -> ViewerState -> IO ()
+registerEventsFromTrace traceName state = registerEvents (Right traceName) state
        
--------------------------------------------------------------------------------
-
-registerEvents :: String
-	       -> Either String EventLog
+registerEvents :: Either FilePath String
 	       -> ViewerState
 	       -> IO ()
 
-registerEvents _name (Left msg) _ = 
-  putStrLn msg
-registerEvents name (Right fmt) state@ViewerState{..} = do
-  let 
-      groups = groupEvents (events (dat fmt))
-      trees = rawEventsToHECs groups
-      lastTx = maximum (map (time.last.snd) groups) -- Last event time i
+registerEvents from state@ViewerState{..} = do
 
-      -- sort the events by time and put them in an array
-      sorted    = sortGroups groups
-      n_events  = length sorted
-      event_arr = listArray (0, n_events-1) sorted
+  let msg = "Loading " ++ (case from of
+                               Left filename -> filename
+                               Right test    -> test)
 
-      hecs = HECs {
-               hecCount         = length trees,
-               hecTrees         = trees,
-               hecEventArray    = event_arr,
-               hecLastEventTime = lastTx
-            }
-  --
-  writeIORef hecsIORef (Just hecs)
+--  dialog <- messageDialogNew Nothing [DialogModal] MessageInfo ButtonsCancel msg
 
-  -- Debugging information
-  when debug $ zipWithM_ reportEventTree [0..] trees
+  dialog <- dialogNew 
+  dialogAddButton dialog "gtk-cancel" ResponseCancel
+  widgetSetSizeRequest dialog 400 (-1)
+  upper <- dialogGetUpper dialog
+  hbox <- hBoxNew True 0
+  label <- labelNew Nothing
+  miscSetAlignment label 0 0.5
+  miscSetPadding label 20 0
+  labelSetMarkup label $ 
+       printf "<big><b>Loading %s</b></big>"  (takeFileName msg)
+  boxPackStart upper label PackGrow 10
+  boxPackStart upper hbox PackNatural 10
+  progress <- progressBarNew
+  boxPackStart hbox progress PackGrow 20
+  widgetShowAll upper
+  progressBarSetText progress msg
+  set dialog [ dialogHasSeparator := False ]
+  timeout <- timeoutAdd (do progressBarPulse progress; return True) 50
 
-  -- Update the IORefs used for drawing callbacks
-  writeIORef scaleIORef defaultScaleValue
+  windowSetTitle dialog "ThreadScope"
 
-  -- Adjust height to fit capabilities
---  (width, _) <- widgetGetSize mainWindow
---  widgetSetSizeRequest mainWindow width ((length capabilities)*gapcap+oycap+120)
+  t <- forkIO $ buildEventLog from dialog progress state
 
-  -- Set the status bar
-  ctx <- statusbarGetContextId statusBar "file"
-  statusbarPush statusBar ctx $
-    printf "%s (%d events, %.3fs)" name n_events
-                              ((fromIntegral lastTx :: Double) * 1.0e-9)
+  when debug $ printf "before\n"
+  r <- dialogRun dialog
+  case r of
+    ResponseUser 1 -> return ()
+    _ -> killThread t
+  when debug $ printf "after\n"
+  widgetDestroy dialog
+  timeoutRemove timeout
 
-  windowSetTitle mainWindow ("ThreadScope - " ++ takeFileName name)
-
-  updateTimelines state [ TraceHEC n | n <- [0..hecCount hecs-1] ]
-       
 -------------------------------------------------------------------------------
+
+-- NB. nRun in a background thread, can call GUI functions only with
+-- postGUI.
+--
+buildEventLog :: DialogClass dialog => Either FilePath String
+              -> dialog
+              -> ProgressBar -> ViewerState -> IO ()
+buildEventLog from dialog progress state@ViewerState{..} =
+  case from of
+    Right test     -> build test (testTrace test)
+    Left filename  -> do
+      postGUISync $ progressBarSetText progress $ "Reading " ++ filename
+      fmt <- readEventLogFromFile filename
+      case fmt of
+        Left  err -> hPutStr stderr err
+        Right evs -> build filename evs
+
+  where
+    build name evs = do
+       let 
+         groups = groupEvents (events (dat evs))
+         trees = rawEventsToHECs groups
+         lastTx = maximum (map (time.last.snd) groups) -- Last event time i
+   
+         -- sort the events by time and put them in an array
+         sorted    = sortGroups groups
+         n_events  = length sorted
+         event_arr = listArray (0, n_events-1) sorted
+         hec_count = length trees
+   
+         hecs = HECs {
+                  hecCount         = hec_count,
+                  hecTrees         = trees,
+                  hecEventArray    = event_arr,
+                  hecLastEventTime = lastTx
+               }
+
+         treeProgress :: ProgressBar -> Int -> EventTree -> IO ()
+         treeProgress progress hec tree = do
+            postGUISync $ progressBarSetText progress $ 
+                     printf "Building HEC %d/%d" (hec+1) hec_count
+            progressBarSetFraction progress $
+                     fromIntegral hec / fromIntegral hec_count
+            evaluate tree
+            return ()
+
+       zipWithM_ (treeProgress progress) [0..] trees
+
+       postGUISync $ do
+         windowSetTitle mainWindow ("ThreadScope - " ++ takeFileName name)
+         ctx <- statusbarGetContextId statusBar "file"
+         statusbarPush statusBar ctx $ 
+            printf "%s (%d events, %.3fs)" name n_events
+                                ((fromIntegral lastTx :: Double) * 1.0e-9)
+         updateTimelines state [ TraceHEC n | n <- [0..hecCount hecs-1] ]
+         when debug $ zipWithM_ reportEventTree [0..] trees
+         writeIORef hecsIORef (Just hecs)
+         writeIORef scaleIORef defaultScaleValue
+         dialogResponse dialog (ResponseUser 1)
+
+

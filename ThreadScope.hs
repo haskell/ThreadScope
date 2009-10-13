@@ -39,7 +39,7 @@ main
        args <- getArgs
        let options = parseOptions args
 
-       initGUI
+       unsafeInitGUIForThreadedRTS
        state <- buildInitialState options
 
        startup options state
@@ -199,6 +199,8 @@ buildInitialState options = do
 
        mainWindow         <- xmlGetWidget xml castToWindow "main_window"
        statusBar          <- xmlGetWidget xml castToStatusbar "statusbar"
+       progressBar        <- progressBarNew
+       containerAdd statusBar progressBar
 
        bwToggle           <- xmlGetWidget xml castToCheckMenuItem "black_and_white"
        fullDetailToggle   <- xmlGetWidget xml castToCheckMenuItem "fullDetail"

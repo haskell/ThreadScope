@@ -1,16 +1,16 @@
 TODO ------------------------------------------------------------------------
 
-- fix the status bar
-     -- remove debug status bar
-     -- put useful stuff in other status bar
-- move the text entents stuff out of drawing ThreadRuns
-- background of some widgets on Windows are white when they are grey in Linux
-- fix ticks
-- progress bar
-- tidy up menu option
+Satnam:
+  - fix ticks
+  - key is messed up (we shouldn't be using fixed coordinates here, font
+    sizes are variable)
 
-DONE: - key is messed up
-
+Simon:
+  - (Simon thinks this might be fixed) background of some widgets on
+    Windows are white when they are grey in Linux
+  - tidy up menu option
+  - when nothing is loaded, show a message to that effect in the window
+  - Finish the sidebar and traces tree-view
 
 FIRST RELEASE ---------------------------------------------------------------
 
@@ -70,8 +70,10 @@ UI
      - some way to reorder the traces?
      - when rendering threads, we want some way to indicate the time
        between creation and death - colour grey?
+- a better progress bar
 
 OTHER
+- move the text entents stuff out of drawing ThreadRuns
 - overlay ETW events
 - integrate strace events in the event view on Linux
 - colour threads differently
