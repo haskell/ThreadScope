@@ -120,6 +120,7 @@ timelineParamsChanged state = do
 configureTimelineDrawingArea :: ViewerState -> IO ()
 configureTimelineDrawingArea state = do
   updateTimelineVScroll state
+  updateTimelineHPageSize state
 
 updateTimelineVScroll :: ViewerState -> IO ()
 updateTimelineVScroll state@ViewerState{..} = do
@@ -134,6 +135,15 @@ updateTimelineVScroll state@ViewerState{..} = do
 
   adjustmentSetPageSize timelineVAdj winh'
   rangeSetIncrements timelineVScrollbar (0.1 * winh') (0.9 * winh')
+
+-- when the drawing area is resized, we update the page size of the
+-- adjustment.  Everything else stays the same: we don't scale or move
+-- the view at all.
+updateTimelineHPageSize :: ViewerState -> IO ()
+updateTimelineHPageSize state@ViewerState{..} = do
+  (winw,_) <- widgetGetSize timelineDrawingArea
+  scaleValue <- readIORef scaleIORef
+  adjustmentSetPageSize timelineAdj (fromIntegral winw * scaleValue)
 
 -------------------------------------------------------------------------------
 -- Set the cursor to a new position
