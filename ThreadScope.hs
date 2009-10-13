@@ -67,10 +67,8 @@ startup options state@ViewerState{..}
 
        ------------------------------------------------------------------------
        -- Status bar functionality
-       summary_ctx <- statusbarGetContextId summaryBar "state"
-       statusbarPush summaryBar summary_ctx "No eventlog loaded."
        ctx <- statusbarGetContextId statusBar "state"
-       statusbarPush statusBar ctx ("Scale " ++ show defaultScaleValue)
+       statusbarPush statusBar ctx "No eventlog loaded."
 
        ------------------------------------------------------------------------
        --- Get the label for the name of the event log
@@ -84,12 +82,10 @@ startup options state@ViewerState{..}
        -- When a filename for an event log is specified open and
        -- parse the event log file and update the IORefs for 
        -- the capabilities and event array.
-       when (filename /= "") $
-           registerEventsFromFile filename state summary_ctx
+       when (filename /= "") $ registerEventsFromFile filename state
 
        -- Likewise for test traces
-       when (traceName /= "") $
-           registerEventsFromTrace traceName state summary_ctx
+       when (traceName /= "") $ registerEventsFromTrace traceName state
 
        -- B&W toggle button
                       
@@ -98,7 +94,7 @@ startup options state@ViewerState{..}
        openMenuItem `onActivateLeaf` do
          filename <- openFileDialog mainWindow
          when (isJust filename) $
-           registerEventsFromFile (fromJust filename) state summary_ctx
+           registerEventsFromFile (fromJust filename) state
                                      
        ------------------------------------------------------------------------
        -- Save as PDF functionality
@@ -147,8 +143,7 @@ startup options state@ViewerState{..}
           do mb_filename <- readIORef filenameIORef
              case mb_filename of
                Nothing -> return ()
-               Just filename -> 
-                 registerEventsFromFile filename state summary_ctx
+               Just filename -> registerEventsFromFile filename state
 
        ------------------------------------------------------------------------
        -- CPUs view
@@ -203,7 +198,6 @@ buildInitialState options = do
        cursorIORef       <- newIORef 0
 
        mainWindow         <- xmlGetWidget xml castToWindow "main_window"
-       summaryBar         <- xmlGetWidget xml castToStatusbar "summary"
        statusBar          <- xmlGetWidget xml castToStatusbar "statusbar"
 
        bwToggle           <- xmlGetWidget xml castToCheckMenuItem "black_and_white"

@@ -637,26 +637,9 @@ Bookmarks
           </packing>
         </child>
         <child>
-          <widget class="GtkHBox" id="hbox3">
+          <widget class="GtkStatusbar" id="statusbar">
             <property name="visible">True</property>
-            <property name="homogeneous">True</property>
-            <child>
-              <widget class="GtkStatusbar" id="summary">
-                <property name="visible">True</property>
-              </widget>
-              <packing>
-                <property name="expand">False</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkStatusbar" id="statusbar">
-                <property name="visible">True</property>
-              </widget>
-              <packing>
-                <property name="position">1</property>
-              </packing>
-            </child>
+            <property name="spacing">2</property>
           </widget>
           <packing>
             <property name="expand">False</property>

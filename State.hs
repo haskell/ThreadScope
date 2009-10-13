@@ -31,7 +31,6 @@ data ViewerState = ViewerState {
   
   -- main window
   mainWindow         :: Window,
-  summaryBar         :: Statusbar,
   statusBar          :: Statusbar,
 
   -- menu items

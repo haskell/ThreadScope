@@ -93,9 +93,10 @@ zoomToFit state@ViewerState{..} = do
 
 scaleUpdateStatus :: ViewerState -> Double -> IO ()
 scaleUpdateStatus state@ViewerState{..} newScaleValue = do
-  ctx <- statusbarGetContextId statusBar "state"
-  statusbarPush statusBar ctx ("Scale " ++ show newScaleValue)
-  return ()
+  when debug $ do
+    ctx <- statusbarGetContextId statusBar "debug"
+    statusbarPush statusBar ctx ("Scale " ++ show newScaleValue)
+    return ()
 
 -------------------------------------------------------------------------------
 

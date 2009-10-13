@@ -63,18 +63,16 @@ eventsToTree events
 
 registerEventsFromFile :: String
 		       -> ViewerState
-		       -> ContextId
 		       -> IO ()
 
-registerEventsFromFile filename state summary_ctx
+registerEventsFromFile filename state
   = do eitherFmt <- readEventLogFromFile filename 
-       registerEvents filename eitherFmt state summary_ctx
+       registerEvents filename eitherFmt state
        
 -------------------------------------------------------------------------------
 
 registerEventsFromTrace :: String
 			-> ViewerState
-			-> ContextId
 			-> IO ()
 
 registerEventsFromTrace traceName
@@ -85,12 +83,11 @@ registerEventsFromTrace traceName
 registerEvents :: String
 	       -> Either String EventLog
 	       -> ViewerState
-	       -> ContextId
 	       -> IO ()
 
-registerEvents _name (Left msg) _ _ = 
+registerEvents _name (Left msg) _ = 
   putStrLn msg
-registerEvents name (Right fmt) state@ViewerState{..} summary_ctx = do
+registerEvents name (Right fmt) state@ViewerState{..} = do
   let 
       groups = groupEvents (events (dat fmt))
       trees = rawEventsToHECs groups
@@ -121,8 +118,9 @@ registerEvents name (Right fmt) state@ViewerState{..} summary_ctx = do
 --  widgetSetSizeRequest mainWindow width ((length capabilities)*gapcap+oycap+120)
 
   -- Set the status bar
-  statusbarPush summaryBar summary_ctx $
-    printf "%d events, %.3fs" n_events 
+  ctx <- statusbarGetContextId statusBar "file"
+  statusbarPush statusBar ctx $
+    printf "%s (%d events, %.3fs)" name n_events
                               ((fromIntegral lastTx :: Double) * 1.0e-9)
 
   windowSetTitle mainWindow ("ThreadScope - " ++ takeFileName name)

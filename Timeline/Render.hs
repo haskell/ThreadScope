@@ -52,10 +52,6 @@ renderView state@ViewerState{..} exposeRegion hecs = do
     printf "width %d, height %d\n" dAreaWidth dAreaHeight
 
   scaleValue <- checkScaleValue state
-  -- Get the scrollbar settings
-  hadj_lower <- adjustmentGetLower timelineAdj
-  hadj_upper <- adjustmentGetUpper timelineAdj
-  hadj_value0 <- adjustmentGetValue timelineAdj
 
   vadj_value <- adjustmentGetValue timelineVAdj
   when debug $ liftIO $ printf "vadj_value: %f\n" vadj_value
@@ -67,19 +63,19 @@ renderView state@ViewerState{..} exposeRegion hecs = do
   -- smaller than the window).
 
   -- snap the view to whole pixels, to avoid blurring
+  hadj_value0 <- adjustmentGetValue timelineAdj
   let hadj_value = toWholePixels scaleValue hadj_value0
 
-  hadj_pagesize <- adjustmentGetPageSize timelineAdj   
-
-  ctx <- statusbarGetContextId statusBar "state"
-  statusbarPush statusBar ctx $
-       "Scale: " ++ show scaleValue ++ 
-       " width = " ++ show dAreaWidth ++ 
-       " height = " ++ show dAreaHeight ++ 
-       " hadj_value = " ++ printf "%1.3f" hadj_value ++ 
-       " hadj_pagesize = " ++ show hadj_pagesize ++ 
-       " hadj_low = " ++ show hadj_lower ++ 
-       " hadj_upper = " ++ show hadj_upper
+  when debug $ do
+     hadj_pagesize <- adjustmentGetPageSize timelineAdj   
+     hadj_lower <- adjustmentGetLower timelineAdj
+     hadj_upper <- adjustmentGetUpper timelineAdj
+     ctx <- statusbarGetContextId statusBar "debug"
+     statusbarPush statusBar ctx $
+          printf "scale=%f win=(%d,%d) hadj: (val=%f, page=%f, l=%f u=%f)"
+                 scaleValue dAreaWidth dAreaHeight
+                 hadj_value hadj_pagesize hadj_lower hadj_upper
+     return ()
 
   let params = ViewParameters {
                         width     = dAreaWidth,
