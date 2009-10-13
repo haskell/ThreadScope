@@ -167,6 +167,8 @@ Bookmarks
                         <child>
                           <widget class="GtkImage" id="image1">
                             <property name="visible">True</property>
+                            <property name="has_tooltip">True</property>
+                            <property name="tooltip" translatable="yes">Hide the sidebar</property>
                             <property name="stock">gtk-close</property>
                           </widget>
                         </child>
@@ -262,6 +264,8 @@ Bookmarks
                             <child>
                               <widget class="GtkToolButton" id="cpus_first">
                                 <property name="visible">True</property>
+                                <property name="has_tooltip">True</property>
+                                <property name="tooltip" translatable="yes">Jump to start</property>
                                 <property name="use_underline">True</property>
                                 <property name="stock_id">gtk-goto-first</property>
                               </widget>
@@ -273,6 +277,8 @@ Bookmarks
                             <child>
                               <widget class="GtkToolButton" id="cpus_centre">
                                 <property name="visible">True</property>
+                                <property name="has_tooltip">True</property>
+                                <property name="tooltip" translatable="yes">Centre view on the cursor</property>
                                 <property name="stock_id">gtk-home</property>
                               </widget>
                               <packing>
@@ -283,6 +289,8 @@ Bookmarks
                             <child>
                               <widget class="GtkToolButton" id="cpus_last">
                                 <property name="visible">True</property>
+                                <property name="has_tooltip">True</property>
+                                <property name="tooltip" translatable="yes">Jump to the end</property>
                                 <property name="use_underline">True</property>
                                 <property name="stock_id">gtk-goto-last</property>
                               </widget>
@@ -302,6 +310,8 @@ Bookmarks
                             <child>
                               <widget class="GtkToolButton" id="cpus_zoomin">
                                 <property name="visible">True</property>
+                                <property name="has_tooltip">True</property>
+                                <property name="tooltip" translatable="yes">Zoom in</property>
                                 <property name="stock_id">gtk-zoom-in</property>
                               </widget>
                               <packing>
@@ -312,6 +322,8 @@ Bookmarks
                             <child>
                               <widget class="GtkToolButton" id="cpus_zoomout">
                                 <property name="visible">True</property>
+                                <property name="has_tooltip">True</property>
+                                <property name="tooltip" translatable="yes">Zoom out</property>
                                 <property name="stock_id">gtk-zoom-out</property>
                               </widget>
                               <packing>
@@ -322,6 +334,8 @@ Bookmarks
                             <child>
                               <widget class="GtkToolButton" id="cpus_zoomfit">
                                 <property name="visible">True</property>
+                                <property name="has_tooltip">True</property>
+                                <property name="tooltip" translatable="yes">Fit view to the window</property>
                                 <property name="stock_id">gtk-zoom-fit</property>
                               </widget>
                               <packing>
@@ -340,6 +354,8 @@ Bookmarks
                             <child>
                               <widget class="GtkToggleToolButton" id="cpus_showlabels">
                                 <property name="visible">True</property>
+                                <property name="has_tooltip">True</property>
+                                <property name="tooltip" translatable="yes">Display labels</property>
                                 <property name="label" translatable="yes">Show labels</property>
                                 <property name="use_underline">True</property>
                                 <property name="stock_id">gtk-info</property>
@@ -524,6 +540,8 @@ Bookmarks
                             <child>
                               <widget class="GtkToolButton" id="events_find">
                                 <property name="visible">True</property>
+                                <property name="has_tooltip">True</property>
+                                <property name="tooltip" translatable="yes">Search for event</property>
                                 <property name="stock_id">gtk-find</property>
                               </widget>
                               <packing>
@@ -542,6 +560,8 @@ Bookmarks
                             <child>
                               <widget class="GtkToolButton" id="events_first">
                                 <property name="visible">True</property>
+                                <property name="has_tooltip">True</property>
+                                <property name="tooltip" translatable="yes">Jump to beginning</property>
                                 <property name="stock_id">gtk-goto-first</property>
                               </widget>
                               <packing>
@@ -552,6 +572,8 @@ Bookmarks
                             <child>
                               <widget class="GtkToolButton" id="events_home">
                                 <property name="visible">True</property>
+                                <property name="has_tooltip">True</property>
+                                <property name="tooltip" translatable="yes">Centre view on cursor</property>
                                 <property name="stock_id">gtk-home</property>
                               </widget>
                               <packing>
@@ -562,6 +584,8 @@ Bookmarks
                             <child>
                               <widget class="GtkToolButton" id="events_last">
                                 <property name="visible">True</property>
+                                <property name="has_tooltip">True</property>
+                                <property name="tooltip" translatable="yes">Jump to end</property>
                                 <property name="stock_id">gtk-goto-last</property>
                               </widget>
                               <packing>
@@ -597,6 +621,7 @@ Bookmarks
                         <child>
                           <widget class="GtkVScrollbar" id="eventsVScroll">
                             <property name="visible">True</property>
+                            <property name="orientation">vertical</property>
                             <property name="adjustment">0 0 0 0 0 0</property>
                           </widget>
                           <packing>
@@ -639,7 +664,6 @@ Bookmarks
         <child>
           <widget class="GtkStatusbar" id="statusbar">
             <property name="visible">True</property>
-            <property name="spacing">2</property>
           </widget>
           <packing>
             <property name="expand">False</property>
