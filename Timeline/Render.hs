@@ -318,7 +318,7 @@ drawLabel canvas gc trace y
        txt <- canvas `widgetCreateLayout` (showTrace trace)
        drawLayoutWithColors win gc 10 y txt (Just black) Nothing
 
--- -----------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 traceYPositions :: Bool -> [Trace] -> [Int]
 traceYPositions labels_mode traces
@@ -329,12 +329,18 @@ traceYPositions labels_mode traces
       traceHeight (TraceHEC _) = hecTraceHeight
       traceHeight _            = 0
 
+--------------------------------------------------------------------------------
+
 showTrace :: Trace -> String
 showTrace (TraceHEC n) = "HEC " ++ show n
 showTrace _            = "?"
+
+--------------------------------------------------------------------------------
 
 calculateTotalTimelineHeight :: ViewerState -> IO Int
 calculateTotalTimelineHeight state@ViewerState{..} = do
    traces <- readIORef timelineTraces
    labels_mode <- toggleToolButtonGetActive showLabelsToggle
    return $ last (traceYPositions labels_mode traces)
+
+--------------------------------------------------------------------------------

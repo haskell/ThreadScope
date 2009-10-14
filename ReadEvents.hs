@@ -46,13 +46,19 @@ import Control.Exception
 
 rawEventsToHECs :: [(Maybe Int, [GHCEvents.Event])] -> [EventTree]
 rawEventsToHECs eventList
-  = map (toTree . flip lookup heclists)  [0 .. maximum (map fst heclists)]
+  = map (toTree . flip lookup heclists)  [0 .. maximum0 (map fst heclists)]
   where
     heclists = [ (h,events) | (Just h,events) <- eventList ]
 
     toTree Nothing    = EventTreeLeaf []
     toTree (Just evs) = eventsToTree evs
     
+-------------------------------------------------------------------------------
+
+maximum0 :: (Num a, Ord a) => [a] -> a
+maximum0 [] = -1
+maximum0 x = maximum x
+
 -------------------------------------------------------------------------------
 
 eventsToTree :: [GHCEvents.Event] -> EventTree
@@ -137,7 +143,10 @@ buildEventLog from dialog progress state@ViewerState{..} =
        let 
          groups = groupEvents (events (dat evs))
          trees = rawEventsToHECs groups
-         lastTx = maximum (map (time.last.snd) groups) -- Last event time i
+         lastTx = if length groups == 0 then
+                    100 -- no groups so pick an arbitrary non-zero last time
+                  else
+                    maximum (map timeOfLastEvent groups) -- Last event time i
    
          -- sort the events by time and put them in an array
          sorted    = sortGroups groups
@@ -175,4 +184,16 @@ buildEventLog from dialog progress state@ViewerState{..} =
          writeIORef scaleIORef defaultScaleValue
          dialogResponse dialog (ResponseUser 1)
 
+-------------------------------------------------------------------------------
+-- If there are no events return an arbitrary last timespec of 100ns
+-- to avoid GUI crahses.
+
+timeOfLastEvent :: (a, [GHCEvents.Event]) -> Timestamp
+timeOfLastEvent (_, esi)
+  = if length esi == 0 then
+      100
+    else
+      100 `max` time (last esi)
+
+-------------------------------------------------------------------------------
 

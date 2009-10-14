@@ -1,7 +1,7 @@
 TODO ------------------------------------------------------------------------
 
 Satnam:
-  - fix ticks
+  - PARTLY DONE: overlaps should be gone now. fix ticks
   - DONE: key is messed up (we shouldn't be using fixed coordinates here, font
     sizes are variable)
 
@@ -19,7 +19,7 @@ All of above
 BUGS ------------------------------------------------------------------------
 
 NOT QUITE DONE: - crash when zooming in too far (negative exponent)
-- when there are no events, we crash in last
+- DONE. when there are no events, we crash in last
 - scrolling to the right, we get some over-rendering at the boundary
   causing a thick line
 - scrolling when event labels are on chops off some labels

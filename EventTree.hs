@@ -54,6 +54,7 @@ data EventTree
 -------------------------------------------------------------------------------
 
 mkEventTree :: [EventDuration] -> EventTree
+mkEventTree [] = EventTreeLeaf []
 mkEventTree es = 
   -- trace (show tree) $
   tree
