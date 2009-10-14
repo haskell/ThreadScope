@@ -108,7 +108,7 @@ showTickTime pos
       "0s"
     else
       if pos < 1000000 then -- Show time as micro-seconds for times < 1e-6
-        reformatMS  (posf / 1000) ++ "us"  -- microsecond (1e-6s).
+        reformatMS  (posf / 1000) ++ ('\x00b5':"s")  -- microsecond (1e-6s).
     else
       if pos < 100000000 then -- Show miliseonds for time < 0.1s
         reformatMS (posf / 1000000) ++ "ms" -- miliseconds 1e-3

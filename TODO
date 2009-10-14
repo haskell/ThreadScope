@@ -2,7 +2,7 @@ TODO ------------------------------------------------------------------------
 
 Satnam:
   - fix ticks
-  - key is messed up (we shouldn't be using fixed coordinates here, font
+  - DONE: key is messed up (we shouldn't be using fixed coordinates here, font
     sizes are variable)
 
 Simon:
