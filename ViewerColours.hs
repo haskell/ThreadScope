@@ -22,7 +22,10 @@ createThreadColour :: Color
 createThreadColour = lightBlue
 
 runSparkColour :: Color
-runSparkColour = magenta
+runSparkColour = darkBlue
+
+stealSparkColour :: Color
+stealSparkColour = magenta
 
 threadRunnableColour :: Color
 threadRunnableColour = darkGreen

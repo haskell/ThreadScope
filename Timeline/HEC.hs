@@ -155,6 +155,7 @@ drawDuration c params@ViewParameters{..} (EV event)
   = case spec event of 
       CreateThread{}   -> renderInstantEvent params event createThreadColour
       RunSpark{}       -> renderInstantEvent params event runSparkColour
+      StealSpark{}     -> renderInstantEvent params event stealSparkColour
       ThreadRunnable{} -> renderInstantEvent params event threadRunnableColour
       RequestSeqGC{}   -> renderInstantEvent params event seqGCReqColour
       RequestParGC{}   -> renderInstantEvent params event parGCReqColour
