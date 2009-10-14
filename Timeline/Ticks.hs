@@ -72,7 +72,8 @@ drawTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
                m <- getMatrix
                identityMatrix
                tExtent <- textExtents tickTimeText
-               when (textExtentsWidth tExtent < fromIntegral tickWidthInPixels || atMidTick || atMajorTick) $ do
+               (fourPixels, _) <- deviceToUserDistance 4 0
+               when (textExtentsWidth tExtent + fourPixels < fromIntegral tickWidthInPixels || atMidTick || atMajorTick) $ do
                  textPath tickTimeText
                  C.fill
                setMatrix m
