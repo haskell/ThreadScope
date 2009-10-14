@@ -144,7 +144,7 @@ buildEventLog from dialog progress state@ViewerState{..} =
          groups = groupEvents (events (dat evs))
          trees = rawEventsToHECs groups
          lastTx = if length groups == 0 then
-                    100 -- no groups so pick an arbitrary non-zero last time
+                    0 -- no groups 
                   else
                     maximum (map timeOfLastEvent groups) -- Last event time i
    
@@ -185,15 +185,13 @@ buildEventLog from dialog progress state@ViewerState{..} =
          dialogResponse dialog (ResponseUser 1)
 
 -------------------------------------------------------------------------------
--- If there are no events return an arbitrary last timespec of 100ns
--- to avoid GUI crahses.
 
 timeOfLastEvent :: (a, [GHCEvents.Event]) -> Timestamp
 timeOfLastEvent (_, esi)
   = if length esi == 0 then
-      100
+      0
     else
-      100 `max` time (last esi)
+      time (last esi)
 
 -------------------------------------------------------------------------------
 

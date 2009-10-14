@@ -195,26 +195,27 @@ renderTraces state@ViewerState{..} params@ViewParameters{..}
                 ]
 
     when debug $ liftIO $ do
-        printf "rx = %d, scale_rx = %f, scale_rw = %f, hadjValue = %f, startPos = %d, endPos = %d\n" rx scale_rx scale_rw hadjValue startPos endPos
+        printf "rx = %d, scale_rx = %f, scale_rw = %f, hadjValue = %f, startPos = %d, endPos = %d scaleValue = %f\n" rx scale_rx scale_rw hadjValue startPos endPos scaleValue
   
     withViewScale params $ do
 
-    save
-    renderTicks startPos endPos scaleValue height
-    restore
+    when (scaleValue > 0) $ do
+      save
+      renderTicks startPos endPos scaleValue height
+      restore
 
-    let
-      renderTrace trace y = do
-          save
-          translate 0 (fromIntegral y)
-          case trace of 
-             TraceHEC c -> 
-                 renderHEC c params startPos endPos (hecTrees hecs !! c)
-             _ -> 
-                 return ()
-          restore
-    --
-    zipWithM_ renderTrace traces (traceYPositions labelsMode traces)
+      let
+        renderTrace trace y = do
+            save
+            translate 0 (fromIntegral y)
+            case trace of 
+               TraceHEC c -> 
+                   renderHEC c params startPos endPos (hecTrees hecs !! c)
+               _   -> 
+                   return ()
+            restore
+      --
+      zipWithM_ renderTrace traces (traceYPositions labelsMode traces)
 
 
 withViewScale :: ViewParameters -> Render () -> Render ()
@@ -279,7 +280,10 @@ scrollView state surface old new traces hecs = do
    surfaceFinish surface
    return new_surface
 
+------------------------------------------------------------------------------
+
 toWholePixels :: Double -> Double -> Double
+toWholePixels 0 x = 0
 toWholePixels scale x = fromIntegral (truncate (x / scale)) * scale
 
 -------------------------------------------------------------------------------
