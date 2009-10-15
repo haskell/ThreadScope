@@ -217,7 +217,13 @@ Bookmarks
                       </packing>
                     </child>
                     <child>
-                      <placeholder/>
+                      <widget class="GtkTreeView" id="bookmark_list">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                      </widget>
+                      <packing>
+                        <property name="position">1</property>
+                      </packing>
                     </child>
                   </widget>
                   <packing>

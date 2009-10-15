@@ -9,6 +9,7 @@ import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Glade
 import Graphics.Rendering.Cairo 
 import qualified Graphics.Rendering.Cairo as C
+import Graphics.UI.Gtk.ModelView as New
 
 -- Imports from Haskell library
 import System.Environment
@@ -250,5 +251,17 @@ buildInitialState options = do
        sidebarHBox        <- xmlGetWidget xml castToHBox "sidebar_hbox"
        sidebarCombo       <- xmlGetWidget xml castToComboBox "sidebar_combobox"
        sidebarCloseButton <- xmlGetWidget xml castToButton "sidebar_close_button"
+       bookmarkTreeView <- xmlGetWidget xml castToTreeView "bookmark_list"
+
+       store <- New.listStoreNew ["alpha", "beta", "gamma"]
+       New.treeViewSetModel bookmarkTreeView store
+       New.treeViewSetHeadersVisible bookmarkTreeView True
+       bookmarkColumn <- New.treeViewColumnNew
+       New.treeViewColumnSetTitle bookmarkColumn "Time"    
+       cell <- New.cellRendererTextNew
+       New.treeViewColumnPackStart bookmarkColumn cell True
+       New.cellLayoutSetAttributes bookmarkColumn cell store
+          (\record -> [New.cellText := record])
+       New.treeViewAppendColumn bookmarkTreeView bookmarkColumn
 
        return ViewerState { .. }

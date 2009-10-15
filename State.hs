@@ -79,7 +79,10 @@ data ViewerState = ViewerState {
   sidebarVBox        :: VBox,
   sidebarHBox        :: HBox,
   sidebarCombo       :: ComboBox,
-  sidebarCloseButton :: Button
+  sidebarCloseButton :: Button,
+
+  -- Bookmarks
+  bookmarkTreeView   :: TreeView
   }
 
 -- all the data from a .eventlog file
