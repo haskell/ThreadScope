@@ -130,6 +130,9 @@ data EventTypeSpecificInfo
   | RequestSeqGC       { }
   | RequestParGC       { }
   | StartGC            { }
+  | GCWork             { }
+  | GCIdle             { }
+  | GCDone             { }
   | EndGC              { }
   | Message            { msg :: String }
   | UserMessage        { msg :: String }
@@ -282,8 +285,10 @@ getEvSpecInfo num = case fromIntegral num :: Int of
  EVENT_REQUEST_PAR_GC -> return RequestParGC
 
  EVENT_GC_START -> return StartGC
-
- EVENT_GC_END -> return EndGC
+ EVENT_GC_WORK  -> return GCWork
+ EVENT_GC_IDLE  -> return GCIdle
+ EVENT_GC_DONE  -> return GCDone
+ EVENT_GC_END   -> return EndGC
 
  EVENT_LOG_MSG -> do -- (msg)
   num <- getE :: GetEvents Word16
