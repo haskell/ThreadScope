@@ -159,7 +159,8 @@ eventTreeEvents (EventTreeLeaf eventList) = length eventList
 gcTimeOf :: EventTree -> Timestamp
 gcTimeOf (EventSplit _ _ _ _ _ _ _ gcTime) = gcTime
 gcTimeOf (EventTreeLeaf eventList)
-  = sum [e - s | GC s e <- eventList]
+  = sum [endTimeOfEventDuration ev - timeOfEventDuration ev 
+        | ev <- eventList, isGCDuration ev ]
 
 -------------------------------------------------------------------------------
 

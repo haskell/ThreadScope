@@ -18,6 +18,12 @@ runningColour = green
 gcColour :: Color
 gcColour = orange
 
+gcStartColour, gcWorkColour, gcIdleColour, gcEndColour :: Color
+gcStartColour = orange
+gcWorkColour  = green
+gcIdleColour  = white
+gcEndColour   = orange
+
 createThreadColour :: Color
 createThreadColour = lightBlue
 

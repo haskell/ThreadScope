@@ -15,7 +15,7 @@ import qualified Graphics.Rendering.Cairo as C
 import Graphics.UI.Gtk
 
 import qualified GHC.RTS.Events as GHC
-import GHC.RTS.Events hiding (Event)
+import GHC.RTS.Events hiding (Event, GCWork, GCIdle)
 
 import Control.Monad
 
@@ -63,11 +63,12 @@ inView viewStart viewEnd event
 drawAverageDuration :: Int -> ViewParameters
 		    -> Timestamp -> Timestamp -> Timestamp -> Timestamp
 		    -> Render ()
-drawAverageDuration c ViewParameters{..} startTime endTime _runAv gcAv
+drawAverageDuration c ViewParameters{..} startTime endTime runAv gcAv
   = do setSourceRGBAhex (if not bwMode then runningColour else black) 1.0
-       draw_outlined_rectangle startTime hecBarOff -- x, y
-                      (endTime - startTime)        -- w
-                       hecBarHeight
+       when (runAv > 0) $
+         draw_outlined_rectangle startTime hecBarOff -- x, y
+                        (endTime - startTime)        -- w
+                         hecBarHeight
        setSourceRGBAhex black 1.0
        --move_to (oxs + startTime, 0)
        --relMoveTo (4/scaleValue) 13
@@ -142,14 +143,17 @@ drawDuration c ViewParameters{..}
     rectWidth = truncate (fromIntegral (endTime - startTime) / scaleValue) -- as pixels
     tStr = show t
 
+drawDuration c ViewParameters{..} (GCStart startTime endTime)
+  = gcBar (if bwMode then black else gcStartColour) startTime endTime
 
-drawDuration c ViewParameters{..} (GC startTime endTime)
-  = do setSourceRGBAhex (if not bwMode then gcColour else black) 1.0
-       draw_rectangle_opt False
-                      startTime                      -- x
-                      (hecBarOff+hecBarHeight)       -- y
-                      (endTime - startTime)          -- w
-                      (hecBarHeight `div` 2)         -- h
+drawDuration c ViewParameters{..} (GCWork startTime endTime)
+  = gcBar (if bwMode then black else gcWorkColour) startTime endTime
+
+drawDuration c ViewParameters{..} (GCIdle startTime endTime)
+  = gcBar (if bwMode then black else gcIdleColour) startTime endTime
+
+drawDuration c ViewParameters{..} (GCEnd startTime endTime)
+  = gcBar (if bwMode then black else gcEndColour) startTime endTime
 
 drawDuration c params@ViewParameters{..} (EV event)
   = case spec event of 
@@ -168,6 +172,15 @@ drawDuration c params@ViewParameters{..} (EV event)
       StartGC{}    -> return ()
 
       _ -> return () 
+
+gcBar :: Color -> Timestamp -> Timestamp -> Render ()
+gcBar col !startTime !endTime
+  = do setSourceRGBAhex col 1.0
+       draw_rectangle_opt False
+                      startTime                      -- x
+                      (hecBarOff+hecBarHeight)       -- y
+                      (endTime - startTime)          -- w
+                      (hecBarHeight `div` 2)         -- h
 
 renderInstantEvent :: ViewParameters -> GHC.Event -> Color -> Render ()
 renderInstantEvent ViewParameters{..} event color = 
