@@ -7,8 +7,7 @@ Satnam:
 
 Simon:
   - opening a non-existent file failure
-  - (Simon thinks this might be fixed) background of some widgets on
-    Windows are white when they are grey in Linux
+  - background of some widgets on Windows are white when they are grey in Linux
   - tidy up menu option
   - when nothing is loaded, show a message to that effect in the window
   - Finish the sidebar and traces tree-view
