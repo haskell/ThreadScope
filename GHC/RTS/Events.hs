@@ -455,6 +455,12 @@ showEventTypeSpecificInfo spec =
           printf "starting GC"
         EndGC ->
           printf "finished GC"
+        GCWork ->
+          printf "GC working"
+        GCIdle ->
+          printf "GC idle"
+        GCDone ->
+          printf "GC done"
 	_ ->
           printf "unknown event type"
 
