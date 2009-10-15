@@ -92,7 +92,6 @@ data EventType =
 
 data Event = 
   Event {
-    ref  :: {-# UNPACK #-}!EventTypeNum,
     time :: {-# UNPACK #-}!Timestamp,
     spec :: EventTypeSpecificInfo
   } deriving Show
@@ -136,7 +135,8 @@ data EventTypeSpecificInfo
   | EndGC              { }
   | Message            { msg :: String }
   | UserMessage        { msg :: String }
-  | UnknownEvent
+  | UnknownEvent       { ref  :: {-# UNPACK #-}!EventTypeNum }
+
   deriving Show
 
 --sync with ghc/includes/Constants.h
@@ -216,7 +216,7 @@ getEvent = do
      then return Nothing
      else do !ts   <- getE
              spec <- getEvSpecInfo etRef
-             return (Just (Event etRef ts spec))
+             return (Just (Event ts spec))
            
 getEvSpecInfo :: EventTypeNum -> GetEvents EventTypeSpecificInfo
 getEvSpecInfo num = case fromIntegral num :: Int of
@@ -309,7 +309,7 @@ getEvSpecInfo num = case fromIntegral num :: Int of
                  Just n  -> return n
                  Nothing -> getE :: GetEvents Word16
       skip  <- lift . lift $ replicateM_ (fromIntegral bytes) getWord8
-      return UnknownEvent
+      return UnknownEvent{ ref = num }
 
 
 getData :: GetEvents Data

@@ -47,13 +47,13 @@ ppEventType et = printf "%4d: %s (size %s)" (Log.num et) (Log.desc et)
    (case Log.size et of Nothing -> "variable"; Just x -> show x)
 
 ppEvent :: IntMap EventType -> CapEvent -> String
-ppEvent imap (CapEvent cap (Event ref time spec)) =
+ppEvent imap (CapEvent cap (Event time spec)) =
   printf "%9d: " time ++
   (case cap of
     Nothing -> ""
     Just c  -> printf "cap %d: " c) ++
   case spec of
-    UnknownEvent ->
+    UnknownEvent{ ref=ref } ->
       printf (Log.desc (fromJust (M.lookup (fromIntegral ref) imap)))
 
     Message msg -> msg
