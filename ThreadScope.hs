@@ -108,7 +108,6 @@ startup options state@ViewerState{..}
          case (mfn, maybeEventArray) of
            (Just fn, Just hecs) -> do
              bw_mode <- checkMenuItemGetActive bwToggle
-             full_detail <- checkMenuItemGetActive fullDetailToggle
              labels_mode <- toggleToolButtonGetActive showLabelsToggle
 
              let params = ViewParameters {
@@ -203,7 +202,6 @@ buildInitialState options = do
        containerAdd statusBar progressBar
 
        bwToggle           <- xmlGetWidget xml castToCheckMenuItem "black_and_white"
-       fullDetailToggle   <- xmlGetWidget xml castToCheckMenuItem "fullDetail"
        sidebarToggle      <- xmlGetWidget xml castToCheckMenuItem "view_sidebar"
        openMenuItem       <- xmlGetWidget xml castToMenuItem "openMenuItem"
        saveMenuItem       <- xmlGetWidget xml castToMenuItem "saveMenuItem"

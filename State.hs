@@ -36,7 +36,6 @@ data ViewerState = ViewerState {
 
   -- menu items
   bwToggle           :: CheckMenuItem,
-  fullDetailToggle   :: CheckMenuItem,
   sidebarToggle      :: CheckMenuItem,
   openMenuItem       :: MenuItem,
   saveMenuItem       :: MenuItem,

@@ -89,13 +89,6 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkCheckMenuItem" id="fullDetail">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Full detail</property>
-                        <property name="use_underline">True</property>
-                      </widget>
-                    </child>
-                    <child>
                       <widget class="GtkSeparatorMenuItem" id="separator1">
                         <property name="visible">True</property>
                       </widget>

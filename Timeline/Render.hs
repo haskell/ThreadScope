@@ -43,7 +43,6 @@ renderView state@ViewerState{..} exposeRegion hecs = do
 
   -- Get state information from user-interface components
   bw_mode <- checkMenuItemGetActive bwToggle
-  full_detail <- checkMenuItemGetActive fullDetailToggle
   labels_mode <- toggleToolButtonGetActive showLabelsToggle
   (dAreaWidth,dAreaHeight) <- widgetGetSize timelineDrawingArea
   when debug $ do
