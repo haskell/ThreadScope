@@ -253,15 +253,17 @@ buildInitialState options = do
        sidebarCloseButton <- xmlGetWidget xml castToButton "sidebar_close_button"
        bookmarkTreeView <- xmlGetWidget xml castToTreeView "bookmark_list"
 
-       store <- New.listStoreNew ["alpha", "beta", "gamma"]
-       New.treeViewSetModel bookmarkTreeView store
+       -- Bookmarks
+       addBookmarkButton  <- xmlGetWidget xml castToToolButton "add_bookmark_button"
+       bookmarkStore <- New.listStoreNew []
+       New.treeViewSetModel bookmarkTreeView bookmarkStore  
        New.treeViewSetHeadersVisible bookmarkTreeView True
        bookmarkColumn <- New.treeViewColumnNew
        New.treeViewColumnSetTitle bookmarkColumn "Time"    
        cell <- New.cellRendererTextNew
        New.treeViewColumnPackStart bookmarkColumn cell True
-       New.cellLayoutSetAttributes bookmarkColumn cell store
-          (\record -> [New.cellText := record])
+       New.cellLayoutSetAttributes bookmarkColumn cell bookmarkStore  
+          (\record -> [New.cellText := show record ++ " ns"])
        New.treeViewAppendColumn bookmarkTreeView bookmarkColumn
 
        return ViewerState { .. }

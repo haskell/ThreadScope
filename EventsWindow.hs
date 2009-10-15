@@ -12,11 +12,14 @@ import Graphics.UI.Gtk.Gdk.EventM
 import Graphics.Rendering.Cairo 
 
 import GHC.RTS.Events as GHC
+import Graphics.UI.Gtk.ModelView as New
 
 import Control.Monad.Reader
 import Data.Array
 import Data.IORef
 import Text.Printf
+
+-------------------------------------------------------------------------------
 
 setupEventsWindow :: ViewerState -> IO ()
 setupEventsWindow state@ViewerState{..} = do
@@ -84,6 +87,14 @@ setupEventsWindow state@ViewerState{..} = do
      cursorpos <- getCursorLine state
      page  <- adjustmentGetPageSize adj
      adjustmentSetValue adj (fromIntegral (max 0 (cursorpos - round page `quot` 2)))
+
+
+  -- Button for adding the cursor position to the boomark list
+  onToolButtonClicked addBookmarkButton  $ do
+     when debug $ putStrLn "Add bookmark\n"
+     cursorPos <- readIORef cursorIORef
+     New.listStoreAppend bookmarkStore cursorPos
+     return ()
 
   exts <- withImageSurface FormatARGB32 0 0 $ \s -> renderWith s eventsFont
   writeIORef eventsFontExtents exts

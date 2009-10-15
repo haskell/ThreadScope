@@ -82,7 +82,9 @@ data ViewerState = ViewerState {
   sidebarCloseButton :: Button,
 
   -- Bookmarks
-  bookmarkTreeView   :: TreeView
+  addBookmarkButton  :: ToolButton,
+  bookmarkTreeView   :: TreeView,
+  bookmarkStore      :: ListStore Timestamp
   }
 
 -- all the data from a .eventlog file
