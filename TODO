@@ -6,6 +6,7 @@ Satnam:
     sizes are variable)
 
 Simon:
+  - opening a non-existent file failure
   - (Simon thinks this might be fixed) background of some widgets on
     Windows are white when they are grey in Linux
   - tidy up menu option
@@ -24,6 +25,9 @@ NOT QUITE DONE: - crash when zooming in too far (negative exponent)
   causing a thick line
 - scrolling when event labels are on chops off some labels
 DONE: - fix event colours (key doesn't match)
+- rendering bug when scrolling: we need to clip to the rectangle being
+  drawn, otherwise we overwrite other parts of the window when there 
+  are long bars being drawn, which makes some events disappear.
 - scrolling to the right at the end of the trace leaves an extra blue
   line at the top.
 DONE: - fix the ticks: labels overlap sometimes
@@ -36,6 +40,7 @@ NAVIGATION
 - shift-click and drag to zoom to a region
 - draw the detailed view in the background
 - bookmarks
+
   - add/remove
   - save
   - measure the time between two markers
