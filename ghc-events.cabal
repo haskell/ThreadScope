@@ -1,5 +1,5 @@
 name:             ghc-events
-version:          0.1.0.1
+version:          0.1.0.2
 synopsis:         Library and tool for parsing .eventlog files from GHC
 description:      Parses .eventlog files emitted by GHC 6.12.1 and later.
                   Includes the show-ghc-events tool to dump an event
@@ -13,6 +13,7 @@ maintainer:       Simon Marlow <marlowsd@gmail.com>
 build-type:       Simple
 tested-with:      GHC == 6.10.2, GHC == 6.11.20090221
 cabal-version:    >= 1.6
+extra-source-files: GHC/RTS/EventLogFormat.h
 
 library {
   build-depends:    base       == 4.*,
@@ -26,3 +27,5 @@ library {
 executable show-ghc-events {
   main-is:          ShowGhcEvents.hs
 }
+
+
