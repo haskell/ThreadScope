@@ -147,7 +147,7 @@ renderView state@ViewerState{..} exposeRegion hecs = do
           -- ^^ this is where we adjust for the vertical scrollbar
   setOperator OperatorSource
   paint
-  drawCursor cursor_t params
+  when (scaleValue > 0) $ drawCursor cursor_t params
 
 clearWhite :: Render ()
 clearWhite = do
@@ -197,9 +197,8 @@ renderTraces state@ViewerState{..} params@ViewParameters{..}
     when debug $ liftIO $ do
         printf "rx = %d, scale_rx = %f, scale_rw = %f, hadjValue = %f, startPos = %d, endPos = %d scaleValue = %f\n" rx scale_rx scale_rw hadjValue startPos endPos scaleValue
   
-    withViewScale params $ do
-
     when (scaleValue > 0) $ do
+      withViewScale params $ do
       save
       renderTicks startPos endPos scaleValue height
       restore
@@ -214,9 +213,8 @@ renderTraces state@ViewerState{..} params@ViewParameters{..}
                _   -> 
                    return ()
             restore
-      --
       zipWithM_ renderTrace traces (traceYPositions labelsMode traces)
-
+    when debug $ liftIO $ putStrLn "renderTraces done\n"
 
 withViewScale :: ViewParameters -> Render () -> Render ()
 withViewScale params@ViewParameters{..} inner = do

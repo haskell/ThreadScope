@@ -90,6 +90,7 @@ setupEventsWindow state@ViewerState{..} = do
 
   return ()
 
+-------------------------------------------------------------------------------
 
 eventsWindowResize :: ViewerState -> EventM EConfigure Bool
 eventsWindowResize state@ViewerState{..} = liftIO $ do
@@ -109,6 +110,8 @@ eventsWindowResize state@ViewerState{..} = liftIO $ do
       -- printf "eventsWindowResize: %f" page
       return True
 
+-------------------------------------------------------------------------------
+
 updateEventsWindow :: ViewerState -> EventM EExpose Bool
 updateEventsWindow state@ViewerState{..} = liftIO $ do
   value <- adjustmentGetValue eventsAdj
@@ -125,6 +128,8 @@ updateEventsWindow state@ViewerState{..} = liftIO $ do
       renderWithDrawable win $ do
         drawEvents value arr w h cursorpos
       return True
+
+-------------------------------------------------------------------------------
 
 getCursorLine :: ViewerState -> IO Int
 getCursorLine state@ViewerState{..} = do
@@ -143,6 +148,8 @@ getCursorLine state@ViewerState{..} = do
               let cursorpos = locateCursor arr current_cursor
               writeIORef eventsCursorIORef (Just (current_cursor, cursorpos))
               return cursorpos
+
+-------------------------------------------------------------------------------
   
 setCursor :: ViewerState -> Double -> IO ()
 setCursor state@ViewerState{..} eventY = do
