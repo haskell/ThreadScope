@@ -43,25 +43,25 @@ import Control.Exception
 
 -------------------------------------------------------------------------------
 
-rawEventsToHECs :: [(Maybe Int, [GHCEvents.Event])] -> [EventTree]
-rawEventsToHECs eventList
+rawEventsToHECs :: [(Maybe Int, [GHCEvents.Event])] -> Timestamp
+                -> [(DurationTree,EventTree)]
+rawEventsToHECs eventList endTime
   = map (toTree . flip lookup heclists)  [0 .. maximum0 (map fst heclists)]
   where
     heclists = [ (h,events) | (Just h,events) <- eventList ]
 
-    toTree Nothing    = EventTreeLeaf []
-    toTree (Just evs) = eventsToTree evs
-    
+    toTree Nothing    = (DurationTreeEmpty, EventTreeLeaf [])
+    toTree (Just evs) = 
+       ( mkDurationTree (eventsToDurations nondiscrete) endTime,
+         mkEventTree discrete endTime )
+       where (discrete,nondiscrete) = partition isDiscreteEvent evs
+
 -------------------------------------------------------------------------------
 
+-- XXX: what's this for?
 maximum0 :: (Num a, Ord a) => [a] -> a
 maximum0 [] = -1
 maximum0 x = maximum x
-
--------------------------------------------------------------------------------
-
-eventsToTree :: [GHCEvents.Event] -> EventTree
-eventsToTree events = mkEventTree (eventsToDurations events)
 
 -------------------------------------------------------------------------------
 
@@ -105,6 +105,7 @@ registerEvents from state@ViewerState{..} = do
   windowSetTitle dialog "ThreadScope"
 
   t <- forkIO $ buildEventLog from dialog progress state
+                `onException` dialogResponse dialog (ResponseUser 1)
 
   r <- dialogRun dialog
   case r of
@@ -134,13 +135,14 @@ buildEventLog from dialog progress state@ViewerState{..} =
   where
     build name evs = do
        let 
-         groups = groupEvents (events (dat evs))
-         trees = rawEventsToHECs groups
-         lastTx = if length groups == 0 then
-                    0 -- no groups 
-                  else
-                    maximum (map timeOfLastEvent groups) -- Last event time i
+         eventBlockEnd e | EventBlock{ end_time=t } <- spec e = t
+         eventBlockEnd e = time e
+
+         lastTx = maximum (0 : map eventBlockEnd (events (dat evs)))
    
+         groups = groupEvents (events (dat evs))
+         trees = rawEventsToHECs groups lastTx
+
          -- sort the events by time and put them in an array
          sorted    = sortGroups groups
          n_events  = length sorted
@@ -154,13 +156,14 @@ buildEventLog from dialog progress state@ViewerState{..} =
                   hecLastEventTime = lastTx
                }
 
-         treeProgress :: ProgressBar -> Int -> EventTree -> IO ()
-         treeProgress progress hec tree = do
+         treeProgress :: ProgressBar -> Int -> (DurationTree,EventTree) -> IO ()
+         treeProgress progress hec (tree1,tree2) = do
             postGUISync $ progressBarSetText progress $ 
                      printf "Building HEC %d/%d" (hec+1) hec_count
             progressBarSetFraction progress $
                      fromIntegral hec / fromIntegral hec_count
-            evaluate tree
+            evaluate tree1
+            evaluate (eventTreeMaxDepth tree2)
             return ()
 
        zipWithM_ (treeProgress progress) [0..] trees
@@ -172,19 +175,11 @@ buildEventLog from dialog progress state@ViewerState{..} =
             printf "%s (%d events, %.3fs)" name n_events
                                 ((fromIntegral lastTx :: Double) * 1.0e-9)
          updateTimelines state [ TraceHEC n | n <- [0..hecCount hecs-1] ]
-         when debug $ zipWithM_ reportEventTree [0..] trees
+         when debug $ zipWithM_ reportDurationTree [0..] (map fst trees)
+         when debug $ zipWithM_ reportEventTree [0..] (map snd trees)
          writeIORef hecsIORef (Just hecs)
          writeIORef scaleIORef defaultScaleValue
          dialogResponse dialog (ResponseUser 1)
-
--------------------------------------------------------------------------------
-
-timeOfLastEvent :: (a, [GHCEvents.Event]) -> Timestamp
-timeOfLastEvent (_, esi)
-  = if length esi == 0 then
-      0
-    else
-      time (last esi)
 
 -------------------------------------------------------------------------------
 

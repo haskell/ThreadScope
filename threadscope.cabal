@@ -13,11 +13,11 @@ Cabal-Version:       >=1.2
 Data-files:	     threadscope.glade, threadscope.png
 Executable threadscope
   Main-is:           ThreadScope.hs
-  Build-Depends:     base, 
+  Build-Depends:     base == 4.*, 
                      gtk, cairo, glade,
                      binary, array, mtl, filepath,
                      ghc-events >= 0.1.1 && < 0.2
-  extensions:        RecordWildCards, BangPatterns
+  extensions:        RecordWildCards, BangPatterns, PatternGuards
 
   if impl(ghc < 6.12)
      -- GHC before 6.12 gave spurious warnings for RecordWildCards

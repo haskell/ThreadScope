@@ -59,6 +59,9 @@ labelTextColour = black
 black :: Color
 black = Color 0 0 0
 
+grey :: Color
+grey = Color 0x8000 0x8000 0x8000
+
 green :: Color
 green = Color 0 0xFFFF 0
 

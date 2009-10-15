@@ -90,7 +90,7 @@ data ViewerState = ViewerState {
 -- all the data from a .eventlog file
 data HECs = HECs {
     hecCount         :: Int,
-    hecTrees         :: [EventTree],
+    hecTrees         :: [(DurationTree,EventTree)],
     hecEventArray    :: Array Int GHCEvents.CapEvent,
     hecLastEventTime :: Timestamp
   }

@@ -4,9 +4,9 @@
 module EventDuration ( 
     EventDuration(..),
     isGCDuration,
-    timeOfEventDuration,
-    endTimeOfEventDuration,
-    eventsToDurations
+    startTimeOf, endTimeOf, durationOf,
+    eventsToDurations,
+    isDiscreteEvent
   ) where
 
 -- Imports for GHC Events
@@ -35,8 +35,6 @@ data EventDuration
 
   | GCEnd   {-#UNPACK#-}!Timestamp
             {-#UNPACK#-}!Timestamp
-
-  | EV GHC.Event
   deriving Show
 
 {-
@@ -56,28 +54,32 @@ isGCDuration _         = False
 -------------------------------------------------------------------------------
 -- The start time of an event.
 
-timeOfEventDuration :: EventDuration -> Timestamp
-timeOfEventDuration ed
+startTimeOf :: EventDuration -> Timestamp
+startTimeOf ed
   = case ed of
       ThreadRun _ _ startTime _ -> startTime
       GCStart startTime _       -> startTime
       GCWork  startTime _       -> startTime
       GCIdle  startTime _       -> startTime
       GCEnd   startTime _       -> startTime
-      EV event                  -> time event
 
 -------------------------------------------------------------------------------
 -- The emd time of an event.
 
-endTimeOfEventDuration :: EventDuration -> Timestamp
-endTimeOfEventDuration ed
+endTimeOf :: EventDuration -> Timestamp
+endTimeOf ed
   = case ed of
       ThreadRun _ _ _ endTime -> endTime
       GCStart _ endTime       -> endTime
       GCWork  _ endTime       -> endTime
       GCIdle  _ endTime       -> endTime
       GCEnd   _ endTime       -> endTime
-      EV event                -> time event
+
+-------------------------------------------------------------------------------
+-- The duration of an EventDuration
+
+durationOf :: EventDuration -> Timestamp
+durationOf ed = endTimeOf ed - startTimeOf ed
 
 -------------------------------------------------------------------------------
 
@@ -89,12 +91,24 @@ eventsToDurations (event : events) =
      StopThread{}  -> rest
      StartGC       -> gcStart (time event) events
      EndGC{}       -> rest
-     _otherEvent   -> EV event : rest
+     _otherEvent   -> rest
   where
     rest = eventsToDurations events
 
     runDuration t = ThreadRun t s (time event) endTime
        where (endTime, s) = findRunThreadTime events
+
+isDiscreteEvent :: GHC.Event -> Bool
+isDiscreteEvent e = 
+  case spec e of
+    RunThread{}  -> False
+    StopThread{} -> False
+    StartGC{}    -> False
+    EndGC{}      -> False
+    GHC.GCWork{} -> False
+    GHC.GCIdle{} -> False
+    GHC.GCDone{} -> False
+    _            -> True
 
 gcStart :: Timestamp -> [GHC.Event] -> [EventDuration]
 gcStart t0 [] = []
@@ -105,7 +119,7 @@ gcStart t0 (event : events) =
     GHC.GCDone{} -> GCStart t0 t1 : gcDone t1 events
     GHC.EndGC{}  -> GCStart t0 t1 : eventsToDurations events
     RunThread{}  -> GCStart t0 t1 : eventsToDurations (event : events)
-    _other       -> EV event : gcStart t0 events
+    _other       -> gcStart t0 events
  where 
         t1 = time event
 
@@ -118,7 +132,7 @@ gcWork t0 (event : events) =
     GHC.GCDone{} -> GCWork t0 t1 : gcDone t1 events
     GHC.EndGC{}  -> GCWork t0 t1 : eventsToDurations events
     RunThread{}  -> GCWork t0 t1 : eventsToDurations (event : events)
-    _other       -> EV event : gcStart t0 events
+    _other       -> gcStart t0 events
  where 
         t1 = time event
 
@@ -131,7 +145,7 @@ gcIdle t0 (event : events) =
     GHC.GCDone{} -> GCIdle t0 t1 : gcDone t1 events
     GHC.EndGC{}  -> GCIdle t0 t1 : eventsToDurations events
     RunThread{}  -> GCIdle t0 t1 : eventsToDurations (event : events)
-    _other       -> EV event : gcStart t0 events
+    _other       -> gcStart t0 events
  where 
         t1 = time event
 
@@ -144,7 +158,7 @@ gcDone t0 (event : events) =
     GHC.GCIdle{} -> GCEnd t0 t1 : gcIdle t1 events
     GHC.EndGC{}  -> GCEnd t0 t1 : eventsToDurations events
     RunThread{}  -> GCEnd t0 t1 : eventsToDurations (event : events)
-    _other       -> EV event : gcStart t0 events
+    _other       -> gcStart t0 events
  where 
         t1 = time event
 

@@ -81,7 +81,7 @@ renderView state@ViewerState{..} exposeRegion hecs = do
                         height    = timelineHeight,
                         hadjValue = hadj_value,
                         scaleValue = scaleValue,
-                        detail = 2, -- for now
+                        detail = 3, -- for now
                         bwMode = bw_mode,
                         labelsMode = labels_mode
                     }
