@@ -21,7 +21,6 @@ import Data.List
 import Text.Printf
 import System.FilePath
 import Control.Monad
-import Debug.Trace
 import Data.Function
 import Control.Concurrent
 import Control.Exception
@@ -62,11 +61,7 @@ maximum0 x = maximum x
 -------------------------------------------------------------------------------
 
 eventsToTree :: [GHCEvents.Event] -> EventTree
-eventsToTree events
-  = trace ("events: " ++ show (length events) ++ "\ndurations: " ++ show (length durations)) $ tree
-    where
-    tree = mkEventTree durations
-    durations = eventsToDurations events
+eventsToTree events = mkEventTree (eventsToDurations events)
 
 -------------------------------------------------------------------------------
 
@@ -111,12 +106,10 @@ registerEvents from state@ViewerState{..} = do
 
   t <- forkIO $ buildEventLog from dialog progress state
 
-  when debug $ printf "before\n"
   r <- dialogRun dialog
   case r of
     ResponseUser 1 -> return ()
     _ -> killThread t
-  when debug $ printf "after\n"
   widgetDestroy dialog
   timeoutRemove timeout
 
