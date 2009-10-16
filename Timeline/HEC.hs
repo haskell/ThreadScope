@@ -103,7 +103,7 @@ drawAverageDuration :: Int -> ViewParameters
 drawAverageDuration c ViewParameters{..} startTime endTime runAv gcAv
   = do setSourceRGBAhex (if not bwMode then runningColour else black) 1.0
        when (runAv > 0) $
-         draw_outlined_rectangle startTime hecBarOff -- x, y
+         draw_rectangle startTime hecBarOff -- x, y
                         (endTime - startTime)        -- w
                          hecBarHeight
        setSourceRGBAhex black 1.0
