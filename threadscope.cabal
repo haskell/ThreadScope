@@ -16,7 +16,8 @@ Executable threadscope
   Build-Depends:     base == 4.*, 
                      gtk, cairo, glade,
                      binary, array, mtl, filepath,
-                     ghc-events >= 0.2 && < 0.3
+                     ghc-events >= 0.2 && < 0.3,
+                     containers >= 0.2 && < 0.3
   extensions:        RecordWildCards, BangPatterns, PatternGuards
 
   if impl(ghc < 6.12)

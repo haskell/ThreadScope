@@ -255,8 +255,10 @@ buildInitialState options = do
        sidebarVBox        <- xmlGetWidget xml castToVBox "sidebar_vbox"
        sidebarHBox        <- xmlGetWidget xml castToHBox "sidebar_hbox"
        sidebarCombo       <- xmlGetWidget xml castToComboBox "sidebar_combobox"
+       sidebarComboState  <- newIORef sidebarBookmarks
        sidebarCloseButton <- xmlGetWidget xml castToButton "sidebar_close_button"
-       bookmarkTreeView <- xmlGetWidget xml castToTreeView "bookmark_list"
+       bookmarkVBox       <- xmlGetWidget xml castToVBox "bookmarks_vbox"
+       bookmarkTreeView   <- xmlGetWidget xml castToTreeView "bookmark_list"
 
        -- Bookmarks
        addBookmarkButton  <- xmlGetWidget xml castToToolButton "add_bookmark_button"
@@ -271,5 +273,10 @@ buildInitialState options = do
        New.cellLayoutSetAttributes bookmarkColumn cell bookmarkStore  
           (\record -> [New.cellText := show record ++ " ns"])
        New.treeViewAppendColumn bookmarkTreeView bookmarkColumn
+
+       -- Trace view
+       tracesVBox <- vBoxNew False 0
+       tracesTreeView <- treeViewNew
+       boxPackEnd tracesVBox tracesTreeView PackGrow 0
 
        return ViewerState { .. }
