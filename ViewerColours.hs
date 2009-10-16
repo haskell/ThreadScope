@@ -54,6 +54,9 @@ shutdownColour = darkBrown
 labelTextColour :: Color
 labelTextColour = black
 
+bookmarkColour :: Color
+bookmarkColour = Color 0xff00 0x0000 0xff00 -- pinkish
+
 -------------------------------------------------------------------------------
 
 black :: Color

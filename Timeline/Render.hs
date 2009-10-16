@@ -9,6 +9,8 @@ import Timeline.Render.Constants
 import Timeline.Motion
 import Timeline.Ticks
 import Timeline.HEC
+import Timeline.RenderBookmarks
+import Timeline.WithViewScale
 
 import State
 import ViewerColours
@@ -146,7 +148,11 @@ renderView state@ViewerState{..} exposeRegion hecs = do
           -- ^^ this is where we adjust for the vertical scrollbar
   setOperator OperatorSource
   paint
-  when (scaleValue > 0) $ drawCursor cursor_t params
+  when (scaleValue > 0) $ do
+    renderBookmarks state params
+    drawCursor cursor_t params
+
+-------------------------------------------------------------------------------
 
 clearWhite :: Render ()
 clearWhite = do
@@ -156,10 +162,13 @@ clearWhite = do
   paint
   restore
 
+-------------------------------------------------------------------------------
+
 drawCursor :: Timestamp -> ViewParameters -> Render ()
 drawCursor cursor_t param@ViewParameters{..} = do
   withViewScale param $ do
-    setLineWidth (3*scaleValue)
+    (threePixels, _) <- deviceToUserDistance 3 0
+    setLineWidth threePixels
     setOperator OperatorOver
     setSourceRGBAhex blue 1.0
     moveTo (fromIntegral cursor_t) 0
@@ -196,12 +205,15 @@ renderTraces state@ViewerState{..} params@ViewParameters{..}
     when debug $ liftIO $ do
         printf "rx = %d, scale_rx = %f, scale_rw = %f, hadjValue = %f, startPos = %d, endPos = %d scaleValue = %f\n" rx scale_rx scale_rw hadjValue startPos endPos scaleValue
   
+    -- Now render the timeline drawing if we have a non-empty trace
     when (scaleValue > 0) $ do
       withViewScale params $ do
       save
+      -- First render the ticks and tick times
       renderTicks startPos endPos scaleValue height
       restore
 
+      -- This function helps to render a single HEC...
       let
         renderTrace trace y = do
             save
@@ -212,16 +224,9 @@ renderTraces state@ViewerState{..} params@ViewParameters{..}
                _   -> 
                    return ()
             restore
+       -- Now rennder all the HECs.
       zipWithM_ renderTrace traces (traceYPositions labelsMode traces)
     when debug $ liftIO $ putStrLn "renderTraces done\n"
-
-withViewScale :: ViewParameters -> Render () -> Render ()
-withViewScale params@ViewParameters{..} inner = do
-   save
-   scale (1/scaleValue) 1.0
-   translate (-hadjValue) 0
-   inner
-   restore
 
 -------------------------------------------------------------------------------
 

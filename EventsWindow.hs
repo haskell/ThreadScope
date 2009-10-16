@@ -6,6 +6,7 @@ module EventsWindow (
 
 import State
 import ViewerColours
+import Timeline
 
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Gdk.EventM
@@ -94,7 +95,7 @@ setupEventsWindow state@ViewerState{..} = do
      when debug $ putStrLn "Add bookmark\n"
      cursorPos <- readIORef cursorIORef
      New.listStoreAppend bookmarkStore cursorPos
-     return ()
+     queueRedrawTimelines state
 
   exts <- withImageSurface FormatARGB32 0 0 $ \s -> renderWith s eventsFont
   writeIORef eventsFontExtents exts

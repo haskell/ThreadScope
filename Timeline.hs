@@ -3,7 +3,8 @@ module Timeline (
     updateTimelines,
     renderTraces,
     timelineParamsChanged,
-    defaultScaleValue
+    defaultScaleValue,
+    queueRedrawTimelines
  ) where
 
 import Timeline.Motion
