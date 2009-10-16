@@ -86,6 +86,7 @@ data ViewerState = ViewerState {
   bookmarkVBox       :: VBox,
   addBookmarkButton  :: ToolButton,
   deleteBookmarkButton  :: ToolButton,
+  gotoBookmarkButton :: ToolButton,
   bookmarkTreeView   :: TreeView,
   bookmarkStore      :: ListStore Timestamp,
 

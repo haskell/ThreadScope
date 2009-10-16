@@ -4,7 +4,8 @@ module Timeline (
     renderTraces,
     timelineParamsChanged,
     defaultScaleValue,
-    queueRedrawTimelines
+    queueRedrawTimelines,
+    setCursorToTime
  ) where
 
 import Timeline.Motion
@@ -12,6 +13,7 @@ import Timeline.Render
 import Timeline.Key
 
 import State
+import GHC.RTS.Events
 
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Gdk.Events as Old hiding (eventModifier)
@@ -159,6 +161,20 @@ setCursor state@ViewerState{..} x = do
   queueRedrawTimelines state
 
 -------------------------------------------------------------------------------
+
+setCursorToTime :: ViewerState -> Timestamp -> IO ()
+setCursorToTime state@ViewerState{..} x 
+  = do hadjValue <- adjustmentGetValue timelineAdj
+       scaleValue <- readIORef scaleIORef
+       -- let cursor = round (hadjValue + x * scaleValue)
+       -- when debug $ printf "cursor set to: %d\n" cursor
+       writeIORef cursorIORef x
+       pageSize <- adjustmentGetPageSize timelineAdj 
+       adjustmentSetValue timelineAdj ((fromIntegral x - pageSize/2) `max` 0)
+       queueRedrawTimelines state
+
+-------------------------------------------------------------------------------
+
 
 -- This scale value is used to map a micro-second value to a pixel unit.
 -- To convert a timestamp value to a pixel value, multiply it by scale.

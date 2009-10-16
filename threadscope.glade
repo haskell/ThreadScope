@@ -187,6 +187,7 @@ Bookmarks
                         <child>
                           <widget class="GtkToolButton" id="add_bookmark_button">
                             <property name="visible">True</property>
+                            <property name="tooltip" translatable="yes">Add bookmark</property>
                             <property name="label" translatable="yes">Bookmark</property>
                             <property name="use_underline">True</property>
                             <property name="stock_id">gtk-add</property>
@@ -199,7 +200,19 @@ Bookmarks
                         <child>
                           <widget class="GtkToolButton" id="delete_bookmark">
                             <property name="visible">True</property>
+                            <property name="tooltip" translatable="yes">Delete bookmark</property>
                             <property name="stock_id">gtk-delete</property>
+                          </widget>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="homogeneous">True</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <widget class="GtkToolButton" id="goto_bookmark_button">
+                            <property name="visible">True</property>
+                            <property name="tooltip" translatable="yes">Jump to bookmark</property>
+                            <property name="stock_id">gtk-jump-to</property>
                           </widget>
                           <packing>
                             <property name="expand">False</property>

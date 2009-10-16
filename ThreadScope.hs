@@ -263,6 +263,7 @@ buildInitialState options = do
        -- Bookmarks
        addBookmarkButton  <- xmlGetWidget xml castToToolButton "add_bookmark_button"
        deleteBookmarkButton <- xmlGetWidget xml castToToolButton "delete_bookmark" 
+       gotoBookmarkButton  <- xmlGetWidget xml castToToolButton "goto_bookmark_button"
        bookmarkStore <- New.listStoreNew []
        New.treeViewSetModel bookmarkTreeView bookmarkStore  
        New.treeViewSetHeadersVisible bookmarkTreeView True

@@ -106,7 +106,18 @@ setupEventsWindow state@ViewerState{..} = do
       Nothing -> return ()
       Just (TreeIter _ pos _ _) -> listStoreRemove bookmarkStore (fromIntegral pos)
     queueRedrawTimelines state
-    return ()
+ 
+  -- Button for jumping to bookmark
+  onToolButtonClicked gotoBookmarkButton $ do
+    sel <- treeViewGetSelection bookmarkTreeView
+    selection <- treeSelectionGetSelected sel 
+    case selection of
+      Nothing -> return ()
+      Just (TreeIter _ pos _ _) -> do
+        l <- listStoreToList bookmarkStore
+        when debug $ putStrLn ("gotoBookmark: " ++ show l++ " pos = " ++ show pos)
+        setCursorToTime state (l!!(fromIntegral pos))
+    queueRedrawTimelines state
 
   exts <- withImageSurface FormatARGB32 0 0 $ \s -> renderWith s eventsFont
   writeIORef eventsFontExtents exts
