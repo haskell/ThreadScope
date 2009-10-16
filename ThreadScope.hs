@@ -29,6 +29,7 @@ import Options
 import ReadEvents
 import EventsWindow
 import Timeline
+import Sidebar
 
 -------------------------------------------------------------------------------
 
@@ -156,6 +157,11 @@ startup options state@ViewerState{..}
        setupEventsWindow state
 
        ------------------------------------------------------------------------
+       -- Sidebar
+
+       setupSideBar state
+
+       ------------------------------------------------------------------------
        -- Quit
        quitMenuItem `onActivateLeaf` mainQuit
 
@@ -199,8 +205,7 @@ buildInitialState options = do
 
        mainWindow         <- xmlGetWidget xml castToWindow "main_window"
        statusBar          <- xmlGetWidget xml castToStatusbar "statusbar"
-       progressBar        <- progressBarNew
-       containerAdd statusBar progressBar
+       hpaned             <- xmlGetWidget xml castToHPaned "hpaned"
 
        bwToggle           <- xmlGetWidget xml castToCheckMenuItem "black_and_white"
        sidebarToggle      <- xmlGetWidget xml castToCheckMenuItem "view_sidebar"

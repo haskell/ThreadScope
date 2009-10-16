@@ -1,7 +1,7 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
+<!--Generated with glade3 3.4.4 on Fri Oct 16 10:03:36 2009 -->
 <glade-interface>
-  <!-- interface-requires gtk+ 2.6 -->
-  <!-- interface-naming-policy toplevel-contextual -->
   <widget class="GtkWindow" id="main_window">
     <property name="width_request">600</property>
     <property name="height_request">400</property>
@@ -12,7 +12,6 @@
     <child>
       <widget class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <property name="spacing">4</property>
         <child>
           <widget class="GtkMenuBar" id="menubar1">
@@ -26,24 +25,24 @@
                   <widget class="GtkMenu" id="menuitem1_menu">
                     <child>
                       <widget class="GtkImageMenuItem" id="openMenuItem">
-                        <property name="label">gtk-open</property>
                         <property name="visible">True</property>
+                        <property name="label">gtk-open</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                       </widget>
                     </child>
                     <child>
                       <widget class="GtkImageMenuItem" id="saveMenuItem">
-                        <property name="label">gtk-save</property>
                         <property name="visible">True</property>
+                        <property name="label">gtk-save</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                       </widget>
                     </child>
                     <child>
                       <widget class="GtkImageMenuItem" id="saveAsMenuItem">
-                        <property name="label">gtk-save-as</property>
                         <property name="visible">True</property>
+                        <property name="label">gtk-save-as</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                       </widget>
@@ -95,8 +94,8 @@
                     </child>
                     <child>
                       <widget class="GtkImageMenuItem" id="view_reload">
-                        <property name="label">gtk-refresh</property>
                         <property name="visible">True</property>
+                        <property name="label">gtk-refresh</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <signal name="activate" handler="on_view_reload_activate"/>
@@ -127,17 +126,15 @@
           </widget>
           <packing>
             <property name="expand">False</property>
-            <property name="position">0</property>
           </packing>
         </child>
         <child>
-          <widget class="GtkHPaned" id="hpaned1">
+          <widget class="GtkHPaned" id="hpaned">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <child>
               <widget class="GtkVBox" id="sidebar_vbox">
                 <property name="visible">True</property>
-                <property name="orientation">vertical</property>
                 <child>
                   <widget class="GtkHBox" id="sidebar_hbox">
                     <property name="visible">True</property>
@@ -148,15 +145,12 @@
 Bookmarks
 </property>
                       </widget>
-                      <packing>
-                        <property name="position">0</property>
-                      </packing>
                     </child>
                     <child>
                       <widget class="GtkButton" id="sidebar_close_button">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="receives_default">False</property>
+                        <property name="response_id">0</property>
                         <child>
                           <widget class="GtkImage" id="image1">
                             <property name="visible">True</property>
@@ -175,17 +169,15 @@ Bookmarks
                   </widget>
                   <packing>
                     <property name="expand">False</property>
-                    <property name="position">0</property>
                   </packing>
                 </child>
                 <child>
                   <widget class="GtkVBox" id="bookmarks_vbox">
                     <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
                     <child>
                       <widget class="GtkToolbar" id="toolbar3">
                         <property name="visible">True</property>
-                        <property name="toolbar_style">both-horiz</property>
+                        <property name="toolbar_style">GTK_TOOLBAR_BOTH_HORIZ</property>
                         <property name="show_arrow">False</property>
                         <child>
                           <widget class="GtkToolButton" id="add_bookmark_button">
@@ -196,7 +188,6 @@ Bookmarks
                           </widget>
                           <packing>
                             <property name="expand">False</property>
-                            <property name="homogeneous">True</property>
                           </packing>
                         </child>
                         <child>
@@ -206,14 +197,12 @@ Bookmarks
                           </widget>
                           <packing>
                             <property name="expand">False</property>
-                            <property name="homogeneous">True</property>
                           </packing>
                         </child>
                       </widget>
                       <packing>
                         <property name="expand">False</property>
                         <property name="fill">False</property>
-                        <property name="position">0</property>
                       </packing>
                     </child>
                     <child>
@@ -243,7 +232,6 @@ Bookmarks
                 <child>
                   <widget class="GtkVBox" id="vbox2">
                     <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
                     <child>
                       <widget class="GtkHBox" id="hbox4">
                         <property name="visible">True</property>
@@ -251,14 +239,11 @@ Bookmarks
                           <widget class="GtkLabel" id="label1">
                             <property name="visible">True</property>
                           </widget>
-                          <packing>
-                            <property name="position">0</property>
-                          </packing>
                         </child>
                         <child>
                           <widget class="GtkToolbar" id="toolbar2">
                             <property name="visible">True</property>
-                            <property name="toolbar_style">both-horiz</property>
+                            <property name="toolbar_style">GTK_TOOLBAR_BOTH_HORIZ</property>
                             <property name="show_arrow">False</property>
                             <child>
                               <widget class="GtkToolButton" id="cpus_first">
@@ -270,7 +255,6 @@ Bookmarks
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="homogeneous">True</property>
                               </packing>
                             </child>
                             <child>
@@ -282,7 +266,6 @@ Bookmarks
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="homogeneous">True</property>
                               </packing>
                             </child>
                             <child>
@@ -295,7 +278,6 @@ Bookmarks
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="homogeneous">True</property>
                               </packing>
                             </child>
                             <child>
@@ -304,6 +286,7 @@ Bookmarks
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
+                                <property name="homogeneous">False</property>
                               </packing>
                             </child>
                             <child>
@@ -315,7 +298,6 @@ Bookmarks
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="homogeneous">True</property>
                               </packing>
                             </child>
                             <child>
@@ -327,7 +309,6 @@ Bookmarks
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="homogeneous">True</property>
                               </packing>
                             </child>
                             <child>
@@ -339,7 +320,6 @@ Bookmarks
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="homogeneous">True</property>
                               </packing>
                             </child>
                             <child>
@@ -348,6 +328,7 @@ Bookmarks
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
+                                <property name="homogeneous">False</property>
                               </packing>
                             </child>
                             <child>
@@ -361,7 +342,6 @@ Bookmarks
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="homogeneous">True</property>
                               </packing>
                             </child>
                           </widget>
@@ -374,7 +354,6 @@ Bookmarks
                       </widget>
                       <packing>
                         <property name="expand">False</property>
-                        <property name="position">0</property>
                       </packing>
                     </child>
                     <child>
@@ -383,69 +362,25 @@ Bookmarks
                         <property name="n_rows">3</property>
                         <property name="n_columns">3</property>
                         <child>
-                          <widget class="GtkDrawingArea" id="timeline_key_drawingarea">
-                            <property name="height_request">30</property>
+                          <widget class="GtkLabel" id="label6">
                             <property name="visible">True</property>
-                          </widget>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="right_attach">2</property>
-                            <property name="top_attach">2</property>
-                            <property name="bottom_attach">3</property>
-                            <property name="x_options">GTK_FILL</property>
-                            <property name="y_options">GTK_FILL</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <widget class="GtkDrawingArea" id="timeline_labels_drawingarea">
-                            <property name="width_request">80</property>
-                            <property name="visible">True</property>
-                          </widget>
-                          <packing>
-                            <property name="x_options">GTK_FILL</property>
-                            <property name="y_options">GTK_FILL</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <widget class="GtkDrawingArea" id="timeline_drawingarea">
-                            <property name="height_request">40</property>
-                            <property name="visible">True</property>
-                          </widget>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="right_attach">2</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <widget class="GtkHScrollbar" id="timeline_hscroll">
-                            <property name="visible">True</property>
-                          </widget>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="right_attach">2</property>
-                            <property name="top_attach">1</property>
-                            <property name="bottom_attach">2</property>
-                            <property name="y_options">GTK_SHRINK</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <widget class="GtkVScrollbar" id="timeline_vscroll">
-                            <property name="visible">True</property>
-                            <property name="orientation">vertical</property>
                           </widget>
                           <packing>
                             <property name="left_attach">2</property>
                             <property name="right_attach">3</property>
+                            <property name="top_attach">2</property>
+                            <property name="bottom_attach">3</property>
                             <property name="x_options">GTK_SHRINK | GTK_FILL</property>
+                            <property name="y_options">GTK_SHRINK | GTK_FILL</property>
                           </packing>
                         </child>
                         <child>
-                          <widget class="GtkLabel" id="label3">
+                          <widget class="GtkLabel" id="label5">
                             <property name="visible">True</property>
                           </widget>
                           <packing>
-                            <property name="top_attach">1</property>
-                            <property name="bottom_attach">2</property>
+                            <property name="top_attach">2</property>
+                            <property name="bottom_attach">3</property>
                             <property name="x_options">GTK_FILL</property>
                             <property name="y_options">GTK_SHRINK | GTK_FILL</property>
                           </packing>
@@ -464,27 +399,70 @@ Bookmarks
                           </packing>
                         </child>
                         <child>
-                          <widget class="GtkLabel" id="label5">
+                          <widget class="GtkLabel" id="label3">
                             <property name="visible">True</property>
                           </widget>
                           <packing>
-                            <property name="top_attach">2</property>
-                            <property name="bottom_attach">3</property>
+                            <property name="top_attach">1</property>
+                            <property name="bottom_attach">2</property>
                             <property name="x_options">GTK_FILL</property>
                             <property name="y_options">GTK_SHRINK | GTK_FILL</property>
                           </packing>
                         </child>
                         <child>
-                          <widget class="GtkLabel" id="label6">
+                          <widget class="GtkVScrollbar" id="timeline_vscroll">
                             <property name="visible">True</property>
                           </widget>
                           <packing>
                             <property name="left_attach">2</property>
                             <property name="right_attach">3</property>
+                            <property name="x_options">GTK_SHRINK | GTK_FILL</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <widget class="GtkHScrollbar" id="timeline_hscroll">
+                            <property name="visible">True</property>
+                          </widget>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="top_attach">1</property>
+                            <property name="bottom_attach">2</property>
+                            <property name="y_options">GTK_SHRINK</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <widget class="GtkDrawingArea" id="timeline_drawingarea">
+                            <property name="height_request">40</property>
+                            <property name="visible">True</property>
+                          </widget>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <widget class="GtkDrawingArea" id="timeline_labels_drawingarea">
+                            <property name="width_request">80</property>
+                            <property name="visible">True</property>
+                          </widget>
+                          <packing>
+                            <property name="x_options">GTK_FILL</property>
+                            <property name="y_options">GTK_FILL</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <widget class="GtkDrawingArea" id="timeline_key_drawingarea">
+                            <property name="height_request">30</property>
+                            <property name="visible">True</property>
+                          </widget>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
                             <property name="top_attach">2</property>
                             <property name="bottom_attach">3</property>
-                            <property name="x_options">GTK_SHRINK | GTK_FILL</property>
-                            <property name="y_options">GTK_SHRINK | GTK_FILL</property>
+                            <property name="x_options">GTK_FILL</property>
+                            <property name="y_options">GTK_FILL</property>
                           </packing>
                         </child>
                       </widget>
@@ -500,14 +478,13 @@ Bookmarks
                     <property name="label" translatable="yes">Timeline</property>
                   </widget>
                   <packing>
-                    <property name="tab_fill">False</property>
                     <property name="type">tab</property>
+                    <property name="tab_fill">False</property>
                   </packing>
                 </child>
                 <child>
                   <widget class="GtkVBox" id="vbox4">
                     <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
                     <child>
                       <widget class="GtkHBox" id="hbox5">
                         <property name="visible">True</property>
@@ -517,14 +494,13 @@ Bookmarks
                           </widget>
                           <packing>
                             <property name="fill">False</property>
-                            <property name="position">0</property>
                           </packing>
                         </child>
                         <child>
                           <widget class="GtkEntry" id="events_entry">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="invisible_char">&#x25CF;</property>
+                            <property name="invisible_char">●</property>
                             <property name="width_chars">20</property>
                           </widget>
                           <packing>
@@ -534,7 +510,7 @@ Bookmarks
                         <child>
                           <widget class="GtkToolbar" id="toolbar5">
                             <property name="visible">True</property>
-                            <property name="toolbar_style">both-horiz</property>
+                            <property name="toolbar_style">GTK_TOOLBAR_BOTH_HORIZ</property>
                             <property name="show_arrow">False</property>
                             <child>
                               <widget class="GtkToolButton" id="events_find">
@@ -545,7 +521,6 @@ Bookmarks
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="homogeneous">True</property>
                               </packing>
                             </child>
                             <child>
@@ -554,6 +529,7 @@ Bookmarks
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
+                                <property name="homogeneous">False</property>
                               </packing>
                             </child>
                             <child>
@@ -565,7 +541,6 @@ Bookmarks
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="homogeneous">True</property>
                               </packing>
                             </child>
                             <child>
@@ -577,7 +552,6 @@ Bookmarks
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="homogeneous">True</property>
                               </packing>
                             </child>
                             <child>
@@ -589,7 +563,6 @@ Bookmarks
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="homogeneous">True</property>
                               </packing>
                             </child>
                           </widget>
@@ -602,7 +575,6 @@ Bookmarks
                       </widget>
                       <packing>
                         <property name="expand">False</property>
-                        <property name="position">0</property>
                       </packing>
                     </child>
                     <child>
@@ -613,14 +585,10 @@ Bookmarks
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                           </widget>
-                          <packing>
-                            <property name="position">0</property>
-                          </packing>
                         </child>
                         <child>
                           <widget class="GtkVScrollbar" id="eventsVScroll">
                             <property name="visible">True</property>
-                            <property name="orientation">vertical</property>
                             <property name="adjustment">0 0 0 0 0 0</property>
                           </widget>
                           <packing>
@@ -644,9 +612,9 @@ Bookmarks
                     <property name="label" translatable="yes">Events</property>
                   </widget>
                   <packing>
+                    <property name="type">tab</property>
                     <property name="position">1</property>
                     <property name="tab_fill">False</property>
-                    <property name="type">tab</property>
                   </packing>
                 </child>
               </widget>

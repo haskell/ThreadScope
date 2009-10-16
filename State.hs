@@ -32,7 +32,7 @@ data ViewerState = ViewerState {
   -- main window
   mainWindow         :: Window,
   statusBar          :: Statusbar,
-  progressBar        :: ProgressBar,
+  hpaned             :: HPaned,
 
   -- menu items
   bwToggle           :: CheckMenuItem,
