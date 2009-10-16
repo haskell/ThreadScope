@@ -130,7 +130,7 @@ test :: String -> [Event]
 
 test "empty0"
   = [
-     Event startup 0 (Startup 1)
+     Event 0 (Startup 1)
     ]
 
 -------------------------------------------------------------------------------
@@ -138,29 +138,29 @@ test "empty0"
 
 test "empty1"
   = [
-     Event startup 0 (Startup 1),
-     Event blockMarker 0 $ EventBlock 4000000 0 []
+     Event 0 (Startup 1),
+     Event 0 $ EventBlock 4000000 0 []
     ]
 
 -------------------------------------------------------------------------------
 
 test "test0"
   = [
-     Event startup 0 (Startup 1),
-     Event blockMarker 0 $ EventBlock 4000000 0 [
-          Event shutdown 4000000 Shutdown
+     Event 0 (Startup 1),
+     Event 0 $ EventBlock 4000000 0 [
+          Event 4000000 Shutdown
       ]
     ]
 -------------------------------------------------------------------------------
 
 test "small"
   = [
-     Event startup 0 (Startup 1),
-     Event blockMarker 0 $ EventBlock 4000000 0 [
-       Event create    1000000 (CreateThread 1),
-       Event runThread 2000000 (RunThread 1),
-       Event stop      3000000 (StopThread 1 ThreadFinished),
-       Event shutdown  4000000 (Shutdown)
+     Event 0 (Startup 1),
+     Event 0 $ EventBlock 4000000 0 [
+       Event 1000000 (CreateThread 1),
+       Event 2000000 (RunThread 1),
+       Event 3000000 (StopThread 1 ThreadFinished),
+       Event 4000000 (Shutdown)
      ]
     ]
 
@@ -168,26 +168,26 @@ test "small"
 
 test "tick"
   = [-- A thread from 2s to 3s
-     Event startup 0 (Startup 3),
-     Event blockMarker 0 $ EventBlock 4000000000 0 [
-       Event create    1000000000 (CreateThread 1),
-       Event runThread 2000000000 (RunThread 1),
-       Event stop      3000000000 (StopThread 1 ThreadFinished),
-       Event shutdown  4000000000 (Shutdown)
+     Event 0 (Startup 3),
+     Event 0 $ EventBlock 4000000000 0 [
+       Event 1000000000 (CreateThread 1),
+       Event 2000000000 (RunThread 1),
+       Event 3000000000 (StopThread 1 ThreadFinished),
+       Event 4000000000 (Shutdown)
      ],
      -- A thread from 0.2ms to 0.3ms
-     Event blockMarker 0 $ EventBlock 4000000000 1 [
-       Event create    1000000 (CreateThread 2),
-       Event runThread 2000000 (RunThread 2),
-       Event stop      3000000 (StopThread 2 ThreadFinished),
-       Event shutdown  4000000 (Shutdown)
+     Event 0 $ EventBlock 4000000000 1 [
+       Event 1000000 (CreateThread 2),
+       Event 2000000 (RunThread 2),
+       Event 3000000 (StopThread 2 ThreadFinished),
+       Event 4000000 (Shutdown)
     ],
     -- A thread from 0.2us to 0.3us
-     Event blockMarker 0 $ EventBlock 4000000000 2 [
-       Event create    1000 (CreateThread 3),
-       Event runThread 2000 (RunThread 3),
-       Event stop      3000 (StopThread 3 ThreadFinished),
-       Event shutdown  4000 (Shutdown)
+     Event 0 $ EventBlock 4000000000 2 [
+       Event 1000 (CreateThread 3),
+       Event 2000 (RunThread 3),
+       Event 3000 (StopThread 3 ThreadFinished),
+       Event 4000 (Shutdown)
      ]
     ]
 
@@ -195,10 +195,10 @@ test "tick"
 
 test "tick2"
   = [-- A thread create  but no run
-     Event startup 0 (Startup 1),
-       Event blockMarker 0 $ EventBlock 4000000000 0 [
-       Event create    1000000000 (CreateThread 1),
-       Event shutdown  4000000000 (Shutdown)
+     Event 0 (Startup 1),
+       Event 0 $ EventBlock 4000000000 0 [
+       Event 1000000000 (CreateThread 1),
+       Event 4000000000 (Shutdown)
      ]
     ]
 
@@ -206,12 +206,12 @@ test "tick2"
 
 test "tick3"
   = [-- A thread from 2s to 3s
-     Event startup 0 (Startup 1),
-     Event blockMarker 0 $ EventBlock 4000000000 0 [
-       Event create    1000000000 (CreateThread 1),
-       Event runThread 2000000000 (RunThread 1),
-       Event stop      3000000000 (StopThread 1 ThreadFinished),
-       Event shutdown  4000000000 (Shutdown)
+     Event 0 (Startup 1),
+     Event 0 $ EventBlock 4000000000 0 [
+       Event 1000000000 (CreateThread 1),
+       Event 2000000000 (RunThread 1),
+       Event 3000000000 (StopThread 1 ThreadFinished),
+       Event 4000000000 (Shutdown)
      ]
     ]
 
@@ -219,12 +219,12 @@ test "tick3"
 
 test "tick4"
   = [-- A test for scale values close to 1.0
-     Event startup 0 (Startup 1),
-     Event blockMarker 0 $ EventBlock 4000000000 0 [
-       Event create    100 (CreateThread 1),
-       Event runThread 200 (RunThread 1),
-       Event stop      300 (StopThread 1 ThreadFinished),
-       Event shutdown  400 (Shutdown)
+     Event 0 (Startup 1),
+     Event 0 $ EventBlock 4000000000 0 [
+       Event 100 (CreateThread 1),
+       Event 200 (RunThread 1),
+       Event 300 (StopThread 1 ThreadFinished),
+       Event 400 (Shutdown)
      ]
     ]
 
@@ -232,12 +232,12 @@ test "tick4"
 
 test "tick5"
   = [-- A thread from 2s to 3s
-     Event startup 0 (Startup 1),
-     Event blockMarker 0 $ EventBlock 4000000000 0 [
-       Event create    1000000000 (CreateThread 1),
-       Event runThread 2000000000 (RunThread 1),
-       Event stop      3000000000 (StopThread 1 ThreadFinished),
-       Event shutdown  4000000000 (Shutdown)
+     Event 0 (Startup 1),
+     Event 0 $ EventBlock 4000000000 0 [
+       Event 1000000000 (CreateThread 1),
+       Event 2000000000 (RunThread 1),
+       Event 3000000000 (StopThread 1 ThreadFinished),
+       Event 4000000000 (Shutdown)
      ]
     ]
 
@@ -250,27 +250,27 @@ test "tick6" = chequered 2 100 10000000
 
 test "overlap"
   = [-- A thread from 2s to 3s
-     Event startup 0 (Startup 1),
-     Event blockMarker 0 $ EventBlock 3000 0 [
-       Event create    1000 (CreateThread 1),
-       Event runThread 1100 (RunThread 1),
-       Event create    1200 (CreateThread 2),
-       Event stop      1300 (StopThread 1 ThreadFinished),
+     Event 0 (Startup 1),
+     Event 0 $ EventBlock 3000 0 [
+       Event 1000 (CreateThread 1),
+       Event 1100 (RunThread 1),
+       Event 1200 (CreateThread 2),
+       Event 1300 (StopThread 1 ThreadFinished),
 
-       Event runThread 1400 (RunThread 2),
-       Event create    1500 (CreateThread 3),
-       Event create    1500 (CreateThread 4),
-       Event stop      1500 (StopThread 2 ThreadFinished),
+       Event 1400 (RunThread 2),
+       Event 1500 (CreateThread 3),
+       Event 1500 (CreateThread 4),
+       Event 1500 (StopThread 2 ThreadFinished),
 
-       Event runThread 1600 (RunThread 3),
-       Event create    1600 (CreateThread 5),
-       Event stop      1600 (StopThread 3 ThreadFinished),
+       Event 1600 (RunThread 3),
+       Event 1600 (CreateThread 5),
+       Event 1600 (StopThread 3 ThreadFinished),
 
-       Event runThread 1700 (RunThread 4),
-       Event create    1700 (CreateThread 6),
-       Event stop      1800 (StopThread 4 ThreadFinished),
+       Event 1700 (RunThread 4),
+       Event 1700 (CreateThread 6),
+       Event 1800 (StopThread 4 ThreadFinished),
 
-       Event shutdown  3000 (Shutdown)
+       Event 3000 (Shutdown)
      ]
     ]
 
@@ -298,7 +298,7 @@ test _ = []
 
 chequered :: ThreadId -> Timestamp -> Timestamp -> [Event]
 chequered numThreads basicDuration runLength
-  = Event startup 0 (Startup (fromIntegral numThreads)) : 
+  = Event 0 (Startup (fromIntegral numThreads)) : 
     makeChequered 1 numThreads basicDuration runLength
 
 -------------------------------------------------------------------------------
@@ -307,12 +307,12 @@ makeChequered :: ThreadId -> ThreadId -> Timestamp -> Timestamp -> [Event]
 makeChequered currentThread numThreads basicDuration runLength
               | currentThread > numThreads = [] -- All threads rendered
 makeChequered currentThread numThreads basicDuration runLength
-  = Event blockMarker 0 eventBlock :
+  = Event 0 eventBlock :
     makeChequered (currentThread+1) numThreads (2*basicDuration) runLength
     where
     eventBlock :: EventTypeSpecificInfo
     eventBlock = EventBlock runLength (fromIntegral (currentThread-1))
-                 (Event create 0 (CreateThread currentThread) 
+                 (Event 0 (CreateThread currentThread) 
                  : chequeredPattern currentThread 0 basicDuration runLength)
 
 -------------------------------------------------------------------------------
@@ -320,12 +320,12 @@ makeChequered currentThread numThreads basicDuration runLength
 chequeredPattern :: ThreadId -> Timestamp -> Timestamp -> Timestamp -> [Event]
 chequeredPattern currentThread currentPos basicDuration runLength
   = if currentPos + 2*basicDuration > runLength then
-      [Event shutdown runLength (Shutdown)]
+      [Event runLength (Shutdown)]
     else
-      [Event runThread currentPos (RunThread currentThread),
-       Event stop      (currentPos+basicDuration) (StopThread currentThread ThreadYielding),
-       Event startGC (currentPos+basicDuration) StartGC,
-       Event finishGC (currentPos+2*basicDuration) EndGC
+      [Event currentPos (RunThread currentThread),
+       Event (currentPos+basicDuration) (StopThread currentThread ThreadYielding),
+       Event (currentPos+basicDuration) StartGC,
+       Event (currentPos+2*basicDuration) EndGC
       ] ++ chequeredPattern currentThread (currentPos+2*basicDuration) basicDuration runLength     
 
 -------------------------------------------------------------------------------

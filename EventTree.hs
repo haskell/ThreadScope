@@ -7,7 +7,7 @@ module EventTree (
      durationTreeCountNodes,
      durationTreeMaxDepth,
 
-     EventTree(..),
+     EventTree(..), EventNode(..),
      mkEventTree,
      reportEventTree, eventTreeMaxDepth,
   ) where
@@ -162,35 +162,44 @@ durationTreeMaxDepth _ = 1
 -------------------------------------------------------------------------------
 
 data EventTree
-  = EventSplit
+    = EventTree 
         {-#UNPACK#-}!Timestamp -- The start time of this run-span
+        {-#UNPACK#-}!Timestamp -- The end   time of this run-span
+        EventNode
+
+data EventNode
+  = EventSplit
 	{-#UNPACK#-}!Timestamp -- The time used to split the events into two parts
-	{-#UNPACK#-}!Timestamp -- The end time of this run-span
-	EventTree -- The LHS split; all events lie completely between
+	EventNode -- The LHS split; all events lie completely between
                   -- start and split
-        EventTree -- The RHS split; all events lie completely between
+        EventNode -- The RHS split; all events lie completely between
                   -- split and end
 
   | EventTreeLeaf [GHC.Event]
+        -- sometimes events happen "simultaneously" (at the same time
+        -- given the resolution of our clock source), so we can't
+        -- separate them.
 
 mkEventTree :: [GHC.Event] -> Timestamp -> EventTree
 mkEventTree es endTime = 
+  EventTree s e $
   -- trace (show tree) $
   tree
  where
   tree = splitEvents es endTime
+  (s,e) = if null es then (0,0) else (time (head es), endTime)
 
 splitEvents :: [GHC.Event] -- events
             -> Timestamp       -- end time of last event in the list
-            -> EventTree
-splitEvents []  _endTime = 
+            -> EventNode
+splitEvents []  !_endTime = 
   -- if len /= 0 then error "splitEvents0" else
   EventTreeLeaf []   -- The case for an empty list of events
 
-splitEvents [e] _endTime =
+splitEvents [e] !_endTime =
   EventTreeLeaf [e]
 
-splitEvents es endTime
+splitEvents es !endTime
   | duration == 0
   = EventTreeLeaf es
 
@@ -203,9 +212,7 @@ splitEvents es endTime
   | otherwise
   = -- trace (printf "len = %d, startTime = %d, endTime = %d, lhs_len = %d\n" len startTime endTime lhs_len) $
     -- if len /= length es || length lhs + length rhs /= len then error (printf "splitEvents3; %d %d %d %d %d" len (length es) (length lhs) lhs_len (length rhs))  else 
-    EventSplit startTime
-	       (time (head rhs))
-               endTime
+    EventSplit (time (head rhs))
                ltree
                rtree
     where
@@ -237,23 +244,25 @@ splitEventList (e:es) acc !tsplit !tmax
 -------------------------------------------------------------------------------
 
 reportEventTree :: Int -> EventTree -> IO ()
-reportEventTree hecNumber eventTree
+reportEventTree hecNumber (EventTree _ _ eventTree)
   = putStrLn ("HEC " ++ show hecNumber ++ reportText)
     where
     reportText = " nodes = " ++ show (eventTreeCountNodes eventTree) ++ 
-                 " max depth = " ++ show (eventTreeMaxDepth eventTree)
+                 " max depth = " ++ show (eventNodeMaxDepth eventTree)
 
 -------------------------------------------------------------------------------
 
-eventTreeCountNodes :: EventTree -> Int
-eventTreeCountNodes (EventSplit _ _ _ lhs rhs)
+eventTreeCountNodes :: EventNode -> Int
+eventTreeCountNodes (EventSplit _ lhs rhs)
    = 1 + eventTreeCountNodes lhs + eventTreeCountNodes rhs
 eventTreeCountNodes _ = 1
 
 -------------------------------------------------------------------------------
 
 eventTreeMaxDepth :: EventTree -> Int
-eventTreeMaxDepth (EventSplit _ _ _ lhs rhs)
-  = 1 + eventTreeMaxDepth lhs `max` eventTreeMaxDepth rhs
-eventTreeMaxDepth _ = 1
+eventTreeMaxDepth (EventTree _ _ t) = eventNodeMaxDepth t
 
+eventNodeMaxDepth :: EventNode -> Int
+eventNodeMaxDepth (EventSplit _ lhs rhs)
+  = 1 + eventNodeMaxDepth lhs `max` eventNodeMaxDepth rhs
+eventNodeMaxDepth _ = 1

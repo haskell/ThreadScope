@@ -25,7 +25,9 @@ renderHEC :: Int -> ViewParameters
 renderHEC cap params@ViewParameters{..} start end (dtree,etree) = do
   renderDurations cap params start end dtree
   when (scaleValue < detailThreshold) $
-     renderEvents cap params start end etree
+     case etree of 
+       EventTree ltime etime tree ->
+           renderEvents cap params ltime etime start end tree
 
 detailThreshold :: Double
 detailThreshold = 3000
@@ -61,25 +63,27 @@ renderDurations !c params@ViewParameters{..} !startPos !endPos
 -------------------------------------------------------------------------------
 
 renderEvents :: Int -> ViewParameters
-             -> Timestamp -> Timestamp -> EventTree
+             -> Timestamp -- start time of this tree node
+             -> Timestamp -- end   time of this tree node
+             -> Timestamp -> Timestamp -> EventNode
              -> Render ()
 
-renderEvents c params@ViewParameters{..} startPos endPos 
+renderEvents !c params@ViewParameters{..} !s !e !startPos !endPos 
         (EventTreeLeaf es)
   = sequence_ [ drawEvent c params e
               | e <- es, let t = time e, t >= startPos && t < endPos ]
 
-renderEvents c params@ViewParameters{..} startPos endPos 
-        (EventSplit s splitTime e lhs rhs)
+renderEvents !c params@ViewParameters{..} !s !e !startPos !endPos
+        (EventSplit splitTime lhs rhs)
   | startPos < splitTime && endPos >= splitTime &&
         (fromIntegral (e - s) / scaleValue) <= fromIntegral detail
   = drawTooManyEvents c params s e
 
   | otherwise
   = do when (startPos < splitTime) $
-         renderEvents c params startPos endPos lhs
+         renderEvents c params s splitTime startPos endPos lhs
        when (endPos >= splitTime) $
-         renderEvents c params startPos endPos rhs
+         renderEvents c params splitTime e startPos endPos rhs
 
 -------------------------------------------------------------------------------
 -- An event is in view if it is not outside the view.

@@ -223,13 +223,13 @@ drawEvents value arr width height cursor = do
 
 
 ppEvent :: CapEvent -> String
-ppEvent (CapEvent cap (GHC.Event ref time spec)) =
+ppEvent (CapEvent cap (GHC.Event time spec)) =
   printf "%9d: " time ++
   (case cap of
     Nothing -> ""
     Just c  -> printf "cap %d: " c) ++
   case spec of
-    UnknownEvent ->
+    UnknownEvent{ ref=ref } ->
       printf "unknown event; %d" ref
 
     Message msg -> msg
