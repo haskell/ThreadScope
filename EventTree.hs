@@ -180,6 +180,10 @@ data EventNode
         -- given the resolution of our clock source), so we can't
         -- separate them.
 
+  | EventTreeOne GHC.Event
+        -- This is a space optimisation for the common case of
+        -- EventTreeLeaf [e].
+
 mkEventTree :: [GHC.Event] -> Timestamp -> EventTree
 mkEventTree es endTime = 
   EventTree s e $
@@ -197,7 +201,7 @@ splitEvents []  !_endTime =
   EventTreeLeaf []   -- The case for an empty list of events
 
 splitEvents [e] !_endTime =
-  EventTreeLeaf [e]
+  EventTreeOne e
 
 splitEvents es !endTime
   | duration == 0

@@ -72,6 +72,11 @@ renderEvents !c params@ViewParameters{..} !s !e !startPos !endPos
         (EventTreeLeaf es)
   = sequence_ [ drawEvent c params e
               | e <- es, let t = time e, t >= startPos && t < endPos ]
+renderEvents !c params@ViewParameters{..} !s !e !startPos !endPos 
+        (EventTreeOne ev)
+  | t >= startPos && t < endPos = drawEvent c params ev
+  | otherwise = return ()
+  where t = time ev
 
 renderEvents !c params@ViewParameters{..} !s !e !startPos !endPos
         (EventSplit splitTime lhs rhs)
