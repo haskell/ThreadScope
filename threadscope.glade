@@ -191,7 +191,7 @@ Bookmarks
                           </packing>
                         </child>
                         <child>
-                          <widget class="GtkToolButton" id="toolbutton1">
+                          <widget class="GtkToolButton" id="delete_bookmark">
                             <property name="visible">True</property>
                             <property name="stock_id">gtk-delete</property>
                           </widget>

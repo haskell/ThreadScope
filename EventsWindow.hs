@@ -97,6 +97,17 @@ setupEventsWindow state@ViewerState{..} = do
      New.listStoreAppend bookmarkStore cursorPos
      queueRedrawTimelines state
 
+  -- Button for deleting a bookmark
+  onToolButtonClicked deleteBookmarkButton  $ do
+    when debug $ putStrLn "Delete bookmark\n"
+    sel <- treeViewGetSelection bookmarkTreeView
+    selection <- treeSelectionGetSelected sel 
+    case selection of
+      Nothing -> return ()
+      Just (TreeIter _ pos _ _) -> listStoreRemove bookmarkStore (fromIntegral pos)
+    queueRedrawTimelines state
+    return ()
+
   exts <- withImageSurface FormatARGB32 0 0 $ \s -> renderWith s eventsFont
   writeIORef eventsFontExtents exts
 

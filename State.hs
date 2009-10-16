@@ -83,6 +83,7 @@ data ViewerState = ViewerState {
 
   -- Bookmarks
   addBookmarkButton  :: ToolButton,
+  deleteBookmarkButton  :: ToolButton,
   bookmarkTreeView   :: TreeView,
   bookmarkStore      :: ListStore Timestamp
   }
