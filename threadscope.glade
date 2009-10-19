@@ -7,8 +7,8 @@
     <property name="height_request">400</property>
     <property name="can_focus">True</property>
     <property name="title" translatable="yes">ThreadScope</property>
-    <property name="default_width">1500</property>
-    <property name="default_height">400</property>
+    <property name="default_width">1280</property>
+    <property name="default_height">600</property>
     <child>
       <widget class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
@@ -476,7 +476,6 @@ Bookmarks
                         </child>
                         <child>
                           <widget class="GtkDrawingArea" id="timeline_drawingarea">
-                            <property name="height_request">40</property>
                             <property name="visible">True</property>
                           </widget>
                           <packing>
