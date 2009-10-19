@@ -12,6 +12,7 @@
     <child>
       <widget class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
+        <property name="orientation">vertical</property>
         <property name="spacing">4</property>
         <child>
           <widget class="GtkMenuBar" id="menubar1">
@@ -136,6 +137,7 @@
             <child>
               <widget class="GtkVBox" id="sidebar_vbox">
                 <property name="visible">True</property>
+                <property name="orientation">vertical</property>
                 <child>
                   <widget class="GtkHBox" id="sidebar_hbox">
                     <property name="visible">True</property>
@@ -179,6 +181,7 @@ Bookmarks
                 <child>
                   <widget class="GtkVBox" id="bookmarks_vbox">
                     <property name="visible">True</property>
+                    <property name="orientation">vertical</property>
                     <child>
                       <widget class="GtkToolbar" id="toolbar3">
                         <property name="visible">True</property>
@@ -261,6 +264,7 @@ Bookmarks
                 <child>
                   <widget class="GtkVBox" id="vbox2">
                     <property name="visible">True</property>
+                    <property name="orientation">vertical</property>
                     <child>
                       <widget class="GtkHBox" id="hbox4">
                         <property name="visible">True</property>
@@ -450,6 +454,7 @@ Bookmarks
                         <child>
                           <widget class="GtkVScrollbar" id="timeline_vscroll">
                             <property name="visible">True</property>
+                            <property name="orientation">vertical</property>
                           </widget>
                           <packing>
                             <property name="left_attach">2</property>
@@ -523,6 +528,7 @@ Bookmarks
                 <child>
                   <widget class="GtkVBox" id="vbox4">
                     <property name="visible">True</property>
+                    <property name="orientation">vertical</property>
                     <child>
                       <widget class="GtkHBox" id="hbox5">
                         <property name="visible">True</property>
@@ -635,6 +641,7 @@ Bookmarks
                         <child>
                           <widget class="GtkVScrollbar" id="eventsVScroll">
                             <property name="visible">True</property>
+                            <property name="orientation">vertical</property>
                             <property name="adjustment">0 0 0 0 0 0</property>
                           </widget>
                           <packing>
