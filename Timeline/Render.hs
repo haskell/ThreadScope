@@ -9,11 +9,13 @@ import Timeline.Render.Constants
 import Timeline.Motion
 import Timeline.Ticks
 import Timeline.HEC
+import Timeline.Activity
 import Timeline.RenderBookmarks
 import Timeline.WithViewScale
 
 import State
 import ViewerColours
+import Traces
 
 import GHC.RTS.Events hiding (Event)
 
@@ -78,9 +80,12 @@ renderView state@ViewerState{..} exposeRegion hecs = do
                  hadj_value hadj_pagesize hadj_lower hadj_upper
      return ()
 
+  traces    <- getViewTraces state
+
   let params = ViewParameters {
                         width     = dAreaWidth,
                         height    = timelineHeight,
+                        viewTraces = traces,
                         hadjValue = hadj_value,
                         scaleValue = scaleValue,
                         detail = 3, -- for now
@@ -88,7 +93,6 @@ renderView state@ViewerState{..} exposeRegion hecs = do
                         labelsMode = labels_mode
                     }
 
-  traces    <- readIORef timelineTraces
   prev_view <- readIORef timelinePrevView
   cursor_t  <- readIORef cursorIORef
 
@@ -221,6 +225,8 @@ renderTraces state@ViewerState{..} params@ViewParameters{..}
             case trace of 
                TraceHEC c -> 
                    renderHEC c params startPos endPos (hecTrees hecs !! c)
+               TraceActivity ->
+                   renderActivity params hecs startPos endPos
                _   -> 
                    return ()
             restore
@@ -306,8 +312,8 @@ checkScaleValue state@ViewerState{..}
 -------------------------------------------------------------------------------
 
 updateLabelDrawingArea :: ViewerState -> Event -> IO Bool
-updateLabelDrawingArea ViewerState{..} (Expose { Old.eventArea=rect }) 
-   = do traces <- readIORef timelineTraces
+updateLabelDrawingArea state@ViewerState{..} (Expose { Old.eventArea=rect })
+   = do traces <- getViewTraces state
         labels_mode <- toggleToolButtonGetActive showLabelsToggle
         win <- widgetGetDrawWindow timelineLabelDrawingArea
         vadj_value <- adjustmentGetValue timelineVAdj
@@ -333,19 +339,21 @@ traceYPositions labels_mode traces
       extra = if labels_mode then hecLabelExtra else 0
 
       traceHeight (TraceHEC _) = hecTraceHeight
+      traceHeight TraceActivity = activityGraphHeight
       traceHeight _            = 0
 
 --------------------------------------------------------------------------------
 
 showTrace :: Trace -> String
-showTrace (TraceHEC n) = "HEC " ++ show n
+showTrace (TraceHEC n)  = "HEC " ++ show n
+showTrace TraceActivity = "Activity"
 showTrace _            = "?"
 
 --------------------------------------------------------------------------------
 
 calculateTotalTimelineHeight :: ViewerState -> IO Int
 calculateTotalTimelineHeight state@ViewerState{..} = do
-   traces <- readIORef timelineTraces
+   traces <- getViewTraces state
    labels_mode <- toggleToolButtonGetActive showLabelsToggle
    return $ last (traceYPositions labels_mode traces)
 

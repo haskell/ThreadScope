@@ -1,4 +1,4 @@
-
+{-# LANGUAGE CPP #-}
 -- ThreadScope: a graphical viewer for Haskell event log information.
 -- Maintainer: satnams@microsoft.com, s.singh@ieee.org
 
@@ -18,6 +18,9 @@ import Data.IORef
 import Data.Maybe
 import qualified Data.Function
 import Data.List
+import System.Posix
+import Control.Concurrent
+import Control.Exception
 
 import Paths_threadscope
 
@@ -30,6 +33,7 @@ import ReadEvents
 import EventsWindow
 import Timeline
 import Sidebar
+import Traces
 
 -------------------------------------------------------------------------------
 
@@ -112,9 +116,11 @@ startup options state@ViewerState{..}
              bw_mode <- checkMenuItemGetActive bwToggle
              labels_mode <- toggleToolButtonGetActive showLabelsToggle
 
+             traces <- getViewTraces state
              let params = ViewParameters {
                                 width     = width,
                                 height    = height,
+                                viewTraces = traces,
                                 hadjValue = hadj_value,
                                 scaleValue = scaleValue,
                                 detail = 2, -- for now
@@ -124,7 +130,6 @@ startup options state@ViewerState{..}
 
                  rect = Rectangle 0 0 width height
 
-             traces <- readIORef timelineTraces
              withPDFSurface (fn++".pdf") (fromIntegral width) (fromIntegral height)
                (flip renderWith $ (translate (-hadj_value) 0 >> 
                                    renderTraces state params traces hecs rect) >> showPage)
@@ -176,6 +181,11 @@ startup options state@ViewerState{..}
        ------------------------------------------------------------------------
        -- Show all windows
        widgetShowAll mainWindow
+
+#ifndef mingw32_HOST_OS
+       main <- myThreadId
+       installHandler sigINT (Catch (postGUIAsync (throw UserInterrupt))) Nothing
+#endif
 
        ------------------------------------------------------------------------
        -- Enter main event loop for GUI.
@@ -278,6 +288,8 @@ buildInitialState options = do
        -- Trace view
        tracesVBox <- vBoxNew False 0
        tracesTreeView <- treeViewNew
+       tracesStore <- treeStoreNew []
+       treeViewSetModel tracesTreeView tracesStore
        boxPackEnd tracesVBox tracesTreeView PackGrow 0
 
        return ViewerState { .. }

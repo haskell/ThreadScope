@@ -1,6 +1,7 @@
 module Timeline.Render.Constants (
     ox, oy, firstTraceY, tracePad, 
     hecTraceHeight, hecBarOff, hecBarHeight, hecLabelExtra,
+    activityGraphHeight,
     ticksHeight, ticksPad
   ) where
 
@@ -35,6 +36,11 @@ hecBarOff      = 10
 -- extra space to allow between HECs when labels are on.
 -- ToDo: should be calculated somehow
 hecLabelExtra  = 80
+
+-- Activity graph
+
+activityGraphHeight :: Int
+activityGraphHeight = 100
 
 -- Ticks
 

@@ -7,6 +7,7 @@ import State
 import TestEvents
 import EventDuration
 import Timeline
+import Traces
 
 import Graphics.UI.Gtk hiding (on)
 
@@ -174,7 +175,8 @@ buildEventLog from dialog progress state@ViewerState{..} =
          statusbarPush statusBar ctx $ 
             printf "%s (%d events, %.3fs)" name n_events
                                 ((fromIntegral lastTx :: Double) * 1.0e-9)
-         updateTimelines state [ TraceHEC n | n <- [0..hecCount hecs-1] ]
+         newHECs state hecs
+         timelineParamsChanged state
          when debug $ zipWithM_ reportDurationTree [0..] (map fst trees)
          when debug $ zipWithM_ reportEventTree [0..] (map snd trees)
          writeIORef hecsIORef (Just hecs)

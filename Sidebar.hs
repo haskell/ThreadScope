@@ -5,11 +5,11 @@ module Sidebar (
   ) where
 
 import State
+import Timeline
 
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Gdk.EventM
 
-import Data.Tree
 import Data.IORef
 import Control.Monad
 import Control.Monad.Trans
@@ -36,32 +36,35 @@ setupSideBar state@ViewerState{..} = do
      sidebarChangeView state
 
   writeIORef sidebarComboState 1
-  comboBoxSetActive sidebarCombo 1
-
-  tracesStore <- treeStoreNew [ Node { rootLabel = ("HECs",True),
-                                       subForest = [
-                                          Node { rootLabel = ("1",True),
-                                                 subForest = [] },
-                                          Node { rootLabel = ("2",True),
-                                                 subForest = [] } ]
-                                     } ]
-  treeViewSetModel tracesTreeView tracesStore
+  comboBoxSetActive sidebarCombo 0
+  sidebarChangeView state
 
   traceColumn <- treeViewColumnNew
-  treeViewColumnSetTitle traceColumn "Trace"
-  cell <- cellRendererTextNew
-  treeViewColumnPackStart traceColumn cell True
-  cellLayoutSetAttributes traceColumn cell tracesStore $
-          \(str,bool) -> [cellText := str]
-  treeViewAppendColumn tracesTreeView traceColumn
+--  treeViewColumnSetTitle traceColumn "Trace"
 
-  showColumn <- treeViewColumnNew
-  treeViewColumnSetTitle showColumn "Show"
-  cell <- cellRendererToggleNew
-  treeViewColumnPackStart showColumn cell True
-  cellLayoutSetAttributes showColumn cell tracesStore $
+  textcell <- cellRendererTextNew
+  togglecell <- cellRendererToggleNew
+
+  treeViewColumnPackStart traceColumn textcell True
+  treeViewColumnPackEnd   traceColumn togglecell False
+
+  cellLayoutSetAttributes traceColumn textcell tracesStore $
+          \(t,bool) -> case t of
+                         TraceGroup str -> [cellText := str]
+                         TraceHEC   n   -> [cellText := show n]
+                         TraceThread n  -> [cellText := show n]
+                         TraceActivity  -> [cellText := "Activity Profile"]
+
+  cellLayoutSetAttributes traceColumn togglecell tracesStore $
           \(str,bool) -> [cellToggleActive := bool]
-  treeViewAppendColumn tracesTreeView showColumn
+
+  on togglecell cellToggled $ \str ->  do
+    let p = stringToTreePath str
+    (str,bool) <- treeStoreGetValue tracesStore p
+    treeStoreSetValue tracesStore p (str, not bool)
+    timelineParamsChanged state
+
+  treeViewAppendColumn tracesTreeView traceColumn
 
   return ()
 

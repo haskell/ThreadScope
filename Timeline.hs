@@ -1,6 +1,5 @@
 module Timeline ( 
     setupTimelineView,
-    updateTimelines,
     renderTraces,
     timelineParamsChanged,
     defaultScaleValue,
@@ -97,23 +96,20 @@ setupTimelineView state@ViewerState{..} = do
   onValueChanged timelineAdj  $ queueRedrawTimelines state
   onValueChanged timelineVAdj $ queueRedrawTimelines state
 
-  on timelineDrawingArea exposeEvent $ tryEvent $ do
+  on timelineDrawingArea exposeEvent $ do
      exposeRegion <- New.eventRegion
      liftIO $ exposeTraceView state exposeRegion
+     return True
 
-  on timelineDrawingArea configureEvent $ tryEvent $ do
+  on timelineDrawingArea configureEvent $ do
      liftIO $ configureTimelineDrawingArea state
+     return True
 
   return ()
 
 -------------------------------------------------------------------------------
 -- Update the internal state and the timemline view after changing which
 -- traces are displayed, or the order of traces.
-
-updateTimelines :: ViewerState -> [Trace] -> IO ()
-updateTimelines state@ViewerState{..} traces = do
-  writeIORef timelineTraces traces
-  timelineParamsChanged state
 
 timelineParamsChanged :: ViewerState -> IO ()
 timelineParamsChanged state = do

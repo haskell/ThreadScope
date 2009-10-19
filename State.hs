@@ -60,7 +60,6 @@ data ViewerState = ViewerState {
   centreButton             :: ToolButton,
   showLabelsToggle         :: ToggleToolButton,
 
-  timelineTraces      :: IORef [Trace],
   timelinePrevView    :: IORef (Maybe (ViewParameters, Surface)),
 
   -- Events view
@@ -92,7 +91,8 @@ data ViewerState = ViewerState {
 
   -- Traces
   tracesVBox         :: VBox,
-  tracesTreeView     :: TreeView
+  tracesTreeView     :: TreeView,
+  tracesStore        :: TreeStore (Trace,Bool)
   }
 
 -- all the data from a .eventlog file
@@ -104,14 +104,18 @@ data HECs = HECs {
   }
 
 data Trace
-  = TraceHEC    Int
-  | TraceThread ThreadId
+  = TraceHEC      Int
+  | TraceThread   ThreadId
+  | TraceGroup    String
+  | TraceActivity
   -- more later ...
+  deriving Eq
 
 -- the parameters for a timeline render; used to figure out whether
 -- we're drawing the same thing twice.
 data ViewParameters = ViewParameters {
     width, height :: Int,
+    viewTraces    :: [Trace],
     hadjValue     :: Double,
     scaleValue    :: Double,
     detail        :: Int,
