@@ -18,7 +18,9 @@ import Data.IORef
 import Data.Maybe
 import qualified Data.Function
 import Data.List
+#ifndef mingw32_HOST_OS
 import System.Posix
+#endif
 import Control.Concurrent
 import Control.Exception
 
