@@ -128,13 +128,23 @@ Move into the tests directory and type:</p>
 <p>./ParFib +RTS -ls -N2</p>
 <p>Now view the eventlog which should look something like this on a machine with 
 two or more cores:</p>
-<p><img alt="" src="html/parfib.png" width="1296" height="636" /></p>
+<p><img alt="" src="html/parfib.png" width="1296" height="491" /></p>
 <p class="h1">Installing under Linux</p>
 <ul>
-	<li>Get the <a href="http://hackage.haskell.org/platform/">Haskell Platform</a>.</li>
-	<li><span class="computer">darcs get http://code.haskell.org/ThreadScope</span></li>
-	<li><span class="computer">cabal install</span></li>
+	<li>Install GHC (any 6.10 verison).</li>
+	<li>Install gtk2hs</li>
+	<li>Install darcs</li>
+	<li>Download the 6.12 release candidate to your home directory e.g. 
+	~/ghc.6.12.0.20091011</li>
+	<li>For the remaining steps please follow the Windows instructions.</li>
 </ul>
+<p>For example on Ubuntu or Debian you would type:</p>
+<p class="MsoNormal">
+<span style="font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;
+color:black" class="computer">sudo apt-get install ghc6<br />
+sudo apt-get install gtk2hs<br />
+sudo apt-get install darcs<o:p></o:p></span></p>
+<p>&nbsp;</p>
 
 </body>
 
