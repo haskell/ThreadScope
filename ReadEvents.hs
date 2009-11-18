@@ -8,6 +8,7 @@ import TestEvents
 import EventDuration
 import Timeline
 import Traces
+import Utils
 
 import Graphics.UI.Gtk hiding (on)
 
