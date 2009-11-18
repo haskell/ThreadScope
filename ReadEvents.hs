@@ -105,6 +105,8 @@ registerEvents from state@ViewerState{..} = do
 
   windowSetTitle dialog "ThreadScope"
 
+  withBackgroundProcessing $ do
+
   t <- forkIO $ buildEventLog from dialog progress state
                 `onException` dialogResponse dialog (ResponseUser 1)
 
@@ -117,7 +119,7 @@ registerEvents from state@ViewerState{..} = do
 
 -------------------------------------------------------------------------------
 
--- NB. nRun in a background thread, can call GUI functions only with
+-- NB. Runs in a background thread, can call GUI functions only with
 -- postGUI.
 --
 buildEventLog :: DialogClass dialog => Either FilePath String

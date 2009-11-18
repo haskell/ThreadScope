@@ -30,7 +30,9 @@ Executable threadscope
      build-depends: unix == 2.3.*
 
   ghc-options:  -fno-warn-type-defaults -fno-warn-name-shadowing
-  ghc-options: -threaded -debug
+
+-- Not yet: gtk2hs doesn't support -threaded at the moment.
+--  ghc-options: -threaded 
 
   c-sources: ghcrts.c
 
