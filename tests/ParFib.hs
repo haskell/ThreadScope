@@ -21,7 +21,7 @@ seqFib n = seqFib (n-1) + seqFib (n-2)
 -- reverts to sequential implementaiton.
 
 threshHold :: Int
-threshHold = 35
+threshHold = 25
 
 -------------------------------------------------------------------------------
 -- A parallel implementation of fib.
@@ -39,7 +39,7 @@ parFib n
 -------------------------------------------------------------------------------
 
 result :: Integer
-result = parFib 36
+result = parFib 44
 
 -------------------------------------------------------------------------------
 
@@ -56,7 +56,7 @@ main
        t0 <- getClockTime
        pseq result (return ())
        t1 <- getClockTime
-       putStrLn ("fib2 = " ++ show result)
+       putStrLn ("fib = " ++ show result)
        putStrLn ("Time: " ++ show (secDiff t0 t1))
 
 -------------------------------------------------------------------------------

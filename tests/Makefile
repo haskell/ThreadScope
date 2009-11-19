@@ -5,7 +5,7 @@ all:
 	$(GHC) $(GHC_OPTS) --make Null.hs
 	$(GHC) $(GHC_OPTS) --make Hello.hs
 	$(GHC) $(GHC_OPTS) --make SumEulerPar1.hs
-	$(GHC) -threaded -eventlog --make ParFib.hs
+	$(GHC) $(GHC_OPTS) --make ParFib.hs
 
 run:	cleanlogs rnull rhello rsep1 rparfib
 
