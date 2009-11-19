@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- A parallel implementation of fib in Haskell using semi-explicit
--- parlalelsim is `par` and `pseq`
+-- parallelism expressed with `par` and `pseq`
 
 module Main
 where
@@ -11,14 +11,14 @@ import System.Mem
 -------------------------------------------------------------------------------
 -- A purely sequential implementaiton of fib.
 
-seqFib :: Int -> Integer
+seqFib :: Int -> Int
 seqFib 0 = 0
 seqFib 1 = 1
 seqFib n = seqFib (n-1) + seqFib (n-2)
 
 -------------------------------------------------------------------------------
 -- A thresh-hold value below which the parallel implementation of fib
--- reverts to sequential implementaiton.
+-- reverts to sequential implementation.
 
 threshHold :: Int
 threshHold = 25
@@ -26,7 +26,7 @@ threshHold = 25
 -------------------------------------------------------------------------------
 -- A parallel implementation of fib.
 
-parFib :: Int -> Integer
+parFib :: Int -> Int
 parFib n
   = if n < threshHold then
       seqFib n
@@ -38,7 +38,7 @@ parFib n
 
 -------------------------------------------------------------------------------
 
-result :: Integer
+result :: Int
 result = parFib 44
 
 -------------------------------------------------------------------------------
@@ -52,7 +52,6 @@ secDiff (TOD secs1 psecs1) (TOD secs2 psecs2)
 main :: IO ()
 main
   = do putStrLn "ParFib"
-       performGC
        t0 <- getClockTime
        pseq result (return ())
        t1 <- getClockTime
