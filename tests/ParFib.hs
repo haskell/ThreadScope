@@ -11,8 +11,8 @@ import System.Mem
 -------------------------------------------------------------------------------
 -- A purely sequential implementaiton of fib.
 
-seqFib :: Int -> Int
-seqFib 0 = 0
+seqFib :: Int -> Integer
+seqFib 0 = 1
 seqFib 1 = 1
 seqFib n = seqFib (n-1) + seqFib (n-2)
 
@@ -26,7 +26,7 @@ threshHold = 25
 -------------------------------------------------------------------------------
 -- A parallel implementation of fib.
 
-parFib :: Int -> Int
+parFib :: Int -> Integer
 parFib n
   = if n < threshHold then
       seqFib n
@@ -38,7 +38,7 @@ parFib n
 
 -------------------------------------------------------------------------------
 
-result :: Int
+result :: Integer
 result = parFib 44
 
 -------------------------------------------------------------------------------
