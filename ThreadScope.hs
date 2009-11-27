@@ -34,6 +34,7 @@ import Options
 import ReadEvents
 import EventsWindow
 import Timeline
+import SaveAsPDF
 import Sidebar
 import Traces
 
@@ -69,6 +70,11 @@ startup options state@ViewerState{..}
                        else
                          head tracenames
 
+       writeIORef filenameIORef (if filename == "" then
+                                   Nothing
+                                 else
+                                   Just filename)
+        
        widgetSetAppPaintable mainWindow True
        logoPath <- getDataFileName "threadscope.png"
        windowSetIconFromFile mainWindow logoPath
@@ -106,44 +112,7 @@ startup options state@ViewerState{..}
                                      
        ------------------------------------------------------------------------
        -- Save as PDF functionality
-       saveMenuItem `onActivateLeaf` do
-         (width, height) <- widgetGetSize timelineDrawingArea
-         scaleValue <- readIORef scaleIORef
-         maybeEventArray <- readIORef hecsIORef
-         hadj_value <- adjustmentGetValue timelineAdj
-         hadj_pagesize <- adjustmentGetPageSize timelineAdj
-         mfn <- readIORef filenameIORef
-         case (mfn, maybeEventArray) of
-           (Just fn, Just hecs) -> do
-             bw_mode <- checkMenuItemGetActive bwToggle
-             labels_mode <- toggleToolButtonGetActive showLabelsToggle
-
-             traces <- getViewTraces state
-             let params = ViewParameters {
-                                width     = width,
-                                height    = height,
-                                viewTraces = traces,
-                                hadjValue = hadj_value,
-                                scaleValue = scaleValue,
-                                detail = 2, -- for now
-                                bwMode = bw_mode,
-                                labelsMode = labels_mode
-                            }
-
-                 rect = Rectangle 0 0 width height
-
-             withPDFSurface (fn++".pdf") (fromIntegral width) (fromIntegral height)
-               (flip renderWith $ (translate (-hadj_value) 0 >> 
-                                   renderTraces state params traces hecs rect) >> showPage)
-             withImageSurface C.FormatARGB32 (fromIntegral width) (fromIntegral height) $ \ result ->
-             
-               do  renderWith result (translate (-hadj_value) 0 >> 
-                                      renderTraces state params traces hecs rect)
-                   surfaceWriteToPNG result (fn++".png")
-             statusbarPush statusBar ctx ("Saved " ++ fn ++ ".pdf")
-             return ()
-
-           _other -> return ()
+       saveMenuItem `onActivateLeaf` saveAsPDF state
 
        ------------------------------------------------------------------------
        -- Reload functionality

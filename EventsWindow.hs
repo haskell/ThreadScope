@@ -1,7 +1,9 @@
 module EventsWindow (
     setupEventsWindow,
     updateEventsWindow,
-    eventsWindowResize
+    eventsWindowResize,
+    getCursorLine,
+    drawEvents
   ) where
 
 import State
@@ -222,6 +224,8 @@ eventsFont = do
   setFontSize 12
   fontExtents
 
+-------------------------------------------------------------------------------
+
 drawEvents :: Double -> Array Int GHC.CapEvent -> Int -> Int -> Int -> Render ()
 drawEvents value arr width height cursor = do
   let val = truncate value :: Int
@@ -243,6 +247,8 @@ drawEvents value arr width height cursor = do
     moveTo 0                    cursory
     lineTo (fromIntegral width) cursory
     stroke
+
+-------------------------------------------------------------------------------
 
 
 ppEvent :: CapEvent -> String
