@@ -197,8 +197,10 @@ setCursor state@ViewerState{..} eventY = do
       let arr = hecEventArray hecs
       exts <- readIORef eventsFontExtents
       let 
-          line = truncate (val + eventY / fontExtentsHeight exts)
-          t    = time (ce_event (arr!line))
+          line'   = truncate (val + eventY / fontExtentsHeight exts)
+          arr_max = snd $ bounds arr
+          line    = if line' > arr_max then arr_max else line' 
+          t       = time (ce_event (arr!line))
       --
       writeIORef cursorIORef t
       writeIORef eventsCursorIORef (Just (t,line))
