@@ -14,7 +14,8 @@ import ViewerColours
 
 updateKeyDrawingArea :: DrawingArea -> Event -> IO Bool
 updateKeyDrawingArea canvas _
-  = do win <- widgetGetDrawWindow canvas
+  = do widgetModifyBg canvas StateNormal (Color 0xffff 0xffff 0xffff)
+       win <- widgetGetDrawWindow canvas
        renderWithDrawable win addKeyElements
        return True
 
