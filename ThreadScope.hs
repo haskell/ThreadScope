@@ -35,6 +35,7 @@ import ReadEvents
 import EventsWindow
 import Timeline
 import SaveAsPDF
+import SaveAsPNG
 import Sidebar
 import Traces
 
@@ -112,7 +113,11 @@ startup options state@ViewerState{..}
                                      
        ------------------------------------------------------------------------
        -- Save as PDF functionality
-       saveMenuItem `onActivateLeaf` saveAsPDF state 
+       saveAsPDFMenuItem `onActivateLeaf` saveAsPDF state 
+
+       ------------------------------------------------------------------------
+       -- Save as PNG functionality
+       saveAsPNGMenuItem `onActivateLeaf` saveAsPNG state 
 
        ------------------------------------------------------------------------
        -- Reload functionality
@@ -191,8 +196,8 @@ buildInitialState options = do
        bwToggle           <- xmlGetWidget xml castToCheckMenuItem "black_and_white"
        sidebarToggle      <- xmlGetWidget xml castToCheckMenuItem "view_sidebar"
        openMenuItem       <- xmlGetWidget xml castToMenuItem "openMenuItem"
-       saveMenuItem       <- xmlGetWidget xml castToMenuItem "saveMenuItem"
-       saveAsMenuItem     <- xmlGetWidget xml castToMenuItem "saveAsMenuItem"
+       saveAsPDFMenuItem  <- xmlGetWidget xml castToMenuItem "saveAsPDFMenuItem"
+       saveAsPNGMenuItem     <- xmlGetWidget xml castToMenuItem "saveAsPNGMenuItem"
        reloadMenuItem     <- xmlGetWidget xml castToMenuItem "view_reload"
        quitMenuItem       <- xmlGetWidget xml castToMenuItem "quitMenuItem"
        aboutMenuItem      <- xmlGetWidget xml castToMenuItem "aboutMenuItem"

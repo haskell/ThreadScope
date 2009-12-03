@@ -33,19 +33,31 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkImageMenuItem" id="saveMenuItem">
-                        <property name="label">gtk-save</property>
+                      <widget class="GtkImageMenuItem" id="saveAsPDFMenuItem">
+                        <property name="label">Save as PDF</property>
                         <property name="visible">True</property>
-                        <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
+                        <property name="use_stock">False</property>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="image2">
+                            <property name="visible">True</property>
+                            <property name="stock">gtk-save-as</property>
+                            <property name="icon-size">1</property>
+                          </widget>
+                        </child>
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkImageMenuItem" id="saveAsMenuItem">
-                        <property name="label">gtk-save-as</property>
+                      <widget class="GtkImageMenuItem" id="saveAsPNGMenuItem">
+                        <property name="label">Save as PNG</property>
                         <property name="visible">True</property>
-                        <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
+                        <property name="use_stock">False</property>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="image3">
+                            <property name="visible">True</property>
+                            <property name="stock">gtk-save-as</property>
+                            <property name="icon-size">1</property>
+                          </widget>
+                        </child>
                       </widget>
                     </child>
                     <child>
