@@ -2,7 +2,8 @@ module Timeline.Render (
     exposeTraceView,
     renderTraces,
     updateLabelDrawingArea,
-    calculateTotalTimelineHeight
+    calculateTotalTimelineHeight,
+    toWholePixels
   ) where
 
 import Timeline.Render.Constants

@@ -112,7 +112,7 @@ startup options state@ViewerState{..}
                                      
        ------------------------------------------------------------------------
        -- Save as PDF functionality
-       saveMenuItem `onActivateLeaf` saveAsPDF state
+       saveMenuItem `onActivateLeaf` saveAsPDF state 
 
        ------------------------------------------------------------------------
        -- Reload functionality
