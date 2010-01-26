@@ -11,5 +11,5 @@ withBackgroundProcessing :: IO a -> IO a
 withBackgroundProcessing f =
   bracket 
     (idleAdd (yield >> return True) priorityDefaultIdle)
-    timeoutRemove
+    idleRemove
     (\_ -> f)
