@@ -86,3 +86,11 @@ draw_rectangle_outline x y w h = do
   stroke
 
 -------------------------------------------------------------------------------
+
+clearWhite :: Render ()
+clearWhite = do
+  save
+  setOperator OperatorSource
+  setSourceRGBA 0xffff 0xffff 0xffff 0xffff
+  paint
+  restore

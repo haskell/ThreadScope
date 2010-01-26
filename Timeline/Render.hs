@@ -17,6 +17,7 @@ import Timeline.WithViewScale
 import State
 import ViewerColours
 import Traces
+import CairoDrawing
 
 import GHC.RTS.Events hiding (Event)
 
@@ -158,14 +159,6 @@ renderView state@ViewerState{..} exposeRegion hecs = do
     drawCursor cursor_t params
 
 -------------------------------------------------------------------------------
-
-clearWhite :: Render ()
-clearWhite = do
-  save
-  setOperator OperatorSource
-  setSourceRGBA 0xffff 0xffff 0xffff 0xffff
-  paint
-  restore
 
 -------------------------------------------------------------------------------
 

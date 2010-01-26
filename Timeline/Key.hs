@@ -9,13 +9,13 @@ import Graphics.Rendering.Cairo
 import qualified Graphics.Rendering.Cairo as C
 
 import ViewerColours
+import CairoDrawing
 
 -------------------------------------------------------------------------------
 
 updateKeyDrawingArea :: DrawingArea -> Event -> IO Bool
 updateKeyDrawingArea canvas _
-  = do widgetModifyBg canvas StateNormal (Color 0xffff 0xffff 0xffff)
-       win <- widgetGetDrawWindow canvas
+  = do win <- widgetGetDrawWindow canvas
        renderWithDrawable win addKeyElements
        return True
 
@@ -27,7 +27,8 @@ data KeyStyle = Box | Vertical
 
 addKeyElements :: Render ()
 addKeyElements 
-  = do selectFontFace "sans serif" FontSlantNormal FontWeightNormal
+  = do clearWhite
+       selectFontFace "sans serif" FontSlantNormal FontWeightNormal
        setFontSize 12
        addKeyElements' 10 [(Box, "running", runningColour),
                            (Box, "GC", gcColour),
