@@ -79,9 +79,9 @@ registerEvents :: Either FilePath String
 
 registerEvents from state@ViewerState{..} = do
 
-  let msg = "Loading " ++ (case from of
-                               Left filename -> filename
-                               Right test    -> test)
+  let msg = case from of
+              Left filename -> filename
+              Right test    -> test
 
 --  dialog <- messageDialogNew Nothing [DialogModal] MessageInfo ButtonsCancel msg
 
