@@ -11,9 +11,12 @@ Stability:	     Preliminary release.
 Build-Type:          Simple
 Cabal-Version:       >=1.2
 Data-files:	     threadscope.glade, threadscope.png
+cabal-version: 	     >= 1.6
+Category:            Thread profiling utility
+Synopsis:            A graphical thread profiler.
 Executable threadscope
   Main-is:           ThreadScope.hs
-  Build-Depends:     base == 4.*, 
+  Build-Depends:     base >= 4.0 && < 5, 
                      gtk, cairo, glade,
                      binary, array, mtl, filepath,
                      ghc-events >= 0.2 && < 0.3,
@@ -55,7 +58,7 @@ Executable threadscope
      ghc-options:  -Wall
 
   if !os(windows)
-     build-depends: unix == 2.3.*
+     build-depends: unix >= 2.3.0
 
   ghc-options:  -fno-warn-type-defaults -fno-warn-name-shadowing
 
