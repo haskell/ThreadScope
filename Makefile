@@ -10,6 +10,9 @@ cabal:
 	cabal install -w $(GHC) --user --prefix=$(HOME)/haskell
 
 
+sdist:	
+	cabal sdist
+
 haddock:
 	cabal haddock --executables
 

@@ -45,7 +45,8 @@ Executable threadscope
                      Timeline.Render,
                      Timeline.RenderBookmarks,
                      Timeline.Ticks,
-                     Timeline.WithViewScale
+                     Timeline.WithViewScale,
+                     Timeline.Render.Constants
 
   if impl(ghc < 6.12)
      -- GHC before 6.12 gave spurious warnings for RecordWildCards
