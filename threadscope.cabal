@@ -7,7 +7,7 @@ Copyright:           Released under the GHC license
 Author:              Donnie Jones, Simon Marlow, Satnam Singh
 Maintainer:          Satnam Singh <s.singh@ieee.org>
 Bug-reports:	     Satnam Singh <s.singh@ieee.org>
-Stability:	     Pre-release version for review.
+Stability:	     Preliminary release.
 Build-Type:          Simple
 Cabal-Version:       >=1.2
 Data-files:	     threadscope.glade, threadscope.png
@@ -19,6 +19,33 @@ Executable threadscope
                      ghc-events >= 0.2 && < 0.3,
                      containers >= 0.2 && < 0.3
   extensions:        RecordWildCards, BangPatterns, PatternGuards
+  Other-Modules:     About, 
+                     CairoDrawing, 
+                     EventDuration, 
+                     EventTree, 
+                     EventsWindow, 
+                     FileDialog, 
+                     Options, 
+                     ReadEvents, 
+                     SaveAsPDF, 
+                     SaveAsPNG, 
+                     Setup,
+                     ShowEvents,
+                     Sidebar,
+                     State,
+                     TestEvents,
+                     Timeline,
+                     Traces,
+                     Utils,
+                     ViewerColours,
+                     Timeline.Activity,
+                     Timeline.HEC,
+                     Timeline.Key,
+                     Timeline.Motion,
+                     Timeline.Render,
+                     Timeline.RenderBookmarks,
+                     Timeline.Ticks,
+                     Timeline.WithViewScale
 
   if impl(ghc < 6.12)
      -- GHC before 6.12 gave spurious warnings for RecordWildCards
