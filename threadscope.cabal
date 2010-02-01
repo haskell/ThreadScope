@@ -1,5 +1,5 @@
 Name:                threadscope
-Version:             0.1
+Version:             0.1.1
 Description:         A graphical viewer for GHC eventlog traces.
 License:             BSD3
 License-file:        LICENSE
@@ -20,7 +20,7 @@ Executable threadscope
                      gtk, cairo, glade,
                      binary, array, mtl, filepath,
                      ghc-events >= 0.2 && < 0.3,
-                     containers >= 0.2 && < 0.3
+                     containers >= 0.2 && < 0.4
   extensions:        RecordWildCards, BangPatterns, PatternGuards
   Other-Modules:     About, 
                      CairoDrawing, 

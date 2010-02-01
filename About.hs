@@ -18,14 +18,14 @@ showAboutDialog parent
       logo <- pixbufNewFromFile logoPath
       set aboutDialog [
          aboutDialogName      := "ThreadScope",
-         aboutDialogVersion   := "0.1",
-         aboutDialogCopyright := "Released under the GHC license.",
+         aboutDialogVersion   := "0.1.1",
+         aboutDialogCopyright := "Released under the GHC license as part of the Glasgow Haskell Compiler.",
          aboutDialogComments  := "A GHC eventlog profile viewer",
          aboutDialogAuthors   := ["Donnie Jones (donnie@darthik.com)",
                                   "Simon Marlow (simonm@microsoft.com)",
                                   "Satnam Singh (s.singh@ieee.org)"],
          aboutDialogLogo := Just logo,
-         aboutDialogWebsite   := "http://code.haskell.org/ThreadScope"
+         aboutDialogWebsite   := "http://research.microsoft.com/threadscope"
          ]
       windowSetTransientFor aboutDialog parent
       afterResponse aboutDialog $ \_ -> widgetDestroy aboutDialog
