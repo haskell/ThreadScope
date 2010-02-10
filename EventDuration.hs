@@ -96,7 +96,9 @@ eventsToDurations (event : events) =
     rest = eventsToDurations events
 
     runDuration t = ThreadRun t s (time event) endTime
-       where (endTime, s) = findRunThreadTime events
+       where (endTime, s) = case findRunThreadTime events of
+                              Nothing -> error $ "findRunThreadTime for " ++ (show event)
+                              Just x -> x
 
 isDiscreteEvent :: GHC.Event -> Bool
 isDiscreteEvent e = 
@@ -164,11 +166,11 @@ gcDone t0 (event : events) =
 
 -------------------------------------------------------------------------------
 
-findRunThreadTime :: [GHC.Event] -> (Timestamp, ThreadStopStatus)
-findRunThreadTime [] = error "findRunThreadTime"
+findRunThreadTime :: [GHC.Event] -> Maybe (Timestamp, ThreadStopStatus)
+findRunThreadTime [] = Nothing
 findRunThreadTime (e : es)
   = case spec e of
-      StopThread{status=s} -> (time e, s)
+      StopThread{status=s} -> Just (time e, s)
       _                    -> findRunThreadTime es
 
 -------------------------------------------------------------------------------
