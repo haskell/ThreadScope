@@ -24,6 +24,7 @@ import GHC.RTS.Events hiding (Event)
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Gdk.Events as Old
 import Graphics.Rendering.Cairo  as C
+import Graphics.UI.Gtk.Gdk.GC
 
 import Data.Maybe
 import Data.IORef
