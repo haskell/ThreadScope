@@ -1,5 +1,5 @@
 Name:                threadscope
-Version:             0.1.1
+Version:             0.1.2
 Description:         A graphical viewer for GHC eventlog traces.
 License:             BSD3
 License-file:        LICENSE
