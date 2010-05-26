@@ -20,7 +20,7 @@ Executable threadscope
                      gtk, cairo, glade,
                      binary, array, mtl, filepath,
                      ghc-events >= 0.2 && < 0.3,
-                     containers >= 0.2 && < 0.3
+                     containers >= 0.2 && < 0.4
   extensions:        RecordWildCards, BangPatterns, PatternGuards
   Other-Modules:     About, 
                      CairoDrawing, 
@@ -58,7 +58,7 @@ Executable threadscope
      ghc-options:  -Wall
 
   if !os(windows)
-     build-depends: unix == 2.3.*
+     build-depends: unix >= 2.3 && < 2.5
 
   ghc-options:  -fno-warn-type-defaults -fno-warn-name-shadowing
 
