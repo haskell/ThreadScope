@@ -22,6 +22,7 @@ library {
                     binary     == 0.5.*,
                     bytestring == 0.9.*
   exposed-modules:  GHC.RTS.Events
+  extensions:	    CPP
 }
 
 executable show-ghc-events {
