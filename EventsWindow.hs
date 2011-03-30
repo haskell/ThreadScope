@@ -237,7 +237,7 @@ drawEvents value arr width height cursor = do
       lines = ceiling (fromIntegral height / h)
       end = min upper (val + lines)
 
-      draw y ev = do moveTo 0 y; showText (ppEvent ev)
+      draw y ev = do moveTo 0 y; showText (ppEvent' ev)
 
   zipWithM_ draw [ h, h*2 .. ] [ arr ! n | n <- [ val .. end ] ]
 
@@ -253,8 +253,8 @@ drawEvents value arr width height cursor = do
 -------------------------------------------------------------------------------
 
 
-ppEvent :: CapEvent -> String
-ppEvent (CapEvent cap (GHC.Event time spec)) =
+ppEvent' :: CapEvent -> String
+ppEvent' (CapEvent cap (GHC.Event time spec)) =
   printf "%9d: " time ++
   (case cap of
     Nothing -> ""
