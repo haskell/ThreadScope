@@ -109,7 +109,7 @@ showTickTime pos
       "0s"
     else
       if pos < 1000000 then -- Show time as micro-seconds for times < 1e-6
-        reformatMS  (posf / 1000) ++ ('\x00b5':"s")  -- microsecond (1e-6s).
+        reformatMS  (posf / 1000) ++ (mu ++ "s")  -- microsecond (1e-6s).
     else
       if pos < 100000000 then -- Show miliseonds for time < 0.1s
         reformatMS (posf / 1000000) ++ "ms" -- miliseconds 1e-3
@@ -118,6 +118,16 @@ showTickTime pos
     where
     posf :: Double
     posf = fromIntegral pos
+    mu :: String
+-- here we assume that cairo 0.12.1 will have proper Unicode support
+#if MIN_VERSION_cairo(0,12,0) && !MIN_VERSION_cairo(0,12,1)
+    -- this version of cairo doesn't handle Unicode properly.  Thus, we do the
+    -- encoding by hand:
+    mu = "\194\181"
+#else
+    mu = "\x00b5"
+#endif
+
 
 -------------------------------------------------------------------------------
 

@@ -21,7 +21,8 @@ Executable threadscope
                      binary, array, mtl, filepath,
                      ghc-events >= 0.2,
                      containers >= 0.2 && < 0.4
-  extensions:        RecordWildCards, BangPatterns, PatternGuards
+  extensions:        RecordWildCards, BangPatterns, PatternGuards,
+                     CPP
   Other-Modules:     About, 
                      CairoDrawing, 
                      EventDuration, 
