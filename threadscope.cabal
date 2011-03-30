@@ -52,16 +52,18 @@ Executable threadscope
                      Timeline.WithViewScale,
                      Timeline.Render.Constants
 
+  ghc-options:  -Wall -fno-warn-type-defaults -fno-warn-name-shadowing
+
+  if impl(ghc >= 7.0)
+     -- GHC 7.0 and later require a flag to enable the options in ghcrts.c
+     ghc-options:  -rtsopts -fno-warn-unused-do-bind
+
   if impl(ghc < 6.12)
      -- GHC before 6.12 gave spurious warnings for RecordWildCards
-     ghc-options:  -Wall -fno-warn-unused-matches
-  else
-     ghc-options:  -Wall
+     ghc-options:  -fno-warn-unused-matches
 
   if !os(windows)
      build-depends: unix >= 2.3 && < 2.5
-
-  ghc-options:  -fno-warn-type-defaults -fno-warn-name-shadowing
 
 -- Not yet: gtk2hs doesn't support -threaded at the moment.
 --  ghc-options: -threaded 
