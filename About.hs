@@ -8,6 +8,7 @@ module About where
 -- Imports for GTK/Glade
 import Graphics.UI.Gtk
 import Paths_threadscope
+import Data.Version (showVersion)
 
 -------------------------------------------------------------------------------
 
@@ -18,7 +19,7 @@ showAboutDialog parent
       logo <- pixbufNewFromFile logoPath
       set aboutDialog [
          aboutDialogName      := "ThreadScope",
-         aboutDialogVersion   := "0.1.1",
+         aboutDialogVersion   := showVersion version,
          aboutDialogCopyright := "Released under the GHC license as part of the Glasgow Haskell Compiler.",
          aboutDialogComments  := "A GHC eventlog profile viewer",
          aboutDialogAuthors   := ["Donnie Jones (donnie@darthik.com)",
