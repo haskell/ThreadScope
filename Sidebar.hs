@@ -23,10 +23,8 @@ sidebarBookmarks = 1
 setupSideBar :: ViewerState -> IO ()
 setupSideBar state@ViewerState{..} = do
   on sidebarToggle checkMenuItemToggled $ do
-     b <- checkMenuItemGetActive sidebarToggle
-     if b 
-        then panedAdd1 hpaned sidebarBox
-        else containerRemove hpaned sidebarBox
+     showSidebar <- checkMenuItemGetActive sidebarToggle
+     set sidebarBox [ widgetVisible := showSidebar ]
 
   traceColumn <- treeViewColumnNew
 
