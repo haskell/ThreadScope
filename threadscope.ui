@@ -147,6 +147,7 @@
             <child>
               <object class="GtkToolButton" id="cpus_first">
                 <property name="visible">True</property>
+                <property name="tooltip_text" translatable="yes">Jump to start</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-goto-first</property>
               </object>
@@ -158,6 +159,7 @@
             <child>
               <object class="GtkToolButton" id="cpus_centre">
                 <property name="visible">True</property>
+                <property name="tooltip_text" translatable="yes">Centre view on the cursor</property>
                 <property name="stock_id">gtk-home</property>
               </object>
               <packing>
@@ -168,6 +170,7 @@
             <child>
               <object class="GtkToolButton" id="cpus_last">
                 <property name="visible">True</property>
+                <property name="tooltip_text" translatable="yes">Jump to the end</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-goto-last</property>
               </object>
@@ -187,6 +190,7 @@
             <child>
               <object class="GtkToolButton" id="cpus_zoomin">
                 <property name="visible">True</property>
+                <property name="tooltip_text" translatable="yes">Zoom in</property>
                 <property name="stock_id">gtk-zoom-in</property>
               </object>
               <packing>
@@ -197,6 +201,7 @@
             <child>
               <object class="GtkToolButton" id="cpus_zoomout">
                 <property name="visible">True</property>
+                <property name="tooltip_text" translatable="yes">Zoom out</property>
                 <property name="stock_id">gtk-zoom-out</property>
               </object>
               <packing>
@@ -207,6 +212,7 @@
             <child>
               <object class="GtkToolButton" id="cpus_zoomfit">
                 <property name="visible">True</property>
+                <property name="tooltip_text" translatable="yes">Fit view to the window</property>
                 <property name="stock_id">gtk-zoom-fit</property>
               </object>
               <packing>
@@ -225,6 +231,7 @@
             <child>
               <object class="GtkToggleToolButton" id="cpus_showlabels">
                 <property name="visible">True</property>
+                <property name="tooltip_text" translatable="yes">Display labels</property>
                 <property name="label" translatable="yes">Show labels</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-info</property>
