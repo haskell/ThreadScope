@@ -120,7 +120,8 @@ scroll adjust state@ViewerState{..}
        hadj_lower <- adjustmentGetLower timelineAdj
        hadj_upper <- adjustmentGetUpper timelineAdj
        let newValue = adjust hadj_value hadj_pagesize hadj_lower hadj_upper
-       adjustmentSetValue timelineAdj newValue  
+           newValue' = max hadj_lower (min (hadj_upper - hadj_pagesize) newValue)
+       adjustmentSetValue timelineAdj newValue'
        adjustmentValueChanged timelineAdj
 
 vscrollDown, vscrollUp :: ViewerState -> IO ()

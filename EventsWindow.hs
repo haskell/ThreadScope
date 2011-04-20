@@ -68,28 +68,32 @@ setupEventsWindow state@ViewerState{..} = do
       dir <- eventScrollDirection
       liftIO $ do
         val  <- adjustmentGetValue adj
+        upper    <- adjustmentGetUpper adj
+        pagesize <- adjustmentGetPageSize adj
         step <- adjustmentGetStepIncrement adj
         case dir of
-           ScrollUp   -> adjustmentSetValue adj (val - step)
-           ScrollDown -> adjustmentSetValue adj (val + step)
+           ScrollUp   -> set adj [ adjustmentValue := val - step ]
+           ScrollDown -> set adj [ adjustmentValue := min (val + step) (upper - pagesize) ]
            _          -> return ()
         return True
 
   onValueChanged adj $
      widgetQueueDraw eventsDrawingArea
 
-  onToolButtonClicked firstButton $ do
-     adjustmentSetValue adj 0
+  onToolButtonClicked firstButton $
+     set adj [ adjustmentValue := 0 ]
 
   onToolButtonClicked lastButton $ do
-     upper <- adjustmentGetUpper adj
-     adjustmentSetValue adj upper
+     upper    <- adjustmentGetUpper adj
+     pagesize <- adjustmentGetPageSize adj
+     let newval = max 0 (upper - pagesize)
+     set adj [ adjustmentValue := newval ]
 
   onToolButtonClicked centreButton $ do
      cursorpos <- getCursorLine state
-     page  <- adjustmentGetPageSize adj
-     adjustmentSetValue adj (fromIntegral (max 0 (cursorpos - round page `quot` 2)))
-
+     pagesize  <- adjustmentGetPageSize adj
+     let newval = max 0 (cursorpos - round pagesize `quot` 2)
+     set adj [ adjustmentValue := fromIntegral newval ]
 
   -- Button for adding the cursor position to the boomark list
   onToolButtonClicked addBookmarkButton  $ do
