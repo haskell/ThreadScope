@@ -5,7 +5,6 @@
 
 module About where
 
--- Imports for GTK/Glade
 import Graphics.UI.Gtk
 import Paths_threadscope
 import Data.Version (showVersion)

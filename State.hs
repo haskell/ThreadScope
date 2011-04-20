@@ -69,7 +69,7 @@ data ViewerState = ViewerState {
   eventsAdj          :: Adjustment,
   eventsDrawingArea  :: DrawingArea,
   eventsTextEntry    :: Entry,
-  eventsFindButton   :: ToolButton,
+--  eventsFindButton   :: ToolButton,
   eventsFirstButton  :: ToolButton,
   eventsHomeButton   :: ToolButton,
   eventsLastButton   :: ToolButton,

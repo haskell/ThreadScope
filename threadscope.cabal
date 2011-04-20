@@ -10,14 +10,14 @@ Bug-reports:	     Satnam Singh <s.singh@ieee.org>
 Stability:	     Preliminary release.
 Build-Type:          Simple
 Cabal-Version:       >=1.2
-Data-files:	     threadscope.glade, threadscope.png
+Data-files:	     threadscope.ui, threadscope.png
 cabal-version: 	     >= 1.6
 Category:            Thread profiling utility
 Synopsis:            A graphical thread profiler.
 Executable threadscope
   Main-is:           ThreadScope.hs
   Build-Depends:     base >= 4.0 && < 5, 
-                     gtk, cairo, glade,
+                     gtk >= 0.11, cairo, glib,
                      binary, array, mtl, filepath,
                      ghc-events >= 0.2,
                      containers >= 0.2 && < 0.4

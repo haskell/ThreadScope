@@ -5,7 +5,7 @@ where
 import Control.Monad
 import Data.IORef
 
--- Imports for GTK/Glade
+-- Imports for GTK
 import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo 
 import qualified Graphics.Rendering.Cairo as C

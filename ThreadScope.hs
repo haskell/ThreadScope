@@ -4,9 +4,9 @@
 
 module Main where
 
--- Imports for GTK/Glade
+-- Imports for GTK
 import Graphics.UI.Gtk
-import Graphics.UI.Gtk.Glade
+import System.Glib.GError (failOnGError)
 import Graphics.Rendering.Cairo 
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.UI.Gtk.ModelView as New
@@ -170,11 +170,12 @@ startup options state@ViewerState{..}
 -------------------------------------------------------------------------------
 
 buildInitialState :: [Option] -> IO ViewerState
-buildInitialState options = do
+buildInitialState options = failOnGError $ do
 
-       gladePath <- getDataFileName "threadscope.glade"
-       Just xml <- xmlNew gladePath
-       
+       builder <- builderNew
+       builderAddFromFile builder =<< getDataFileName "threadscope.ui"
+       let getWidget cast name = builderGetObject builder cast name 
+
        let debug = Debug `elem` options
 
 
@@ -189,67 +190,63 @@ buildInitialState options = do
        scaleIORef        <- newIORef defaultScaleValue
        cursorIORef       <- newIORef 0
 
-       mainWindow         <- xmlGetWidget xml castToWindow "main_window"
-       statusBar          <- xmlGetWidget xml castToStatusbar "statusbar"
-       hpaned             <- xmlGetWidget xml castToHPaned "hpaned"
+       mainWindow         <- getWidget castToWindow "main_window"
+       statusBar          <- getWidget castToStatusbar "statusbar"
+       hpaned             <- getWidget castToHPaned "hpaned"
 
-       bwToggle           <- xmlGetWidget xml castToCheckMenuItem "black_and_white"
-       sidebarToggle      <- xmlGetWidget xml castToCheckMenuItem "view_sidebar"
-       openMenuItem       <- xmlGetWidget xml castToMenuItem "openMenuItem"
-       saveAsPDFMenuItem  <- xmlGetWidget xml castToMenuItem "saveAsPDFMenuItem"
-       saveAsPNGMenuItem     <- xmlGetWidget xml castToMenuItem "saveAsPNGMenuItem"
-       reloadMenuItem     <- xmlGetWidget xml castToMenuItem "view_reload"
-       quitMenuItem       <- xmlGetWidget xml castToMenuItem "quitMenuItem"
-       aboutMenuItem      <- xmlGetWidget xml castToMenuItem "aboutMenuItem"
+       bwToggle           <- getWidget castToCheckMenuItem "black_and_white"
+       sidebarToggle      <- getWidget castToCheckMenuItem "view_sidebar"
+       openMenuItem       <- getWidget castToMenuItem "openMenuItem"
+       saveAsPDFMenuItem  <- getWidget castToMenuItem "saveAsPDFMenuItem"
+       saveAsPNGMenuItem  <- getWidget castToMenuItem "saveAsPNGMenuItem"
+       reloadMenuItem     <- getWidget castToMenuItem "view_reload"
+       quitMenuItem       <- getWidget castToMenuItem "quitMenuItem"
+       aboutMenuItem      <- getWidget castToMenuItem "aboutMenuItem"
 
-       timelineDrawingArea      <- xmlGetWidget xml castToDrawingArea
-                                        "timeline_drawingarea"
-       timelineLabelDrawingArea <- xmlGetWidget xml castToDrawingArea
-                                        "timeline_labels_drawingarea"
-       timelineKeyDrawingArea   <- xmlGetWidget xml castToDrawingArea
-                                        "timeline_key_drawingarea"
-       timelineHScrollbar       <- xmlGetWidget xml castToHScrollbar
-                                        "timeline_hscroll"
-       timelineVScrollbar       <- xmlGetWidget xml castToVScrollbar
-                                        "timeline_vscroll"
+       timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
+       timelineLabelDrawingArea <- getWidget castToDrawingArea "timeline_labels_drawingarea"
+       timelineKeyDrawingArea   <- getWidget castToDrawingArea "timeline_key_drawingarea"
+       timelineHScrollbar  <- getWidget castToHScrollbar "timeline_hscroll"
+       timelineVScrollbar  <- getWidget castToVScrollbar "timeline_vscroll"
        timelineAdj         <- rangeGetAdjustment timelineHScrollbar
        timelineVAdj        <- rangeGetAdjustment timelineVScrollbar
 
        timelineTraces     <- newIORef []
        timelinePrevView   <- newIORef Nothing
 
-       zoomInButton       <- xmlGetWidget xml castToToolButton "cpus_zoomin"
-       zoomOutButton      <- xmlGetWidget xml castToToolButton "cpus_zoomout"
-       zoomFitButton      <- xmlGetWidget xml castToToolButton "cpus_zoomfit"
+       zoomInButton       <- getWidget castToToolButton "cpus_zoomin"
+       zoomOutButton      <- getWidget castToToolButton "cpus_zoomout"
+       zoomFitButton      <- getWidget castToToolButton "cpus_zoomfit"
 
-       showLabelsToggle   <- xmlGetWidget xml castToToggleToolButton "cpus_showlabels"
-       firstButton        <- xmlGetWidget xml castToToolButton "cpus_first"
-       lastButton         <- xmlGetWidget xml castToToolButton "cpus_last"
-       centreButton       <- xmlGetWidget xml castToToolButton "cpus_centre"
+       showLabelsToggle   <- getWidget castToToggleToolButton "cpus_showlabels"
+       firstButton        <- getWidget castToToolButton "cpus_first"
+       lastButton         <- getWidget castToToolButton "cpus_last"
+       centreButton       <- getWidget castToToolButton "cpus_centre"
 
        eventsFontExtents  <- newIORef (error "eventsFontExtents")
        eventsCursorIORef  <- newIORef Nothing
-       eventsVScrollbar   <- xmlGetWidget xml castToVScrollbar "eventsVScroll"
+       eventsVScrollbar   <- getWidget castToVScrollbar "eventsVScroll"
        eventsAdj          <- rangeGetAdjustment eventsVScrollbar
-       eventsDrawingArea  <- xmlGetWidget xml castToDrawingArea "eventsDrawingArea"
-       eventsTextEntry    <- xmlGetWidget xml castToEntry "events_entry"
-       eventsFindButton   <- xmlGetWidget xml castToToolButton "events_find"
-       eventsFirstButton  <- xmlGetWidget xml castToToolButton "events_first"
-       eventsHomeButton   <- xmlGetWidget xml castToToolButton "events_home"
-       eventsLastButton   <- xmlGetWidget xml castToToolButton "events_last"
+       eventsDrawingArea  <- getWidget castToDrawingArea "eventsDrawingArea"
+       eventsTextEntry    <- getWidget castToEntry      "events_entry"
+   --  eventsFindButton   <- getWidget castToToolButton "events_find"
+       eventsFirstButton  <- getWidget castToToolButton "events_first"
+       eventsHomeButton   <- getWidget castToToolButton "events_home"
+       eventsLastButton   <- getWidget castToToolButton "events_last"
 
-       sidebarVBox        <- xmlGetWidget xml castToVBox "sidebar_vbox"
-       sidebarHBox        <- xmlGetWidget xml castToHBox "sidebar_hbox"
-       sidebarCombo       <- xmlGetWidget xml castToComboBox "sidebar_combobox"
+       sidebarVBox        <- getWidget castToVBox     "sidebar_vbox"
+       sidebarHBox        <- getWidget castToHBox     "sidebar_hbox"
+       sidebarCombo       <- getWidget castToComboBox "sidebar_combobox"
        sidebarComboState  <- newIORef sidebarBookmarks
-       sidebarCloseButton <- xmlGetWidget xml castToButton "sidebar_close_button"
-       bookmarkVBox       <- xmlGetWidget xml castToVBox "bookmarks_vbox"
-       bookmarkTreeView   <- xmlGetWidget xml castToTreeView "bookmark_list"
+       sidebarCloseButton <- getWidget castToButton   "sidebar_close_button"
+       bookmarkVBox       <- getWidget castToVBox     "bookmarks_vbox"
+       bookmarkTreeView   <- getWidget castToTreeView "bookmark_list"
 
        -- Bookmarks
-       addBookmarkButton  <- xmlGetWidget xml castToToolButton "add_bookmark_button"
-       deleteBookmarkButton <- xmlGetWidget xml castToToolButton "delete_bookmark" 
-       gotoBookmarkButton  <- xmlGetWidget xml castToToolButton "goto_bookmark_button"
+       addBookmarkButton    <- getWidget castToToolButton "add_bookmark_button"
+       deleteBookmarkButton <- getWidget castToToolButton "delete_bookmark" 
+       gotoBookmarkButton   <- getWidget castToToolButton "goto_bookmark_button"
+
        bookmarkStore <- New.listStoreNew []
        New.treeViewSetModel bookmarkTreeView bookmarkStore  
        New.treeViewSetHeadersVisible bookmarkTreeView True
