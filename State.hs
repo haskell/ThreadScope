@@ -32,11 +32,12 @@ data ViewerState = ViewerState {
   -- main window
   mainWindow         :: Window,
   statusBar          :: Statusbar,
-  hpaned             :: HPaned,
+  eventsBox          :: Widget,
 
   -- menu items
   bwToggle           :: CheckMenuItem,
   sidebarToggle      :: CheckMenuItem,
+  eventsToggle       :: CheckMenuItem,
   openMenuItem       :: MenuItem,
   saveAsPDFMenuItem  :: MenuItem,
   saveAsPNGMenuItem  :: MenuItem,

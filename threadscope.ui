@@ -90,6 +90,14 @@
                       </object>
                     </child>
                     <child>
+                      <object class="GtkCheckMenuItem" id="view_events">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Events</property>
+                        <property name="use_underline">True</property>
+                        <property name="active">True</property>
+                      </object>
+                    </child>
+                    <child>
                       <object class="GtkCheckMenuItem" id="black_and_white">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Black/white</property>
@@ -366,7 +374,7 @@
                 <property name="can_focus">True</property>
                 <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkVBox" id="vbox2">
+                  <object class="GtkVBox" id="timelinebox">
                     <property name="visible">True</property>
                     <property name="orientation">vertical</property>
                     <child>
@@ -477,7 +485,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkVBox" id="vbox4">
+                  <object class="GtkVBox" id="eventsbox">
                     <property name="visible">True</property>
                     <property name="orientation">vertical</property>
                     <child>

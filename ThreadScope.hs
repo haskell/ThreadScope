@@ -137,6 +137,10 @@ startup options state@ViewerState{..}
 
        setupEventsWindow state
 
+       on eventsToggle checkMenuItemToggled $ do
+          showEvents <- checkMenuItemGetActive eventsToggle
+          set eventsBox [ widgetVisible := showEvents ]
+
        ------------------------------------------------------------------------
        -- Sidebar
 
@@ -192,10 +196,11 @@ buildInitialState options = failOnGError $ do
 
        mainWindow         <- getWidget castToWindow "main_window"
        statusBar          <- getWidget castToStatusbar "statusbar"
-       hpaned             <- getWidget castToHPaned "hpaned"
+       eventsBox          <- getWidget castToWidget "eventsbox"
 
        bwToggle           <- getWidget castToCheckMenuItem "black_and_white"
        sidebarToggle      <- getWidget castToCheckMenuItem "view_sidebar"
+       eventsToggle       <- getWidget castToCheckMenuItem "view_events"
        openMenuItem       <- getWidget castToMenuItem "openMenuItem"
        saveAsPDFMenuItem  <- getWidget castToMenuItem "saveAsPDFMenuItem"
        saveAsPNGMenuItem  <- getWidget castToMenuItem "saveAsPNGMenuItem"
