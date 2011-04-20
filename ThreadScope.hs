@@ -230,9 +230,6 @@ buildInitialState options = failOnGError $ do
        eventsDrawingArea  <- getWidget castToDrawingArea "eventsDrawingArea"
        eventsTextEntry    <- getWidget castToEntry      "events_entry"
    --  eventsFindButton   <- getWidget castToToolButton "events_find"
-       eventsFirstButton  <- getWidget castToToolButton "events_first"
-       eventsHomeButton   <- getWidget castToToolButton "events_home"
-       eventsLastButton   <- getWidget castToToolButton "events_last"
 
        sidebarBox         <- getWidget castToWidget   "sidebar"
        bookmarkVBox       <- getWidget castToVBox     "bookmarks_vbox"

@@ -78,15 +78,14 @@ setupEventsWindow state@ViewerState{..} = do
   onValueChanged adj $
      widgetQueueDraw eventsDrawingArea
 
-  onToolButtonClicked eventsFirstButton $ do
-     putStrLn "eventsFirstButton"
+  onToolButtonClicked firstButton $ do
      adjustmentSetValue adj 0
 
-  onToolButtonClicked eventsLastButton $ do
+  onToolButtonClicked lastButton $ do
      upper <- adjustmentGetUpper adj
      adjustmentSetValue adj upper
 
-  onToolButtonClicked eventsHomeButton $ do
+  onToolButtonClicked centreButton $ do
      cursorpos <- getCursorLine state
      page  <- adjustmentGetPageSize adj
      adjustmentSetValue adj (fromIntegral (max 0 (cursorpos - round page `quot` 2)))

@@ -21,7 +21,6 @@
       <object class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
         <property name="orientation">vertical</property>
-        <property name="spacing">4</property>
         <child>
           <object class="GtkMenuBar" id="menubar1">
             <property name="visible">True</property>
@@ -141,6 +140,108 @@
           </packing>
         </child>
         <child>
+          <object class="GtkToolbar" id="toolbar2">
+            <property name="visible">True</property>
+            <property name="toolbar_style">both-horiz</property>
+            <property name="show_arrow">False</property>
+            <child>
+              <object class="GtkToolButton" id="cpus_first">
+                <property name="visible">True</property>
+                <property name="use_underline">True</property>
+                <property name="stock_id">gtk-goto-first</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="cpus_centre">
+                <property name="visible">True</property>
+                <property name="stock_id">gtk-home</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="cpus_last">
+                <property name="visible">True</property>
+                <property name="use_underline">True</property>
+                <property name="stock_id">gtk-goto-last</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkSeparatorToolItem" id="separatortoolitem5">
+                <property name="visible">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="cpus_zoomin">
+                <property name="visible">True</property>
+                <property name="stock_id">gtk-zoom-in</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="cpus_zoomout">
+                <property name="visible">True</property>
+                <property name="stock_id">gtk-zoom-out</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="cpus_zoomfit">
+                <property name="visible">True</property>
+                <property name="stock_id">gtk-zoom-fit</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkSeparatorToolItem" id="separatortoolitem4">
+                <property name="visible">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToggleToolButton" id="cpus_showlabels">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">Show labels</property>
+                <property name="use_underline">True</property>
+                <property name="stock_id">gtk-info</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
           <object class="GtkHPaned" id="hpaned">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
@@ -253,108 +354,22 @@
               </packing>
             </child>
             <child>
-              <object class="GtkNotebook" id="notebook1">
+              <object class="GtkVPaned" id="vpaned1">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="orientation">vertical</property>
                 <child>
                   <object class="GtkVBox" id="vbox2">
                     <property name="visible">True</property>
                     <property name="orientation">vertical</property>
                     <child>
-                      <object class="GtkToolbar" id="toolbar2">
+                      <object class="GtkLabel" id="label3">
                         <property name="visible">True</property>
-                        <property name="toolbar_style">both-horiz</property>
-                        <property name="show_arrow">False</property>
-                        <child>
-                          <object class="GtkToolButton" id="cpus_first">
-                            <property name="visible">True</property>
-                            <property name="use_underline">True</property>
-                            <property name="stock_id">gtk-goto-first</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="homogeneous">True</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkToolButton" id="cpus_centre">
-                            <property name="visible">True</property>
-                            <property name="stock_id">gtk-home</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="homogeneous">True</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkToolButton" id="cpus_last">
-                            <property name="visible">True</property>
-                            <property name="use_underline">True</property>
-                            <property name="stock_id">gtk-goto-last</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="homogeneous">True</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkSeparatorToolItem" id="separatortoolitem5">
-                            <property name="visible">True</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkToolButton" id="cpus_zoomin">
-                            <property name="visible">True</property>
-                            <property name="stock_id">gtk-zoom-in</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="homogeneous">True</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkToolButton" id="cpus_zoomout">
-                            <property name="visible">True</property>
-                            <property name="stock_id">gtk-zoom-out</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="homogeneous">True</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkToolButton" id="cpus_zoomfit">
-                            <property name="visible">True</property>
-                            <property name="stock_id">gtk-zoom-fit</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="homogeneous">True</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkSeparatorToolItem" id="separatortoolitem4">
-                            <property name="visible">True</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkToggleToolButton" id="cpus_showlabels">
-                            <property name="visible">True</property>
-                            <property name="label" translatable="yes">Show labels</property>
-                            <property name="use_underline">True</property>
-                            <property name="stock_id">gtk-info</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="homogeneous">True</property>
-                          </packing>
-                        </child>
+                        <property name="xalign">0</property>
+                        <property name="xpad">4</property>
+                        <property name="ypad">4</property>
+                        <property name="label" translatable="yes">&lt;b&gt;Timeline&lt;/b&gt;</property>
+                        <property name="use_markup">True</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -365,72 +380,80 @@
                     <child>
                       <object class="GtkTable" id="table1">
                         <property name="visible">True</property>
-                        <property name="n_rows">3</property>
-                        <property name="n_columns">3</property>
+                        <property name="n_rows">2</property>
+                        <property name="n_columns">2</property>
+                        <property name="column_spacing">3</property>
+                        <property name="row_spacing">3</property>
                         <child>
                           <object class="GtkVScrollbar" id="timeline_vscroll">
                             <property name="visible">True</property>
                             <property name="orientation">vertical</property>
                           </object>
                           <packing>
-                            <property name="left_attach">2</property>
-                            <property name="right_attach">3</property>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
                             <property name="x_options">GTK_SHRINK | GTK_FILL</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkHScrollbar" id="timeline_hscroll">
                             <property name="visible">True</property>
+                            <property name="restrict_to_fill_level">False</property>
+                            <property name="fill_level">0</property>
                           </object>
                           <packing>
-                            <property name="left_attach">1</property>
-                            <property name="right_attach">2</property>
                             <property name="top_attach">1</property>
                             <property name="bottom_attach">2</property>
                             <property name="y_options">GTK_SHRINK</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkDrawingArea" id="timeline_drawingarea">
+                          <object class="GtkViewport" id="viewport1">
                             <property name="visible">True</property>
+                            <property name="resize_mode">queue</property>
+                            <child>
+                              <object class="GtkTable" id="table2">
+                                <property name="visible">True</property>
+                                <property name="n_rows">2</property>
+                                <property name="n_columns">2</property>
+                                <property name="row_spacing">4</property>
+                                <child>
+                                  <object class="GtkDrawingArea" id="timeline_key_drawingarea">
+                                    <property name="height_request">30</property>
+                                    <property name="visible">True</property>
+                                  </object>
+                                  <packing>
+                                    <property name="left_attach">1</property>
+                                    <property name="right_attach">2</property>
+                                    <property name="top_attach">1</property>
+                                    <property name="bottom_attach">2</property>
+                                    <property name="y_options">GTK_FILL</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkDrawingArea" id="timeline_drawingarea">
+                                    <property name="visible">True</property>
+                                  </object>
+                                  <packing>
+                                    <property name="left_attach">1</property>
+                                    <property name="right_attach">2</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                                <child>
+                                  <object class="GtkDrawingArea" id="timeline_labels_drawingarea">
+                                    <property name="width_request">80</property>
+                                    <property name="visible">True</property>
+                                  </object>
+                                  <packing>
+                                    <property name="x_options">GTK_FILL</property>
+                                  </packing>
+                                </child>
+                              </object>
+                            </child>
                           </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="right_attach">2</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkDrawingArea" id="timeline_labels_drawingarea">
-                            <property name="width_request">80</property>
-                            <property name="visible">True</property>
-                          </object>
-                          <packing>
-                            <property name="x_options">GTK_FILL</property>
-                            <property name="y_options">GTK_FILL</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkDrawingArea" id="timeline_key_drawingarea">
-                            <property name="height_request">30</property>
-                            <property name="visible">True</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="right_attach">2</property>
-                            <property name="top_attach">2</property>
-                            <property name="bottom_attach">3</property>
-                            <property name="x_options">GTK_FILL</property>
-                            <property name="y_options">GTK_FILL</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
                         </child>
                         <child>
                           <placeholder/>
@@ -441,14 +464,9 @@
                       </packing>
                     </child>
                   </object>
-                </child>
-                <child type="tab">
-                  <object class="GtkLabel" id="timeline_label">
-                    <property name="visible">True</property>
-                    <property name="label" translatable="yes">Timeline</property>
-                  </object>
                   <packing>
-                    <property name="tab_fill">False</property>
+                    <property name="resize">True</property>
+                    <property name="shrink">True</property>
                   </packing>
                 </child>
                 <child>
@@ -456,83 +474,49 @@
                     <property name="visible">True</property>
                     <property name="orientation">vertical</property>
                     <child>
-                      <object class="GtkHBox" id="hbox5">
+                      <object class="GtkLabel" id="label4">
                         <property name="visible">True</property>
-                        <child>
-                          <object class="GtkToolbar" id="toolbar5">
-                            <property name="visible">True</property>
-                            <property name="toolbar_style">both-horiz</property>
-                            <property name="show_arrow">False</property>
-                            <child>
-                              <object class="GtkToolButton" id="events_first">
-                                <property name="visible">True</property>
-                                <property name="has_tooltip">True</property>
-                                <property name="tooltip_text" translatable="yes">Jump to beginning</property>
-                                <property name="stock_id">gtk-goto-first</property>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="homogeneous">True</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkToolButton" id="events_home">
-                                <property name="visible">True</property>
-                                <property name="has_tooltip">True</property>
-                                <property name="tooltip_text" translatable="yes">Centre view on cursor</property>
-                                <property name="stock_id">gtk-home</property>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="homogeneous">True</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkToolButton" id="events_last">
-                                <property name="visible">True</property>
-                                <property name="has_tooltip">True</property>
-                                <property name="tooltip_text" translatable="yes">Jump to end</property>
-                                <property name="stock_id">gtk-goto-last</property>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="homogeneous">True</property>
-                              </packing>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">False</property>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkEntry" id="events_entry">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="invisible_char">&#x25CF;</property>
-                            <property name="width_chars">20</property>
-                            <property name="secondary_icon_stock">gtk-find</property>
-                            <property name="secondary_icon_tooltip_text">Search for event</property>
-                          </object>
-                          <packing>
-                            <property name="padding">4</property>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
+                        <property name="xalign">0</property>
+                        <property name="xpad">4</property>
+                        <property name="ypad">4</property>
+                        <property name="label" translatable="yes">&lt;b&gt;Events&lt;/b&gt;</property>
+                        <property name="use_markup">True</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
+                        <property name="fill">False</property>
                         <property name="position">0</property>
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkHBox" id="eventsHBox">
+                      <object class="GtkEntry" id="events_entry">
                         <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="invisible_char">&#x25CF;</property>
+                        <property name="width_chars">20</property>
+                        <property name="secondary_icon_stock">gtk-find</property>
+                        <property name="secondary_icon_tooltip_text">Search for event</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="eventsHBox">
+                        <property name="height_request">120</property>
+                        <property name="visible">True</property>
+                        <property name="spacing">3</property>
                         <child>
-                          <object class="GtkDrawingArea" id="eventsDrawingArea">
+                          <object class="GtkViewport" id="viewport2">
                             <property name="visible">True</property>
-                            <property name="can_focus">True</property>
+                            <property name="resize_mode">queue</property>
+                            <child>
+                              <object class="GtkDrawingArea" id="eventsDrawingArea">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                              </object>
+                            </child>
                           </object>
                           <packing>
                             <property name="position">0</property>
@@ -551,22 +535,14 @@
                         </child>
                       </object>
                       <packing>
-                        <property name="position">1</property>
+                        <property name="padding">3</property>
+                        <property name="position">2</property>
                       </packing>
                     </child>
                   </object>
                   <packing>
-                    <property name="position">1</property>
-                  </packing>
-                </child>
-                <child type="tab">
-                  <object class="GtkLabel" id="eventslabel">
-                    <property name="visible">True</property>
-                    <property name="label" translatable="yes">Events</property>
-                  </object>
-                  <packing>
-                    <property name="position">1</property>
-                    <property name="tab_fill">False</property>
+                    <property name="resize">False</property>
+                    <property name="shrink">True</property>
                   </packing>
                 </child>
               </object>
@@ -577,7 +553,7 @@
             </child>
           </object>
           <packing>
-            <property name="position">1</property>
+            <property name="position">2</property>
           </packing>
         </child>
         <child>
@@ -586,7 +562,7 @@
           </object>
           <packing>
             <property name="expand">False</property>
-            <property name="position">2</property>
+            <property name="position">3</property>
           </packing>
         </child>
       </object>

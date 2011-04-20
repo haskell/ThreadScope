@@ -70,13 +70,9 @@ data ViewerState = ViewerState {
   eventsDrawingArea  :: DrawingArea,
   eventsTextEntry    :: Entry,
 --  eventsFindButton   :: ToolButton,
-  eventsFirstButton  :: ToolButton,
-  eventsHomeButton   :: ToolButton,
-  eventsLastButton   :: ToolButton,
 
   -- sidebar
   sidebarBox         :: Widget,
---  sidebarCloseButton :: Button,
 
   -- Bookmarks
   addBookmarkButton  :: ToolButton,
