@@ -53,6 +53,7 @@ Executable threadscope
                      Timeline.Render.Constants
 
   ghc-options:  -Wall -fno-warn-type-defaults -fno-warn-name-shadowing
+                -fno-warn-unused-do-bind
 
   if impl(ghc >= 7.0)
      -- GHC 7.0 and later require a flag to enable the options in ghcrts.c
