@@ -75,14 +75,10 @@ data ViewerState = ViewerState {
   eventsLastButton   :: ToolButton,
 
   -- sidebar
-  sidebarVBox        :: VBox,
-  sidebarHBox        :: HBox,
-  sidebarCombo       :: ComboBox,
-  sidebarComboState  :: IORef Int,
-  sidebarCloseButton :: Button,
+  sidebarBox         :: Widget,
+--  sidebarCloseButton :: Button,
 
   -- Bookmarks
-  bookmarkVBox       :: VBox,
   addBookmarkButton  :: ToolButton,
   deleteBookmarkButton  :: ToolButton,
   gotoBookmarkButton :: ToolButton,
@@ -90,7 +86,6 @@ data ViewerState = ViewerState {
   bookmarkStore      :: ListStore Timestamp,
 
   -- Traces
-  tracesVBox         :: VBox,
   tracesTreeView     :: TreeView,
   tracesStore        :: TreeStore (Trace,Bool)
   }

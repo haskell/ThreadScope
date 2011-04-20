@@ -22,25 +22,13 @@ sidebarBookmarks = 1
 
 setupSideBar :: ViewerState -> IO ()
 setupSideBar state@ViewerState{..} = do
-  on sidebarCloseButton buttonPressEvent $ tryEvent $ liftIO $ do
-     checkMenuItemSetActive sidebarToggle False
-     containerRemove hpaned sidebarVBox
-     
-  onToggle sidebarToggle $ do -- no new-style event for menu toggles?
+  on sidebarToggle checkMenuItemToggled $ do
      b <- checkMenuItemGetActive sidebarToggle
      if b 
-        then panedAdd1 hpaned sidebarVBox
-        else containerRemove hpaned sidebarVBox
-
-  on sidebarCombo changed $ do
-     sidebarChangeView state
-
-  writeIORef sidebarComboState 1
-  comboBoxSetActive sidebarCombo 0
-  sidebarChangeView state
+        then panedAdd1 hpaned sidebarBox
+        else containerRemove hpaned sidebarBox
 
   traceColumn <- treeViewColumnNew
---  treeViewColumnSetTitle traceColumn "Trace"
 
   textcell <- cellRendererTextNew
   togglecell <- cellRendererToggleNew
@@ -68,22 +56,3 @@ setupSideBar state@ViewerState{..} = do
 
   return ()
 
-sidebarChangeView :: ViewerState -> IO ()
-sidebarChangeView state@ViewerState{..} = do
-  r <- readIORef sidebarComboState
-  v <- comboBoxGetActive sidebarCombo
-  when (v /= r) $ do
-   writeIORef sidebarComboState v
-   case v of
-    _ | v == sidebarTraces -> do
-        containerRemove sidebarVBox bookmarkVBox
-        boxPackEnd sidebarVBox tracesVBox PackGrow 0
-        widgetShowAll tracesVBox
-
-      | v == sidebarBookmarks -> do
-        containerRemove sidebarVBox tracesVBox
-        boxPackEnd sidebarVBox bookmarkVBox PackGrow 0
-        widgetShowAll bookmarkVBox
-
-    _ ->
-      return ()

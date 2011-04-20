@@ -234,13 +234,10 @@ buildInitialState options = failOnGError $ do
        eventsHomeButton   <- getWidget castToToolButton "events_home"
        eventsLastButton   <- getWidget castToToolButton "events_last"
 
-       sidebarVBox        <- getWidget castToVBox     "sidebar_vbox"
-       sidebarHBox        <- getWidget castToHBox     "sidebar_hbox"
-       sidebarCombo       <- getWidget castToComboBox "sidebar_combobox"
-       sidebarComboState  <- newIORef sidebarBookmarks
-       sidebarCloseButton <- getWidget castToButton   "sidebar_close_button"
+       sidebarBox         <- getWidget castToWidget   "sidebar"
        bookmarkVBox       <- getWidget castToVBox     "bookmarks_vbox"
        bookmarkTreeView   <- getWidget castToTreeView "bookmark_list"
+       tracesTreeView     <- getWidget castToTreeView "traces_list"
 
        -- Bookmarks
        addBookmarkButton    <- getWidget castToToolButton "add_bookmark_button"
@@ -258,11 +255,8 @@ buildInitialState options = failOnGError $ do
           (\record -> [New.cellText := show record ++ " ns"])
        New.treeViewAppendColumn bookmarkTreeView bookmarkColumn
 
-       -- Trace view
-       tracesVBox <- vBoxNew False 0
-       tracesTreeView <- treeViewNew
+       -- Traces
        tracesStore <- treeStoreNew []
        treeViewSetModel tracesTreeView tracesStore
-       boxPackEnd tracesVBox tracesTreeView PackGrow 0
 
        return ViewerState { .. }
