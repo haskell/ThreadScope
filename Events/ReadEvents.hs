@@ -8,7 +8,7 @@ import Events.TestEvents
 import Events.EventDuration
 import GUI.Timeline
 import GUI.Traces
-import GUI.Utils
+import qualified GUI.ConcurrencyControl as ConcurrencyControl
 
 import Graphics.UI.Gtk hiding (on)
 
@@ -104,7 +104,8 @@ registerEvents from state@ViewerState{..} = do
 
   windowSetTitle dialog "ThreadScope"
 
-  withBackgroundProcessing $ do
+  -- This is a cpu-intensive background task
+  ConcurrencyControl.fullSpeed concCtl $ do
 
   t <- forkIO $ buildEventLog from dialog progress state
                 `onException` dialogResponse dialog (ResponseUser 1)
@@ -118,8 +119,7 @@ registerEvents from state@ViewerState{..} = do
 
 -------------------------------------------------------------------------------
 
--- NB. Runs in a background thread, can call GUI functions only with
--- postGUI.
+-- Runs in a background thread
 --
 buildEventLog :: DialogClass dialog => Either FilePath String
               -> dialog
@@ -128,7 +128,7 @@ buildEventLog from dialog progress state@ViewerState{..} =
   case from of
     Right test     -> build test (testTrace test)
     Left filename  -> do
-      postGUISync $ progressBarSetText progress $ "Reading " ++ filename
+      progressBarSetText progress $ "Reading " ++ filename
       fmt <- readEventLogFromFile filename
       case fmt of
         Left  err -> hPutStr stderr err
@@ -160,7 +160,7 @@ buildEventLog from dialog progress state@ViewerState{..} =
 
          treeProgress :: ProgressBar -> Int -> (DurationTree,EventTree) -> IO ()
          treeProgress progress hec (tree1,tree2) = do
-            postGUISync $ progressBarSetText progress $
+            progressBarSetText progress $
                      printf "Building HEC %d/%d" (hec+1) hec_count
             progressBarSetFraction progress $
                      fromIntegral hec / fromIntegral hec_count
@@ -170,7 +170,7 @@ buildEventLog from dialog progress state@ViewerState{..} =
 
        zipWithM_ (treeProgress progress) [0..] trees
 
-       postGUISync $ do
+       do
          windowSetTitle mainWindow ("ThreadScope - " ++ takeFileName name)
          ctx <- statusbarGetContextId statusBar "file"
          statusbarPush statusBar ctx $

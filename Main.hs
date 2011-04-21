@@ -38,6 +38,7 @@ import GUI.SaveAsPDF
 import GUI.SaveAsPNG
 import GUI.Sidebar
 import GUI.Traces
+import qualified GUI.ConcurrencyControl as ConcurrencyControl
 
 -------------------------------------------------------------------------------
 
@@ -49,7 +50,7 @@ main
        args <- getArgs
        let options = parseOptions args
 
-       unsafeInitGUIForThreadedRTS
+       initGUI
        state <- buildInitialState options
 
        startup options state
@@ -260,5 +261,7 @@ buildInitialState options = failOnGError $ do
        -- Traces
        tracesStore <- treeStoreNew []
        treeViewSetModel tracesTreeView tracesStore
+
+       concCtl <- ConcurrencyControl.start
 
        return ViewerState { .. }
