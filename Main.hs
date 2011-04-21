@@ -3,13 +3,12 @@
 
 module Main where
 
-import Options
 import GUI.Main
 
 import Graphics.UI.Gtk
 
 import System.Environment
-
+import Control.Monad
 
 -------------------------------------------------------------------------------
 
@@ -21,7 +20,47 @@ main
        args <- getArgs
        let options = parseOptions args
 
-       initGUI
-       state <- buildInitialState options
+           debug      = Debug `elem` options
+           filenames  = [filename | Filename filename <- options]
+           tracenames = [name | TestTrace name <- options]
 
-       startup options state
+       when (length filenames > 1)
+         (putStrLn "usage: threadscope [eventlog_filename]")
+
+       let filename = if filenames == [] then
+                       ""
+                      else
+                        head filenames
+           traceName = if tracenames == [] then
+                         ""
+                       else
+                         head tracenames
+
+       initGUI
+       state <- buildInitialState debug
+
+       startup filename traceName state
+
+-------------------------------------------------------------------------------
+
+data Option
+  = Debug
+  | Filename String
+  | TestTrace String
+    deriving Eq
+
+-------------------------------------------------------------------------------
+
+parseOptions :: [String] -> [Option]
+parseOptions [] = []
+parseOptions ("--debug":rest)
+  = Debug : parseOptions rest
+parseOptions ("--test":rest)
+  = if rest == [] then
+      error ("--test needs an argument")
+    else
+      TestTrace (head rest) : parseOptions (tail rest)
+parseOptions (filename:rest)
+  = Filename filename : parseOptions rest
+
+-----------------------------------------------------------------------------

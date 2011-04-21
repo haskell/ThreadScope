@@ -29,7 +29,6 @@ import Paths_threadscope
 -- Imports for ThreadScope
 import GUI.State
 import GUI.Dialogs
-import Options
 import Events.ReadEvents
 import GUI.EventsWindow
 import GUI.Timeline
@@ -41,22 +40,9 @@ import qualified GUI.ConcurrencyControl as ConcurrencyControl
 
 -------------------------------------------------------------------------------
 
-startup :: [Option] -> ViewerState -> IO ()
-startup options state@ViewerState{..}
+startup :: FilePath -> String -> ViewerState -> IO ()
+startup filename traceName state@ViewerState{..}
   = do
-       let
-           filenames = [filename | Filename filename <- options]
-           tracenames = [name | TestTrace name <- options]
-       when (length filenames > 1)
-         (putStrLn "usage: threadscope [eventlog_filename]")
-       let filename = if filenames == [] then
-                       ""
-                      else
-                        head filenames
-           traceName = if tracenames == [] then
-                         ""
-                       else
-                         head tracenames
 
        writeIORef filenameIORef (if filename == "" then
                                    Nothing
@@ -159,15 +145,12 @@ startup options state@ViewerState{..}
 
 -------------------------------------------------------------------------------
 
-buildInitialState :: [Option] -> IO ViewerState
-buildInitialState options = failOnGError $ do
+buildInitialState :: Bool -> IO ViewerState
+buildInitialState debug = failOnGError $ do
 
        builder <- builderNew
        builderAddFromFile builder =<< getDataFileName "threadscope.ui"
        let getWidget cast name = builderGetObject builder cast name
-
-       let debug = Debug `elem` options
-
 
        filenameIORef <- newIORef Nothing
 

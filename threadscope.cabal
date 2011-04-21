@@ -31,7 +31,6 @@ Executable threadscope
                      GUI.Main
                      GUI.EventsWindow, 
                      GUI.Dialogs,
-                     Options, 
                      GUI.SaveAsPDF, 
                      GUI.SaveAsPNG, 
                      GUI.Sidebar,
