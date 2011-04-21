@@ -38,7 +38,7 @@ aboutDialog parent
 openFileDialog :: Window -> (FilePath -> IO ()) -> IO ()
 openFileDialog parent open
   = do dialog <- fileChooserDialogNew
-                   (Just "Open Profile... ")
+                   (Just "Open Profile...")
                    (Just parent)
                    FileChooserActionOpen
                    [("gtk-cancel", ResponseCancel)
@@ -46,6 +46,17 @@ openFileDialog parent open
        set dialog [
            windowModal := True
          ]
+
+       eventlogfiles <- fileFilterNew
+       fileFilterSetName eventlogfiles "GHC eventlog files (*.eventlog)"
+       fileFilterAddPattern eventlogfiles "*.eventlog"
+       fileChooserAddFilter dialog eventlogfiles
+
+       allfiles <- fileFilterNew
+       fileFilterSetName allfiles "All files"
+       fileFilterAddPattern allfiles "*"
+       fileChooserAddFilter dialog allfiles
+
        onResponse dialog $ \response -> do
          case response of
            ResponseAccept -> do
