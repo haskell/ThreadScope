@@ -2,10 +2,10 @@
 -- ThreadScope: a graphical viewer for Haskell event log information.
 -- Maintainer: satnams@microsoft.com, s.singh@ieee.org
 
-module GUI.Main where
+module GUI.Main (runGUI) where
 
 -- Imports for GTK
-import Graphics.UI.Gtk
+import Graphics.UI.Gtk as Gtk
 import System.Glib.GError (failOnGError)
 import Graphics.Rendering.Cairo
 import qualified Graphics.Rendering.Cairo as C
@@ -37,6 +37,25 @@ import GUI.SaveAsPNG
 import GUI.Sidebar
 import GUI.Traces
 import qualified GUI.ConcurrencyControl as ConcurrencyControl
+
+-------------------------------------------------------------------------------
+
+runGUI :: FilePath -> String -> Bool -> IO ()
+runGUI filename traceName debug = do
+  Gtk.initGUI
+
+  state <- buildInitialState debug
+  startup filename traceName state
+
+#ifndef mingw32_HOST_OS
+  --TODO: this seems suspicious, it should not be necessary.
+  -- If it is necessary perhaps mainQuit is better than thowing an exception.
+  main <- myThreadId
+  installHandler sigINT (Catch (postGUIAsync (throw UserInterrupt))) Nothing
+#endif
+
+  -- Enter Gtk+ main event loop.
+  Gtk.mainGUI
 
 -------------------------------------------------------------------------------
 
@@ -134,14 +153,6 @@ startup filename traceName state@ViewerState{..}
        -- Show all windows
        widgetShowAll mainWindow
 
-#ifndef mingw32_HOST_OS
-       main <- myThreadId
-       installHandler sigINT (Catch (postGUIAsync (throw UserInterrupt))) Nothing
-#endif
-
-       ------------------------------------------------------------------------
-       -- Enter main event loop for GUI.
-       mainGUI
 
 -------------------------------------------------------------------------------
 

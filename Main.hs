@@ -3,9 +3,7 @@
 
 module Main where
 
-import GUI.Main
-
-import Graphics.UI.Gtk
+import GUI.Main (runGUI)
 
 import System.Environment
 import Control.Monad
@@ -36,10 +34,7 @@ main
                        else
                          head tracenames
 
-       initGUI
-       state <- buildInitialState debug
-
-       startup filename traceName state
+       runGUI filename traceName debug
 
 -------------------------------------------------------------------------------
 
