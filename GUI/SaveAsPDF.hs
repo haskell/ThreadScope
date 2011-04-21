@@ -7,7 +7,7 @@ import Data.IORef
 
 -- Imports for GTK
 import Graphics.UI.Gtk
-import Graphics.Rendering.Cairo 
+import Graphics.Rendering.Cairo
 import qualified Graphics.Rendering.Cairo as C
 
 -- Imports for ThreadScope
@@ -20,9 +20,9 @@ import GUI.Traces
 -------------------------------------------------------------------------------
 
 saveAsPDF :: ViewerState -> IO ()
-saveAsPDF state@ViewerState{..} 
+saveAsPDF state@ViewerState{..}
   = liftIO $ do
-    scaleValue <- readIORef scaleIORef  
+    scaleValue <- readIORef scaleIORef
     hadj_value0 <- adjustmentGetValue timelineAdj
     let hadj_value = toWholePixels scaleValue hadj_value0
     mb_hecs <- readIORef hecsIORef
@@ -38,5 +38,5 @@ saveAsPDF state@ViewerState{..}
         let r = renderTraces state params traces hecs (Rectangle 0 0 w h)
         withPDFSurface (fn++".pdf") (fromIntegral w) (fromIntegral h) (flip renderWith $ r)
         return ()
-    
+
 -------------------------------------------------------------------------------

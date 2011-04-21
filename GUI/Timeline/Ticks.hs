@@ -6,7 +6,7 @@ import GUI.Timeline.Render.Constants
 import GUI.Timeline.CairoDrawing
 import GUI.ViewerColours
 
-import Graphics.Rendering.Cairo 
+import Graphics.Rendering.Cairo
 import qualified Graphics.Rendering.Cairo as C
 
 -- Imports for GHC Events
@@ -16,16 +16,16 @@ import GHC.RTS.Events hiding (Event)
 import Control.Monad
 
 --import Debug.Trace
---import Text.Printf 
+--import Text.Printf
 
 -------------------------------------------------------------------------------
--- Minor, semi-major and major ticks are drawn and the absolute periods of 
+-- Minor, semi-major and major ticks are drawn and the absolute periods of
 -- the ticks is determined by the zoom level.
 -- There are ten minor ticks to a major tick and a semi-major tick
 -- occurs half way through a major tick (overlapping the corresponding
--- minor tick). 
+-- minor tick).
 
--- The timestamp values are in nanos-seconds (1e-9) i.e. 
+-- The timestamp values are in nanos-seconds (1e-9) i.e.
 -- a timestamp value of 1000000000 represents 1s.
 -- The position on the drawing canvas is in milliseconds (ms) (1e-3).
 
@@ -45,23 +45,23 @@ renderTicks startPos endPos scaleValue height
     setLineWidth 1.0
     -- trace (printf "startPos: %d, endPos: %d" startPos endPos) $ do
     draw_line (startPos, oy) (endPos, oy)
-    let 
+    let
         timestampFor100Pixels = truncate (100 * scaleValue) -- ns time for 100 pixels
         snappedTickDuration :: Timestamp
         snappedTickDuration = 10 ^ truncate (logBase 10 (fromIntegral timestampFor100Pixels) :: Double)
         tickWidthInPixels :: Int
         tickWidthInPixels = truncate ((fromIntegral snappedTickDuration) / scaleValue)
         firstTick :: Timestamp
-        firstTick = snappedTickDuration * (startPos `div` snappedTickDuration)        
+        firstTick = snappedTickDuration * (startPos `div` snappedTickDuration)
     -- liftIO $
     --   do putStrLn ("timestampFor100Pixels = " ++ show timestampFor100Pixels)
     --     putStrLn ("tickWidthInPixels     = " ++ show tickWidthInPixels)
-    --     putStrLn ("snappedTickDuration   = " ++ show snappedTickDuration)       
-    drawTicks tickWidthInPixels height scaleValue firstTick 
+    --     putStrLn ("snappedTickDuration   = " ++ show snappedTickDuration)
+    drawTicks tickWidthInPixels height scaleValue firstTick
               snappedTickDuration  (10*snappedTickDuration) endPos
-  
 
-drawTicks :: Int -> Int -> Double -> Timestamp -> Timestamp -> 
+
+drawTicks :: Int -> Int -> Double -> Timestamp -> Timestamp ->
              Timestamp -> Timestamp -> Render ()
 drawTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
   = if pos <= endPos then
@@ -80,17 +80,17 @@ drawTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
                setSourceRGBAhex blue 0.2
                draw_line (x1, y1) (x1, height)
                setSourceRGBAhex blue 1.0
-         
+
          drawTicks tickWidthInPixels height scaleValue (pos+incr) incr majorTick endPos
     else
       return ()
     where
     tickTimeText = showTickTime pos
     atMidTick = pos `mod` (majorTick `div` 2) == 0
-    atMajorTick = pos `mod` majorTick == 0 
+    atMajorTick = pos `mod` majorTick == 0
     (x0, y0, x1, y1) = if pos `mod` majorTick == 0 then
                          (pos, oy, pos, oy+16)
-                       else 
+                       else
                          if pos `mod` (majorTick `div` 2) == 0 then
                            (pos, oy, pos, oy+12)
                          else
@@ -114,7 +114,7 @@ showTickTime pos
       if pos < 100000000 then -- Show miliseonds for time < 0.1s
         reformatMS (posf / 1000000) ++ "ms" -- miliseconds 1e-3
       else -- Show time in seconds
-        reformatMS (posf / 1000000000) ++ "s" 
+        reformatMS (posf / 1000000000) ++ "s"
     where
     posf :: Double
     posf = fromIntegral pos

@@ -1,7 +1,7 @@
 -- This module supports a duration-based data-type to represent thread
 -- execution and GC information.
 
-module Events.EventDuration ( 
+module Events.EventDuration (
     EventDuration(..),
     isGCDuration,
     startTimeOf, endTimeOf, durationOf,
@@ -19,7 +19,7 @@ import GHC.RTS.Events hiding (Event,GCWork,GCIdle)
 -- by a single constructor identifying their start and end points.
 
 data EventDuration
-  = ThreadRun {-#UNPACK#-}!ThreadId 
+  = ThreadRun {-#UNPACK#-}!ThreadId
               ThreadStopStatus
               {-#UNPACK#-}!Timestamp
               {-#UNPACK#-}!Timestamp
@@ -40,7 +40,7 @@ data EventDuration
 {-
            GCStart     GCWork      GCIdle      GCEnd
   gc start -----> work -----> idle ------+> done -----> gc end
-                   |                     | 
+                   |                     |
                    `-------<-------<-----'
 -}
 
@@ -101,7 +101,7 @@ eventsToDurations (event : events) =
                               Just x -> x
 
 isDiscreteEvent :: GHC.Event -> Bool
-isDiscreteEvent e = 
+isDiscreteEvent e =
   case spec e of
     RunThread{}  -> False
     StopThread{} -> False
@@ -122,7 +122,7 @@ gcStart t0 (event : events) =
     GHC.EndGC{}  -> GCStart t0 t1 : eventsToDurations events
     RunThread{}  -> GCStart t0 t1 : eventsToDurations (event : events)
     _other       -> gcStart t0 events
- where 
+ where
         t1 = time event
 
 gcWork :: Timestamp -> [GHC.Event] -> [EventDuration]
@@ -135,7 +135,7 @@ gcWork t0 (event : events) =
     GHC.EndGC{}  -> GCWork t0 t1 : eventsToDurations events
     RunThread{}  -> GCWork t0 t1 : eventsToDurations (event : events)
     _other       -> gcStart t0 events
- where 
+ where
         t1 = time event
 
 gcIdle :: Timestamp -> [GHC.Event] -> [EventDuration]
@@ -148,7 +148,7 @@ gcIdle t0 (event : events) =
     GHC.EndGC{}  -> GCIdle t0 t1 : eventsToDurations events
     RunThread{}  -> GCIdle t0 t1 : eventsToDurations (event : events)
     _other       -> gcStart t0 events
- where 
+ where
         t1 = time event
 
 gcDone :: Timestamp -> [GHC.Event] -> [EventDuration]
@@ -161,7 +161,7 @@ gcDone t0 (event : events) =
     GHC.EndGC{}  -> GCEnd t0 t1 : eventsToDurations events
     RunThread{}  -> GCEnd t0 t1 : eventsToDurations (event : events)
     _other       -> gcStart t0 events
- where 
+ where
         t1 = time event
 
 -------------------------------------------------------------------------------

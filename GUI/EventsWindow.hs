@@ -12,7 +12,7 @@ import GUI.Timeline
 
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Gdk.EventM
-import Graphics.Rendering.Cairo 
+import Graphics.Rendering.Cairo
 
 import GHC.RTS.Events as GHC
 import Graphics.UI.Gtk.ModelView as New
@@ -106,16 +106,16 @@ setupEventsWindow state@ViewerState{..} = do
   onToolButtonClicked deleteBookmarkButton  $ do
     when debug $ putStrLn "Delete bookmark\n"
     sel <- treeViewGetSelection bookmarkTreeView
-    selection <- treeSelectionGetSelected sel 
+    selection <- treeSelectionGetSelected sel
     case selection of
       Nothing -> return ()
       Just (TreeIter _ pos _ _) -> listStoreRemove bookmarkStore (fromIntegral pos)
     queueRedrawTimelines state
- 
+
   -- Button for jumping to bookmark
   onToolButtonClicked gotoBookmarkButton $ do
     sel <- treeViewGetSelection bookmarkTreeView
-    selection <- treeSelectionGetSelected sel 
+    selection <- treeSelectionGetSelected sel
     case selection of
       Nothing -> return ()
       Just (TreeIter _ pos _ _) -> do
@@ -161,7 +161,7 @@ updateEventsWindow state@ViewerState{..} = liftIO $ do
       let arr = hecEventArray hecs
       win <- widgetGetDrawWindow eventsDrawingArea
       (w,h) <- widgetGetSize eventsDrawingArea
-    
+
       cursorpos <- getCursorLine state
       when debug $ printf "cursorpos: %d\n" cursorpos
       renderWithDrawable win $ do
@@ -189,7 +189,7 @@ getCursorLine state@ViewerState{..} = do
               return cursorpos
 
 -------------------------------------------------------------------------------
-  
+
 setCursor :: ViewerState -> Double -> IO ()
 setCursor state@ViewerState{..} eventY = do
   val <- adjustmentGetValue eventsAdj
@@ -199,10 +199,10 @@ setCursor state@ViewerState{..} eventY = do
     Just hecs -> do
       let arr = hecEventArray hecs
       exts <- readIORef eventsFontExtents
-      let 
+      let
           line'   = truncate (val + eventY / fontExtentsHeight exts)
           arr_max = snd $ bounds arr
-          line    = if line' > arr_max then arr_max else line' 
+          line    = if line' > arr_max then arr_max else line'
           t       = time (ce_event (arr!line))
       --
       writeIORef cursorIORef t

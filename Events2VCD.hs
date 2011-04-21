@@ -43,7 +43,7 @@ ppEvent Event{..} =
     RunThread{..}      -> unlines ["#" ++ show ts, showInt thread ++ " <" ++ show cap]
     StopThread{..}     -> unlines ["#" ++ show ts, "bZ <" ++ show cap]
     _ -> ""
-   
+
 showThreadStopStatus :: ThreadStopStatus -> String
 showThreadStopStatus HeapOverflow   = "heap overflow"
 showThreadStopStatus StackOverflow  = "stack overflow"
@@ -55,4 +55,4 @@ showInt v = 'b' : reverse (showInt' v)
 
 showInt' 0 = "0"
 showInt' v
-  = (if v `mod` 2 == 0 then '0' else '1') : showInt' (v `div` 2) 
+  = (if v `mod` 2 == 0 then '0' else '1') : showInt' (v `div` 2)

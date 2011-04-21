@@ -27,7 +27,7 @@ main = do
 --   putStrLn (show $ phaseEvents dat !! (len - 3))
 --   putStrLn (show $ phaseEvents dat !! (len - 2))
 --   putStrLn (show $ phaseEvents dat !! (len - 1))
--- 
+--
 -- getFirstPE dat = head $ phaseEvents dat
 
 {- EOF. -}
@@ -52,7 +52,7 @@ ppEvent Event{..} =
     RequestParGC{..}   -> printf "requesting parallel GC"
     StartGC{..}        -> printf "starting GC"
     EndGC{..}          -> printf "finished GC"
-   
+
 showThreadStopStatus :: ThreadStopStatus -> String
 showThreadStopStatus HeapOverflow   = "heap overflow"
 showThreadStopStatus StackOverflow  = "stack overflow"

@@ -19,15 +19,15 @@ import GHC.RTS.Events hiding (Event)
 
 -------------------------------------------------------------------------------
 
-renderBookmarks :: ViewerState -> ViewParameters -> Render () 
-renderBookmarks state@ViewerState{..} params@ViewParameters{..} 
+renderBookmarks :: ViewerState -> ViewParameters -> Render ()
+renderBookmarks state@ViewerState{..} params@ViewParameters{..}
   = withViewScale params $ do
          -- Get the list of bookmarks
          bookmarkList <- liftIO $ listStoreToList bookmarkStore
          -- Render the bookmarks
          -- First set the line width to one pixel and set the line colour
          (onePixel, _) <- deviceToUserDistance 1 0
-         setLineWidth onePixel 
+         setLineWidth onePixel
          setSourceRGBAhex bookmarkColour 1.0
          mapM_ (drawBookmark height) bookmarkList
          return ()
@@ -35,7 +35,7 @@ renderBookmarks state@ViewerState{..} params@ViewParameters{..}
 -------------------------------------------------------------------------------
 
 drawBookmark :: Int -> Timestamp -> Render ()
-drawBookmark height bookmarkTime 
+drawBookmark height bookmarkTime
   = draw_line (bookmarkTime, 0) (bookmarkTime, height)
 
 -------------------------------------------------------------------------------

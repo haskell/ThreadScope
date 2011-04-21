@@ -9,7 +9,7 @@ import Control.Concurrent
 -- compute-intensive activity going on in other threads.
 withBackgroundProcessing :: IO a -> IO a
 withBackgroundProcessing f =
-  bracket 
+  bracket
     (idleAdd (yield >> return True) priorityDefaultIdle)
     idleRemove
     (\_ -> f)

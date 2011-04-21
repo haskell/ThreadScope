@@ -12,7 +12,7 @@ import GUI.Timeline.CairoDrawing
 
 import GHC.RTS.Events hiding (Event, GCWork, GCIdle)
 
-import Graphics.Rendering.Cairo 
+import Graphics.Rendering.Cairo
 import qualified Graphics.Rendering.Cairo as C
 
 import Control.Monad
@@ -30,7 +30,7 @@ renderActivity :: ViewParameters -> HECs -> Timestamp -> Timestamp
                -> Render ()
 
 renderActivity param@ViewParameters{..} hecs start0 end0 = do
-  let 
+  let
       slice = round (fromIntegral activity_detail * scaleValue)
 
       -- round the start time down, and the end time up, to a slice boundary
@@ -75,7 +75,7 @@ actProfile slice start0 end0 t
      | otherwise      = t : rest
    flatten start t@(DurationTreeLeaf d) rest
      = t : rest
-   
+
    chop :: Timestamp -> Timestamp -> [DurationTree] -> [Timestamp]
    chop sofar start ts
      | start >= end = if sofar > 0 then [sofar] else []
@@ -174,4 +174,3 @@ dashedLine1 = do
   setLineWidth 1
   stroke
   restore
-  

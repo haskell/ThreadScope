@@ -1,4 +1,4 @@
-module Events.ReadEvents ( 
+module Events.ReadEvents (
     registerEventsFromFile, registerEventsFromTrace
   ) where
 
@@ -35,7 +35,7 @@ import Control.Exception
 -- which (for each HEC) records event *durations* which are ordered in time.
 -- The durations represent the run-lengths for thread execution and
 -- run-lengths for garbage colleciton. This data-structure is called
--- EventDuration. 
+-- EventDuration.
 -- ThreadScope then transformations this data-structure into another
 -- data-structure which gives a binary-tree view of the event information
 -- by performing a binary split on the time domain i.e. the EventTree
@@ -53,7 +53,7 @@ rawEventsToHECs eventList endTime
     heclists = [ (h,events) | (Just h,events) <- eventList ]
 
     toTree Nothing    = (DurationTreeEmpty, EventTree 0 0 (EventTreeLeaf []))
-    toTree (Just evs) = 
+    toTree (Just evs) =
        ( mkDurationTree (eventsToDurations nondiscrete) endTime,
          mkEventTree discrete endTime )
        where (discrete,nondiscrete) = partition isDiscreteEvent evs
@@ -69,13 +69,13 @@ maximum0 x = maximum x
 
 registerEventsFromFile :: String -> ViewerState -> IO ()
 registerEventsFromFile filename state = registerEvents (Left filename) state
-       
+
 registerEventsFromTrace :: String -> ViewerState -> IO ()
 registerEventsFromTrace traceName state = registerEvents (Right traceName) state
-       
+
 registerEvents :: Either FilePath String
-	       -> ViewerState
-	       -> IO ()
+               -> ViewerState
+               -> IO ()
 
 registerEvents from state@ViewerState{..} = do
 
@@ -85,7 +85,7 @@ registerEvents from state@ViewerState{..} = do
 
 --  dialog <- messageDialogNew Nothing [DialogModal] MessageInfo ButtonsCancel msg
 
-  dialog <- dialogNew 
+  dialog <- dialogNew
   dialogAddButton dialog "gtk-cancel" ResponseCancel
   widgetSetSizeRequest dialog 400 (-1)
   upper <- dialogGetUpper dialog
@@ -93,7 +93,7 @@ registerEvents from state@ViewerState{..} = do
   label <- labelNew Nothing
   miscSetAlignment label 0 0.5
   miscSetPadding label 20 0
-  labelSetMarkup label $ 
+  labelSetMarkup label $
        printf "<big><b>Loading %s</b></big>"  (takeFileName msg)
   boxPackStart upper label PackGrow 10
   boxPackStart upper hbox PackNatural 10
@@ -138,12 +138,12 @@ buildEventLog from dialog progress state@ViewerState{..} =
 
   where
     build name evs = do
-       let 
+       let
          eventBlockEnd e | EventBlock{ end_time=t } <- spec e = t
          eventBlockEnd e = time e
 
          lastTx = maximum (0 : map eventBlockEnd (events (dat evs)))
-   
+
          groups = groupEvents (events (dat evs))
          trees = rawEventsToHECs groups lastTx
 
@@ -152,7 +152,7 @@ buildEventLog from dialog progress state@ViewerState{..} =
          n_events  = length sorted
          event_arr = listArray (0, n_events-1) sorted
          hec_count = length trees
-   
+
          hecs = HECs {
                   hecCount         = hec_count,
                   hecTrees         = trees,
@@ -162,7 +162,7 @@ buildEventLog from dialog progress state@ViewerState{..} =
 
          treeProgress :: ProgressBar -> Int -> (DurationTree,EventTree) -> IO ()
          treeProgress progress hec (tree1,tree2) = do
-            postGUISync $ progressBarSetText progress $ 
+            postGUISync $ progressBarSetText progress $
                      printf "Building HEC %d/%d" (hec+1) hec_count
             progressBarSetFraction progress $
                      fromIntegral hec / fromIntegral hec_count
@@ -175,7 +175,7 @@ buildEventLog from dialog progress state@ViewerState{..} =
        postGUISync $ do
          windowSetTitle mainWindow ("ThreadScope - " ++ takeFileName name)
          ctx <- statusbarGetContextId statusBar "file"
-         statusbarPush statusBar ctx $ 
+         statusbarPush statusBar ctx $
             printf "%s (%d events, %.3fs)" name n_events
                                 ((fromIntegral lastTx :: Double) * 1.0e-9)
          newHECs state hecs

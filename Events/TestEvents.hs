@@ -1,7 +1,7 @@
 module Events.TestEvents (testTrace)
 where
 
-import GHC.RTS.Events 
+import GHC.RTS.Events
 import Data.Word
 
 -------------------------------------------------------------------------------
@@ -298,7 +298,7 @@ test _ = []
 
 chequered :: ThreadId -> Timestamp -> Timestamp -> [Event]
 chequered numThreads basicDuration runLength
-  = Event 0 (Startup (fromIntegral numThreads)) : 
+  = Event 0 (Startup (fromIntegral numThreads)) :
     makeChequered 1 numThreads basicDuration runLength
 
 -------------------------------------------------------------------------------
@@ -312,7 +312,7 @@ makeChequered currentThread numThreads basicDuration runLength
     where
     eventBlock :: EventTypeSpecificInfo
     eventBlock = EventBlock runLength (fromIntegral (currentThread-1))
-                 (Event 0 (CreateThread currentThread) 
+                 (Event 0 (CreateThread currentThread)
                  : chequeredPattern currentThread 0 basicDuration runLength)
 
 -------------------------------------------------------------------------------
@@ -326,7 +326,7 @@ chequeredPattern currentThread currentPos basicDuration runLength
        Event (currentPos+basicDuration) (StopThread currentThread ThreadYielding),
        Event (currentPos+basicDuration) StartGC,
        Event (currentPos+2*basicDuration) EndGC
-      ] ++ chequeredPattern currentThread (currentPos+2*basicDuration) basicDuration runLength     
+      ] ++ chequeredPattern currentThread (currentPos+2*basicDuration) basicDuration runLength
 
 -------------------------------------------------------------------------------
 

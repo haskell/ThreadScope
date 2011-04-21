@@ -39,12 +39,12 @@ import Text.Printf
 data DurationTree
   = DurationSplit
         {-#UNPACK#-}!Timestamp -- The start time of this run-span
-	{-#UNPACK#-}!Timestamp -- The time used to split the events into two parts
-	{-#UNPACK#-}!Timestamp -- The end time of this run-span
-	DurationTree -- The LHS split; all events lie completely between
+        {-#UNPACK#-}!Timestamp -- The time used to split the events into two parts
+        {-#UNPACK#-}!Timestamp -- The end time of this run-span
+        DurationTree -- The LHS split; all events lie completely between
                      -- start and split
         DurationTree -- The RHS split; all events lie completely between
-	             -- split and end
+                     -- split and end
         {-#UNPACK#-}!Timestamp -- The total amount of time spent running a thread
         {-#UNPACK#-}!Timestamp -- The total amount of time spend in GC
 
@@ -58,7 +58,7 @@ data DurationTree
 -------------------------------------------------------------------------------
 
 mkDurationTree :: [EventDuration] -> Timestamp -> DurationTree
-mkDurationTree es endTime = 
+mkDurationTree es endTime =
   -- trace (show tree) $
   tree
  where
@@ -67,7 +67,7 @@ mkDurationTree es endTime =
 splitDurations :: [EventDuration] -- events
              -> Timestamp       -- end time of last event in the list
              -> DurationTree
-splitDurations []  _endTime = 
+splitDurations []  _endTime =
   -- if len /= 0 then error "splitDurations0" else
   DurationTreeEmpty   -- The case for an empty list of events
 
@@ -81,10 +81,10 @@ splitDurations es  endTime
 
   | otherwise
   = -- trace (printf "len = %d, startTime = %d, endTime = %d, lhs_len = %d\n" len startTime endTime lhs_len) $
-    -- if len /= length es || length lhs + length rhs /= len then error (printf "splitDurations3; %d %d %d %d %d" len (length es) (length lhs) lhs_len (length rhs))  else 
+    -- if len /= length es || length lhs + length rhs /= len then error (printf "splitDurations3; %d %d %d %d %d" len (length es) (length lhs) lhs_len (length rhs))  else
     DurationSplit startTime
-	       lhs_end
-               endTime 
+               lhs_end
+               endTime
                ltree
                rtree
                runTime
@@ -142,7 +142,7 @@ reportDurationTree :: Int -> DurationTree -> IO ()
 reportDurationTree hecNumber eventTree
   = putStrLn ("HEC " ++ show hecNumber ++ reportText)
     where
-    reportText = " nodes = " ++ show (durationTreeCountNodes eventTree) ++ 
+    reportText = " nodes = " ++ show (durationTreeCountNodes eventTree) ++
                  " max depth = " ++ show (durationTreeMaxDepth eventTree)
 
 -------------------------------------------------------------------------------
@@ -162,15 +162,15 @@ durationTreeMaxDepth _ = 1
 -------------------------------------------------------------------------------
 
 data EventTree
-    = EventTree 
+    = EventTree
         {-#UNPACK#-}!Timestamp -- The start time of this run-span
         {-#UNPACK#-}!Timestamp -- The end   time of this run-span
         EventNode
 
 data EventNode
   = EventSplit
-	{-#UNPACK#-}!Timestamp -- The time used to split the events into two parts
-	EventNode -- The LHS split; all events lie completely between
+        {-#UNPACK#-}!Timestamp -- The time used to split the events into two parts
+        EventNode -- The LHS split; all events lie completely between
                   -- start and split
         EventNode -- The RHS split; all events lie completely between
                   -- split and end
@@ -185,7 +185,7 @@ data EventNode
         -- EventTreeLeaf [e].
 
 mkEventTree :: [GHC.Event] -> Timestamp -> EventTree
-mkEventTree es endTime = 
+mkEventTree es endTime =
   EventTree s e $
   -- trace (show tree) $
   tree
@@ -196,7 +196,7 @@ mkEventTree es endTime =
 splitEvents :: [GHC.Event] -- events
             -> Timestamp       -- end time of last event in the list
             -> EventNode
-splitEvents []  !_endTime = 
+splitEvents []  !_endTime =
   -- if len /= 0 then error "splitEvents0" else
   EventTreeLeaf []   -- The case for an empty list of events
 
@@ -215,7 +215,7 @@ splitEvents es !endTime
 
   | otherwise
   = -- trace (printf "len = %d, startTime = %d, endTime = %d, lhs_len = %d\n" len startTime endTime lhs_len) $
-    -- if len /= length es || length lhs + length rhs /= len then error (printf "splitEvents3; %d %d %d %d %d" len (length es) (length lhs) lhs_len (length rhs))  else 
+    -- if len /= length es || length lhs + length rhs /= len then error (printf "splitEvents3; %d %d %d %d %d" len (length es) (length lhs) lhs_len (length rhs))  else
     EventSplit (time (head rhs))
                ltree
                rtree
@@ -251,7 +251,7 @@ reportEventTree :: Int -> EventTree -> IO ()
 reportEventTree hecNumber (EventTree _ _ eventTree)
   = putStrLn ("HEC " ++ show hecNumber ++ reportText)
     where
-    reportText = " nodes = " ++ show (eventTreeCountNodes eventTree) ++ 
+    reportText = " nodes = " ++ show (eventTreeCountNodes eventTree) ++
                  " max depth = " ++ show (eventNodeMaxDepth eventTree)
 
 -------------------------------------------------------------------------------

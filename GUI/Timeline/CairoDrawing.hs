@@ -34,7 +34,7 @@ rel_line_to (x, y)
 
 {-# INLINE draw_rectangle #-}
 draw_rectangle :: (Integral x, Integral y, Integral w, Integral h)
-               => x -> y -> w -> h 
+               => x -> y -> w -> h
                -> Render ()
 draw_rectangle x y w h = do
   rectangle (fromIntegral x) (fromIntegral y) (fromIntegral w) (fromIntegral h)
@@ -44,7 +44,7 @@ draw_rectangle x y w h = do
 
 {-# INLINE draw_outlined_rectangle #-}
 draw_outlined_rectangle :: (Integral x, Integral y, Integral w, Integral h)
-                        => x -> y -> w -> h 
+                        => x -> y -> w -> h
                         -> Render ()
 draw_outlined_rectangle x y w h = do
   rectangle (fromIntegral x) (fromIntegral y) (fromIntegral w) (fromIntegral h)
@@ -57,7 +57,7 @@ draw_outlined_rectangle x y w h = do
 
 {-# INLINE draw_rectangle_opt #-}
 draw_rectangle_opt :: (Integral x, Integral y, Integral w, Integral h)
-                   => Bool -> x -> y -> w -> h 
+                   => Bool -> x -> y -> w -> h
                    -> Render ()
 draw_rectangle_opt opt x y w h
   = draw_rectangle_opt' opt (fromIntegral x) (fromIntegral y)

@@ -39,7 +39,7 @@ import Text.Printf
 exposeTraceView :: ViewerState -> Region -> IO ()
 exposeTraceView state@ViewerState{..} exposeRegion = do
   maybeEventArray <- readIORef hecsIORef
-  
+
   -- Check to see if an event trace has been loaded
   case maybeEventArray of
     Nothing   -> return ()
@@ -53,7 +53,7 @@ renderView state@ViewerState{..} exposeRegion hecs = do
   labels_mode <- toggleToolButtonGetActive showLabelsToggle
   (dAreaWidth,dAreaHeight) <- widgetGetSize timelineDrawingArea
   when debug $ do
-    putStrLn ("\n=== updateCanvas") 
+    putStrLn ("\n=== updateCanvas")
     putStrLn (show exposeRegion)
     printf "width %d, height %d\n" dAreaWidth dAreaHeight
 
@@ -73,7 +73,7 @@ renderView state@ViewerState{..} exposeRegion hecs = do
   let hadj_value = toWholePixels scaleValue hadj_value0
 
   when debug $ do
-     hadj_pagesize <- adjustmentGetPageSize timelineAdj   
+     hadj_pagesize <- adjustmentGetPageSize timelineAdj
      hadj_lower <- adjustmentGetLower timelineAdj
      hadj_upper <- adjustmentGetUpper timelineAdj
      ctx <- statusbarGetContextId statusBar "debug"
@@ -105,15 +105,15 @@ renderView state@ViewerState{..} exposeRegion hecs = do
   renderWithDrawable win $ do
 
   let renderToNewSurface = do
-        new_surface <- withTargetSurface $ \surface -> 
+        new_surface <- withTargetSurface $ \surface ->
                          liftIO $ createSimilarSurface surface ContentColor
                                     dAreaWidth timelineHeight
-        renderWith new_surface $ do 
+        renderWith new_surface $ do
              clearWhite
              renderTraces state params traces hecs rect
         return new_surface
 
-  surface <- 
+  surface <-
     case prev_view of
       Nothing -> do
         when debug $ liftIO $ putStrLn "no old surface"
@@ -126,19 +126,19 @@ renderView state@ViewerState{..} exposeRegion hecs = do
 
          | width  old_params == width  params &&
            height old_params == height params
-         -> do 
+         -> do
                if old_params { hadjValue = hadjValue params } == params
                   -- only the hadjValue changed
                   && abs (hadjValue params - hadjValue old_params) <
                      fromIntegral (width params) * scaleValue
                   -- and the views overlap...
-                  then do 
+                  then do
                        when debug $ liftIO $ putStrLn "scrolling"
                        scrollView state surface old_params params traces hecs
-                       
-                  else do 
+
+                  else do
                        when debug $ liftIO $ putStrLn "using old surface"
-                       renderWith surface $ do 
+                       renderWith surface $ do
                           clearWhite; renderTraces state params traces hecs rect
                        return surface
 
@@ -181,10 +181,10 @@ drawCursor cursor_t param@ViewParameters{..} = do
 renderTraces :: ViewerState -> ViewParameters -> [Trace] -> HECs -> Rectangle
              -> Render ()
 
-renderTraces state@ViewerState{..} params@ViewParameters{..} 
+renderTraces state@ViewerState{..} params@ViewParameters{..}
              traces hecs (Rectangle rx ry rw rh)
-  = do   
-    let 
+  = do
+    let
         scale_rx    = fromIntegral rx * scaleValue
         scale_rw    = fromIntegral rw * scaleValue
         scale_width = fromIntegral width * scaleValue
@@ -203,7 +203,7 @@ renderTraces state@ViewerState{..} params@ViewParameters{..}
 
     when debug $ liftIO $ do
         printf "rx = %d, scale_rx = %f, scale_rw = %f, hadjValue = %f, startPos = %d, endPos = %d scaleValue = %f\n" rx scale_rx scale_rw hadjValue startPos endPos scaleValue
-  
+
     -- Now render the timeline drawing if we have a non-empty trace
     when (scaleValue > 0) $ do
       withViewScale params $ do
@@ -217,12 +217,12 @@ renderTraces state@ViewerState{..} params@ViewParameters{..}
         renderTrace trace y = do
             save
             translate 0 (fromIntegral y)
-            case trace of 
-               TraceHEC c -> 
+            case trace of
+               TraceHEC c ->
                    renderHEC c params startPos endPos (hecTrees hecs !! c)
                TraceActivity ->
                    renderActivity params hecs startPos endPos
-               _   -> 
+               _   ->
                    return ()
             restore
        -- Now rennder all the HECs.
@@ -242,13 +242,13 @@ scrollView state surface old new traces hecs = do
 --   scrolling on the same surface seems not to work, I get garbled results.
 --   Not sure what the best way to do this is.
 --   let new_surface = surface
-   new_surface <- withTargetSurface $ \surface -> 
+   new_surface <- withTargetSurface $ \surface ->
                     liftIO $ createSimilarSurface surface ContentColor
                                 (width new) (height new)
 
    renderWith new_surface $ do
 
-       let 
+       let
            scale    = scaleValue new
            old_hadj = hadjValue old
            new_hadj = hadjValue new
@@ -259,10 +259,10 @@ scrollView state surface old new traces hecs = do
 --   liftIO $ printf "scrollView: old: %f, new %f, dist = %f (%f pixels)\n"
 --              old_hadj new_hadj (old_hadj - new_hadj) off
 
-       -- copy the content from the old surface to the new surface, 
+       -- copy the content from the old surface to the new surface,
        -- shifted by the appropriate amount.
        setSourceSurface surface off 0
-       if old_hadj > new_hadj 
+       if old_hadj > new_hadj
           then do rectangle off 0 (w - off) h -- scroll right.
           else do rectangle 0   0 (w + off) h -- scroll left.
        C.fill
@@ -272,8 +272,8 @@ scrollView state surface old new traces hecs = do
                 | otherwise
                 = Rectangle (truncate (w + off)) 0 (ceiling (-off)) (height new)
 
-       case rect of 
-         Rectangle x y w h -> rectangle (fromIntegral x) (fromIntegral y) 
+       case rect of
+         Rectangle x y w h -> rectangle (fromIntegral x) (fromIntegral y)
                                         (fromIntegral w) (fromIntegral h)
        setSourceRGBA 0xffff 0xffff 0xffff 0xffff
        C.fill
@@ -299,7 +299,7 @@ toWholePixels scale x = fromIntegral (truncate (x / scale)) * scale
 checkScaleValue :: ViewerState -> IO Double
 checkScaleValue state@ViewerState{..}
   = do scaleValue <- readIORef scaleIORef
-       if scaleValue < 0.0 
+       if scaleValue < 0.0
           then do zoomToFit state
                   readIORef scaleIORef
           else return scaleValue
@@ -313,10 +313,10 @@ updateLabelDrawingArea state@ViewerState{..} (Expose { Old.eventArea=rect })
         win <- widgetGetDrawWindow timelineLabelDrawingArea
         vadj_value <- adjustmentGetValue timelineVAdj
         gc <- gcNew win
-        let ys = map (subtract (round vadj_value)) $ 
+        let ys = map (subtract (round vadj_value)) $
                       traceYPositions labels_mode traces
         zipWithM_ (drawLabel timelineLabelDrawingArea gc) traces ys
-        return True 
+        return True
 updateLabelDrawingArea _ _ = error "updateLabelDrawingArea"
 
 drawLabel :: DrawingArea -> GC -> Trace -> Int -> IO ()

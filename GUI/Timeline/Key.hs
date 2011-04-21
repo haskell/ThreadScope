@@ -5,7 +5,7 @@ import GUI.Timeline.Render.Constants
 -- Imports for GTK/Glade
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Gdk.Events
-import Graphics.Rendering.Cairo 
+import Graphics.Rendering.Cairo
 import qualified Graphics.Rendering.Cairo as C
 
 import GUI.ViewerColours
@@ -26,7 +26,7 @@ data KeyStyle = Box | Vertical
 -------------------------------------------------------------------------------
 
 addKeyElements :: Render ()
-addKeyElements 
+addKeyElements
   = do clearWhite
        selectFontFace "sans serif" FontSlantNormal FontWeightNormal
        setFontSize 12
@@ -52,7 +52,7 @@ addKeyElements' position ((Box, keyText, keyColour):rest)
        setSourceRGBA 0.0 0.0 0.0 1.0
        moveTo (position+5) 22
        textPath keyText
-       C.fill  
+       C.fill
        tExtent <- textExtents keyText
        let textW = textExtentsWidth tExtent + 10
        addKeyElements' (position + (60 `max` textW)) rest

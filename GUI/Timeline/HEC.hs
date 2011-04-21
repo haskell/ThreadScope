@@ -10,7 +10,7 @@ import GUI.State
 import GUI.Timeline.CairoDrawing
 import GUI.ViewerColours
 
-import Graphics.Rendering.Cairo 
+import Graphics.Rendering.Cairo
 import qualified Graphics.Rendering.Cairo as C
 import Graphics.UI.Gtk
 
@@ -25,7 +25,7 @@ renderHEC :: Int -> ViewParameters
 renderHEC cap params@ViewParameters{..} start end (dtree,etree) = do
   renderDurations cap params start end dtree
   when (scaleValue < detailThreshold) $
-     case etree of 
+     case etree of
        EventTree ltime etime tree ->
            renderEvents cap params ltime etime start end tree
 
@@ -46,9 +46,9 @@ renderDurations c params@ViewParameters{..} startPos endPos (DurationTreeLeaf e)
   | otherwise                = return ()
 
 renderDurations !c params@ViewParameters{..} !startPos !endPos
-        (DurationSplit s splitTime e lhs rhs runAv gcAv) 
-  | startPos < splitTime && endPos >= splitTime && 
-	  (fromIntegral (e - s) / scaleValue) <= fromIntegral detail
+        (DurationSplit s splitTime e lhs rhs runAv gcAv)
+  | startPos < splitTime && endPos >= splitTime &&
+          (fromIntegral (e - s) / scaleValue) <= fromIntegral detail
   = -- View spans both left and right sub-tree.
     -- trace (printf "hecView (average): start:%d end:%d s:%d e:%d" startPos endPos s e) $
     drawAverageDuration c params s e runAv gcAv
@@ -68,11 +68,11 @@ renderEvents :: Int -> ViewParameters
              -> Timestamp -> Timestamp -> EventNode
              -> Render ()
 
-renderEvents !c params@ViewParameters{..} !s !e !startPos !endPos 
+renderEvents !c params@ViewParameters{..} !s !e !startPos !endPos
         (EventTreeLeaf es)
   = sequence_ [ drawEvent c params e
               | e <- es, let t = time e, t >= startPos && t < endPos ]
-renderEvents !c params@ViewParameters{..} !s !e !startPos !endPos 
+renderEvents !c params@ViewParameters{..} !s !e !startPos !endPos
         (EventTreeOne ev)
   | t >= startPos && t < endPos = drawEvent c params ev
   | otherwise = return ()
@@ -103,8 +103,8 @@ inView viewStart viewEnd event
 -------------------------------------------------------------------------------
 
 drawAverageDuration :: Int -> ViewParameters
-		    -> Timestamp -> Timestamp -> Timestamp -> Timestamp
-		    -> Render ()
+                    -> Timestamp -> Timestamp -> Timestamp -> Timestamp
+                    -> Render ()
 drawAverageDuration c ViewParameters{..} startTime endTime runAv gcAv
   = do setSourceRGBAhex (if not bwMode then runningColour else black) 1.0
        when (runAv > 0) $
@@ -135,7 +135,7 @@ unscaledText text
   = do m <- getMatrix
        identityMatrix
        textPath text
-       C.fill        
+       C.fill
        setMatrix m
 
 -------------------------------------------------------------------------------
@@ -173,7 +173,7 @@ drawDuration c ViewParameters{..}
 
         -- Optionally write the reason for the thread being stopped
         -- depending on the zoom value
-       labelAt labelsMode endTime $ 
+       labelAt labelsMode endTime $
              show t ++ " " ++ showThreadStopStatus s
     where
     rectWidth = truncate (fromIntegral (endTime - startTime) / scaleValue) -- as pixels
@@ -210,12 +210,12 @@ labelAt labelsMode t str
        identityMatrix
        rotate (pi/4)
        textPath str
-       C.fill        
+       C.fill
        restore
-                    
+
 drawEvent :: Int -> ViewParameters -> GHC.Event -> Render ()
 drawEvent c params@ViewParameters{..} event
-  = case spec event of 
+  = case spec event of
       CreateThread{}   -> renderInstantEvent params event createThreadColour
       RunSpark{}       -> renderInstantEvent params event runSparkColour
       StealSpark{}     -> renderInstantEvent params event stealSparkColour
@@ -230,18 +230,18 @@ drawEvent c params@ViewParameters{..} event
       StopThread{} -> return ()
       StartGC{}    -> return ()
 
-      _ -> return () 
+      _ -> return ()
 
 renderInstantEvent :: ViewParameters -> GHC.Event -> Color -> Render ()
 renderInstantEvent ViewParameters{..} event color = do
-     setSourceRGBAhex color 1.0 
+     setSourceRGBAhex color 1.0
      setLineWidth (3 * scaleValue)
      let t = time event
      draw_line (t, hecBarOff-4) (t, hecBarOff+hecBarHeight+4)
      labelAt labelsMode t $ showEventTypeSpecificInfo (spec event)
 
 
-drawTooManyEvents :: Int -> ViewParameters -> Timestamp -> Timestamp 
+drawTooManyEvents :: Int -> ViewParameters -> Timestamp -> Timestamp
                   -> Render ()
 drawTooManyEvents c params@ViewParameters{..} start end = do
      return ()

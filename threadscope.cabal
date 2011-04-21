@@ -51,7 +51,8 @@ Executable threadscope
                      GUI.Timeline.WithViewScale,
                      GUI.Timeline.Render.Constants
 
-  ghc-options:  -Wall -fno-warn-type-defaults -fno-warn-name-shadowing
+  ghc-options:  -Wall -fwarn-tabs
+                -fno-warn-type-defaults -fno-warn-name-shadowing
                 -fno-warn-unused-do-bind
 
   if impl(ghc >= 7.0)

@@ -1,5 +1,5 @@
-module GUI.State ( 
-    ViewerState(..), 
+module GUI.State (
+    ViewerState(..),
     ViewParameters(..),
     Trace(..),
     HECs(..)
@@ -11,7 +11,7 @@ import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
 
 import Graphics.UI.Gtk
-import Graphics.Rendering.Cairo 
+import Graphics.Rendering.Cairo
 
 import Data.IORef
 import Data.Array
@@ -28,7 +28,7 @@ data ViewerState = ViewerState {
   cursorIORef       :: IORef Timestamp,
 
   -- WIDGETS
-  
+
   -- main window
   mainWindow         :: Window,
   statusBar          :: Statusbar,

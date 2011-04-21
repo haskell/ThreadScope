@@ -1,5 +1,5 @@
 module GUI.Timeline.Render.Constants (
-    ox, oy, firstTraceY, tracePad, 
+    ox, oy, firstTraceY, tracePad,
     hecTraceHeight, hecBarOff, hecBarHeight, hecLabelExtra,
     activityGraphHeight,
     ticksHeight, ticksPad

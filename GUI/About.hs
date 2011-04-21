@@ -12,7 +12,7 @@ import Data.Version (showVersion)
 -------------------------------------------------------------------------------
 
 showAboutDialog :: Window -> IO ()
-showAboutDialog parent 
+showAboutDialog parent
  = do aboutDialog <- aboutDialogNew
       logoPath <- getDataFileName "threadscope.png"
       logo <- pixbufNewFromFile logoPath

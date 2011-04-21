@@ -1,4 +1,4 @@
-module GUI.Timeline ( 
+module GUI.Timeline (
     setupTimelineView,
     renderTraces,
     timelineParamsChanged,
@@ -40,7 +40,7 @@ setupTimelineView state@ViewerState{..} = do
       "Right"  -> do scrollRight state; return True
       "Left"   -> do scrollLeft  state; return True
       _ -> if isJust mch then
-             case fromJust mch of 
+             case fromJust mch of
                '+' -> do zoomIn  state; return True
                '-' -> do zoomOut state; return True
                _   -> return True
@@ -78,7 +78,7 @@ setupTimelineView state@ViewerState{..} = do
       (ScrollUp,   [])        -> vscrollUp state
       (ScrollDown, [])        -> vscrollDown state
       _ -> return ()
-                 
+
   ------------------------------------------------------------------------
   -- Mouse button
 
@@ -159,13 +159,13 @@ setCursor state@ViewerState{..} x = do
 -------------------------------------------------------------------------------
 
 setCursorToTime :: ViewerState -> Timestamp -> IO ()
-setCursorToTime state@ViewerState{..} x 
+setCursorToTime state@ViewerState{..} x
   = do hadjValue <- adjustmentGetValue timelineAdj
        scaleValue <- readIORef scaleIORef
        -- let cursor = round (hadjValue + x * scaleValue)
        -- when debug $ printf "cursor set to: %d\n" cursor
        writeIORef cursorIORef x
-       pageSize <- adjustmentGetPageSize timelineAdj 
+       pageSize <- adjustmentGetPageSize timelineAdj
        adjustmentSetValue timelineAdj ((fromIntegral x - pageSize/2) `max` 0)
        queueRedrawTimelines state
 

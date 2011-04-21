@@ -17,7 +17,7 @@ import Control.Monad
 -- import Debug.Trace
 
 -------------------------------------------------------------------------------
--- Zoom in works by expanding the current view such that the 
+-- Zoom in works by expanding the current view such that the
 -- left hand edge of the original view remains at the same
 -- position and the zoom in factor is 2.
 -- For example, zoom into the time range 1.0 3.0
@@ -58,7 +58,7 @@ zoom factor state@ViewerState{..} = do
 
        scaleUpdateStatus state newScaleValue
        queueRedrawTimelines state
-  
+
 -------------------------------------------------------------------------------
 
 zoomToFit :: ViewerState -> IO ()
@@ -79,7 +79,7 @@ zoomToFit state@ViewerState{..} = do
            lower = -gap
            upper = fromIntegral lastTx + gap
            page  = upper + gap
-           
+
        adjustmentSetLower    timelineAdj lower
        adjustmentSetValue    timelineAdj lower
        adjustmentSetUpper    timelineAdj upper
@@ -136,8 +136,8 @@ vscroll adjust state@ViewerState{..}
        hadj_lower <- adjustmentGetLower timelineVAdj
        hadj_upper <- adjustmentGetUpper timelineVAdj
        let newValue = adjust hadj_value hadj_pagesize hadj_lower hadj_upper
-       adjustmentSetValue timelineVAdj newValue  
-       adjustmentValueChanged timelineVAdj       
+       adjustmentSetValue timelineVAdj newValue
+       adjustmentValueChanged timelineVAdj
 
 -- -----------------------------------------------------------------------------
 

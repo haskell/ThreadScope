@@ -1,4 +1,4 @@
-module GUI.Traces ( 
+module GUI.Traces (
     newHECs,
     getViewTraces
  ) where
@@ -52,4 +52,3 @@ getTracesStoreContents ViewerState{..} = go 0
       Just t  -> do
         ts <- go (n+1)
         return (t:ts)
-  

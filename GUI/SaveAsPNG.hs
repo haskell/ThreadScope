@@ -7,7 +7,7 @@ import Data.IORef
 
 -- Imports for GTK
 import Graphics.UI.Gtk
-import Graphics.Rendering.Cairo 
+import Graphics.Rendering.Cairo
 import qualified Graphics.Rendering.Cairo as C
 
 -- Imports for ThreadScope
@@ -20,9 +20,9 @@ import GUI.Traces
 -------------------------------------------------------------------------------
 
 saveAsPNG :: ViewerState -> IO ()
-saveAsPNG state@ViewerState{..} 
+saveAsPNG state@ViewerState{..}
   = liftIO $ do
-    scaleValue <- readIORef scaleIORef  
+    scaleValue <- readIORef scaleIORef
     hadj_value0 <- adjustmentGetValue timelineAdj
     let hadj_value = toWholePixels scaleValue hadj_value0
     mb_hecs <- readIORef hecsIORef
@@ -36,10 +36,10 @@ saveAsPNG state@ViewerState{..}
         let params = ViewParameters w h traces hadj_value scaleValue 1 False
                                     False
         let r = renderTraces state params traces hecs (Rectangle 0 0 w h)
-        withImageSurface C.FormatARGB32 (fromIntegral w) (fromIntegral h) 
+        withImageSurface C.FormatARGB32 (fromIntegral w) (fromIntegral h)
          $ \ surface ->
               do renderWith surface r
                  surfaceWriteToPNG surface (fn++".png")
         return ()
-    
+
 -------------------------------------------------------------------------------

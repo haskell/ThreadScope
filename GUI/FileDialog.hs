@@ -15,9 +15,9 @@ openFileDialog parentWindow
   = do dialog <- fileChooserDialogNew
                    (Just "Open Profile... ")
                    (Just parentWindow)
-	           FileChooserActionOpen
-	           [("gtk-cancel", ResponseCancel)
-	           ,("gtk-open", ResponseAccept)]
+                   FileChooserActionOpen
+                   [("gtk-cancel", ResponseCancel)
+                   ,("gtk-open", ResponseAccept)]
        widgetShow dialog
        response <- dialogRun dialog
        widgetHide dialog

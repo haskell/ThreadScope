@@ -6,7 +6,7 @@
 module GUI.ViewerColours where
 
 import Graphics.UI.Gtk
-import Graphics.Rendering.Cairo 
+import Graphics.Rendering.Cairo
 
 -------------------------------------------------------------------------------
 
@@ -75,7 +75,7 @@ blue :: Color
 blue = Color 0 0 0xFFFF
 
 cyan :: Color
-cyan = Color 0 0xFFFF 0xFFFF 
+cyan = Color 0 0xFFFF 0xFFFF
 
 magenta :: Color
 magenta = Color 0xFFFF 0 0xFFFF
@@ -113,7 +113,7 @@ yellow = Color 0xff00 0xff00 0x3300
 white :: Color
 white = Color 0xffff 0xffff 0xffff
 
--------------------------------------------------------------------------------      
+-------------------------------------------------------------------------------
 setSourceRGBAhex :: Color -> Double -> Render ()
 setSourceRGBAhex (Color r g b) t
   = setSourceRGBA (fromIntegral r/0xFFFF) (fromIntegral g/0xFFFF)
