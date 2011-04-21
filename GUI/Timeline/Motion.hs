@@ -10,7 +10,6 @@ import GUI.State
 
 import Graphics.UI.Gtk
 
-import Data.Maybe
 import Data.IORef
 import Control.Monad
 -- import Text.Printf

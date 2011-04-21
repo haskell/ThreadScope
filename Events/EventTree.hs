@@ -17,8 +17,6 @@ import Events.EventDuration
 import qualified GHC.RTS.Events as GHC
 import GHC.RTS.Events hiding (Event)
 
-import Data.List
--- import Debug.Trace
 import Text.Printf
 
 -------------------------------------------------------------------------------

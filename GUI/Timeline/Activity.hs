@@ -8,17 +8,13 @@ import GUI.State
 import Events.EventTree
 import Events.EventDuration
 import GUI.ViewerColours
-import GUI.Timeline.CairoDrawing
 
 import GHC.RTS.Events hiding (Event, GCWork, GCIdle)
 
 import Graphics.Rendering.Cairo
-import qualified Graphics.Rendering.Cairo as C
 
 import Control.Monad
 import Data.List
-import Text.Printf
-import Debug.Trace
 
 -- ToDo:
 --  - we average over the slice, but the point is drawn at the beginning

@@ -2,7 +2,6 @@ module GUI.SaveAsPNG
 where
 
 -- Imports from Haskell library
-import Control.Monad
 import Data.IORef
 
 -- Imports for GTK
@@ -14,7 +13,6 @@ import qualified Graphics.Rendering.Cairo as C
 import GUI.EventsWindow
 import GUI.Timeline.Render
 import GUI.State
-import GUI.Timeline
 import GUI.Traces
 
 -------------------------------------------------------------------------------

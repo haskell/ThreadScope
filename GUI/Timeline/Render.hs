@@ -26,7 +26,6 @@ import Graphics.UI.Gtk.Gdk.Events as Old
 import Graphics.Rendering.Cairo  as C
 import Graphics.UI.Gtk.Gdk.GC
 
-import Data.Maybe
 import Data.IORef
 import Control.Monad
 import Text.Printf

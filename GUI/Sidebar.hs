@@ -8,11 +8,7 @@ import GUI.State
 import GUI.Timeline
 
 import Graphics.UI.Gtk
-import Graphics.UI.Gtk.Gdk.EventM
 
-import Data.IORef
-import Control.Monad
-import Control.Monad.Trans
 
 -- XXX: we should be using a Model here, but not sure how to do that
 -- with Glade.

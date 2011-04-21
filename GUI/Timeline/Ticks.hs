@@ -10,7 +10,6 @@ import Graphics.Rendering.Cairo
 import qualified Graphics.Rendering.Cairo as C
 
 -- Imports for GHC Events
-import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
 
 import Control.Monad

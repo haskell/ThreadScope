@@ -17,13 +17,11 @@ import GHC.RTS.Events hiding (Event)
 
 import System.IO
 import Data.Array
-import qualified Data.Function
 import Data.IORef
 import Data.List
 import Text.Printf
 import System.FilePath
 import Control.Monad
-import Data.Function
 import Control.Concurrent
 import Control.Exception
 
