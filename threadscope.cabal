@@ -28,6 +28,7 @@ Executable threadscope
                      Events.EventTree, 
                      Events.ReadEvents,
                      Events.TestEvents,
+                     GUI.Main
                      GUI.EventsWindow, 
                      GUI.Dialogs,
                      Options, 
