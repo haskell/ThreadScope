@@ -1,6 +1,6 @@
-module Timeline.Key ( updateKeyDrawingArea )  where
+module GUI.Timeline.Key ( updateKeyDrawingArea )  where
 
-import Timeline.Render.Constants
+import GUI.Timeline.Render.Constants
 
 -- Imports for GTK/Glade
 import Graphics.UI.Gtk
@@ -8,8 +8,8 @@ import Graphics.UI.Gtk.Gdk.Events
 import Graphics.Rendering.Cairo 
 import qualified Graphics.Rendering.Cairo as C
 
-import ViewerColours
-import CairoDrawing
+import GUI.ViewerColours
+import GUI.Timeline.CairoDrawing
 
 -------------------------------------------------------------------------------
 

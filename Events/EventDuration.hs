@@ -1,7 +1,7 @@
 -- This module supports a duration-based data-type to represent thread
 -- execution and GC information.
 
-module EventDuration ( 
+module Events.EventDuration ( 
     EventDuration(..),
     isGCDuration,
     startTimeOf, endTimeOf, durationOf,

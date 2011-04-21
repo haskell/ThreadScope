@@ -3,7 +3,7 @@
 --- $Source: //depot/satnams/haskell/ThreadScope/CairoDrawing.hs $
 -------------------------------------------------------------------------------
 
-module CairoDrawing
+module GUI.Timeline.CairoDrawing
 where
 
 import Graphics.Rendering.Cairo

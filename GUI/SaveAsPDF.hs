@@ -1,4 +1,4 @@
-module SaveAsPDF
+module GUI.SaveAsPDF
 where
 
 -- Imports from Haskell library
@@ -11,11 +11,11 @@ import Graphics.Rendering.Cairo
 import qualified Graphics.Rendering.Cairo as C
 
 -- Imports for ThreadScope
-import EventsWindow
-import Timeline.Render
-import State
-import Timeline
-import Traces
+import GUI.EventsWindow
+import GUI.Timeline.Render
+import GUI.State
+import GUI.Timeline
+import GUI.Traces
 
 -------------------------------------------------------------------------------
 

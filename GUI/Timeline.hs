@@ -1,4 +1,4 @@
-module Timeline ( 
+module GUI.Timeline ( 
     setupTimelineView,
     renderTraces,
     timelineParamsChanged,
@@ -7,11 +7,11 @@ module Timeline (
     setCursorToTime
  ) where
 
-import Timeline.Motion
-import Timeline.Render
-import Timeline.Key
+import GUI.Timeline.Motion
+import GUI.Timeline.Render
+import GUI.Timeline.Key
 
-import State
+import GUI.State
 import GHC.RTS.Events
 
 import Graphics.UI.Gtk

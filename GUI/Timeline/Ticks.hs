@@ -1,10 +1,10 @@
-module Timeline.Ticks (
+module GUI.Timeline.Ticks (
     renderTicks
   ) where
 
-import Timeline.Render.Constants
-import CairoDrawing
-import ViewerColours
+import GUI.Timeline.Render.Constants
+import GUI.Timeline.CairoDrawing
+import GUI.ViewerColours
 
 import Graphics.Rendering.Cairo 
 import qualified Graphics.Rendering.Cairo as C

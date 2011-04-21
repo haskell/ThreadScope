@@ -1,14 +1,14 @@
-module ReadEvents ( 
+module Events.ReadEvents ( 
     registerEventsFromFile, registerEventsFromTrace
   ) where
 
-import EventTree
-import State
-import TestEvents
-import EventDuration
-import Timeline
-import Traces
-import Utils
+import Events.EventTree
+import GUI.State
+import Events.TestEvents
+import Events.EventDuration
+import GUI.Timeline
+import GUI.Traces
+import GUI.Utils
 
 import Graphics.UI.Gtk hiding (on)
 

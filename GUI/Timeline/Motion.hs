@@ -1,12 +1,12 @@
-module Timeline.Motion (
+module GUI.Timeline.Motion (
     zoomIn, zoomOut, zoomToFit,
     scrollLeft, scrollRight, scrollToBeginning, scrollToEnd, centreOnCursor,
     vscrollDown, vscrollUp,
     queueRedrawTimelines
   ) where
 
-import Timeline.Render.Constants
-import State
+import GUI.Timeline.Render.Constants
+import GUI.State
 
 import Graphics.UI.Gtk
 

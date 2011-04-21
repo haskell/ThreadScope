@@ -1,4 +1,4 @@
-module Utils ( withBackgroundProcessing ) where
+module GUI.Utils ( withBackgroundProcessing ) where
 
 import Graphics.UI.Gtk
 import Control.Exception

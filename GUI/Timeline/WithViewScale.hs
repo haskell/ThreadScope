@@ -1,7 +1,7 @@
-module Timeline.WithViewScale
+module GUI.Timeline.WithViewScale
 where
 
-import State
+import GUI.State
 
 import Graphics.Rendering.Cairo
 

@@ -1,14 +1,14 @@
-module Timeline.HEC (
+module GUI.Timeline.HEC (
     renderHEC
   ) where
 
-import Timeline.Render.Constants
+import GUI.Timeline.Render.Constants
 
-import EventTree
-import EventDuration
-import State
-import CairoDrawing
-import ViewerColours
+import Events.EventTree
+import Events.EventDuration
+import GUI.State
+import GUI.Timeline.CairoDrawing
+import GUI.ViewerColours
 
 import Graphics.Rendering.Cairo 
 import qualified Graphics.Rendering.Cairo as C

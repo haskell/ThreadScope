@@ -1,4 +1,4 @@
-module TestEvents (testTrace)
+module Events.TestEvents (testTrace)
 where
 
 import GHC.RTS.Events 

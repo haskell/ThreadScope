@@ -1,4 +1,4 @@
-module Timeline.Render (
+module GUI.Timeline.Render (
     exposeTraceView,
     renderTraces,
     updateLabelDrawingArea,
@@ -6,18 +6,18 @@ module Timeline.Render (
     toWholePixels
   ) where
 
-import Timeline.Render.Constants
-import Timeline.Motion
-import Timeline.Ticks
-import Timeline.HEC
-import Timeline.Activity
-import Timeline.RenderBookmarks
-import Timeline.WithViewScale
+import GUI.Timeline.Render.Constants
+import GUI.Timeline.Motion
+import GUI.Timeline.Ticks
+import GUI.Timeline.HEC
+import GUI.Timeline.Activity
+import GUI.Timeline.RenderBookmarks
+import GUI.Timeline.WithViewScale
 
-import State
-import ViewerColours
-import Traces
-import CairoDrawing
+import GUI.State
+import GUI.ViewerColours
+import GUI.Traces
+import GUI.Timeline.CairoDrawing
 
 import GHC.RTS.Events hiding (Event)
 

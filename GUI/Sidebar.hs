@@ -1,11 +1,11 @@
-module Sidebar (
+module GUI.Sidebar (
     setupSideBar,
     sidebarBookmarks,
     sidebarTraces,
   ) where
 
-import State
-import Timeline
+import GUI.State
+import GUI.Timeline
 
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Gdk.EventM

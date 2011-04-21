@@ -1,4 +1,4 @@
-module EventTree (
+module Events.EventTree (
      DurationTree(..),
      mkDurationTree,
 
@@ -12,7 +12,7 @@ module EventTree (
      reportEventTree, eventTreeMaxDepth,
   ) where
 
-import EventDuration
+import Events.EventDuration
 
 import qualified GHC.RTS.Events as GHC
 import GHC.RTS.Events hiding (Event)

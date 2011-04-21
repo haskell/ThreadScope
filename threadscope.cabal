@@ -14,8 +14,9 @@ Data-files:	     threadscope.ui, threadscope.png
 cabal-version: 	     >= 1.6
 Category:            Thread profiling utility
 Synopsis:            A graphical thread profiler.
+
 Executable threadscope
-  Main-is:           ThreadScope.hs
+  Main-is:           Main.hs
   Build-Depends:     base >= 4.0 && < 5, 
                      gtk >= 0.11, cairo, glib,
                      binary, array, mtl, filepath,
@@ -23,34 +24,32 @@ Executable threadscope
                      containers >= 0.2 && < 0.5
   extensions:        RecordWildCards, BangPatterns, PatternGuards,
                      CPP
-  Other-Modules:     About, 
-                     CairoDrawing, 
-                     EventDuration, 
-                     EventTree, 
-                     EventsWindow, 
-                     FileDialog, 
+  Other-Modules:     Events.EventDuration, 
+                     Events.EventTree, 
+                     Events.ReadEvents,
+                     Events.TestEvents,
+                     GUI.About, 
+                     GUI.EventsWindow, 
+                     GUI.FileDialog, 
                      Options, 
-                     ReadEvents, 
-                     SaveAsPDF, 
-                     SaveAsPNG, 
-                     Setup,
-                     ShowEvents,
-                     Sidebar,
-                     State,
-                     TestEvents,
-                     Timeline,
-                     Traces,
-                     Utils,
-                     ViewerColours,
-                     Timeline.Activity,
-                     Timeline.HEC,
-                     Timeline.Key,
-                     Timeline.Motion,
-                     Timeline.Render,
-                     Timeline.RenderBookmarks,
-                     Timeline.Ticks,
-                     Timeline.WithViewScale,
-                     Timeline.Render.Constants
+                     GUI.SaveAsPDF, 
+                     GUI.SaveAsPNG, 
+                     GUI.Sidebar,
+                     GUI.State,
+                     GUI.Timeline,
+                     GUI.Traces,
+                     GUI.Utils,
+                     GUI.ViewerColours,
+                     GUI.Timeline.Activity,
+                     GUI.Timeline.CairoDrawing, 
+                     GUI.Timeline.HEC,
+                     GUI.Timeline.Key,
+                     GUI.Timeline.Motion,
+                     GUI.Timeline.Render,
+                     GUI.Timeline.RenderBookmarks,
+                     GUI.Timeline.Ticks,
+                     GUI.Timeline.WithViewScale,
+                     GUI.Timeline.Render.Constants
 
   ghc-options:  -Wall -fno-warn-type-defaults -fno-warn-name-shadowing
                 -fno-warn-unused-do-bind

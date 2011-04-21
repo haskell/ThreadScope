@@ -1,11 +1,11 @@
-module State ( 
+module GUI.State ( 
     ViewerState(..), 
     ViewParameters(..),
     Trace(..),
     HECs(..)
   ) where
 
-import EventTree
+import Events.EventTree
 
 import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)

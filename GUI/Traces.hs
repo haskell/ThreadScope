@@ -1,9 +1,9 @@
-module Traces ( 
+module GUI.Traces ( 
     newHECs,
     getViewTraces
  ) where
 
-import State
+import GUI.State
 
 import Graphics.UI.Gtk
 import Data.Tree

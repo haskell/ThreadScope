@@ -1,14 +1,14 @@
-module Timeline.Activity (
+module GUI.Timeline.Activity (
       renderActivity
   ) where
 
-import Timeline.Render.Constants
+import GUI.Timeline.Render.Constants
 
-import State
-import EventTree
-import EventDuration
-import ViewerColours
-import CairoDrawing
+import GUI.State
+import Events.EventTree
+import Events.EventDuration
+import GUI.ViewerColours
+import GUI.Timeline.CairoDrawing
 
 import GHC.RTS.Events hiding (Event, GCWork, GCIdle)
 

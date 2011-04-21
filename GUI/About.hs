@@ -3,7 +3,7 @@
 --- $Source: //depot/satnams/haskell/ThreadScope/About.hs $
 -------------------------------------------------------------------------------
 
-module About where
+module GUI.About where
 
 import Graphics.UI.Gtk
 import Paths_threadscope

@@ -4,16 +4,16 @@
 -- and then renders the bookmarks in view.
 -------------------------------------------------------------------------------
 
-module Timeline.RenderBookmarks (renderBookmarks)
+module GUI.Timeline.RenderBookmarks (renderBookmarks)
 where
 
-import Timeline.WithViewScale
+import GUI.Timeline.WithViewScale
 
 import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo
-import State
-import CairoDrawing
-import ViewerColours
+import GUI.State
+import GUI.Timeline.CairoDrawing
+import GUI.ViewerColours
 
 import GHC.RTS.Events hiding (Event)
 

@@ -1,4 +1,4 @@
-module EventsWindow (
+module GUI.EventsWindow (
     setupEventsWindow,
     updateEventsWindow,
     eventsWindowResize,
@@ -6,9 +6,9 @@ module EventsWindow (
     drawEvents
   ) where
 
-import State
-import ViewerColours
-import Timeline
+import GUI.State
+import GUI.ViewerColours
+import GUI.Timeline
 
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Gdk.EventM

@@ -3,7 +3,7 @@
 --- $Source: //depot/satnams/haskell/ThreadScope/FileDialog.hs $
 -------------------------------------------------------------------------------
 
-module FileDialog
+module GUI.FileDialog
 where
 
 import Graphics.UI.Gtk
