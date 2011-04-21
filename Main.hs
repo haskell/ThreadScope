@@ -28,8 +28,7 @@ import Paths_threadscope
 
 -- Imports for ThreadScope
 import GUI.State
-import GUI.About
-import GUI.FileDialog
+import GUI.Dialogs
 import Options
 import Events.ReadEvents
 import GUI.EventsWindow
@@ -108,9 +107,8 @@ startup options state@ViewerState{..}
        -- The File:Open menu option can be used to specify an
        -- eventlog file.
        openMenuItem `onActivateLeaf` do
-         filename <- openFileDialog mainWindow
-         when (isJust filename) $
-           registerEventsFromFile (fromJust filename) state
+         openFileDialog mainWindow $ \filename ->
+           registerEventsFromFile filename state
 
        ------------------------------------------------------------------------
        -- Save as PDF functionality
@@ -153,7 +151,7 @@ startup options state@ViewerState{..}
 
        ------------------------------------------------------------------------
        -- About dialog
-       aboutMenuItem `onActivateLeaf` showAboutDialog mainWindow
+       aboutMenuItem `onActivateLeaf` aboutDialog mainWindow
 
        ------------------------------------------------------------------------
        -- Quit behaviour
