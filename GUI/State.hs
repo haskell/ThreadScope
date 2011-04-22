@@ -34,18 +34,10 @@ data ViewerState = ViewerState {
   -- main window
   mainWindow         :: Window,
   statusBar          :: Statusbar,
-  eventsBox          :: Widget,
 
   -- menu items
   bwToggle           :: CheckMenuItem,
   sidebarToggle      :: CheckMenuItem,
-  eventsToggle       :: CheckMenuItem,
-  openMenuItem       :: MenuItem,
-  saveAsPDFMenuItem  :: MenuItem,
-  saveAsPNGMenuItem  :: MenuItem,
-  reloadMenuItem     :: MenuItem,
-  quitMenuItem       :: MenuItem,
-  aboutMenuItem      :: MenuItem,
 
   -- Timeline view
   timelineDrawingArea      :: DrawingArea,
@@ -71,8 +63,6 @@ data ViewerState = ViewerState {
   eventsVScrollbar   :: VScrollbar,
   eventsAdj          :: Adjustment,
   eventsDrawingArea  :: DrawingArea,
-  eventsTextEntry    :: Entry,
---  eventsFindButton   :: ToolButton,
 
   -- sidebar
   sidebarBox         :: Widget,
