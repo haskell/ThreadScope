@@ -7,21 +7,14 @@ module GUI.Main (runGUI) where
 -- Imports for GTK
 import Graphics.UI.Gtk as Gtk
 import System.Glib.GError (failOnGError)
-import Graphics.Rendering.Cairo
-import qualified Graphics.Rendering.Cairo as C
 import Graphics.UI.Gtk.ModelView as New
 
 -- Imports from Haskell library
-import System.Environment
 import Control.Monad
 import Data.IORef
-import Data.Maybe
-import qualified Data.Function
-import Data.List
 #ifndef mingw32_HOST_OS
 import System.Posix
 #endif
-import Control.Concurrent
 import Control.Exception
 
 import Paths_threadscope
@@ -35,7 +28,6 @@ import GUI.Timeline
 import GUI.SaveAsPDF
 import GUI.SaveAsPNG
 import GUI.Sidebar
-import GUI.Traces
 import qualified GUI.ConcurrencyControl as ConcurrencyControl
 
 -------------------------------------------------------------------------------
@@ -49,7 +41,6 @@ runGUI filename traceName debug = do
 #ifndef mingw32_HOST_OS
   --TODO: this seems suspicious, it should not be necessary.
   -- If it is necessary perhaps mainQuit is better than thowing an exception.
-  main <- myThreadId
   installHandler sigINT (Catch (postGUIAsync (throw UserInterrupt))) Nothing
 #endif
 
@@ -70,10 +61,7 @@ startup filename traceName debug
 
        -- IORefs are used to communicate informaiton about the eventlog
        -- to the callback functions for windows, buttons etc.
-       capabilitiesIORef <- newIORef Nothing
        hecsIORef         <- newIORef Nothing
-       lastTxIORef       <- newIORef 0
-       eventArrayIORef   <- newIORef (error "eventArrayIORef")
        scaleIORef        <- newIORef defaultScaleValue
        cursorIORef       <- newIORef 0
 
@@ -99,7 +87,6 @@ startup filename traceName debug
        timelineAdj         <- rangeGetAdjustment timelineHScrollbar
        timelineVAdj        <- rangeGetAdjustment timelineVScrollbar
 
-       timelineTraces     <- newIORef []
        timelinePrevView   <- newIORef Nothing
 
        zoomInButton       <- getWidget castToToolButton "cpus_zoomin"
@@ -122,7 +109,6 @@ startup filename traceName debug
    --  eventsFindButton   <- getWidget castToToolButton "events_find"
 
        sidebarBox         <- getWidget castToWidget   "sidebar"
-       bookmarkVBox       <- getWidget castToVBox     "bookmarks_vbox"
        bookmarkTreeView   <- getWidget castToTreeView "bookmark_list"
        tracesTreeView     <- getWidget castToTreeView "traces_list"
 

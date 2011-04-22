@@ -1,7 +1,5 @@
 module GUI.Sidebar (
     setupSideBar,
-    sidebarBookmarks,
-    sidebarTraces,
   ) where
 
 import GUI.State
@@ -10,11 +8,6 @@ import GUI.Timeline
 import Graphics.UI.Gtk
 
 
--- XXX: we should be using a Model here, but not sure how to do that
--- with Glade.
-sidebarTraces, sidebarBookmarks :: Int
-sidebarTraces    = 0
-sidebarBookmarks = 1
 
 setupSideBar :: ViewerState -> IO ()
 setupSideBar state@ViewerState{..} = do
