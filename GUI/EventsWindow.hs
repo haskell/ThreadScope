@@ -1,9 +1,5 @@
 module GUI.EventsWindow (
     setupEventsWindow,
-    updateEventsWindow,
-    eventsWindowResize,
-    getCursorLine,
-    drawEvents
   ) where
 
 import GUI.State

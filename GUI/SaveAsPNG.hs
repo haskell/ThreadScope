@@ -10,7 +10,6 @@ import Graphics.Rendering.Cairo
 import qualified Graphics.Rendering.Cairo as C
 
 -- Imports for ThreadScope
-import GUI.EventsWindow
 import GUI.Timeline.Render
 import GUI.State
 import GUI.Traces
@@ -30,7 +29,6 @@ saveAsPNG state@ViewerState{..}
       Just hecs -> do
         (w, h) <- widgetGetSize timelineDrawingArea
         traces    <- getViewTraces state
-        cursorpos <- getCursorLine state
         let params = ViewParameters w h traces hadj_value scaleValue 1 False
                                     False
         let r = renderTraces state params traces hecs (Rectangle 0 0 w h)
