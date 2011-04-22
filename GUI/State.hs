@@ -37,7 +37,6 @@ data ViewerState = ViewerState {
 
   -- menu items
   bwToggle           :: CheckMenuItem,
-  sidebarToggle      :: CheckMenuItem,
 
   -- Timeline view
   timelineDrawingArea      :: DrawingArea,
