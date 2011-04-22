@@ -1,45 +1,69 @@
 module GUI.Sidebar (
-    setupSideBar,
+    Sidebar,
+    sidebarNew,
+    SidebarActions(..),
+
+    sidebarSetVisibility
   ) where
 
-import GUI.State
-import GUI.Timeline
+import GUI.State (Trace(..))
 
 import Graphics.UI.Gtk
 
 
+-- | Abstract sidebar object.
+--
+data Sidebar = Sidebar {
+       sidebarBox :: Widget
+     }
 
-setupSideBar :: ViewerState -> IO ()
-setupSideBar state@ViewerState{..} = do
-  on sidebarToggle checkMenuItemToggled $ do
-     showSidebar <- checkMenuItemGetActive sidebarToggle
-     set sidebarBox [ widgetVisible := showSidebar ]
+-- | The actions to take in response to sidebar events.
+--
+data SidebarActions = SidebarActions {
+       sidebarTraceToggled :: IO ()
+     }
 
-  traceColumn <- treeViewColumnNew
 
-  textcell <- cellRendererTextNew
-  togglecell <- cellRendererToggleNew
+sidebarSetVisibility :: Sidebar -> Bool -> IO ()
+sidebarSetVisibility sidebar visible =
+  set (sidebarBox sidebar) [ widgetVisible := visible ]
 
-  treeViewColumnPackStart traceColumn textcell True
-  treeViewColumnPackEnd   traceColumn togglecell False
 
-  cellLayoutSetAttributes traceColumn textcell tracesStore $
-          \(t,bool) -> case t of
-                         TraceGroup str -> [cellText := str]
-                         TraceHEC   n   -> [cellText := show n]
-                         TraceThread n  -> [cellText := show n]
-                         TraceActivity  -> [cellText := "Activity Profile"]
+sidebarNew :: TreeStore (Trace, Bool) --TODO: eliminate this param
+           -> Builder -> SidebarActions -> IO Sidebar
+sidebarNew tracesStore builder actions = do
 
-  cellLayoutSetAttributes traceColumn togglecell tracesStore $
-          \(str,bool) -> [cellToggleActive := bool]
+    let getWidget cast = builderGetObject builder cast
 
-  on togglecell cellToggled $ \str ->  do
-    let p = stringToTreePath str
-    (str,bool) <- treeStoreGetValue tracesStore p
-    treeStoreSetValue tracesStore p (str, not bool)
-    timelineParamsChanged state
+    sidebarBox      <- getWidget castToWidget   "sidebar"
+    tracesTreeView  <- getWidget castToTreeView "traces_tree"
 
-  treeViewAppendColumn tracesTreeView traceColumn
+    traceColumn <- treeViewColumnNew
+    textcell    <- cellRendererTextNew
+    togglecell  <- cellRendererToggleNew
 
-  return ()
+    treeViewColumnPackStart traceColumn textcell   True
+    treeViewColumnPackStart traceColumn togglecell False
+    treeViewAppendColumn tracesTreeView traceColumn
 
+    treeViewSetModel tracesTreeView tracesStore
+
+    cellLayoutSetAttributes traceColumn textcell tracesStore $ \(tr, _) ->
+      [ cellText := renderTrace tr ]
+
+    cellLayoutSetAttributes traceColumn togglecell tracesStore $ \(_, bool) ->
+      [ cellToggleActive := bool ]
+
+    on togglecell cellToggled $ \str ->  do
+      let tp = stringToTreePath str
+      (str, bool) <- treeStoreGetValue tracesStore tp
+      treeStoreSetValue tracesStore tp (str, not bool)
+      sidebarTraceToggled actions
+
+    return Sidebar {..}
+
+  where
+    renderTrace (TraceGroup str) = str
+    renderTrace (TraceHEC    n)  = show n
+    renderTrace (TraceThread n)  = show n
+    renderTrace (TraceActivity)  = "Activity Profile"

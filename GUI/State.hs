@@ -64,9 +64,6 @@ data ViewerState = ViewerState {
   eventsAdj          :: Adjustment,
   eventsDrawingArea  :: DrawingArea,
 
-  -- sidebar
-  sidebarBox         :: Widget,
-
   -- Bookmarks
   addBookmarkButton  :: ToolButton,
   deleteBookmarkButton  :: ToolButton,
@@ -75,7 +72,6 @@ data ViewerState = ViewerState {
   bookmarkStore      :: ListStore Timestamp,
 
   -- Traces
-  tracesTreeView     :: TreeView,
   tracesStore        :: TreeStore (Trace,Bool)
   }
 

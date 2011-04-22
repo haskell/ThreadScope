@@ -108,9 +108,7 @@ startup filename traceName debug
    --  eventsTextEntry    <- getWidget castToEntry      "events_entry"
    --  eventsFindButton   <- getWidget castToToolButton "events_find"
 
-       sidebarBox         <- getWidget castToWidget   "sidebar"
        bookmarkTreeView   <- getWidget castToTreeView "bookmark_list"
-       tracesTreeView     <- getWidget castToTreeView "traces_list"
 
        -- Bookmarks
        addBookmarkButton    <- getWidget castToToolButton "add_bookmark_button"
@@ -129,8 +127,9 @@ startup filename traceName debug
        New.treeViewAppendColumn bookmarkTreeView bookmarkColumn
 
        -- Traces
+       --FIXME: this should almost certainly be constructed elsewhere
+       -- e.g. Traces or Sidebar
        tracesStore <- treeStoreNew []
-       treeViewSetModel tracesTreeView tracesStore
 
        concCtl <- ConcurrencyControl.start
 
@@ -210,7 +209,11 @@ startup filename traceName debug
        ------------------------------------------------------------------------
        -- Sidebar
 
-       setupSideBar state
+       sidebar <- sidebarNew tracesStore builder SidebarActions {
+           sidebarTraceToggled = timelineParamsChanged state
+         }
+       on sidebarToggle checkMenuItemToggled $
+         sidebarSetVisibility sidebar =<< checkMenuItemGetActive sidebarToggle
 
        ------------------------------------------------------------------------
        -- Quit
