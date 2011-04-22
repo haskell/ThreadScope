@@ -1,16 +1,21 @@
 module GUI.EventsWindow (
-    setupEventsWindow,
+    EventsWindow,
+    eventsWindowNew,
+    eventsWindowSetVisibility,
+
+    eventsWindowGetCursorLine,
+    eventsWindowJumpToBeginning,
+    eventsWindowJumpToEnd,
+    eventsWindowJumpToPosition,
   ) where
 
-import GUI.State
+import GUI.State (HECs(..))
 import GUI.ViewerColours
-import GUI.Timeline
 
 import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo
 
 import GHC.RTS.Events as GHC
-import Graphics.UI.Gtk.ModelView as New
 
 import Control.Monad.Reader
 import Data.Array
@@ -19,28 +24,63 @@ import Text.Printf
 
 -------------------------------------------------------------------------------
 
-setupEventsWindow :: ViewerState -> IO ()
-setupEventsWindow state@ViewerState{..} = do
+data EventsWindow = EventsWindow {
+       eventsFontExtents  :: FontExtents,
+       eventsCursorIORef  :: IORef (Maybe (Timestamp, Int)),
+       eventsAdj          :: Adjustment,
+       eventsDrawingArea  :: DrawingArea,
+       eventsBox          :: Widget,
+
+       --TODO: eliminate, these are **shared** not private IORefs !!
+       -- Should instead have methods for updating the display state
+       -- and events for when the cursor is changed. Let the interaction
+       -- module hold the state.
+       hecsIORef          :: IORef (Maybe HECs),
+       cursorIORef        :: IORef Timestamp
+     }
+
+-------------------------------------------------------------------------------
+
+eventsWindowSetVisibility :: EventsWindow -> Bool -> IO ()
+eventsWindowSetVisibility sidebar visible =
+  set (eventsBox sidebar) [ widgetVisible := visible ]
+
+-------------------------------------------------------------------------------
+
+eventsWindowNew :: Bool -> Builder
+                -> IORef (Maybe HECs) -> IORef Timestamp --TODO: eliminate
+                -> IO EventsWindow
+eventsWindowNew debug builder hecsIORef cursorIORef = do
+
+  let getWidget cast = builderGetObject builder cast
+  eventsCursorIORef  <- newIORef Nothing
+  eventsBox          <- getWidget castToWidget "eventsbox"
+  eventsVScrollbar   <- getWidget castToVScrollbar "eventsVScroll"
+  eventsAdj          <- rangeGetAdjustment eventsVScrollbar
+  eventsDrawingArea  <- getWidget castToDrawingArea "eventsDrawingArea"
 
   -- make the background white
   widgetModifyBg eventsDrawingArea StateNormal (Color 0xffff 0xffff 0xffff)
 
-  adj <- rangeGetAdjustment eventsVScrollbar
-  adjustmentSetLower adj 0
-  adjustmentSetStepIncrement adj 4
+  adjustmentSetLower         eventsAdj 0
+  adjustmentSetStepIncrement eventsAdj 4
 
   widgetSetCanFocus eventsDrawingArea True
 
-  on eventsDrawingArea configureEvent $ eventsWindowResize state
+  eventsFontExtents <- withImageSurface FormatARGB32 0 0 $ \s ->
+                         renderWith s eventsFont
 
-  on eventsDrawingArea exposeEvent $ updateEventsWindow state
+  let eventsWin = EventsWindow {..}
+
+  on eventsDrawingArea configureEvent $ eventsWindowResize eventsWin
+
+  on eventsDrawingArea exposeEvent $ updateEventsWindow eventsWin debug
 
   on eventsDrawingArea buttonPressEvent $ tryEvent $ do
-      button <- eventButton
       (_,y)  <- eventCoordinates
       liftIO $ do
         widgetGrabFocus eventsDrawingArea
-        setCursor state y
+        setCursor eventsWin y
 
   on eventsDrawingArea focusInEvent $ liftIO $ do
      f <- get eventsDrawingArea widgetHasFocus
@@ -62,75 +102,49 @@ setupEventsWindow state@ViewerState{..} = do
   on eventsDrawingArea scrollEvent $ do
       dir <- eventScrollDirection
       liftIO $ do
-        val  <- adjustmentGetValue adj
-        upper    <- adjustmentGetUpper adj
-        pagesize <- adjustmentGetPageSize adj
-        step <- adjustmentGetStepIncrement adj
+        val  <- adjustmentGetValue eventsAdj
+        upper    <- adjustmentGetUpper eventsAdj
+        pagesize <- adjustmentGetPageSize eventsAdj
+        step <- adjustmentGetStepIncrement eventsAdj
         case dir of
-           ScrollUp   -> set adj [ adjustmentValue := val - step ]
-           ScrollDown -> set adj [ adjustmentValue := min (val + step) (upper - pagesize) ]
+           ScrollUp   -> set eventsAdj [ adjustmentValue := val - step ]
+           ScrollDown -> set eventsAdj [ adjustmentValue := min (val + step) (upper - pagesize) ]
            _          -> return ()
         return True
 
-  onValueChanged adj $
+  onValueChanged eventsAdj $
      widgetQueueDraw eventsDrawingArea
 
-  onToolButtonClicked firstButton $
-     set adj [ adjustmentValue := 0 ]
-
-  onToolButtonClicked lastButton $ do
-     upper    <- adjustmentGetUpper adj
-     pagesize <- adjustmentGetPageSize adj
-     let newval = max 0 (upper - pagesize)
-     set adj [ adjustmentValue := newval ]
-
-  onToolButtonClicked centreButton $ do
-     cursorpos <- getCursorLine state
-     pagesize  <- adjustmentGetPageSize adj
-     let newval = max 0 (cursorpos - round pagesize `quot` 2)
-     set adj [ adjustmentValue := fromIntegral newval ]
-
-  -- Button for adding the cursor position to the boomark list
-  onToolButtonClicked addBookmarkButton  $ do
-     when debug $ putStrLn "Add bookmark\n"
-     cursorPos <- readIORef cursorIORef
-     New.listStoreAppend bookmarkStore cursorPos
-     queueRedrawTimelines state
-
-  -- Button for deleting a bookmark
-  onToolButtonClicked deleteBookmarkButton  $ do
-    when debug $ putStrLn "Delete bookmark\n"
-    sel <- treeViewGetSelection bookmarkTreeView
-    selection <- treeSelectionGetSelected sel
-    case selection of
-      Nothing -> return ()
-      Just (TreeIter _ pos _ _) -> listStoreRemove bookmarkStore (fromIntegral pos)
-    queueRedrawTimelines state
-
-  -- Button for jumping to bookmark
-  onToolButtonClicked gotoBookmarkButton $ do
-    sel <- treeViewGetSelection bookmarkTreeView
-    selection <- treeSelectionGetSelected sel
-    case selection of
-      Nothing -> return ()
-      Just (TreeIter _ pos _ _) -> do
-        l <- listStoreToList bookmarkStore
-        when debug $ putStrLn ("gotoBookmark: " ++ show l++ " pos = " ++ show pos)
-        setCursorToTime state (l!!(fromIntegral pos))
-    queueRedrawTimelines state
-
-  exts <- withImageSurface FormatARGB32 0 0 $ \s -> renderWith s eventsFont
-  writeIORef eventsFontExtents exts
-
-  return ()
+  return eventsWin
 
 -------------------------------------------------------------------------------
 
-eventsWindowResize :: ViewerState -> EventM EConfigure Bool
-eventsWindowResize state@ViewerState{..} = liftIO $ do
+--TODO: amagamate the following into one function eventsWindowSetCursorLine
+
+eventsWindowJumpToBeginning :: EventsWindow -> IO ()
+eventsWindowJumpToBeginning EventsWindow{..} =
+  set eventsAdj [ adjustmentValue := 0 ]
+
+eventsWindowJumpToEnd :: EventsWindow -> IO ()
+eventsWindowJumpToEnd EventsWindow{..} = do
+  upper    <- adjustmentGetUpper eventsAdj
+  pagesize <- adjustmentGetPageSize eventsAdj
+  let newval = max 0 (upper - pagesize)
+  set eventsAdj [ adjustmentValue := newval ]
+
+eventsWindowJumpToPosition :: EventsWindow -> Int -> IO ()
+eventsWindowJumpToPosition EventsWindow{..} pos = do
+  pagesize  <- adjustmentGetPageSize eventsAdj
+  let newval = max 0 (pos - round pagesize `quot` 2)
+  set eventsAdj [ adjustmentValue := fromIntegral newval ]
+
+
+-------------------------------------------------------------------------------
+
+eventsWindowResize :: EventsWindow -> EventM EConfigure Bool
+eventsWindowResize EventsWindow{..} = liftIO $ do
   (_,h) <- widgetGetSize eventsDrawingArea
-  win <- widgetGetDrawWindow eventsDrawingArea
-  exts <- readIORef eventsFontExtents
+  let exts = eventsFontExtents
   let page = fromIntegral (truncate (fromIntegral h / fontExtentsHeight exts))
   mb_hecs <- readIORef hecsIORef
   case mb_hecs of
@@ -146,8 +160,8 @@ eventsWindowResize state@ViewerState{..} = liftIO $ do
 
 -------------------------------------------------------------------------------
 
-updateEventsWindow :: ViewerState -> EventM EExpose Bool
-updateEventsWindow state@ViewerState{..} = liftIO $ do
+updateEventsWindow :: EventsWindow -> Bool-> EventM EExpose Bool
+updateEventsWindow eventsWin@EventsWindow{..} debug = liftIO $ do
   value <- adjustmentGetValue eventsAdj
   mb_hecs <- readIORef hecsIORef
   case mb_hecs of
@@ -157,7 +171,7 @@ updateEventsWindow state@ViewerState{..} = liftIO $ do
       win <- widgetGetDrawWindow eventsDrawingArea
       (w,h) <- widgetGetSize eventsDrawingArea
 
-      cursorpos <- getCursorLine state
+      cursorpos <- eventsWindowGetCursorLine eventsWin
       when debug $ printf "cursorpos: %d\n" cursorpos
       renderWithDrawable win $ do
         drawEvents value arr w h cursorpos
@@ -165,8 +179,8 @@ updateEventsWindow state@ViewerState{..} = liftIO $ do
 
 -------------------------------------------------------------------------------
 
-getCursorLine :: ViewerState -> IO Int
-getCursorLine state@ViewerState{..} = do
+eventsWindowGetCursorLine :: EventsWindow -> IO Int
+eventsWindowGetCursorLine EventsWindow{..} = do
   -- locate the cursor position as a line number
   current_cursor <- readIORef cursorIORef
   eventsCursor <- readIORef eventsCursorIORef
@@ -185,17 +199,15 @@ getCursorLine state@ViewerState{..} = do
 
 -------------------------------------------------------------------------------
 
-setCursor :: ViewerState -> Double -> IO ()
-setCursor state@ViewerState{..} eventY = do
+setCursor :: EventsWindow -> Double -> IO ()
+setCursor EventsWindow{..} eventY = do
   val <- adjustmentGetValue eventsAdj
   mb_hecs <- readIORef hecsIORef
   case mb_hecs of
     Nothing   -> return ()
     Just hecs -> do
       let arr = hecEventArray hecs
-      exts <- readIORef eventsFontExtents
-      let
-          line'   = truncate (val + eventY / fontExtentsHeight exts)
+          line'   = truncate (val + eventY / fontExtentsHeight eventsFontExtents)
           arr_max = snd $ bounds arr
           line    = if line' > arr_max then arr_max else line'
           t       = time (ce_event (arr!line))

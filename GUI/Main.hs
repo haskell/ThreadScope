@@ -67,7 +67,6 @@ startup filename traceName debug
 
        mainWindow         <- getWidget castToWindow "main_window"
        statusBar          <- getWidget castToStatusbar "statusbar"
-       eventsBox          <- getWidget castToWidget "eventsbox"
 
        bwToggle           <- getWidget castToCheckMenuItem "black_and_white"
        sidebarToggle      <- getWidget castToCheckMenuItem "view_sidebar"
@@ -97,12 +96,6 @@ startup filename traceName debug
        firstButton        <- getWidget castToToolButton "cpus_first"
        lastButton         <- getWidget castToToolButton "cpus_last"
        centreButton       <- getWidget castToToolButton "cpus_centre"
-
-       eventsFontExtents  <- newIORef (error "eventsFontExtents")
-       eventsCursorIORef  <- newIORef Nothing
-       eventsVScrollbar   <- getWidget castToVScrollbar "eventsVScroll"
-       eventsAdj          <- rangeGetAdjustment eventsVScrollbar
-       eventsDrawingArea  <- getWidget castToDrawingArea "eventsDrawingArea"
 
        --TODO: these two are currently unbound, but they should be!
    --  eventsTextEntry    <- getWidget castToEntry      "events_entry"
@@ -200,11 +193,22 @@ startup filename traceName debug
        ------------------------------------------------------------------------
        -- Event view
 
-       setupEventsWindow state
+       eventsWin <- eventsWindowNew debug builder hecsIORef cursorIORef
 
        on eventsToggle checkMenuItemToggled $ do
-          showEvents <- checkMenuItemGetActive eventsToggle
-          set eventsBox [ widgetVisible := showEvents ]
+         showEvents <- checkMenuItemGetActive eventsToggle
+         eventsWindowSetVisibility eventsWin showEvents
+
+       onToolButtonClicked firstButton $
+         eventsWindowJumpToBeginning eventsWin
+
+       onToolButtonClicked lastButton $
+         eventsWindowJumpToEnd eventsWin
+
+       onToolButtonClicked centreButton $ do
+         cursorpos <- eventsWindowGetCursorLine eventsWin
+         eventsWindowJumpToPosition eventsWin cursorpos
+
 
        ------------------------------------------------------------------------
        -- Sidebar
@@ -214,6 +218,37 @@ startup filename traceName debug
          }
        on sidebarToggle checkMenuItemToggled $
          sidebarSetVisibility sidebar =<< checkMenuItemGetActive sidebarToggle
+
+       --TODO: probably should move the bodies of these handlers elsewhere
+
+       -- Button for adding the cursor position to the boomark list
+       onToolButtonClicked addBookmarkButton  $ do
+         when debug $ putStrLn "Add bookmark\n"
+         cursorPos <- readIORef cursorIORef
+         New.listStoreAppend bookmarkStore cursorPos
+         queueRedrawTimelines state
+
+       -- Button for deleting a bookmark
+       onToolButtonClicked deleteBookmarkButton  $ do
+         when debug $ putStrLn "Delete bookmark\n"
+         sel <- treeViewGetSelection bookmarkTreeView
+         selection <- treeSelectionGetSelected sel
+         case selection of
+           Nothing -> return ()
+           Just (TreeIter _ pos _ _) -> listStoreRemove bookmarkStore (fromIntegral pos)
+         queueRedrawTimelines state
+
+       -- Button for jumping to bookmark
+       onToolButtonClicked gotoBookmarkButton $ do
+         sel <- treeViewGetSelection bookmarkTreeView
+         selection <- treeSelectionGetSelected sel
+         case selection of
+           Nothing -> return ()
+           Just (TreeIter _ pos _ _) -> do
+             l <- listStoreToList bookmarkStore
+             when debug $ putStrLn ("gotoBookmark: " ++ show l++ " pos = " ++ show pos)
+             setCursorToTime state (l!!(fromIntegral pos))
+         queueRedrawTimelines state
 
        ------------------------------------------------------------------------
        -- Quit

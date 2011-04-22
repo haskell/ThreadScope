@@ -57,18 +57,7 @@ data ViewerState = ViewerState {
 
   timelinePrevView    :: IORef (Maybe (ViewParameters, Surface)),
 
-  -- Events view
-  eventsFontExtents  :: IORef FontExtents,
-  eventsCursorIORef  :: IORef (Maybe (Timestamp, Int)),
-  eventsVScrollbar   :: VScrollbar,
-  eventsAdj          :: Adjustment,
-  eventsDrawingArea  :: DrawingArea,
-
   -- Bookmarks
-  addBookmarkButton  :: ToolButton,
-  deleteBookmarkButton  :: ToolButton,
-  gotoBookmarkButton :: ToolButton,
-  bookmarkTreeView   :: TreeView,
   bookmarkStore      :: ListStore Timestamp,
 
   -- Traces
