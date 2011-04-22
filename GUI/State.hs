@@ -44,12 +44,6 @@ data ViewerState = ViewerState {
   timelineKeyDrawingArea   :: DrawingArea,
   timelineAdj              :: Adjustment,
   timelineVAdj             :: Adjustment,
-  zoomInButton             :: ToolButton,
-  zoomOutButton            :: ToolButton,
-  zoomFitButton            :: ToolButton,
-  firstButton              :: ToolButton,
-  lastButton               :: ToolButton,
-  centreButton             :: ToolButton,
   showLabelsToggle         :: ToggleToolButton,
 
   timelinePrevView    :: IORef (Maybe (ViewParameters, Surface)),

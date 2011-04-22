@@ -170,6 +170,19 @@ startup filename traceName debug
            registerEventsFromFile filename state
 
        ------------------------------------------------------------------------
+       -- zoom buttons
+
+       --TODO: these should be passed a timeline, not global state.
+
+       zoomInButton  `onToolButtonClicked` timelineZoomIn    state
+       zoomOutButton `onToolButtonClicked` timelineZoomOut   state
+       zoomFitButton `onToolButtonClicked` timelineZoomToFit state
+
+       firstButton  `onToolButtonClicked` timelineScrollToBeginning state
+       lastButton   `onToolButtonClicked` timelineScrollToEnd state
+       centreButton `onToolButtonClicked` timelineCentreOnCursor state
+
+       ------------------------------------------------------------------------
        -- Save as PDF functionality
        saveAsPDFMenuItem `onActivateLeaf` saveAsPDF state
 

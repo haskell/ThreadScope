@@ -4,7 +4,14 @@ module GUI.Timeline (
     timelineParamsChanged,
     defaultScaleValue,
     queueRedrawTimelines,
-    setCursorToTime
+    setCursorToTime,
+
+    timelineZoomIn,
+    timelineZoomOut,
+    timelineZoomToFit,
+    timelineScrollToBeginning,
+    timelineScrollToEnd,
+    timelineCentreOnCursor,
  ) where
 
 import GUI.Timeline.Motion
@@ -54,17 +61,6 @@ setupTimelineView state@ViewerState{..} = do
   ------------------------------------------------------------------------
   -- Set-up the key timelineDrawingArea.
   timelineKeyDrawingArea `onExpose` updateKeyDrawingArea timelineKeyDrawingArea
-
-  ------------------------------------------------------------------------
-  -- zoom buttons
-
-  zoomInButton  `onToolButtonClicked` zoomIn    state
-  zoomOutButton `onToolButtonClicked` zoomOut   state
-  zoomFitButton `onToolButtonClicked` zoomToFit state
-
-  firstButton  `onToolButtonClicked` scrollToBeginning state
-  lastButton   `onToolButtonClicked` scrollToEnd state
-  centreButton `onToolButtonClicked` centreOnCursor state
 
   ------------------------------------------------------------------------
   -- Allow mouse wheel to be used for zoom in/out
@@ -142,7 +138,7 @@ updateTimelineVScroll state@ViewerState{..} = do
 -- adjustment.  Everything else stays the same: we don't scale or move
 -- the view at all.
 updateTimelineHPageSize :: ViewerState -> IO ()
-updateTimelineHPageSize state@ViewerState{..} = do
+updateTimelineHPageSize ViewerState{..} = do
   (winw,_) <- widgetGetSize timelineDrawingArea
   scaleValue <- readIORef scaleIORef
   adjustmentSetPageSize timelineAdj (fromIntegral winw * scaleValue)
@@ -163,17 +159,35 @@ setCursor state@ViewerState{..} x = do
 
 setCursorToTime :: ViewerState -> Timestamp -> IO ()
 setCursorToTime state@ViewerState{..} x
-  = do hadjValue <- adjustmentGetValue timelineAdj
-       scaleValue <- readIORef scaleIORef
-       -- let cursor = round (hadjValue + x * scaleValue)
-       -- when debug $ printf "cursor set to: %d\n" cursor
-       writeIORef cursorIORef x
+  = do writeIORef cursorIORef x
        pageSize <- adjustmentGetPageSize timelineAdj
        adjustmentSetValue timelineAdj ((fromIntegral x - pageSize/2) `max` 0)
        queueRedrawTimelines state
 
 -------------------------------------------------------------------------------
 
+--TODO: change all these ViewerState to TimelineWindow
+
+timelineZoomIn :: ViewerState -> IO ()
+timelineZoomIn state = zoomIn state
+
+timelineZoomOut :: ViewerState -> IO ()
+timelineZoomOut state = zoomOut state
+
+timelineZoomToFit :: ViewerState -> IO ()
+timelineZoomToFit state = zoomToFit state
+
+timelineScrollToBeginning :: ViewerState -> IO ()
+timelineScrollToBeginning state = scrollToBeginning state
+
+timelineScrollToEnd :: ViewerState -> IO ()
+timelineScrollToEnd state = scrollToEnd state
+
+-- This one is especially evil since it relies on a shared cursor IORef
+timelineCentreOnCursor :: ViewerState -> IO ()
+timelineCentreOnCursor state = centreOnCursor state
+
+-------------------------------------------------------------------------------
 
 -- This scale value is used to map a micro-second value to a pixel unit.
 -- To convert a timestamp value to a pixel value, multiply it by scale.
