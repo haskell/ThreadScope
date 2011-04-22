@@ -132,8 +132,11 @@ updateTimelineVScroll state@ViewerState{..} = do
   val <- adjustmentGetValue timelineVAdj
   when (val > h') $ adjustmentSetValue timelineVAdj h'
 
-  adjustmentSetPageSize timelineVAdj winh'
-  rangeSetIncrements timelineVScrollbar (0.1 * winh') (0.9 * winh')
+  set timelineVAdj [
+      adjustmentPageSize      := winh',
+      adjustmentStepIncrement := winh' * 0.1,
+      adjustmentPageIncrement := winh' * 0.9
+    ]
 
 -- when the drawing area is resized, we update the page size of the
 -- adjustment.  Everything else stays the same: we don't scale or move

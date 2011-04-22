@@ -53,7 +53,8 @@ zoom factor state@ViewerState{..} = do
        let pageshift = 0.9 * newPageSize
        let nudge     = 0.1 * newPageSize
 
-       rangeSetIncrements timelineHScrollbar  nudge pageshift
+       adjustmentSetStepIncrement timelineAdj nudge
+       adjustmentSetPageIncrement timelineAdj pageshift
 
        scaleUpdateStatus state newScaleValue
        queueRedrawTimelines state
@@ -83,7 +84,9 @@ zoomToFit state@ViewerState{..} = do
        adjustmentSetValue    timelineAdj lower
        adjustmentSetUpper    timelineAdj upper
        adjustmentSetPageSize timelineAdj page
-       rangeSetIncrements timelineHScrollbar 0 0
+       -- TODO: this seems suspicious:
+       adjustmentSetStepIncrement timelineAdj 0
+       adjustmentSetPageIncrement timelineAdj 0
 
        scaleUpdateStatus state newScaleValue
        queueRedrawTimelines state

@@ -42,8 +42,6 @@ data ViewerState = ViewerState {
   timelineDrawingArea      :: DrawingArea,
   timelineLabelDrawingArea :: DrawingArea,
   timelineKeyDrawingArea   :: DrawingArea,
-  timelineHScrollbar       :: HScrollbar,
-  timelineVScrollbar       :: VScrollbar,
   timelineAdj              :: Adjustment,
   timelineVAdj             :: Adjustment,
   zoomInButton             :: ToolButton,
