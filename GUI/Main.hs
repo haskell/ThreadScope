@@ -80,7 +80,6 @@ startup filename traceName debug
 
        timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
        timelineLabelDrawingArea <- getWidget castToDrawingArea "timeline_labels_drawingarea"
-       timelineKeyDrawingArea   <- getWidget castToDrawingArea "timeline_key_drawingarea"
        timelineHScrollbar  <- getWidget castToHScrollbar "timeline_hscroll"
        timelineVScrollbar  <- getWidget castToVScrollbar "timeline_vscroll"
        timelineAdj         <- rangeGetAdjustment timelineHScrollbar
@@ -145,36 +144,6 @@ startup filename traceName debug
        statusbarPush statusBar ctx "No eventlog loaded."
 
        ------------------------------------------------------------------------
-       --- Get the label for the name of the event log
-
-       -- B&W toggle button
-       bwToggle `onToggle` timelineParamsChanged state
-
-       -- No Labels toggle button
-       showLabelsToggle `onToolButtonToggled` timelineParamsChanged state
-
-       -- B&W toggle button
-
-       -- The File:Open menu option can be used to specify an
-       -- eventlog file.
-       openMenuItem `onActivateLeaf` do
-         openFileDialog mainWindow $ \filename ->
-           registerEventsFromFile filename state
-
-       ------------------------------------------------------------------------
-       -- zoom buttons
-
-       --TODO: these should be passed a timeline, not global state.
-
-       zoomInButton  `onToolButtonClicked` timelineZoomIn    state
-       zoomOutButton `onToolButtonClicked` timelineZoomOut   state
-       zoomFitButton `onToolButtonClicked` timelineZoomToFit state
-
-       firstButton  `onToolButtonClicked` timelineScrollToBeginning state
-       lastButton   `onToolButtonClicked` timelineScrollToEnd state
-       centreButton `onToolButtonClicked` timelineCentreOnCursor state
-
-       ------------------------------------------------------------------------
        -- Save as PDF functionality
        saveAsPDFMenuItem `onActivateLeaf` saveAsPDF state
 
@@ -183,17 +152,10 @@ startup filename traceName debug
        saveAsPNGMenuItem `onActivateLeaf` saveAsPNG state
 
        ------------------------------------------------------------------------
-       -- Reload functionality
-       onActivateLeaf reloadMenuItem $
-          do mb_filename <- readIORef filenameIORef
-             case mb_filename of
-               Nothing -> return ()
-               Just filename -> registerEventsFromFile filename state
-
-       ------------------------------------------------------------------------
        -- CPUs view
 
-       setupTimelineView state
+       --TODO: don't pass state or shared IORefs here
+       timelineWin <- timelineWindowNew debug builder state scaleIORef cursorIORef
 
        ------------------------------------------------------------------------
        -- Event view
@@ -214,12 +176,11 @@ startup filename traceName debug
          cursorpos <- eventsWindowGetCursorLine eventsWin
          eventsWindowJumpToPosition eventsWin cursorpos
 
-
        ------------------------------------------------------------------------
        -- Sidebar
 
        sidebar <- sidebarNew tracesStore builder SidebarActions {
-           sidebarTraceToggled = timelineParamsChanged state
+           sidebarTraceToggled = timelineParamsChanged state timelineWin
          }
        on sidebarToggle checkMenuItemToggled $
          sidebarSetVisibility sidebar =<< checkMenuItemGetActive sidebarToggle
@@ -252,8 +213,44 @@ startup filename traceName debug
            Just (TreeIter _ pos _ _) -> do
              l <- listStoreToList bookmarkStore
              when debug $ putStrLn ("gotoBookmark: " ++ show l++ " pos = " ++ show pos)
-             setCursorToTime state (l!!(fromIntegral pos))
+             setCursorToTime state timelineWin (l!!(fromIntegral pos))
          queueRedrawTimelines state
+
+       ------------------------------------------------------------------------
+       --- Get the label for the name of the event log
+
+       -- B&W toggle button
+       bwToggle `onToggle` timelineParamsChanged state timelineWin
+
+       -- No Labels toggle button
+       showLabelsToggle `onToolButtonToggled` timelineParamsChanged state timelineWin
+
+       -- The File:Open menu option can be used to specify an
+       -- eventlog file.
+       openMenuItem `onActivateLeaf` do
+         openFileDialog mainWindow $ \filename ->
+           registerEventsFromFile filename state timelineWin
+
+       ------------------------------------------------------------------------
+       -- Reload functionality
+       onActivateLeaf reloadMenuItem $
+          do mb_filename <- readIORef filenameIORef
+             case mb_filename of
+               Nothing -> return ()
+               Just filename -> registerEventsFromFile filename state timelineWin
+
+       ------------------------------------------------------------------------
+       -- zoom buttons
+
+       --TODO: these should be passed a timeline, not global state.
+
+       zoomInButton  `onToolButtonClicked` timelineZoomIn    state
+       zoomOutButton `onToolButtonClicked` timelineZoomOut   state
+       zoomFitButton `onToolButtonClicked` timelineZoomToFit state
+
+       firstButton  `onToolButtonClicked` timelineScrollToBeginning state
+       lastButton   `onToolButtonClicked` timelineScrollToEnd state
+       centreButton `onToolButtonClicked` timelineCentreOnCursor state
 
        ------------------------------------------------------------------------
        -- Quit

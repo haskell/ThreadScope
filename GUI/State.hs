@@ -41,7 +41,6 @@ data ViewerState = ViewerState {
   -- Timeline view
   timelineDrawingArea      :: DrawingArea,
   timelineLabelDrawingArea :: DrawingArea,
-  timelineKeyDrawingArea   :: DrawingArea,
   timelineAdj              :: Adjustment,
   timelineVAdj             :: Adjustment,
   showLabelsToggle         :: ToggleToolButton,

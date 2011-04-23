@@ -1,5 +1,6 @@
 module GUI.Timeline (
-    setupTimelineView,
+    TimelineWindow,
+    timelineWindowNew,
     renderTraces,
     timelineParamsChanged,
     defaultScaleValue,
@@ -18,7 +19,7 @@ import GUI.Timeline.Motion
 import GUI.Timeline.Render
 import GUI.Timeline.Key
 
-import GUI.State
+import GUI.State (ViewerState)
 import GHC.RTS.Events
 
 import Graphics.UI.Gtk
@@ -35,11 +36,45 @@ import Text.Printf
 -----------------------------------------------------------------------------
 -- The CPUs view
 
-setupTimelineView :: ViewerState -> IO ()
-setupTimelineView state@ViewerState{..} = do
+data TimelineWindow = TimelineWindow {
+       timelineDrawingArea      :: DrawingArea,
+       timelineLabelDrawingArea :: DrawingArea,
+       timelineKeyDrawingArea   :: DrawingArea,
+       timelineAdj              :: Adjustment,
+       timelineVAdj             :: Adjustment,
+
+       --TODO: eliminate, these are **shared** not private IORefs !!
+       -- Should instead have methods for updating the display state
+       -- and events for when the cursor is changed. Let the interaction
+       -- module hold the state.
+       scaleIORef        :: IORef Double, -- in ns/pixel
+       cursorIORef       :: IORef Timestamp
+     }
+
+-----------------------------------------------------------------------------
+
+timelineWindowNew :: Bool -> Builder
+                  -> ViewerState -> IORef Double -> IORef Timestamp --TODO: eliminate
+                  -> IO TimelineWindow
+timelineWindowNew debug builder state scaleIORef cursorIORef = do
+
+  let getWidget cast = builderGetObject builder cast
+  timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
+  timelineLabelDrawingArea <- getWidget castToDrawingArea "timeline_labels_drawingarea"
+  timelineKeyDrawingArea   <- getWidget castToDrawingArea "timeline_key_drawingarea"
+  timelineHScrollbar       <- getWidget castToHScrollbar "timeline_hscroll"
+  timelineVScrollbar       <- getWidget castToVScrollbar "timeline_vscroll"
+  timelineAdj              <- rangeGetAdjustment timelineHScrollbar
+  timelineVAdj             <- rangeGetAdjustment timelineVScrollbar
+
+  let timelineWin = TimelineWindow {..}
 
   ------------------------------------------------------------------------
   -- Key presses
+
+  --TODO: should not have access to mainWindow here, should attach events in
+  -- MainWindow and manage actions in main interaction module.
+  mainWindow <- getWidget castToWindow "main_window"
   onKeyPress mainWindow $ \Key { Old.eventKeyName = key, eventKeyChar = mch } -> do
     -- when debug $ putStrLn ("key " ++ key)
     case key of
@@ -84,7 +119,7 @@ setupTimelineView state@ViewerState{..} = do
        Button{ Old.eventButton = LeftButton, Old.eventClick = SingleClick,
                -- eventModifier = [],  -- contains [Alt2] for me
                eventX = x } -> do
-           setCursor state x
+           setCursor state debug timelineWin x
            return True
        _other -> do
            return False
@@ -98,27 +133,27 @@ setupTimelineView state@ViewerState{..} = do
      return True
 
   on timelineDrawingArea configureEvent $ do
-     liftIO $ configureTimelineDrawingArea state
+     liftIO $ configureTimelineDrawingArea state timelineWin
      return True
 
-  return ()
+  return timelineWin
 
 -------------------------------------------------------------------------------
 -- Update the internal state and the timemline view after changing which
 -- traces are displayed, or the order of traces.
 
-timelineParamsChanged :: ViewerState -> IO ()
-timelineParamsChanged state = do
+timelineParamsChanged :: ViewerState -> TimelineWindow -> IO ()
+timelineParamsChanged state timelineWin = do
   queueRedrawTimelines state
-  updateTimelineVScroll state
+  updateTimelineVScroll state timelineWin
 
-configureTimelineDrawingArea :: ViewerState -> IO ()
-configureTimelineDrawingArea state = do
-  updateTimelineVScroll state
-  updateTimelineHPageSize state
+configureTimelineDrawingArea :: ViewerState -> TimelineWindow -> IO ()
+configureTimelineDrawingArea state timelineWin = do
+  updateTimelineVScroll state timelineWin
+  updateTimelineHPageSize timelineWin
 
-updateTimelineVScroll :: ViewerState -> IO ()
-updateTimelineVScroll state@ViewerState{..} = do
+updateTimelineVScroll :: ViewerState -> TimelineWindow -> IO ()
+updateTimelineVScroll state TimelineWindow{..} = do
   h <- calculateTotalTimelineHeight state
   (_,winh) <- widgetGetSize timelineDrawingArea
   let winh' = fromIntegral winh; h' = fromIntegral h
@@ -137,8 +172,8 @@ updateTimelineVScroll state@ViewerState{..} = do
 -- when the drawing area is resized, we update the page size of the
 -- adjustment.  Everything else stays the same: we don't scale or move
 -- the view at all.
-updateTimelineHPageSize :: ViewerState -> IO ()
-updateTimelineHPageSize ViewerState{..} = do
+updateTimelineHPageSize :: TimelineWindow -> IO ()
+updateTimelineHPageSize TimelineWindow{..} = do
   (winw,_) <- widgetGetSize timelineDrawingArea
   scaleValue <- readIORef scaleIORef
   adjustmentSetPageSize timelineAdj (fromIntegral winw * scaleValue)
@@ -146,8 +181,8 @@ updateTimelineHPageSize ViewerState{..} = do
 -------------------------------------------------------------------------------
 -- Set the cursor to a new position
 
-setCursor :: ViewerState -> Double -> IO ()
-setCursor state@ViewerState{..} x = do
+setCursor :: ViewerState -> Bool -> TimelineWindow -> Double -> IO ()
+setCursor state debug TimelineWindow{..} x = do
   hadjValue <- adjustmentGetValue timelineAdj
   scaleValue <- readIORef scaleIORef
   let cursor = round (hadjValue + x * scaleValue)
@@ -157,8 +192,8 @@ setCursor state@ViewerState{..} x = do
 
 -------------------------------------------------------------------------------
 
-setCursorToTime :: ViewerState -> Timestamp -> IO ()
-setCursorToTime state@ViewerState{..} x
+setCursorToTime :: ViewerState -> TimelineWindow -> Timestamp -> IO ()
+setCursorToTime state TimelineWindow{..} x
   = do writeIORef cursorIORef x
        pageSize <- adjustmentGetPageSize timelineAdj
        adjustmentSetValue timelineAdj ((fromIntegral x - pageSize/2) `max` 0)

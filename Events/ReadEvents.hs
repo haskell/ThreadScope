@@ -65,17 +65,20 @@ maximum0 x = maximum x
 
 -------------------------------------------------------------------------------
 
-registerEventsFromFile :: String -> ViewerState -> IO ()
-registerEventsFromFile filename state = registerEvents (Left filename) state
+registerEventsFromFile :: String -> ViewerState -> TimelineWindow -> IO ()
+registerEventsFromFile filename = registerEvents (Left filename)
 
-registerEventsFromTrace :: String -> ViewerState -> IO ()
-registerEventsFromTrace traceName state = registerEvents (Right traceName) state
+registerEventsFromTrace :: String -> ViewerState -> TimelineWindow -> IO ()
+registerEventsFromTrace traceName = registerEvents (Right traceName)
 
 registerEvents :: Either FilePath String
-               -> ViewerState
+                  --TODO: eliminate both of these, return the loaded state
+                  -- instead and have the main interaction module update its
+                  -- own private state.
+               -> ViewerState -> TimelineWindow
                -> IO ()
 
-registerEvents from state@ViewerState{..} = do
+registerEvents from state@ViewerState{..} timelineWin = do
 
   let msg = case from of
               Left filename -> filename
@@ -107,7 +110,7 @@ registerEvents from state@ViewerState{..} = do
   -- This is a cpu-intensive background task
   ConcurrencyControl.fullSpeed concCtl $ do
 
-  t <- forkIO $ buildEventLog from dialog progress state
+  t <- forkIO $ buildEventLog from dialog progress state timelineWin
                 `onException` dialogResponse dialog (ResponseUser 1)
 
   r <- dialogRun dialog
@@ -123,8 +126,8 @@ registerEvents from state@ViewerState{..} = do
 --
 buildEventLog :: DialogClass dialog => Either FilePath String
               -> dialog
-              -> ProgressBar -> ViewerState -> IO ()
-buildEventLog from dialog progress state@ViewerState{..} =
+              -> ProgressBar -> ViewerState -> TimelineWindow -> IO ()
+buildEventLog from dialog progress state@ViewerState{..} timelineWin =
   case from of
     Right test     -> build test (testTrace test)
     Left filename  -> do
@@ -177,7 +180,7 @@ buildEventLog from dialog progress state@ViewerState{..} =
             printf "%s (%d events, %.3fs)" name n_events
                                 ((fromIntegral lastTx :: Double) * 1.0e-9)
          newHECs state hecs
-         timelineParamsChanged state
+         timelineParamsChanged state timelineWin
          when debug $ zipWithM_ reportDurationTree [0..] (map fst trees)
          when debug $ zipWithM_ reportEventTree [0..] (map snd trees)
          writeIORef hecsIORef (Just hecs)
