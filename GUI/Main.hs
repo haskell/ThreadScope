@@ -153,14 +153,6 @@ startup filename traceName debug
        -- No Labels toggle button
        showLabelsToggle `onToolButtonToggled` timelineParamsChanged state
 
-       -- When a filename for an event log is specified open and
-       -- parse the event log file and update the IORefs for
-       -- the capabilities and event array.
-       when (filename /= "") $ registerEventsFromFile filename state
-
-       -- Likewise for test traces
-       when (traceName /= "") $ registerEventsFromTrace traceName state
-
        -- B&W toggle button
 
        -- The File:Open menu option can be used to specify an
@@ -278,3 +270,12 @@ startup filename traceName debug
        ------------------------------------------------------------------------
        -- Show all windows
        widgetShowAll mainWindow
+
+       ------------------------------------------------------------------------
+       -- When a filename for an event log is specified open and
+       -- parse the event log file and update the IORefs for
+       -- the capabilities and event array.
+       when (filename /= "") $ registerEventsFromFile filename state timelineWin
+
+       -- Likewise for test traces
+       when (traceName /= "") $ registerEventsFromTrace traceName state timelineWin
