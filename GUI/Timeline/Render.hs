@@ -71,17 +71,6 @@ renderView state@ViewerState{..} exposeRegion hecs = do
   hadj_value0 <- adjustmentGetValue timelineAdj
   let hadj_value = toWholePixels scaleValue hadj_value0
 
-  when debug $ do
-     hadj_pagesize <- adjustmentGetPageSize timelineAdj
-     hadj_lower <- adjustmentGetLower timelineAdj
-     hadj_upper <- adjustmentGetUpper timelineAdj
-     ctx <- statusbarGetContextId statusBar "debug"
-     statusbarPush statusBar ctx $
-          printf "scale=%f win=(%d,%d) hadj: (val=%f, page=%f, l=%f u=%f)"
-                 scaleValue dAreaWidth dAreaHeight
-                 hadj_value hadj_pagesize hadj_lower hadj_upper
-     return ()
-
   traces    <- getViewTraces state
 
   let params = ViewParameters {
