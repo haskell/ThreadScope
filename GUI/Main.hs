@@ -105,7 +105,8 @@ startup filename traceName debug
 
        rec mainWin <- mainWindowNew builder MainWindowActions {
                mainWinOpen          = openFileDialog mainWindow $ \filename ->
-                                        registerEventsFromFile filename state timelineWin,
+                                        registerEventsFromFile filename state
+                                                               timelineWin eventsWin,
                mainWinSavePDF       = saveAsPDF state,
                mainWinSavePNG       = saveAsPNG state,
                mainWinQuit          = mainQuit,
@@ -116,7 +117,8 @@ startup filename traceName debug
                  mb_filename <- readIORef filenameIORef
                  case mb_filename of
                    Nothing -> return ()
-                   Just filename -> registerEventsFromFile filename state timelineWin,
+                   Just filename -> registerEventsFromFile filename state
+                                                           timelineWin eventsWin,
 
                mainWinAbout         = aboutDialog mainWindow,
 
@@ -182,7 +184,7 @@ startup filename traceName debug
        -- When a filename for an event log is specified open and
        -- parse the event log file and update the IORefs for
        -- the capabilities and event array.
-       when (filename /= "") $ registerEventsFromFile filename state timelineWin
+       when (filename /= "") $ registerEventsFromFile filename state timelineWin eventsWin
 
        -- Likewise for test traces
-       when (traceName /= "") $ registerEventsFromTrace traceName state timelineWin
+       when (traceName /= "") $ registerEventsFromTrace traceName state timelineWin eventsWin

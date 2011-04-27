@@ -7,6 +7,9 @@ module GUI.EventsWindow (
     eventsWindowJumpToBeginning,
     eventsWindowJumpToEnd,
     eventsWindowJumpToPosition,
+
+    -- TODO: replace by state change function
+    eventsWindowResize,
   ) where
 
 import GUI.State (HECs(..))
@@ -72,7 +75,9 @@ eventsWindowNew debug builder hecsIORef cursorIORef = do
 
   let eventsWin = EventsWindow {..}
 
-  on eventsDrawingArea configureEvent $ eventsWindowResize eventsWin
+  on eventsDrawingArea configureEvent $ do
+    liftIO $ eventsWindowResize eventsWin
+    return True
 
   on eventsDrawingArea exposeEvent $ updateEventsWindow eventsWin debug
 
@@ -141,14 +146,14 @@ eventsWindowJumpToPosition EventsWindow{..} pos = do
 
 -------------------------------------------------------------------------------
 
-eventsWindowResize :: EventsWindow -> EventM EConfigure Bool
-eventsWindowResize EventsWindow{..} = liftIO $ do
+eventsWindowResize :: EventsWindow -> IO ()
+eventsWindowResize EventsWindow{..} = do
   (_,h) <- widgetGetSize eventsDrawingArea
   let exts = eventsFontExtents
   let page = fromIntegral (truncate (fromIntegral h / fontExtentsHeight exts))
   mb_hecs <- readIORef hecsIORef
   case mb_hecs of
-    Nothing   -> return True
+    Nothing   -> return ()
     Just hecs -> do
       let arr = hecEventArray hecs
       let (_, n_events) = bounds arr
@@ -156,7 +161,7 @@ eventsWindowResize EventsWindow{..} = liftIO $ do
       adjustmentSetPageSize eventsAdj page
       adjustmentSetUpper eventsAdj (fromIntegral n_events + 1)
       -- printf "eventsWindowResize: %f" page
-      return True
+      return ()
 
 -------------------------------------------------------------------------------
 

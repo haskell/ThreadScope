@@ -7,6 +7,7 @@ import GUI.State
 import Events.TestEvents
 import Events.EventDuration
 import GUI.Timeline
+import GUI.EventsWindow
 import GUI.Traces
 import qualified GUI.ConcurrencyControl as ConcurrencyControl
 
@@ -65,20 +66,20 @@ maximum0 x = maximum x
 
 -------------------------------------------------------------------------------
 
-registerEventsFromFile :: String -> ViewerState -> TimelineWindow -> IO ()
+registerEventsFromFile :: String -> ViewerState -> TimelineWindow -> EventsWindow -> IO ()
 registerEventsFromFile filename = registerEvents (Left filename)
 
-registerEventsFromTrace :: String -> ViewerState -> TimelineWindow -> IO ()
+registerEventsFromTrace :: String -> ViewerState -> TimelineWindow -> EventsWindow -> IO ()
 registerEventsFromTrace traceName = registerEvents (Right traceName)
 
 registerEvents :: Either FilePath String
                   --TODO: eliminate both of these, return the loaded state
                   -- instead and have the main interaction module update its
                   -- own private state.
-               -> ViewerState -> TimelineWindow
+               -> ViewerState -> TimelineWindow -> EventsWindow
                -> IO ()
 
-registerEvents from state@ViewerState{..} timelineWin = do
+registerEvents from state@ViewerState{..} timelineWin eventsWin = do
 
   let msg = case from of
               Left filename -> filename
@@ -110,7 +111,7 @@ registerEvents from state@ViewerState{..} timelineWin = do
   -- This is a cpu-intensive background task
   ConcurrencyControl.fullSpeed concCtl $ do
 
-  t <- forkIO $ buildEventLog from dialog progress state timelineWin
+  t <- forkIO $ buildEventLog from dialog progress state timelineWin eventsWin
                 `onException` dialogResponse dialog (ResponseUser 1)
 
   r <- dialogRun dialog
@@ -126,8 +127,8 @@ registerEvents from state@ViewerState{..} timelineWin = do
 --
 buildEventLog :: DialogClass dialog => Either FilePath String
               -> dialog
-              -> ProgressBar -> ViewerState -> TimelineWindow -> IO ()
-buildEventLog from dialog progress state@ViewerState{..} timelineWin =
+              -> ProgressBar -> ViewerState -> TimelineWindow -> EventsWindow -> IO ()
+buildEventLog from dialog progress state@ViewerState{..} timelineWin eventsWin =
   case from of
     Right test     -> build test (testTrace test)
     Left filename  -> do
@@ -183,8 +184,20 @@ buildEventLog from dialog progress state@ViewerState{..} timelineWin =
          timelineParamsChanged state timelineWin
          when debug $ zipWithM_ reportDurationTree [0..] (map fst trees)
          when debug $ zipWithM_ reportEventTree [0..] (map snd trees)
+
+         --FIXME: the following is is a bad pattern. It updates shared IORefs
+         -- directly, followed by calling updates. It is too easy to forget
+         -- the update (indeed an earlier version of this code updated one
+         -- view component but not the other!).
+         --
+         -- We should eliminate the shared mutable state. Instead, we should
+         -- send the new values directly to the view components.
+         --
          writeIORef hecsIORef (Just hecs)
          writeIORef scaleIORef defaultScaleValue
+         eventsWindowResize eventsWin
+         timelineParamsChanged state timelineWin
+
          dialogResponse dialog (ResponseUser 1)
 
 -------------------------------------------------------------------------------
