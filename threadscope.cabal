@@ -28,7 +28,8 @@ Executable threadscope
                      Events.EventTree, 
                      Events.ReadEvents,
                      Events.TestEvents,
-                     GUI.Main
+                     GUI.Main,
+                     GUI.MainWindow,
                      GUI.EventsWindow, 
                      GUI.Dialogs,
                      GUI.SaveAsPDF, 

@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP, DoRec #-}
 -- ThreadScope: a graphical viewer for Haskell event log information.
 -- Maintainer: satnams@microsoft.com, s.singh@ieee.org
 
@@ -20,11 +20,13 @@ import Control.Exception
 import Paths_threadscope
 
 -- Imports for ThreadScope
+import GUI.MainWindow
 import GUI.State
 import GUI.Dialogs
 import Events.ReadEvents
 import GUI.EventsWindow
 import GUI.Timeline
+import GUI.Timeline.Motion (scrollLeft, scrollRight)
 import GUI.SaveAsPDF
 import GUI.SaveAsPNG
 import GUI.Sidebar
@@ -65,19 +67,10 @@ startup filename traceName debug
        scaleIORef        <- newIORef defaultScaleValue
        cursorIORef       <- newIORef 0
 
+       --TODO: eliminate these remaining getWidget calls here.
        mainWindow         <- getWidget castToWindow "main_window"
        statusBar          <- getWidget castToStatusbar "statusbar"
-
        bwToggle           <- getWidget castToCheckMenuItem "black_and_white"
-       sidebarToggle      <- getWidget castToCheckMenuItem "view_sidebar"
-       eventsToggle       <- getWidget castToCheckMenuItem "view_events"
-       openMenuItem       <- getWidget castToMenuItem "openMenuItem"
-       saveAsPDFMenuItem  <- getWidget castToMenuItem "saveAsPDFMenuItem"
-       saveAsPNGMenuItem  <- getWidget castToMenuItem "saveAsPNGMenuItem"
-       reloadMenuItem     <- getWidget castToMenuItem "view_reload"
-       quitMenuItem       <- getWidget castToMenuItem "quitMenuItem"
-       aboutMenuItem      <- getWidget castToMenuItem "aboutMenuItem"
-
        timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
        timelineLabelDrawingArea <- getWidget castToDrawingArea "timeline_labels_drawingarea"
        timelineHScrollbar  <- getWidget castToHScrollbar "timeline_hscroll"
@@ -87,25 +80,8 @@ startup filename traceName debug
 
        timelinePrevView   <- newIORef Nothing
 
-       zoomInButton       <- getWidget castToToolButton "cpus_zoomin"
-       zoomOutButton      <- getWidget castToToolButton "cpus_zoomout"
-       zoomFitButton      <- getWidget castToToolButton "cpus_zoomfit"
-
        showLabelsToggle   <- getWidget castToToggleToolButton "cpus_showlabels"
-       firstButton        <- getWidget castToToolButton "cpus_first"
-       lastButton         <- getWidget castToToolButton "cpus_last"
-       centreButton       <- getWidget castToToolButton "cpus_centre"
-
-       --TODO: these two are currently unbound, but they should be!
-   --  eventsTextEntry    <- getWidget castToEntry      "events_entry"
-   --  eventsFindButton   <- getWidget castToToolButton "events_find"
-
        bookmarkTreeView   <- getWidget castToTreeView "bookmark_list"
-
-       -- Bookmarks
-       addBookmarkButton    <- getWidget castToToolButton "add_bookmark_button"
-       deleteBookmarkButton <- getWidget castToToolButton "delete_bookmark"
-       gotoBookmarkButton   <- getWidget castToToolButton "goto_bookmark_button"
 
        bookmarkStore <- New.listStoreNew []
        New.treeViewSetModel bookmarkTreeView bookmarkStore
@@ -127,146 +103,80 @@ startup filename traceName debug
 
        let state = ViewerState { .. }
 
+       rec mainWin <- mainWindowNew builder MainWindowActions {
+               mainWinOpen          = openFileDialog mainWindow $ \filename ->
+                                        registerEventsFromFile filename state timelineWin,
+               mainWinSavePDF       = saveAsPDF state,
+               mainWinSavePNG       = saveAsPNG state,
+               mainWinQuit          = mainQuit,
+               mainWinViewSidebar   = sidebarSetVisibility sidebar,
+               mainWinViewEvents    = eventsWindowSetVisibility eventsWin,
+               mainWinViewBW        = \_ -> timelineParamsChanged state timelineWin,
+               mainWinViewRefresh   = do
+                 mb_filename <- readIORef filenameIORef
+                 case mb_filename of
+                   Nothing -> return ()
+                   Just filename -> registerEventsFromFile filename state timelineWin,
+
+               mainWinAbout         = aboutDialog mainWindow,
+
+               -- Toolbar actions
+               mainWinJumpStart     = do timelineScrollToBeginning state
+                                         eventsWindowJumpToEnd eventsWin,
+               mainWinJumpEnd       = do timelineScrollToEnd state
+                                         eventsWindowJumpToEnd eventsWin,
+               mainWinJumpCursor    = do timelineCentreOnCursor state
+                                         cursorpos <- eventsWindowGetCursorLine eventsWin
+                                         eventsWindowJumpToPosition eventsWin cursorpos,
+
+               mainWinScrollLeft    = scrollLeft  state,
+               mainWinScrollRight   = scrollRight state,
+               mainWinJumpZoomIn    = timelineZoomIn    state,
+               mainWinJumpZoomOut   = timelineZoomOut   state,
+               mainWinJumpZoomFit   = timelineZoomToFit state,
+               mainWinDisplayLabels = timelineParamsChanged state timelineWin,
+
+               mainWinAddBookmark    = do
+                 when debug $ putStrLn "Add bookmark\n"
+                 cursorPos <- readIORef cursorIORef
+                 New.listStoreAppend bookmarkStore cursorPos
+                 queueRedrawTimelines state,
+
+               mainWinRemoveBookmark = do
+                 when debug $ putStrLn "Delete bookmark\n"
+                 sel <- treeViewGetSelection bookmarkTreeView
+                 selection <- treeSelectionGetSelected sel
+                 case selection of
+                   Nothing -> return ()
+                   Just (TreeIter _ pos _ _) -> listStoreRemove bookmarkStore (fromIntegral pos)
+                 queueRedrawTimelines state,
+
+               mainWinGotoBookmark   = do
+                 sel <- treeViewGetSelection bookmarkTreeView
+                 selection <- treeSelectionGetSelected sel
+                 case selection of
+                   Nothing -> return ()
+                   Just (TreeIter _ pos _ _) -> do
+                     l <- listStoreToList bookmarkStore
+                     when debug $ putStrLn ("gotoBookmark: " ++ show l++ " pos = " ++ show pos)
+                     setCursorToTime state timelineWin (l!!(fromIntegral pos))
+                 queueRedrawTimelines state
+             }
+
+           eventsWin <- eventsWindowNew debug builder hecsIORef cursorIORef
+
+           timelineWin <- timelineWindowNew debug builder state scaleIORef cursorIORef
+
+           sidebar <- sidebarNew tracesStore builder SidebarActions {
+               sidebarTraceToggled = timelineParamsChanged state timelineWin
+             }
+
        ------------------------------------------------------------------------
 
        writeIORef filenameIORef (if filename == "" then
                                    Nothing
                                  else
                                    Just filename)
-
-       widgetSetAppPaintable mainWindow True
-       logoPath <- getDataFileName "threadscope.png"
-       windowSetIconFromFile mainWindow logoPath
-
-       ------------------------------------------------------------------------
-       -- Status bar functionality
-       ctx <- statusbarGetContextId statusBar "state"
-       statusbarPush statusBar ctx "No eventlog loaded."
-
-       ------------------------------------------------------------------------
-       -- Save as PDF functionality
-       saveAsPDFMenuItem `onActivateLeaf` saveAsPDF state
-
-       ------------------------------------------------------------------------
-       -- Save as PNG functionality
-       saveAsPNGMenuItem `onActivateLeaf` saveAsPNG state
-
-       ------------------------------------------------------------------------
-       -- CPUs view
-
-       --TODO: don't pass state or shared IORefs here
-       timelineWin <- timelineWindowNew debug builder state scaleIORef cursorIORef
-
-       ------------------------------------------------------------------------
-       -- Event view
-
-       eventsWin <- eventsWindowNew debug builder hecsIORef cursorIORef
-
-       on eventsToggle checkMenuItemToggled $ do
-         showEvents <- checkMenuItemGetActive eventsToggle
-         eventsWindowSetVisibility eventsWin showEvents
-
-       onToolButtonClicked firstButton $
-         eventsWindowJumpToBeginning eventsWin
-
-       onToolButtonClicked lastButton $
-         eventsWindowJumpToEnd eventsWin
-
-       onToolButtonClicked centreButton $ do
-         cursorpos <- eventsWindowGetCursorLine eventsWin
-         eventsWindowJumpToPosition eventsWin cursorpos
-
-       ------------------------------------------------------------------------
-       -- Sidebar
-
-       sidebar <- sidebarNew tracesStore builder SidebarActions {
-           sidebarTraceToggled = timelineParamsChanged state timelineWin
-         }
-       on sidebarToggle checkMenuItemToggled $
-         sidebarSetVisibility sidebar =<< checkMenuItemGetActive sidebarToggle
-
-       --TODO: probably should move the bodies of these handlers elsewhere
-
-       -- Button for adding the cursor position to the boomark list
-       onToolButtonClicked addBookmarkButton  $ do
-         when debug $ putStrLn "Add bookmark\n"
-         cursorPos <- readIORef cursorIORef
-         New.listStoreAppend bookmarkStore cursorPos
-         queueRedrawTimelines state
-
-       -- Button for deleting a bookmark
-       onToolButtonClicked deleteBookmarkButton  $ do
-         when debug $ putStrLn "Delete bookmark\n"
-         sel <- treeViewGetSelection bookmarkTreeView
-         selection <- treeSelectionGetSelected sel
-         case selection of
-           Nothing -> return ()
-           Just (TreeIter _ pos _ _) -> listStoreRemove bookmarkStore (fromIntegral pos)
-         queueRedrawTimelines state
-
-       -- Button for jumping to bookmark
-       onToolButtonClicked gotoBookmarkButton $ do
-         sel <- treeViewGetSelection bookmarkTreeView
-         selection <- treeSelectionGetSelected sel
-         case selection of
-           Nothing -> return ()
-           Just (TreeIter _ pos _ _) -> do
-             l <- listStoreToList bookmarkStore
-             when debug $ putStrLn ("gotoBookmark: " ++ show l++ " pos = " ++ show pos)
-             setCursorToTime state timelineWin (l!!(fromIntegral pos))
-         queueRedrawTimelines state
-
-       ------------------------------------------------------------------------
-       --- Get the label for the name of the event log
-
-       -- B&W toggle button
-       bwToggle `onToggle` timelineParamsChanged state timelineWin
-
-       -- No Labels toggle button
-       showLabelsToggle `onToolButtonToggled` timelineParamsChanged state timelineWin
-
-       -- The File:Open menu option can be used to specify an
-       -- eventlog file.
-       openMenuItem `onActivateLeaf` do
-         openFileDialog mainWindow $ \filename ->
-           registerEventsFromFile filename state timelineWin
-
-       ------------------------------------------------------------------------
-       -- Reload functionality
-       onActivateLeaf reloadMenuItem $
-          do mb_filename <- readIORef filenameIORef
-             case mb_filename of
-               Nothing -> return ()
-               Just filename -> registerEventsFromFile filename state timelineWin
-
-       ------------------------------------------------------------------------
-       -- zoom buttons
-
-       --TODO: these should be passed a timeline, not global state.
-
-       zoomInButton  `onToolButtonClicked` timelineZoomIn    state
-       zoomOutButton `onToolButtonClicked` timelineZoomOut   state
-       zoomFitButton `onToolButtonClicked` timelineZoomToFit state
-
-       firstButton  `onToolButtonClicked` timelineScrollToBeginning state
-       lastButton   `onToolButtonClicked` timelineScrollToEnd state
-       centreButton `onToolButtonClicked` timelineCentreOnCursor state
-
-       ------------------------------------------------------------------------
-       -- Quit
-       quitMenuItem `onActivateLeaf` mainQuit
-
-       ------------------------------------------------------------------------
-       -- About dialog
-       aboutMenuItem `onActivateLeaf` aboutDialog mainWindow
-
-       ------------------------------------------------------------------------
-       -- Quit behaviour
-       onDestroy mainWindow mainQuit
-
-       ------------------------------------------------------------------------
-       -- Show all windows
-       widgetShowAll mainWindow
 
        ------------------------------------------------------------------------
        -- When a filename for an event log is specified open and
