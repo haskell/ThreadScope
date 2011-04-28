@@ -16,6 +16,7 @@ import Data.IORef
 import System.Posix
 #endif
 import Control.Exception
+import Control.Concurrent
 
 import Paths_threadscope
 
@@ -32,6 +33,7 @@ import GUI.Traces (getViewTraces)
 import GUI.SaveAs
 import GUI.Sidebar
 import qualified GUI.ConcurrencyControl as ConcurrencyControl
+import qualified GUI.ProgressView as ProgressView
 
 -------------------------------------------------------------------------------
 
@@ -129,8 +131,7 @@ startup filename traceName debug
 
        rec mainWin <- mainWindowNew builder MainWindowActions {
                mainWinOpen          = openFileDialog mainWindow $ \filename ->
-                                        registerEventsFromFile filename state
-                                                               timelineWin eventsWin,
+                                        loadEvents (registerEventsFromFile filename),
                mainWinSavePDF       = do
                  viewParams <- getViewParameters
                  mb_fn   <- readIORef filenameIORef
@@ -155,8 +156,7 @@ startup filename traceName debug
                  mb_filename <- readIORef filenameIORef
                  case mb_filename of
                    Nothing -> return ()
-                   Just filename -> registerEventsFromFile filename state
-                                                           timelineWin eventsWin,
+                   Just filename -> loadEvents (registerEventsFromFile filename),
 
                mainWinAbout         = aboutDialog mainWindow,
 
@@ -211,6 +211,14 @@ startup filename traceName debug
                sidebarTraceToggled = timelineParamsChanged state timelineWin
              }
 
+           let loadEvents registerEvents = do
+                 forkIO $ do
+                   ConcurrencyControl.fullSpeed concCtl $
+                     ProgressView.withProgress mainWindow $ \progress ->
+                       registerEvents progress state timelineWin eventsWin
+                   return ()
+                 return ()
+
        ------------------------------------------------------------------------
 
        writeIORef filenameIORef (if filename == "" then
@@ -222,7 +230,7 @@ startup filename traceName debug
        -- When a filename for an event log is specified open and
        -- parse the event log file and update the IORefs for
        -- the capabilities and event array.
-       when (filename /= "") $ registerEventsFromFile filename state timelineWin eventsWin
+       when (filename /= "") $ loadEvents (registerEventsFromFile filename)
 
        -- Likewise for test traces
-       when (traceName /= "") $ registerEventsFromTrace traceName state timelineWin eventsWin
+       when (traceName /= "") $ loadEvents (registerEventsFromTrace traceName)
