@@ -30,7 +30,7 @@ import GUI.EventsWindow
 import GUI.Timeline
 import GUI.Timeline.Motion (scrollLeft, scrollRight)
 import GUI.Timeline.Render (calculateTotalTimelineHeight, toWholePixels)
-import GUI.Traces (getViewTraces)
+import GUI.Traces (newHECs, getViewTraces)
 import GUI.SaveAs
 import GUI.Sidebar
 import qualified GUI.ConcurrencyControl as ConcurrencyControl
@@ -214,11 +214,25 @@ startup filename traceName debug
                  forkIO $ do
                    ConcurrencyControl.fullSpeed concCtl $
                      ProgressView.withProgress mainWindow $ \progress -> do
-                       (file, nevents, timespan) <-
-                         registerEvents progress state timelineWin eventsWin
+                       (hecs, file, nevents, timespan) <- registerEvents progress
                        MainWindow.setFileLoaded mainWin (Just file)
                        MainWindow.setStatusMessage mainWin $
                          printf "%s (%d events, %.3fs)" file nevents timespan
+
+                       --FIXME: the following is is a bad pattern. It updates shared IORefs
+                       -- directly, followed by calling updates. It is too easy to forget
+                       -- the update (indeed an earlier version of this code updated one
+                       -- view component but not the other!).
+                       --
+                       -- We should eliminate the shared mutable state. Instead, we should
+                       -- send the new values directly to the view components.
+                       --
+                       writeIORef hecsIORef (Just hecs)
+                       writeIORef scaleIORef defaultScaleValue
+                       newHECs state hecs
+                       eventsWindowResize eventsWin
+                       timelineParamsChanged state timelineWin
+
                    return ()
                  return ()
 

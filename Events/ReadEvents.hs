@@ -3,12 +3,9 @@ module Events.ReadEvents (
   ) where
 
 import Events.EventTree
-import GUI.State
+import GUI.State (HECs(..))
 import Events.TestEvents
 import Events.EventDuration
-import GUI.Timeline (TimelineWindow, timelineParamsChanged, defaultScaleValue)
-import GUI.EventsWindow (EventsWindow, eventsWindowResize)
-import GUI.Traces (newHECs)
 import qualified GUI.ProgressView as ProgressView
 import GUI.ProgressView (ProgressView)
 
@@ -16,7 +13,6 @@ import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
 
 import Data.Array
-import Data.IORef
 import Data.List
 import Text.Printf
 import System.FilePath
@@ -63,21 +59,17 @@ maximum0 x = maximum x
 
 -------------------------------------------------------------------------------
 
-registerEventsFromFile :: String -> ProgressView -> ViewerState -> TimelineWindow -> EventsWindow -> IO (String, Int, Double)
+registerEventsFromFile :: String -> ProgressView -> IO (HECs, String, Int, Double)
 registerEventsFromFile filename = registerEvents (Left filename)
 
-registerEventsFromTrace :: String -> ProgressView -> ViewerState -> TimelineWindow -> EventsWindow -> IO (String, Int, Double)
+registerEventsFromTrace :: String -> ProgressView -> IO (HECs, String, Int, Double)
 registerEventsFromTrace traceName = registerEvents (Right traceName)
 
 registerEvents :: Either FilePath String
                -> ProgressView
-                  --TODO: eliminate both of these, return the loaded state
-                  -- instead and have the main interaction module update its
-                  -- own private state.
-               -> ViewerState -> TimelineWindow -> EventsWindow
-               -> IO (String, Int, Double)
+               -> IO (HECs, String, Int, Double)
 
-registerEvents from progress state@ViewerState{..} timelineWin eventsWin = do
+registerEvents from progress = do
 
   let msg = case from of
               Left filename -> filename
@@ -85,15 +77,14 @@ registerEvents from progress state@ViewerState{..} timelineWin eventsWin = do
 
   ProgressView.setTitle progress ("Loading " ++ takeFileName msg)
 
-  buildEventLog progress from state timelineWin eventsWin
+  buildEventLog progress from
 
 -------------------------------------------------------------------------------
 
 -- Runs in a background thread
 --
-buildEventLog :: ProgressView -> Either FilePath String
-              -> ViewerState -> TimelineWindow -> EventsWindow -> IO (String, Int, Double)
-buildEventLog progress from state@ViewerState{..} timelineWin eventsWin =
+buildEventLog :: ProgressView -> Either FilePath String -> IO (HECs, String, Int, Double)
+buildEventLog progress from =
   case from of
     Right test     -> build test (testTrace test)
     Left filename  -> do
@@ -139,25 +130,6 @@ buildEventLog progress from state@ViewerState{..} timelineWin eventsWin =
 
        zipWithM_ treeProgress [0..] trees
 
-       do
-         newHECs state hecs
-         timelineParamsChanged state timelineWin
-         when debug $ zipWithM_ reportDurationTree [0..] (map fst trees)
-         when debug $ zipWithM_ reportEventTree [0..] (map snd trees)
-
-         --FIXME: the following is is a bad pattern. It updates shared IORefs
-         -- directly, followed by calling updates. It is too easy to forget
-         -- the update (indeed an earlier version of this code updated one
-         -- view component but not the other!).
-         --
-         -- We should eliminate the shared mutable state. Instead, we should
-         -- send the new values directly to the view components.
-         --
-         writeIORef hecsIORef (Just hecs)
-         writeIORef scaleIORef defaultScaleValue
-         eventsWindowResize eventsWin
-         timelineParamsChanged state timelineWin
-
-         return (name, n_events, fromIntegral lastTx * 1.0e-9)
+       return (hecs, name, n_events, fromIntegral lastTx * 1.0e-9)
 
 -------------------------------------------------------------------------------
