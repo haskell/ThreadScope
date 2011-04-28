@@ -27,6 +27,8 @@ import Events.ReadEvents
 import GUI.EventsWindow
 import GUI.Timeline
 import GUI.Timeline.Motion (scrollLeft, scrollRight)
+import GUI.Timeline.Render (calculateTotalTimelineHeight, toWholePixels)
+import GUI.Traces (getViewTraces)
 import GUI.SaveAs
 import GUI.Sidebar
 import qualified GUI.ConcurrencyControl as ConcurrencyControl
@@ -102,17 +104,48 @@ startup filename traceName debug
 
        let state = ViewerState { .. }
 
+       let getViewParameters = do
+
+            (dAreaWidth,_) <- widgetGetSize timelineDrawingArea
+            scaleValue <- readIORef scaleIORef
+            timelineHeight <- calculateTotalTimelineHeight state
+
+            -- snap the view to whole pixels, to avoid blurring
+            hadj_value0 <- adjustmentGetValue timelineAdj
+            let hadj_value = toWholePixels scaleValue hadj_value0
+
+            traces    <- getViewTraces state
+
+            return ViewParameters {
+                     width      = dAreaWidth,
+                     height     = timelineHeight,
+                     viewTraces = traces,
+                     hadjValue  = hadj_value,
+                     scaleValue = scaleValue,
+                     detail     = 1,
+                     bwMode     = False,
+                     labelsMode = False
+                   }
+
        rec mainWin <- mainWindowNew builder MainWindowActions {
                mainWinOpen          = openFileDialog mainWindow $ \filename ->
                                         registerEventsFromFile filename state
                                                                timelineWin eventsWin,
                mainWinSavePDF       = do
-                 mfn <- readIORef filenameIORef
-                 case mfn of Just fn -> saveAsPDF fn state; _ -> return (),
+                 viewParams <- getViewParameters
+                 mb_fn   <- readIORef filenameIORef
+                 mb_hecs <- readIORef hecsIORef
+                 case (mb_fn, mb_hecs) of
+                   (Just fn, Just hecs) -> saveAsPDF fn hecs state viewParams
+                   _                    -> return (),
 
                mainWinSavePNG       = do
-                 mfn <- readIORef filenameIORef
-                 case mfn of Just fn -> saveAsPNG fn state; _ -> return (),
+                 viewParams <- getViewParameters
+                 mb_fn   <- readIORef filenameIORef
+                 mb_hecs <- readIORef hecsIORef
+                 case (mb_fn, mb_hecs) of
+                   (Just fn, Just hecs) -> saveAsPNG fn hecs state viewParams
+                   _                    -> return (),
 
                mainWinQuit          = mainQuit,
                mainWinViewSidebar   = sidebarSetVisibility sidebar,
