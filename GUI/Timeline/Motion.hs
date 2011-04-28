@@ -56,7 +56,6 @@ zoom factor state@ViewerState{..} = do
        adjustmentSetStepIncrement timelineAdj nudge
        adjustmentSetPageIncrement timelineAdj pageshift
 
-       scaleUpdateStatus state newScaleValue
        queueRedrawTimelines state
 
 -------------------------------------------------------------------------------
@@ -88,17 +87,7 @@ zoomToFit state@ViewerState{..} = do
        adjustmentSetStepIncrement timelineAdj 0
        adjustmentSetPageIncrement timelineAdj 0
 
-       scaleUpdateStatus state newScaleValue
        queueRedrawTimelines state
-
--------------------------------------------------------------------------------
-
-scaleUpdateStatus :: ViewerState -> Double -> IO ()
-scaleUpdateStatus state@ViewerState{..} newScaleValue = do
-  when debug $ do
-    ctx <- statusbarGetContextId statusBar "debug"
-    statusbarPush statusBar ctx ("Scale " ++ show newScaleValue)
-    return ()
 
 -------------------------------------------------------------------------------
 

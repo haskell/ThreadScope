@@ -7,6 +7,9 @@ module GUI.MainWindow (
     mainWindowNew,
     MainWindowActions(..),
 
+    setFileLoaded,
+    setStatusMessage,
+
   ) where
 
 import Paths_threadscope
@@ -20,7 +23,8 @@ import Graphics.UI.Gtk.Gdk.Events as Old hiding (eventModifier)
 
 data MainWindow = MainWindow {
        mainWindow         :: Window,
-       statusBar          :: Statusbar
+       statusBar          :: Statusbar,
+       statusBarCxt       :: ContextId
      }
 
 data MainWindowActions = MainWindowActions {
@@ -54,6 +58,24 @@ data MainWindowActions = MainWindowActions {
        mainWinRemoveBookmark :: IO (),
        mainWinGotoBookmark   :: IO ()
      }
+
+-------------------------------------------------------------------------------
+
+setFileLoaded :: MainWindow -> Maybe FilePath -> IO ()
+setFileLoaded mainWin Nothing =
+  set (mainWindow mainWin) [
+      windowTitle := "ThreadScope"
+    ]
+setFileLoaded mainWin (Just file) =
+  set (mainWindow mainWin) [
+      windowTitle := file ++ " - ThreadScope"
+    ]
+
+setStatusMessage :: MainWindow -> String -> IO ()
+setStatusMessage mainWin msg = do
+  statusbarPop  (statusBar mainWin) (statusBarCxt mainWin)
+  statusbarPush (statusBar mainWin) (statusBarCxt mainWin) (' ':msg)
+  return ()
 
 -------------------------------------------------------------------------------
 
@@ -113,8 +135,8 @@ mainWindowNew builder actions = do
   ------------------------------------------------------------------------
   -- Status bar functionality
 
-  ctx <- statusbarGetContextId statusBar "file"
-  statusbarPush statusBar ctx "No eventlog loaded."
+  statusBarCxt <- statusbarGetContextId statusBar "file"
+  statusbarPush statusBar statusBarCxt "No eventlog loaded."
 
   ------------------------------------------------------------------------
   -- Bind all the events

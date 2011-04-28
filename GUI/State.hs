@@ -30,10 +30,6 @@ data ViewerState = ViewerState {
 
   -- WIDGETS
 
-  -- main window
-  mainWindow         :: Window,
-  statusBar          :: Statusbar,
-
   -- menu items
   bwToggle           :: CheckMenuItem,
 

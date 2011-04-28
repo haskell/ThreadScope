@@ -10,6 +10,7 @@ import System.Glib.GError (failOnGError)
 import Graphics.UI.Gtk.ModelView as New
 
 -- Imports from Haskell library
+import Text.Printf
 import Control.Monad
 import Data.IORef
 #ifndef mingw32_HOST_OS
@@ -21,7 +22,7 @@ import Control.Concurrent
 import Paths_threadscope
 
 -- Imports for ThreadScope
-import GUI.MainWindow
+import GUI.MainWindow as MainWindow
 import GUI.State
 import GUI.Dialogs
 import Events.ReadEvents
@@ -72,7 +73,6 @@ startup filename traceName debug
 
        --TODO: eliminate these remaining getWidget calls here.
        mainWindow         <- getWidget castToWindow "main_window"
-       statusBar          <- getWidget castToStatusbar "statusbar"
        bwToggle           <- getWidget castToCheckMenuItem "black_and_white"
        timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
        timelineLabelDrawingArea <- getWidget castToDrawingArea "timeline_labels_drawingarea"
@@ -214,8 +214,12 @@ startup filename traceName debug
            let loadEvents registerEvents = do
                  forkIO $ do
                    ConcurrencyControl.fullSpeed concCtl $
-                     ProgressView.withProgress mainWindow $ \progress ->
-                       registerEvents progress state timelineWin eventsWin
+                     ProgressView.withProgress mainWindow $ \progress -> do
+                       (file, nevents, timespan) <-
+                         registerEvents progress state timelineWin eventsWin
+                       MainWindow.setFileLoaded mainWin (Just file)
+                       MainWindow.setStatusMessage mainWin $
+                         printf "%s (%d events, %.3fs)" file nevents timespan
                    return ()
                  return ()
 

@@ -12,12 +12,9 @@ import GUI.Traces (newHECs)
 import qualified GUI.ProgressView as ProgressView
 import GUI.ProgressView (ProgressView)
 
-import Graphics.UI.Gtk hiding (on)
-
 import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
 
-import System.IO
 import Data.Array
 import Data.IORef
 import Data.List
@@ -66,10 +63,10 @@ maximum0 x = maximum x
 
 -------------------------------------------------------------------------------
 
-registerEventsFromFile :: String -> ProgressView -> ViewerState -> TimelineWindow -> EventsWindow -> IO ()
+registerEventsFromFile :: String -> ProgressView -> ViewerState -> TimelineWindow -> EventsWindow -> IO (String, Int, Double)
 registerEventsFromFile filename = registerEvents (Left filename)
 
-registerEventsFromTrace :: String -> ProgressView -> ViewerState -> TimelineWindow -> EventsWindow -> IO ()
+registerEventsFromTrace :: String -> ProgressView -> ViewerState -> TimelineWindow -> EventsWindow -> IO (String, Int, Double)
 registerEventsFromTrace traceName = registerEvents (Right traceName)
 
 registerEvents :: Either FilePath String
@@ -78,7 +75,7 @@ registerEvents :: Either FilePath String
                   -- instead and have the main interaction module update its
                   -- own private state.
                -> ViewerState -> TimelineWindow -> EventsWindow
-               -> IO ()
+               -> IO (String, Int, Double)
 
 registerEvents from progress state@ViewerState{..} timelineWin eventsWin = do
 
@@ -95,7 +92,7 @@ registerEvents from progress state@ViewerState{..} timelineWin eventsWin = do
 -- Runs in a background thread
 --
 buildEventLog :: ProgressView -> Either FilePath String
-              -> ViewerState -> TimelineWindow -> EventsWindow -> IO ()
+              -> ViewerState -> TimelineWindow -> EventsWindow -> IO (String, Int, Double)
 buildEventLog progress from state@ViewerState{..} timelineWin eventsWin =
   case from of
     Right test     -> build test (testTrace test)
@@ -104,7 +101,7 @@ buildEventLog progress from state@ViewerState{..} timelineWin eventsWin =
       fmt <- readEventLogFromFile filename
       stopPulse
       case fmt of
-        Left  err -> hPutStr stderr err --FIXME: report error properly
+        Left  err -> fail err --FIXME: report error properly
         Right evs -> build filename evs
 
   where
@@ -143,11 +140,6 @@ buildEventLog progress from state@ViewerState{..} timelineWin eventsWin =
        zipWithM_ treeProgress [0..] trees
 
        do
-         windowSetTitle mainWindow ("ThreadScope - " ++ takeFileName name)
-         ctx <- statusbarGetContextId statusBar "file"
-         statusbarPush statusBar ctx $
-            printf "%s (%d events, %.3fs)" name n_events
-                                ((fromIntegral lastTx :: Double) * 1.0e-9)
          newHECs state hecs
          timelineParamsChanged state timelineWin
          when debug $ zipWithM_ reportDurationTree [0..] (map fst trees)
@@ -165,5 +157,7 @@ buildEventLog progress from state@ViewerState{..} timelineWin eventsWin =
          writeIORef scaleIORef defaultScaleValue
          eventsWindowResize eventsWin
          timelineParamsChanged state timelineWin
+
+         return (name, n_events, fromIntegral lastTx * 1.0e-9)
 
 -------------------------------------------------------------------------------
