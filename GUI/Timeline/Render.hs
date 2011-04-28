@@ -23,8 +23,8 @@ import GHC.RTS.Events hiding (Event)
 
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Gdk.Events as Old
-import Graphics.Rendering.Cairo  as C
-import Graphics.UI.Gtk.Gdk.GC
+import Graphics.Rendering.Cairo
+import Graphics.UI.Gtk.Gdk.GC (GC, gcNew) --FIXME: eliminate old style drawing
 
 import Data.IORef
 import Control.Monad
@@ -252,7 +252,7 @@ scrollView state surface old new traces hecs = do
        if old_hadj > new_hadj
           then do rectangle off 0 (w - off) h -- scroll right.
           else do rectangle 0   0 (w + off) h -- scroll left.
-       C.fill
+       fill
 
        let rect | old_hadj > new_hadj
                 = Rectangle 0 0 (ceiling off) (height new)
@@ -263,7 +263,7 @@ scrollView state surface old new traces hecs = do
          Rectangle x y w h -> rectangle (fromIntegral x) (fromIntegral y)
                                         (fromIntegral w) (fromIntegral h)
        setSourceRGBA 0xffff 0xffff 0xffff 0xffff
-       C.fill
+       fill
 
        renderTraces state new traces hecs rect
 
@@ -310,6 +310,7 @@ drawLabel :: DrawingArea -> GC -> Trace -> Int -> IO ()
 drawLabel canvas gc trace y
   = do win <- widgetGetDrawWindow canvas
        txt <- canvas `widgetCreateLayout` (showTrace trace)
+       --FIXME: eliminate use of GC drawing and use cairo instead.
        drawLayoutWithColors win gc 10 y txt (Just black) Nothing
 
 --------------------------------------------------------------------------------
