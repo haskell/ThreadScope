@@ -27,7 +27,6 @@ import Graphics.UI.Gtk.Gdk.GC (GC, gcNew) --FIXME: eliminate old style drawing
 
 import Data.IORef
 import Control.Monad
-import Text.Printf
 
 -------------------------------------------------------------------------------
 -- |The 'updateProfileDrawingArea' function is called when an expose event
@@ -49,15 +48,9 @@ renderView state@ViewerState{..} bwmode exposeRegion hecs = do
   -- Get state information from user-interface components
   labels_mode <- toggleToolButtonGetActive showLabelsToggle
   (dAreaWidth,dAreaHeight) <- widgetGetSize timelineDrawingArea
-  when debug $ do
-    putStrLn ("\n=== updateCanvas")
-    putStrLn (show exposeRegion)
-    printf "width %d, height %d\n" dAreaWidth dAreaHeight
 
   scaleValue <- checkScaleValue state
-
   vadj_value <- adjustmentGetValue timelineVAdj
-  when debug $ liftIO $ printf "vadj_value: %f\n" vadj_value
 
   totalHeight <- calculateTotalTimelineHeight state
   let timelineHeight = max totalHeight dAreaHeight
@@ -161,7 +154,7 @@ drawCursor cursor_t param@ViewParameters{..} = do
 renderTraces :: ViewParameters -> [Trace] -> HECs -> Rectangle
              -> Render ()
 
-renderTraces params@ViewParameters{..} traces hecs (Rectangle rx ry rw rh)
+renderTraces params@ViewParameters{..} traces hecs (Rectangle rx _ry rw _rh)
   = do
     let
         scale_rx    = fromIntegral rx * scaleValue
@@ -261,7 +254,7 @@ scrollView surface old new traces hecs = do
 ------------------------------------------------------------------------------
 
 toWholePixels :: Double -> Double -> Double
-toWholePixels 0 x = 0
+toWholePixels 0    _x = 0
 toWholePixels scale x = fromIntegral (truncate (x / scale)) * scale
 
 -------------------------------------------------------------------------------

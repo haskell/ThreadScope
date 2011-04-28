@@ -6,7 +6,6 @@ module GUI.State (
   ) where
 
 import Events.EventTree
-import GUI.ConcurrencyControl (ConcurrencyControl)
 
 import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
@@ -20,8 +19,6 @@ import Data.Array
 -----------------------------------------------------------------------------
 
 data ViewerState = ViewerState {
-  concCtl          :: ConcurrencyControl,
-  debug            :: Bool,
 
   -- The loaded profile
   hecsIORef         :: IORef (Maybe HECs),
