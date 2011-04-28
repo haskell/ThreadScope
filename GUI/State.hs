@@ -21,7 +21,6 @@ import Data.Array
 
 data ViewerState = ViewerState {
   concCtl          :: ConcurrencyControl,
-  filenameIORef    :: IORef (Maybe FilePath),
   debug            :: Bool,
 
   -- The loaded profile

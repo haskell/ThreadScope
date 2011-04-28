@@ -106,8 +106,14 @@ startup filename traceName debug
                mainWinOpen          = openFileDialog mainWindow $ \filename ->
                                         registerEventsFromFile filename state
                                                                timelineWin eventsWin,
-               mainWinSavePDF       = saveAsPDF state,
-               mainWinSavePNG       = saveAsPNG state,
+               mainWinSavePDF       = do
+                 mfn <- readIORef filenameIORef
+                 case mfn of Just fn -> saveAsPDF fn state; _ -> return (),
+
+               mainWinSavePNG       = do
+                 mfn <- readIORef filenameIORef
+                 case mfn of Just fn -> saveAsPNG fn state; _ -> return (),
+
                mainWinQuit          = mainQuit,
                mainWinViewSidebar   = sidebarSetVisibility sidebar,
                mainWinViewEvents    = eventsWindowSetVisibility eventsWin,
