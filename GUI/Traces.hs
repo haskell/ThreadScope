@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns #-}
 module GUI.Traces (
     newHECs,
     getViewTraces
@@ -10,7 +11,7 @@ import Data.Tree
 
 -- Find the HEC traces in the treeStore and replace them
 newHECs :: ViewerState -> HECs -> IO ()
-newHECs state@ViewerState{..} hecs = do
+newHECs ViewerState{tracesStore} hecs = do
   go 0
   treeStoreInsert tracesStore [] 0 (TraceActivity, True)
  where
@@ -35,15 +36,15 @@ newHECs state@ViewerState{..} hecs = do
              go (n+1)
 
 getViewTraces :: ViewerState -> IO [Trace]
-getViewTraces state@ViewerState{..} = do
+getViewTraces state = do
   f <- getTracesStoreContents state
   return [ t | (t, True) <- concatMap flatten f, notGroup t ]
  where
   notGroup (TraceGroup _) = False
-  notGroup other = True
+  notGroup _              = True
 
 getTracesStoreContents :: ViewerState -> IO (Forest (Trace,Bool))
-getTracesStoreContents ViewerState{..} = go 0
+getTracesStoreContents ViewerState{tracesStore} = go 0
   where
   go !n = do
     m <- treeStoreLookup tracesStore [n]

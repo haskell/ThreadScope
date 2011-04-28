@@ -4,6 +4,7 @@
 -- and then renders the bookmarks in view.
 -------------------------------------------------------------------------------
 
+{-# LANGUAGE NamedFieldPuns #-}
 module GUI.Timeline.RenderBookmarks (renderBookmarks)
 where
 
@@ -20,7 +21,7 @@ import GHC.RTS.Events hiding (Event)
 -------------------------------------------------------------------------------
 
 renderBookmarks :: ViewerState -> ViewParameters -> Render ()
-renderBookmarks state@ViewerState{..} params@ViewParameters{..}
+renderBookmarks ViewerState{bookmarkStore} params@ViewParameters{..}
   = withViewScale params $ do
          -- Get the list of bookmarks
          bookmarkList <- liftIO $ listStoreToList bookmarkStore

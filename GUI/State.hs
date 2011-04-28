@@ -28,19 +28,19 @@ data ViewerState = ViewerState {
   -- WIDGETS
 
   -- Timeline view
-  timelineDrawingArea      :: DrawingArea,
-  timelineLabelDrawingArea :: DrawingArea,
-  timelineAdj              :: Adjustment,
-  timelineVAdj             :: Adjustment,
-  showLabelsToggle         :: ToggleToolButton,
+  timelineDrawingArea      :: DrawingArea, --render, motion
+  timelineLabelDrawingArea :: DrawingArea, --render, motion
+  timelineAdj              :: Adjustment,  --render, motion
+  timelineVAdj             :: Adjustment,  --render, motion
+  showLabelsToggle         :: ToggleToolButton, --render
 
   timelinePrevView    :: IORef (Maybe (ViewParameters, Surface)),
 
   -- Bookmarks
-  bookmarkStore      :: ListStore Timestamp,
+  bookmarkStore      :: ListStore Timestamp, --renderbookmarks
 
   -- Traces
-  tracesStore        :: TreeStore (Trace,Bool)
+  tracesStore        :: TreeStore (Trace,Bool) --sidebar, traces
   }
 
 -- all the data from a .eventlog file

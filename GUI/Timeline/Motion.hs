@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns #-}
 module GUI.Timeline.Motion (
     zoomIn, zoomOut, zoomToFit,
     scrollLeft, scrollRight, scrollToBeginning, scrollToEnd, centreOnCursor,
@@ -29,7 +30,7 @@ zoomOut :: ViewerState -> IO ()
 zoomOut  = zoom (*2)
 
 zoom :: (Double->Double) -> ViewerState -> IO ()
-zoom factor state@ViewerState{..} = do
+zoom factor state@ViewerState{timelineAdj, scaleIORef, cursorIORef} = do
        scaleValue <- readIORef scaleIORef
        let clampedFactor = if factor scaleValue < 1 then
                              id
@@ -61,7 +62,7 @@ zoom factor state@ViewerState{..} = do
 -------------------------------------------------------------------------------
 
 zoomToFit :: ViewerState -> IO ()
-zoomToFit state@ViewerState{..} = do
+zoomToFit state@ViewerState{hecsIORef, scaleIORef, timelineAdj, timelineDrawingArea} = do
   mb_hecs <- readIORef hecsIORef
   case mb_hecs of
     Nothing   -> writeIORef scaleIORef (-1.0)
@@ -99,13 +100,13 @@ scrollRight       = scroll (\val page l u -> (u - page) `min` (val + page/2))
 scrollToBeginning = scroll (\_ _ l u -> l)
 scrollToEnd       = scroll (\_ _ l u -> u)
 
-centreOnCursor state@ViewerState{..} = do
+centreOnCursor state@ViewerState{cursorIORef} = do
   cursor <- readIORef cursorIORef
   scroll (\_ page l u -> max l (fromIntegral cursor - page/2)) state
 
 scroll :: (Double -> Double -> Double -> Double -> Double)
        -> ViewerState -> IO ()
-scroll adjust state@ViewerState{..}
+scroll adjust ViewerState{timelineAdj}
   = do hadj_value <- adjustmentGetValue timelineAdj
        hadj_pagesize <- adjustmentGetPageSize timelineAdj
        hadj_lower <- adjustmentGetLower timelineAdj
@@ -121,7 +122,7 @@ vscrollUp   = vscroll (\val page l u -> l `max` (val - page/8))
 
 vscroll :: (Double -> Double -> Double -> Double -> Double)
         -> ViewerState -> IO ()
-vscroll adjust state@ViewerState{..}
+vscroll adjust ViewerState{timelineVAdj}
   = do hadj_value <- adjustmentGetValue timelineVAdj
        hadj_pagesize <- adjustmentGetPageSize timelineVAdj
        hadj_lower <- adjustmentGetLower timelineVAdj

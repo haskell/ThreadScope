@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns #-}
 module GUI.Timeline.Render (
     exposeTraceView,
     renderTraces,
@@ -34,7 +35,7 @@ import Control.Monad
 --  main trace canvas plus related canvases.
 
 exposeTraceView :: ViewerState -> Bool -> Region -> IO ()
-exposeTraceView state@ViewerState{..} bwmode exposeRegion = do
+exposeTraceView state@ViewerState{hecsIORef} bwmode exposeRegion = do
   maybeEventArray <- readIORef hecsIORef
 
   -- Check to see if an event trace has been loaded
@@ -43,7 +44,7 @@ exposeTraceView state@ViewerState{..} bwmode exposeRegion = do
     Just hecs -> renderView state bwmode exposeRegion hecs
 
 renderView :: ViewerState -> Bool -> Region -> HECs -> IO ()
-renderView state@ViewerState{..} bwmode exposeRegion hecs = do
+renderView state@ViewerState{timelineDrawingArea, showLabelsToggle, timelineVAdj, timelineAdj, timelinePrevView, cursorIORef} bwmode exposeRegion hecs = do
 
   -- Get state information from user-interface components
   labels_mode <- toggleToolButtonGetActive showLabelsToggle
@@ -265,7 +266,7 @@ toWholePixels scale x = fromIntegral (truncate (x / scale)) * scale
 -- We estimate the width of the vertical scrollbar at 20 pixels
 
 checkScaleValue :: ViewerState -> IO Double
-checkScaleValue state@ViewerState{..}
+checkScaleValue state@ViewerState{scaleIORef}
   = do scaleValue <- readIORef scaleIORef
        if scaleValue < 0.0
           then do zoomToFit state
@@ -275,7 +276,7 @@ checkScaleValue state@ViewerState{..}
 -------------------------------------------------------------------------------
 
 updateLabelDrawingArea :: ViewerState -> IO ()
-updateLabelDrawingArea state@ViewerState{..}
+updateLabelDrawingArea state@ViewerState{timelineVAdj, timelineLabelDrawingArea, showLabelsToggle}
    = do traces <- getViewTraces state
         labels_mode <- toggleToolButtonGetActive showLabelsToggle
         win <- widgetGetDrawWindow timelineLabelDrawingArea
@@ -314,7 +315,7 @@ showTrace _            = "?"
 --------------------------------------------------------------------------------
 
 calculateTotalTimelineHeight :: ViewerState -> IO Int
-calculateTotalTimelineHeight state@ViewerState{..} = do
+calculateTotalTimelineHeight state@ViewerState{showLabelsToggle} = do
    traces <- getViewTraces state
    labels_mode <- toggleToolButtonGetActive showLabelsToggle
    return $ last (traceYPositions labels_mode traces)
