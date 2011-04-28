@@ -73,7 +73,6 @@ startup filename traceName debug
 
        --TODO: eliminate these remaining getWidget calls here.
        mainWindow         <- getWidget castToWindow "main_window"
-       bwToggle           <- getWidget castToCheckMenuItem "black_and_white"
        timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
        timelineLabelDrawingArea <- getWidget castToDrawingArea "timeline_labels_drawingarea"
        timelineHScrollbar  <- getWidget castToHScrollbar "timeline_hscroll"
@@ -151,7 +150,7 @@ startup filename traceName debug
                mainWinQuit          = mainQuit,
                mainWinViewSidebar   = sidebarSetVisibility sidebar,
                mainWinViewEvents    = eventsWindowSetVisibility eventsWin,
-               mainWinViewBW        = \_ -> timelineParamsChanged state timelineWin,
+               mainWinViewBW        = timelineSetBWMode timelineWin,
                mainWinViewRefresh   = do
                  mb_filename <- readIORef filenameIORef
                  case mb_filename of

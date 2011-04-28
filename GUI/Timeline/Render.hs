@@ -35,20 +35,19 @@ import Text.Printf
 --  occurs. This function redraws the currently visible part of the
 --  main trace canvas plus related canvases.
 
-exposeTraceView :: ViewerState -> Region -> IO ()
-exposeTraceView state@ViewerState{..} exposeRegion = do
+exposeTraceView :: ViewerState -> Bool -> Region -> IO ()
+exposeTraceView state@ViewerState{..} bwmode exposeRegion = do
   maybeEventArray <- readIORef hecsIORef
 
   -- Check to see if an event trace has been loaded
   case maybeEventArray of
     Nothing   -> return ()
-    Just hecs -> renderView state exposeRegion hecs
+    Just hecs -> renderView state bwmode exposeRegion hecs
 
-renderView :: ViewerState -> Region -> HECs -> IO ()
-renderView state@ViewerState{..} exposeRegion hecs = do
+renderView :: ViewerState -> Bool -> Region -> HECs -> IO ()
+renderView state@ViewerState{..} bwmode exposeRegion hecs = do
 
   -- Get state information from user-interface components
-  bw_mode <- checkMenuItemGetActive bwToggle
   labels_mode <- toggleToolButtonGetActive showLabelsToggle
   (dAreaWidth,dAreaHeight) <- widgetGetSize timelineDrawingArea
   when debug $ do
@@ -80,7 +79,7 @@ renderView state@ViewerState{..} exposeRegion hecs = do
                         hadjValue = hadj_value,
                         scaleValue = scaleValue,
                         detail = 3, -- for now
-                        bwMode = bw_mode,
+                        bwMode = bwmode,
                         labelsMode = labels_mode
                     }
 

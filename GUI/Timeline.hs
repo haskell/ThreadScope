@@ -1,6 +1,10 @@
 module GUI.Timeline (
     TimelineWindow,
     timelineWindowNew,
+
+    timelineSetBWMode,
+
+    --TODO: this group needs reviewing
     renderTraces,
     timelineParamsChanged,
     defaultScaleValue,
@@ -43,6 +47,8 @@ data TimelineWindow = TimelineWindow {
        timelineAdj              :: Adjustment,
        timelineVAdj             :: Adjustment,
 
+       bwmodeIORef :: IORef Bool,
+
        --TODO: eliminate, these are **shared** not private IORefs !!
        -- Should instead have methods for updating the display state
        -- and events for when the cursor is changed. Let the interaction
@@ -50,6 +56,15 @@ data TimelineWindow = TimelineWindow {
        scaleIORef        :: IORef Double, -- in ns/pixel
        cursorIORef       :: IORef Timestamp
      }
+
+-----------------------------------------------------------------------------
+
+-- | Draw some parts of the timeline in black and white rather than colour.
+--
+timelineSetBWMode :: TimelineWindow -> Bool -> IO ()
+timelineSetBWMode timelineWin bwmode = do
+  writeIORef (bwmodeIORef timelineWin) bwmode
+  widgetQueueDraw (timelineDrawingArea timelineWin)
 
 -----------------------------------------------------------------------------
 
@@ -66,6 +81,8 @@ timelineWindowNew debug builder state scaleIORef cursorIORef = do
   timelineVScrollbar       <- getWidget castToVScrollbar "timeline_vscroll"
   timelineAdj              <- rangeGetAdjustment timelineHScrollbar
   timelineVAdj             <- rangeGetAdjustment timelineVScrollbar
+
+  bwmodeIORef <- newIORef False
 
   let timelineWin = TimelineWindow {..}
 
@@ -129,7 +146,9 @@ timelineWindowNew debug builder state scaleIORef cursorIORef = do
 
   on timelineDrawingArea exposeEvent $ do
      exposeRegion <- New.eventRegion
-     liftIO $ exposeTraceView state exposeRegion
+     liftIO $ do
+       bwmode <- readIORef bwmodeIORef
+       exposeTraceView state bwmode exposeRegion
      return True
 
   on timelineDrawingArea configureEvent $ do
