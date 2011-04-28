@@ -27,8 +27,7 @@ import Events.ReadEvents
 import GUI.EventsWindow
 import GUI.Timeline
 import GUI.Timeline.Motion (scrollLeft, scrollRight)
-import GUI.SaveAsPDF
-import GUI.SaveAsPNG
+import GUI.SaveAs
 import GUI.Sidebar
 import qualified GUI.ConcurrencyControl as ConcurrencyControl
 
