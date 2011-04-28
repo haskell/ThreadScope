@@ -136,7 +136,7 @@ startup filename traceName debug
                  mb_fn   <- readIORef filenameIORef
                  mb_hecs <- readIORef hecsIORef
                  case (mb_fn, mb_hecs) of
-                   (Just fn, Just hecs) -> saveAsPDF fn hecs state viewParams
+                   (Just fn, Just hecs) -> saveAsPDF fn hecs viewParams
                    _                    -> return (),
 
                mainWinSavePNG       = do
@@ -144,7 +144,7 @@ startup filename traceName debug
                  mb_fn   <- readIORef filenameIORef
                  mb_hecs <- readIORef hecsIORef
                  case (mb_fn, mb_hecs) of
-                   (Just fn, Just hecs) -> saveAsPNG fn hecs state viewParams
+                   (Just fn, Just hecs) -> saveAsPNG fn hecs viewParams
                    _                    -> return (),
 
                mainWinQuit          = mainQuit,

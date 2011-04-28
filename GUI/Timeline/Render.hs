@@ -22,7 +22,6 @@ import GUI.Timeline.CairoDrawing
 import GHC.RTS.Events hiding (Event)
 
 import Graphics.UI.Gtk
-import Graphics.UI.Gtk.Gdk.Events as Old
 import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk.Gdk.GC (GC, gcNew) --FIXME: eliminate old style drawing
 
@@ -97,19 +96,16 @@ renderView state@ViewerState{..} bwmode exposeRegion hecs = do
                                     dAreaWidth timelineHeight
         renderWith new_surface $ do
              clearWhite
-             renderTraces state params traces hecs rect
+             renderTraces params traces hecs rect
         return new_surface
 
   surface <-
     case prev_view of
-      Nothing -> do
-        when debug $ liftIO $ putStrLn "no old surface"
-        renderToNewSurface
+      Nothing -> renderToNewSurface
 
       Just (old_params, surface)
          | old_params == params
-         -> do when debug $ liftIO $ putStrLn "using previously rendered view"
-               return surface
+         -> return surface
 
          | width  old_params == width  params &&
            height old_params == height params
@@ -120,18 +116,15 @@ renderView state@ViewerState{..} bwmode exposeRegion hecs = do
                      fromIntegral (width params) * scaleValue
                   -- and the views overlap...
                   then do
-                       when debug $ liftIO $ putStrLn "scrolling"
-                       scrollView state surface old_params params traces hecs
+                       scrollView surface old_params params traces hecs
 
                   else do
-                       when debug $ liftIO $ putStrLn "using old surface"
                        renderWith surface $ do
-                          clearWhite; renderTraces state params traces hecs rect
+                          clearWhite; renderTraces params traces hecs rect
                        return surface
 
          | otherwise
-         -> do when debug $ liftIO $ putStrLn "old surface no good"
-               surfaceFinish surface
+         -> do surfaceFinish surface
                renderToNewSurface
 
   liftIO $ writeIORef timelinePrevView (Just (params, surface))
@@ -165,11 +158,10 @@ drawCursor cursor_t param@ViewParameters{..} = do
 -------------------------------------------------------------------------------
 -- This function draws the current view of all the HECs with Cario
 
-renderTraces :: ViewerState -> ViewParameters -> [Trace] -> HECs -> Rectangle
+renderTraces :: ViewParameters -> [Trace] -> HECs -> Rectangle
              -> Render ()
 
-renderTraces state@ViewerState{..} params@ViewParameters{..}
-             traces hecs (Rectangle rx ry rw rh)
+renderTraces params@ViewParameters{..} traces hecs (Rectangle rx ry rw rh)
   = do
     let
         scale_rx    = fromIntegral rx * scaleValue
@@ -187,9 +179,6 @@ renderTraces state@ViewerState{..} params@ViewParameters{..}
                    ceiling (max 0 (hadjValue + scale_rx + scale_rw)),
                    hecLastEventTime hecs
                 ]
-
-    when debug $ liftIO $ do
-        printf "rx = %d, scale_rx = %f, scale_rw = %f, hadjValue = %f, startPos = %d, endPos = %d scaleValue = %f\n" rx scale_rx scale_rw hadjValue startPos endPos scaleValue
 
     -- Now render the timeline drawing if we have a non-empty trace
     when (scaleValue > 0) $ do
@@ -214,17 +203,16 @@ renderTraces state@ViewerState{..} params@ViewParameters{..}
             restore
        -- Now rennder all the HECs.
       zipWithM_ renderTrace traces (traceYPositions labelsMode traces)
-    when debug $ liftIO $ putStrLn "renderTraces done\n"
 
 -------------------------------------------------------------------------------
 
 -- parameters differ only in the hadjValue, we can scroll ...
-scrollView :: ViewerState -> Surface
+scrollView :: Surface
            -> ViewParameters -> ViewParameters
            -> [Trace] -> HECs
            -> Render Surface
 
-scrollView state surface old new traces hecs = do
+scrollView surface old new traces hecs = do
 
 --   scrolling on the same surface seems not to work, I get garbled results.
 --   Not sure what the best way to do this is.
@@ -265,7 +253,7 @@ scrollView state surface old new traces hecs = do
        setSourceRGBA 0xffff 0xffff 0xffff 0xffff
        fill
 
-       renderTraces state new traces hecs rect
+       renderTraces new traces hecs rect
 
    surfaceFinish surface
    return new_surface
@@ -293,8 +281,8 @@ checkScaleValue state@ViewerState{..}
 
 -------------------------------------------------------------------------------
 
-updateLabelDrawingArea :: ViewerState -> Event -> IO Bool
-updateLabelDrawingArea state@ViewerState{..} (Expose { Old.eventArea=rect })
+updateLabelDrawingArea :: ViewerState -> IO ()
+updateLabelDrawingArea state@ViewerState{..}
    = do traces <- getViewTraces state
         labels_mode <- toggleToolButtonGetActive showLabelsToggle
         win <- widgetGetDrawWindow timelineLabelDrawingArea
@@ -303,8 +291,6 @@ updateLabelDrawingArea state@ViewerState{..} (Expose { Old.eventArea=rect })
         let ys = map (subtract (round vadj_value)) $
                       traceYPositions labels_mode traces
         zipWithM_ (drawLabel timelineLabelDrawingArea gc) traces ys
-        return True
-updateLabelDrawingArea _ _ = error "updateLabelDrawingArea"
 
 drawLabel :: DrawingArea -> GC -> Trace -> Int -> IO ()
 drawLabel canvas gc trace y

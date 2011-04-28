@@ -108,7 +108,9 @@ timelineWindowNew debug builder state scaleIORef cursorIORef = do
 
   ------------------------------------------------------------------------
   -- Porgram the callback for the capability drawingArea
-  timelineLabelDrawingArea `onExpose` updateLabelDrawingArea state
+  timelineLabelDrawingArea `onExpose` \_ -> do
+    updateLabelDrawingArea state
+    return True
 
   ------------------------------------------------------------------------
   -- Set-up the key timelineDrawingArea.
