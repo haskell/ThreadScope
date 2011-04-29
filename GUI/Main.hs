@@ -23,7 +23,7 @@ import Paths_threadscope
 
 -- Imports for ThreadScope
 import GUI.MainWindow as MainWindow
-import GUI.State
+import GUI.Types
 import GUI.Dialogs
 import Events.ReadEvents
 import GUI.EventsWindow

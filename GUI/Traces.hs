@@ -4,7 +4,7 @@ module GUI.Traces (
     getViewTraces
  ) where
 
-import GUI.State (Trace(..), HECs(..))
+import GUI.Types
 
 import Graphics.UI.Gtk
 import Data.Tree

@@ -3,7 +3,7 @@ module GUI.Timeline.Types (
  ) where
 
 
-import GUI.State (HECs, Trace, ViewParameters)
+import GUI.Types
 import GHC.RTS.Events
 
 import Graphics.UI.Gtk

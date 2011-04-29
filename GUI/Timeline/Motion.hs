@@ -8,7 +8,7 @@ module GUI.Timeline.Motion (
 
 import GUI.Timeline.Types
 import GUI.Timeline.Render.Constants
-import GUI.State (HECs(..))
+import GUI.Types
 
 import Graphics.UI.Gtk
 

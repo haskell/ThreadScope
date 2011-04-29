@@ -3,7 +3,7 @@ module Events.ReadEvents (
   ) where
 
 import Events.EventTree
-import GUI.State (HECs(..))
+import GUI.Types
 import Events.TestEvents
 import Events.EventDuration
 import qualified GUI.ProgressView as ProgressView

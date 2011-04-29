@@ -4,7 +4,7 @@ module GUI.Timeline.Activity (
 
 import GUI.Timeline.Render.Constants
 
-import GUI.State
+import GUI.Types
 import Events.EventTree
 import Events.EventDuration
 import GUI.ViewerColours
@@ -25,7 +25,7 @@ import Data.List
 renderActivity :: ViewParameters -> HECs -> Timestamp -> Timestamp
                -> Render ()
 
-renderActivity param@ViewParameters{..} hecs start0 end0 = do
+renderActivity ViewParameters{..} hecs start0 end0 = do
   let
       slice = round (fromIntegral activity_detail * scaleValue)
 

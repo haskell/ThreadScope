@@ -1,4 +1,4 @@
-module GUI.State (
+module GUI.Types (
     ViewParameters(..),
     Trace(..),
     HECs(..)

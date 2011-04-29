@@ -6,7 +6,7 @@ import GUI.Timeline.Render.Constants
 
 import Events.EventTree
 import Events.EventDuration
-import GUI.State
+import GUI.Types
 import GUI.Timeline.CairoDrawing
 import GUI.ViewerColours
 

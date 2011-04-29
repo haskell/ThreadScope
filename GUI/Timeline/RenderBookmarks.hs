@@ -9,7 +9,7 @@ module GUI.Timeline.RenderBookmarks (renderBookmarks) where
 
 import GUI.Timeline.WithViewScale
 
-import GUI.State (ViewParameters(..))
+import GUI.Types
 import GUI.Timeline.CairoDrawing
 import GUI.ViewerColours
 

@@ -16,7 +16,7 @@ import GUI.Timeline.Activity
 import GUI.Timeline.RenderBookmarks
 import GUI.Timeline.WithViewScale
 
-import GUI.State (Trace(..), HECs(..), ViewParameters(..))
+import GUI.Types
 import GUI.ViewerColours
 import GUI.Traces
 import GUI.Timeline.CairoDrawing

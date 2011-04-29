@@ -2,7 +2,7 @@ module GUI.SaveAs (saveAsPDF, saveAsPNG) where
 
 -- Imports for ThreadScope
 import GUI.Timeline.Render (renderTraces)
-import GUI.State (HECs, ViewParameters(..))
+import GUI.Types
 
 -- Imports for GTK
 import Graphics.UI.Gtk

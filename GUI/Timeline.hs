@@ -24,7 +24,7 @@ import GUI.Timeline.Motion
 import GUI.Timeline.Render
 import GUI.Timeline.Key
 
-import GUI.State (HECs(..), Trace)
+import GUI.Types
 import GHC.RTS.Events
 
 import Graphics.UI.Gtk

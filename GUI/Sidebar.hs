@@ -6,7 +6,7 @@ module GUI.Sidebar (
     sidebarSetVisibility
   ) where
 
-import GUI.State (Trace(..))
+import GUI.Types
 
 import Graphics.UI.Gtk
 
