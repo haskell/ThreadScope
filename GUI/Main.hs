@@ -91,8 +91,9 @@ startup filename traceName debug
        concCtl <- ConcurrencyControl.start
 
        rec mainWin <- mainWindowNew builder MainWindowActions {
-               mainWinOpen          = openFileDialog mainWin $ \filename ->
-                                        loadEvents (registerEventsFromFile filename),
+               mainWinOpen          = openFileDialog mainWin $ \filename -> do
+                                        loadEvents (registerEventsFromFile filename)
+                                        writeIORef filenameIORef (Just filename),
                mainWinSavePDF       = do
                  viewParams <- timelineGetViewParameters timelineWin
                  mb_fn   <- readIORef filenameIORef
@@ -189,6 +190,9 @@ startup filename traceName debug
 
                        -- note, this hecsIORef is not shared with the TimelineWindow
                        writeIORef hecsIORef (Just hecs)
+
+                       --FIXME: note, not all state is reset on loading a file:
+                       -- events cursor pos, timeline cursor pos, current view pos
 
                    return ()
                  return ()
