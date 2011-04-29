@@ -74,15 +74,9 @@ startup filename traceName debug
        --TODO: eliminate these remaining getWidget calls here.
        mainWindow         <- getWidget castToWindow "main_window"
        timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
-       timelineLabelDrawingArea <- getWidget castToDrawingArea "timeline_labels_drawingarea"
        timelineHScrollbar  <- getWidget castToHScrollbar "timeline_hscroll"
-       timelineVScrollbar  <- getWidget castToVScrollbar "timeline_vscroll"
        timelineAdj         <- rangeGetAdjustment timelineHScrollbar
-       timelineVAdj        <- rangeGetAdjustment timelineVScrollbar
 
-       timelinePrevView   <- newIORef Nothing
-
-       showLabelsToggle   <- getWidget castToToggleToolButton "cpus_showlabels"
        bookmarkTreeView   <- getWidget castToTreeView "bookmark_list"
 
        bookmarkStore <- New.listStoreNew []
@@ -103,32 +97,30 @@ startup filename traceName debug
 
        concCtl <- ConcurrencyControl.start
 
-       let state = ViewerState { .. }
+       rec let getViewParameters = do
 
-       let getViewParameters = do
+                (dAreaWidth,_) <- widgetGetSize timelineDrawingArea
+                scaleValue <- readIORef scaleIORef
+                timelineHeight <- calculateTotalTimelineHeight timelineWin
 
-            (dAreaWidth,_) <- widgetGetSize timelineDrawingArea
-            scaleValue <- readIORef scaleIORef
-            timelineHeight <- calculateTotalTimelineHeight state
+                -- snap the view to whole pixels, to avoid blurring
+                hadj_value0 <- adjustmentGetValue timelineAdj
+                let hadj_value = toWholePixels scaleValue hadj_value0
 
-            -- snap the view to whole pixels, to avoid blurring
-            hadj_value0 <- adjustmentGetValue timelineAdj
-            let hadj_value = toWholePixels scaleValue hadj_value0
+                traces    <- getViewTraces tracesStore
 
-            traces    <- getViewTraces state
+                return ViewParameters {
+                         width      = dAreaWidth,
+                         height     = timelineHeight,
+                         viewTraces = traces,
+                         hadjValue  = hadj_value,
+                         scaleValue = scaleValue,
+                         detail     = 1,
+                         bwMode     = False,
+                         labelsMode = False
+                       }
 
-            return ViewParameters {
-                     width      = dAreaWidth,
-                     height     = timelineHeight,
-                     viewTraces = traces,
-                     hadjValue  = hadj_value,
-                     scaleValue = scaleValue,
-                     detail     = 1,
-                     bwMode     = False,
-                     labelsMode = False
-                   }
-
-       rec mainWin <- mainWindowNew builder MainWindowActions {
+           mainWin <- mainWindowNew builder MainWindowActions {
                mainWinOpen          = openFileDialog mainWindow $ \filename ->
                                         loadEvents (registerEventsFromFile filename),
                mainWinSavePDF       = do
@@ -160,27 +152,27 @@ startup filename traceName debug
                mainWinAbout         = aboutDialog mainWindow,
 
                -- Toolbar actions
-               mainWinJumpStart     = do timelineScrollToBeginning state
+               mainWinJumpStart     = do timelineScrollToBeginning timelineWin
                                          eventsWindowJumpToEnd eventsWin,
-               mainWinJumpEnd       = do timelineScrollToEnd state
+               mainWinJumpEnd       = do timelineScrollToEnd timelineWin
                                          eventsWindowJumpToEnd eventsWin,
-               mainWinJumpCursor    = do timelineCentreOnCursor state
+               mainWinJumpCursor    = do timelineCentreOnCursor timelineWin
                                          --FIXME: sync the cursor of the timeline and events windows
                                          cursorpos <- eventsWindowGetCursorLine eventsWin
                                          eventsWindowJumpToPosition eventsWin cursorpos,
 
-               mainWinScrollLeft    = scrollLeft  state,
-               mainWinScrollRight   = scrollRight state,
-               mainWinJumpZoomIn    = timelineZoomIn    state,
-               mainWinJumpZoomOut   = timelineZoomOut   state,
-               mainWinJumpZoomFit   = timelineZoomToFit state,
-               mainWinDisplayLabels = timelineParamsChanged state timelineWin,
+               mainWinScrollLeft    = scrollLeft  timelineWin,
+               mainWinScrollRight   = scrollRight timelineWin,
+               mainWinJumpZoomIn    = timelineZoomIn    timelineWin,
+               mainWinJumpZoomOut   = timelineZoomOut   timelineWin,
+               mainWinJumpZoomFit   = timelineZoomToFit timelineWin,
+               mainWinDisplayLabels = timelineParamsChanged timelineWin,
 
                mainWinAddBookmark    = do
                  when debug $ putStrLn "Add bookmark\n"
                  cursorPos <- readIORef cursorIORef
                  New.listStoreAppend bookmarkStore cursorPos
-                 queueRedrawTimelines state,
+                 queueRedrawTimelines timelineWin,
 
                mainWinRemoveBookmark = do
                  when debug $ putStrLn "Delete bookmark\n"
@@ -189,7 +181,7 @@ startup filename traceName debug
                  case selection of
                    Nothing -> return ()
                    Just (TreeIter _ pos _ _) -> listStoreRemove bookmarkStore (fromIntegral pos)
-                 queueRedrawTimelines state,
+                 queueRedrawTimelines timelineWin,
 
                mainWinGotoBookmark   = do
                  sel <- treeViewGetSelection bookmarkTreeView
@@ -199,16 +191,16 @@ startup filename traceName debug
                    Just (TreeIter _ pos _ _) -> do
                      l <- listStoreToList bookmarkStore
                      when debug $ putStrLn ("gotoBookmark: " ++ show l++ " pos = " ++ show pos)
-                     setCursorToTime state timelineWin (l!!(fromIntegral pos))
-                 queueRedrawTimelines state
+                     setCursorToTime timelineWin (l!!(fromIntegral pos))
+                 queueRedrawTimelines timelineWin
              }
 
            eventsWin <- eventsWindowNew builder
 
-           timelineWin <- timelineWindowNew debug builder state scaleIORef cursorIORef
+           timelineWin <- timelineWindowNew debug builder bookmarkStore tracesStore hecsIORef scaleIORef cursorIORef
 
            sidebar <- sidebarNew tracesStore builder SidebarActions {
-               sidebarTraceToggled = timelineParamsChanged state timelineWin
+               sidebarTraceToggled = timelineParamsChanged timelineWin
              }
 
            let loadEvents registerEvents = do
@@ -231,8 +223,8 @@ startup filename traceName debug
                        --
                        writeIORef hecsIORef (Just hecs)
                        writeIORef scaleIORef defaultScaleValue
-                       newHECs state hecs
-                       timelineParamsChanged state timelineWin
+                       newHECs tracesStore hecs
+                       timelineParamsChanged timelineWin
 
                    return ()
                  return ()

@@ -7,6 +7,7 @@ module GUI.Timeline.Render (
     toWholePixels
   ) where
 
+import GUI.Timeline.Types
 import GUI.Timeline.Render.Constants
 import GUI.Timeline.Motion
 import GUI.Timeline.Ticks
@@ -15,7 +16,7 @@ import GUI.Timeline.Activity
 import GUI.Timeline.RenderBookmarks
 import GUI.Timeline.WithViewScale
 
-import GUI.State
+import GUI.State (Trace(..), HECs(..), ViewParameters(..))
 import GUI.ViewerColours
 import GUI.Traces
 import GUI.Timeline.CairoDrawing
@@ -34,8 +35,8 @@ import Control.Monad
 --  occurs. This function redraws the currently visible part of the
 --  main trace canvas plus related canvases.
 
-exposeTraceView :: ViewerState -> Bool -> Region -> IO ()
-exposeTraceView state@ViewerState{hecsIORef} bwmode exposeRegion = do
+exposeTraceView :: TimelineWindow -> Bool -> Region -> IO ()
+exposeTraceView state@TimelineWindow{hecsIORef} bwmode exposeRegion = do
   maybeEventArray <- readIORef hecsIORef
 
   -- Check to see if an event trace has been loaded
@@ -43,8 +44,8 @@ exposeTraceView state@ViewerState{hecsIORef} bwmode exposeRegion = do
     Nothing   -> return ()
     Just hecs -> renderView state bwmode exposeRegion hecs
 
-renderView :: ViewerState -> Bool -> Region -> HECs -> IO ()
-renderView state@ViewerState{timelineDrawingArea, showLabelsToggle, timelineVAdj, timelineAdj, timelinePrevView, cursorIORef} bwmode exposeRegion hecs = do
+renderView :: TimelineWindow -> Bool -> Region -> HECs -> IO ()
+renderView state@TimelineWindow{timelineDrawingArea, showLabelsToggle, timelineVAdj, timelineAdj, timelinePrevView, cursorIORef, bookmarkStore, tracesStore} bwmode exposeRegion hecs = do
 
   -- Get state information from user-interface components
   labels_mode <- toggleToolButtonGetActive showLabelsToggle
@@ -63,7 +64,7 @@ renderView state@ViewerState{timelineDrawingArea, showLabelsToggle, timelineVAdj
   hadj_value0 <- adjustmentGetValue timelineAdj
   let hadj_value = toWholePixels scaleValue hadj_value0
 
-  traces    <- getViewTraces state
+  traces    <- getViewTraces tracesStore
 
   let params = ViewParameters {
                         width     = dAreaWidth,
@@ -130,7 +131,8 @@ renderView state@ViewerState{timelineDrawingArea, showLabelsToggle, timelineVAdj
   setOperator OperatorSource
   paint
   when (scaleValue > 0) $ do
-    renderBookmarks state params
+    bookmarkList <- liftIO $ listStoreToList bookmarkStore
+    renderBookmarks bookmarkList params
     drawCursor cursor_t params
 
 -------------------------------------------------------------------------------
@@ -265,8 +267,8 @@ toWholePixels scale x = fromIntegral (truncate (x / scale)) * scale
 -- An "uncomputed" scale value is represetned as -1.0 (defaultScaleValue)
 -- We estimate the width of the vertical scrollbar at 20 pixels
 
-checkScaleValue :: ViewerState -> IO Double
-checkScaleValue state@ViewerState{scaleIORef}
+checkScaleValue :: TimelineWindow -> IO Double
+checkScaleValue state@TimelineWindow{scaleIORef}
   = do scaleValue <- readIORef scaleIORef
        if scaleValue < 0.0
           then do zoomToFit state
@@ -275,9 +277,9 @@ checkScaleValue state@ViewerState{scaleIORef}
 
 -------------------------------------------------------------------------------
 
-updateLabelDrawingArea :: ViewerState -> IO ()
-updateLabelDrawingArea state@ViewerState{timelineVAdj, timelineLabelDrawingArea, showLabelsToggle}
-   = do traces <- getViewTraces state
+updateLabelDrawingArea :: TimelineWindow -> IO ()
+updateLabelDrawingArea TimelineWindow{timelineVAdj, timelineLabelDrawingArea, showLabelsToggle, tracesStore}
+   = do traces <- getViewTraces tracesStore
         labels_mode <- toggleToolButtonGetActive showLabelsToggle
         win <- widgetGetDrawWindow timelineLabelDrawingArea
         vadj_value <- adjustmentGetValue timelineVAdj
@@ -314,9 +316,9 @@ showTrace _            = "?"
 
 --------------------------------------------------------------------------------
 
-calculateTotalTimelineHeight :: ViewerState -> IO Int
-calculateTotalTimelineHeight state@ViewerState{showLabelsToggle} = do
-   traces <- getViewTraces state
+calculateTotalTimelineHeight :: TimelineWindow -> IO Int
+calculateTotalTimelineHeight TimelineWindow{showLabelsToggle, tracesStore} = do
+   traces <- getViewTraces tracesStore
    labels_mode <- toggleToolButtonGetActive showLabelsToggle
    return $ last (traceYPositions labels_mode traces)
 

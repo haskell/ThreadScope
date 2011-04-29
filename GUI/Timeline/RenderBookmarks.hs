@@ -5,26 +5,23 @@
 -------------------------------------------------------------------------------
 
 {-# LANGUAGE NamedFieldPuns #-}
-module GUI.Timeline.RenderBookmarks (renderBookmarks)
-where
+module GUI.Timeline.RenderBookmarks (renderBookmarks) where
 
 import GUI.Timeline.WithViewScale
 
-import Graphics.UI.Gtk
-import Graphics.Rendering.Cairo
-import GUI.State
+import GUI.State (ViewParameters(..))
 import GUI.Timeline.CairoDrawing
 import GUI.ViewerColours
 
 import GHC.RTS.Events hiding (Event)
 
+import Graphics.Rendering.Cairo
+
 -------------------------------------------------------------------------------
 
-renderBookmarks :: ViewerState -> ViewParameters -> Render ()
-renderBookmarks ViewerState{bookmarkStore} params@ViewParameters{..}
+renderBookmarks :: [Timestamp] -> ViewParameters -> Render ()
+renderBookmarks bookmarkList params@ViewParameters{..}
   = withViewScale params $ do
-         -- Get the list of bookmarks
-         bookmarkList <- liftIO $ listStoreToList bookmarkStore
          -- Render the bookmarks
          -- First set the line width to one pixel and set the line colour
          (onePixel, _) <- deviceToUserDistance 1 0
