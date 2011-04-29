@@ -3,6 +3,7 @@ module GUI.Timeline (
     timelineWindowNew,
 
     timelineSetBWMode,
+    timelineGetViewParameters,
 
     --TODO: this group needs reviewing
     renderTraces,
@@ -23,6 +24,7 @@ import GUI.Timeline.Types (TimelineWindow(..))
 import GUI.Timeline.Motion
 import GUI.Timeline.Render
 import GUI.Timeline.Key
+import GUI.Traces (getViewTraces)
 
 import GUI.Types
 import GHC.RTS.Events
@@ -47,6 +49,30 @@ timelineSetBWMode :: TimelineWindow -> Bool -> IO ()
 timelineSetBWMode timelineWin bwmode = do
   writeIORef (bwmodeIORef timelineWin) bwmode
   widgetQueueDraw (timelineDrawingArea timelineWin)
+
+timelineGetViewParameters :: TimelineWindow -> IO ViewParameters
+timelineGetViewParameters timelineWin@TimelineWindow{..} = do
+
+  (dAreaWidth,_) <- widgetGetSize timelineDrawingArea
+  scaleValue <- readIORef scaleIORef
+  timelineHeight <- calculateTotalTimelineHeight timelineWin
+
+  -- snap the view to whole pixels, to avoid blurring
+  hadj_value0 <- adjustmentGetValue timelineAdj
+  let hadj_value = toWholePixels scaleValue hadj_value0
+
+  traces <- getViewTraces tracesStore
+
+  return ViewParameters {
+           width      = dAreaWidth,
+           height     = timelineHeight,
+           viewTraces = traces,
+           hadjValue  = hadj_value,
+           scaleValue = scaleValue,
+           detail     = 1,
+           bwMode     = False,
+           labelsMode = False
+         }
 
 -----------------------------------------------------------------------------
 

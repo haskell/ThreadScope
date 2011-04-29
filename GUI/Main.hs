@@ -29,8 +29,7 @@ import Events.ReadEvents
 import GUI.EventsWindow
 import GUI.Timeline
 import GUI.Timeline.Motion (scrollLeft, scrollRight)
-import GUI.Timeline.Render (calculateTotalTimelineHeight, toWholePixels)
-import GUI.Traces (newHECs, getViewTraces)
+import GUI.Traces (newHECs)
 import GUI.SaveAs
 import GUI.Sidebar
 import qualified GUI.ConcurrencyControl as ConcurrencyControl
@@ -73,9 +72,6 @@ startup filename traceName debug
 
        --TODO: eliminate these remaining getWidget calls here.
        mainWindow         <- getWidget castToWindow "main_window"
-       timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
-       timelineHScrollbar  <- getWidget castToHScrollbar "timeline_hscroll"
-       timelineAdj         <- rangeGetAdjustment timelineHScrollbar
 
        bookmarkTreeView   <- getWidget castToTreeView "bookmark_list"
 
@@ -97,34 +93,11 @@ startup filename traceName debug
 
        concCtl <- ConcurrencyControl.start
 
-       rec let getViewParameters = do
-
-                (dAreaWidth,_) <- widgetGetSize timelineDrawingArea
-                scaleValue <- readIORef scaleIORef
-                timelineHeight <- calculateTotalTimelineHeight timelineWin
-
-                -- snap the view to whole pixels, to avoid blurring
-                hadj_value0 <- adjustmentGetValue timelineAdj
-                let hadj_value = toWholePixels scaleValue hadj_value0
-
-                traces    <- getViewTraces tracesStore
-
-                return ViewParameters {
-                         width      = dAreaWidth,
-                         height     = timelineHeight,
-                         viewTraces = traces,
-                         hadjValue  = hadj_value,
-                         scaleValue = scaleValue,
-                         detail     = 1,
-                         bwMode     = False,
-                         labelsMode = False
-                       }
-
-           mainWin <- mainWindowNew builder MainWindowActions {
+       rec mainWin <- mainWindowNew builder MainWindowActions {
                mainWinOpen          = openFileDialog mainWindow $ \filename ->
                                         loadEvents (registerEventsFromFile filename),
                mainWinSavePDF       = do
-                 viewParams <- getViewParameters
+                 viewParams <- timelineGetViewParameters timelineWin
                  mb_fn   <- readIORef filenameIORef
                  mb_hecs <- readIORef hecsIORef
                  case (mb_fn, mb_hecs) of
@@ -132,7 +105,7 @@ startup filename traceName debug
                    _                    -> return (),
 
                mainWinSavePNG       = do
-                 viewParams <- getViewParameters
+                 viewParams <- timelineGetViewParameters timelineWin
                  mb_fn   <- readIORef filenameIORef
                  mb_hecs <- readIORef hecsIORef
                  case (mb_fn, mb_hecs) of
