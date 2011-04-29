@@ -13,7 +13,7 @@ import Data.Version (showVersion)
 
 -------------------------------------------------------------------------------
 
-aboutDialog :: Window -> IO ()
+aboutDialog :: WindowClass window => window -> IO ()
 aboutDialog parent
  = do dialog <- aboutDialogNew
       logoPath <- getDataFileName "threadscope.png"
@@ -28,18 +28,18 @@ aboutDialog parent
                                   "Satnam Singh (s.singh@ieee.org)"],
          aboutDialogLogo      := Just logo,
          aboutDialogWebsite   := "http://research.microsoft.com/threadscope",
-         windowTransientFor   := parent
+         windowTransientFor   := toWindow parent
         ]
       onResponse dialog $ \_ -> widgetDestroy dialog
       widgetShow dialog
 
 -------------------------------------------------------------------------------
 
-openFileDialog :: Window -> (FilePath -> IO ()) -> IO ()
+openFileDialog :: WindowClass window => window -> (FilePath -> IO ()) -> IO ()
 openFileDialog parent open
   = do dialog <- fileChooserDialogNew
                    (Just "Open Profile...")
-                   (Just parent)
+                   (Just (toWindow parent))
                    FileChooserActionOpen
                    [("gtk-cancel", ResponseCancel)
                    ,("gtk-open", ResponseAccept)]

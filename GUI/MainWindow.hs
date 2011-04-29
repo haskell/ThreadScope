@@ -17,6 +17,7 @@ import Paths_threadscope
 -- Imports for GTK
 import Graphics.UI.Gtk as Gtk
 import Graphics.UI.Gtk.Gdk.Events as Old hiding (eventModifier)
+import System.Glib.GObject as Glib
 
 
 -------------------------------------------------------------------------------
@@ -26,6 +27,16 @@ data MainWindow = MainWindow {
        statusBar          :: Statusbar,
        statusBarCxt       :: ContextId
      }
+
+instance Glib.GObjectClass  MainWindow where
+  toGObject = toGObject . mainWindow
+  unsafeCastGObject = error "cannot downcast to MainView type"
+
+instance Gtk.ObjectClass    MainWindow
+instance Gtk.WidgetClass    MainWindow
+instance Gtk.ContainerClass MainWindow
+instance Gtk.BinClass       MainWindow
+instance Gtk.WindowClass    MainWindow
 
 data MainWindowActions = MainWindowActions {
 

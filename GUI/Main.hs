@@ -70,11 +70,9 @@ startup filename traceName debug
        scaleIORef        <- newIORef defaultScaleValue
        cursorIORef       <- newIORef 0
 
-       --TODO: eliminate these remaining getWidget calls here.
-       mainWindow         <- getWidget castToWindow "main_window"
-
+       -- Bookmarks
+       --FIXME: this should almost certainly be constructed elsewhere
        bookmarkTreeView   <- getWidget castToTreeView "bookmark_list"
-
        bookmarkStore <- New.listStoreNew []
        New.treeViewSetModel bookmarkTreeView bookmarkStore
        New.treeViewSetHeadersVisible bookmarkTreeView True
@@ -94,7 +92,7 @@ startup filename traceName debug
        concCtl <- ConcurrencyControl.start
 
        rec mainWin <- mainWindowNew builder MainWindowActions {
-               mainWinOpen          = openFileDialog mainWindow $ \filename ->
+               mainWinOpen          = openFileDialog mainWin $ \filename ->
                                         loadEvents (registerEventsFromFile filename),
                mainWinSavePDF       = do
                  viewParams <- timelineGetViewParameters timelineWin
@@ -122,7 +120,7 @@ startup filename traceName debug
                    Nothing -> return ()
                    Just filename -> loadEvents (registerEventsFromFile filename),
 
-               mainWinAbout         = aboutDialog mainWindow,
+               mainWinAbout         = aboutDialog mainWin,
 
                -- Toolbar actions
                mainWinJumpStart     = do timelineScrollToBeginning timelineWin
@@ -179,7 +177,7 @@ startup filename traceName debug
            let loadEvents registerEvents = do
                  forkIO $ do
                    ConcurrencyControl.fullSpeed concCtl $
-                     ProgressView.withProgress mainWindow $ \progress -> do
+                     ProgressView.withProgress mainWin $ \progress -> do
                        (hecs, file, nevents, timespan) <- registerEvents progress
                        MainWindow.setFileLoaded mainWin (Just file)
                        MainWindow.setStatusMessage mainWin $
