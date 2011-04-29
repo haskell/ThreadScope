@@ -51,8 +51,8 @@ eventsWindowSetEvents eventWin@EventsWindow{..} mevents = do
 
 -------------------------------------------------------------------------------
 
-eventsWindowNew :: Bool -> Builder -> IO EventsWindow
-eventsWindowNew debug builder = do
+eventsWindowNew :: Builder -> IO EventsWindow
+eventsWindowNew builder = do
 
   eventsIORef        <- newIORef Nothing
   eventsCursorIORef  <- newIORef Nothing
@@ -76,30 +76,13 @@ eventsWindowNew debug builder = do
 
   let eventsWin = EventsWindow {..}
 
-  on eventsDrawingArea exposeEvent $ updateEventsWindow eventsWin debug
+  on eventsDrawingArea exposeEvent $ updateEventsWindow eventsWin
 
   on eventsDrawingArea buttonPressEvent $ tryEvent $ do
       (_,y)  <- eventCoordinates
       liftIO $ do
         widgetGrabFocus eventsDrawingArea
         setCursor eventsWin y
-
-  on eventsDrawingArea focusInEvent $ liftIO $ do
-     f <- get eventsDrawingArea widgetHasFocus
-     when debug $ putStrLn ("focus in: " ++ show f)
---     set eventsDrawingArea [widgetHasFocus := True]
-     return False
-
-  on eventsDrawingArea focusOutEvent $ liftIO $ do
-     f <- get eventsDrawingArea widgetHasFocus
-     when debug $ putStrLn ("focus out: " ++ show f)
---     set eventsDrawingArea [widgetHasFocus := False]
-     return False
-
-  on eventsDrawingArea keyPressEvent $ do
-      key <- eventKeyName
-      when debug $ liftIO $ putStrLn ("key " ++ key)
-      return True
 
   on eventsDrawingArea scrollEvent $ do
       dir <- eventScrollDirection
@@ -161,8 +144,8 @@ eventsWindowResize EventsWindow{..} = do
 
 -------------------------------------------------------------------------------
 
-updateEventsWindow :: EventsWindow -> Bool-> EventM EExpose Bool
-updateEventsWindow eventsWin@EventsWindow{..} debug = liftIO $ do
+updateEventsWindow :: EventsWindow -> EventM EExpose Bool
+updateEventsWindow eventsWin@EventsWindow{..} = liftIO $ do
   value <- adjustmentGetValue eventsAdj
   mb_events <- readIORef eventsIORef
   case mb_events of
@@ -172,7 +155,6 @@ updateEventsWindow eventsWin@EventsWindow{..} debug = liftIO $ do
       (w,h) <- widgetGetSize eventsDrawingArea
 
       cursorpos <- eventsWindowGetCursorLine eventsWin
-      when debug $ printf "cursorpos: %d\n" cursorpos
       renderWithDrawable win $ do
         drawEvents value arr w h cursorpos
       return True

@@ -203,7 +203,7 @@ startup filename traceName debug
                  queueRedrawTimelines state
              }
 
-           eventsWin <- eventsWindowNew debug builder
+           eventsWin <- eventsWindowNew builder
 
            timelineWin <- timelineWindowNew debug builder state scaleIORef cursorIORef
 
