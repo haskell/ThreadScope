@@ -1,18 +1,15 @@
 module GUI.EventsWindow (
     EventsWindow,
     eventsWindowNew,
-    eventsWindowSetVisibility,
 
+    eventsWindowSetEvents,
+    eventsWindowSetVisibility,
     eventsWindowGetCursorLine,
     eventsWindowJumpToBeginning,
     eventsWindowJumpToEnd,
     eventsWindowJumpToPosition,
-
-    -- TODO: replace by state change function
-    eventsWindowResize,
   ) where
 
-import GUI.State (HECs(..))
 import GUI.ViewerColours
 
 import Graphics.UI.Gtk
@@ -29,34 +26,38 @@ import Text.Printf
 
 data EventsWindow = EventsWindow {
        eventsFontExtents  :: FontExtents,
-       eventsCursorIORef  :: IORef (Maybe (Timestamp, Int)),
        eventsAdj          :: Adjustment,
        eventsDrawingArea  :: DrawingArea,
        eventsBox          :: Widget,
 
-       --TODO: eliminate, these are **shared** not private IORefs !!
-       -- Should instead have methods for updating the display state
-       -- and events for when the cursor is changed. Let the interaction
-       -- module hold the state.
-       hecsIORef          :: IORef (Maybe HECs),
-       cursorIORef        :: IORef Timestamp
+       eventsCursorIORef  :: IORef (Maybe (Timestamp, Int)),
+       eventsIORef        :: IORef (Maybe (Array Int CapEvent))
      }
 
 -------------------------------------------------------------------------------
 
 eventsWindowSetVisibility :: EventsWindow -> Bool -> IO ()
-eventsWindowSetVisibility sidebar visible =
-  set (eventsBox sidebar) [ widgetVisible := visible ]
+eventsWindowSetVisibility eventWin visible =
+  set (eventsBox eventWin) [ widgetVisible := visible ]
 
 -------------------------------------------------------------------------------
 
-eventsWindowNew :: Bool -> Builder
-                -> IORef (Maybe HECs) -> IORef Timestamp --TODO: eliminate
-                -> IO EventsWindow
-eventsWindowNew debug builder hecsIORef cursorIORef = do
+eventsWindowSetEvents :: EventsWindow -> Maybe (Array Int GHC.CapEvent) -> IO ()
+eventsWindowSetEvents eventWin@EventsWindow{..} mevents = do
+  writeIORef eventsIORef mevents
+  writeIORef eventsCursorIORef Nothing
+  eventsWindowResize eventWin
+  widgetQueueDraw eventsDrawingArea
+
+-------------------------------------------------------------------------------
+
+eventsWindowNew :: Bool -> Builder -> IO EventsWindow
+eventsWindowNew debug builder = do
+
+  eventsIORef        <- newIORef Nothing
+  eventsCursorIORef  <- newIORef Nothing
 
   let getWidget cast = builderGetObject builder cast
-  eventsCursorIORef  <- newIORef Nothing
   eventsBox          <- getWidget castToWidget "eventsbox"
   eventsVScrollbar   <- getWidget castToVScrollbar "eventsVScroll"
   eventsAdj          <- rangeGetAdjustment eventsVScrollbar
@@ -74,10 +75,6 @@ eventsWindowNew debug builder hecsIORef cursorIORef = do
                          renderWith s eventsFont
 
   let eventsWin = EventsWindow {..}
-
-  on eventsDrawingArea configureEvent $ do
-    liftIO $ eventsWindowResize eventsWin
-    return True
 
   on eventsDrawingArea exposeEvent $ updateEventsWindow eventsWin debug
 
@@ -151,11 +148,10 @@ eventsWindowResize EventsWindow{..} = do
   (_,h) <- widgetGetSize eventsDrawingArea
   let exts = eventsFontExtents
   let page = fromIntegral (truncate (fromIntegral h / fontExtentsHeight exts))
-  mb_hecs <- readIORef hecsIORef
-  case mb_hecs of
-    Nothing   -> return ()
-    Just hecs -> do
-      let arr = hecEventArray hecs
+  mb_events <- readIORef eventsIORef
+  case mb_events of
+    Nothing  -> return ()
+    Just arr -> do
       let (_, n_events) = bounds arr
       adjustmentSetPageIncrement eventsAdj page
       adjustmentSetPageSize eventsAdj page
@@ -168,11 +164,10 @@ eventsWindowResize EventsWindow{..} = do
 updateEventsWindow :: EventsWindow -> Bool-> EventM EExpose Bool
 updateEventsWindow eventsWin@EventsWindow{..} debug = liftIO $ do
   value <- adjustmentGetValue eventsAdj
-  mb_hecs <- readIORef hecsIORef
-  case mb_hecs of
-    Nothing   -> return True
-    Just hecs -> do
-      let arr = hecEventArray hecs
+  mb_events <- readIORef eventsIORef
+  case mb_events of
+    Nothing  -> return True
+    Just arr -> do
       win <- widgetGetDrawWindow eventsDrawingArea
       (w,h) <- widgetGetSize eventsDrawingArea
 
@@ -184,40 +179,29 @@ updateEventsWindow eventsWin@EventsWindow{..} debug = liftIO $ do
 
 -------------------------------------------------------------------------------
 
+-- | Locate the cursor position as a line number
+--
 eventsWindowGetCursorLine :: EventsWindow -> IO Int
 eventsWindowGetCursorLine EventsWindow{..} = do
-  -- locate the cursor position as a line number
-  current_cursor <- readIORef cursorIORef
-  eventsCursor <- readIORef eventsCursorIORef
-  mb_hecs <- readIORef hecsIORef
-  case mb_hecs of
-    Nothing   -> return 0
-    Just hecs -> do
-      let arr = hecEventArray hecs
-      case eventsCursor of
-        Just (cursort, cursorpos) | cursort == current_cursor ->
-              return cursorpos
-        _other -> do
-              let cursorpos = locateCursor arr current_cursor
-              writeIORef eventsCursorIORef (Just (current_cursor, cursorpos))
-              return cursorpos
+  cursor <- readIORef eventsCursorIORef
+  case cursor of
+    Nothing                       -> return 0
+    Just (_cursorTime, cursorPos) -> return cursorPos
 
 -------------------------------------------------------------------------------
 
 setCursor :: EventsWindow -> Double -> IO ()
 setCursor EventsWindow{..} eventY = do
   val <- adjustmentGetValue eventsAdj
-  mb_hecs <- readIORef hecsIORef
-  case mb_hecs of
-    Nothing   -> return ()
-    Just hecs -> do
-      let arr = hecEventArray hecs
-          line'   = truncate (val + eventY / fontExtentsHeight eventsFontExtents)
+  mb_events <- readIORef eventsIORef
+  case mb_events of
+    Nothing  -> return ()
+    Just arr -> do
+      let line'   = truncate (val + eventY / fontExtentsHeight eventsFontExtents)
           arr_max = snd $ bounds arr
           line    = if line' > arr_max then arr_max else line'
           t       = time (ce_event (arr!line))
       --
-      writeIORef cursorIORef t
       writeIORef eventsCursorIORef (Just (t,line))
       widgetQueueDraw eventsDrawingArea
 

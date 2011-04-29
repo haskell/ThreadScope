@@ -165,6 +165,7 @@ startup filename traceName debug
                mainWinJumpEnd       = do timelineScrollToEnd state
                                          eventsWindowJumpToEnd eventsWin,
                mainWinJumpCursor    = do timelineCentreOnCursor state
+                                         --FIXME: sync the cursor of the timeline and events windows
                                          cursorpos <- eventsWindowGetCursorLine eventsWin
                                          eventsWindowJumpToPosition eventsWin cursorpos,
 
@@ -202,7 +203,7 @@ startup filename traceName debug
                  queueRedrawTimelines state
              }
 
-           eventsWin <- eventsWindowNew debug builder hecsIORef cursorIORef
+           eventsWin <- eventsWindowNew debug builder
 
            timelineWin <- timelineWindowNew debug builder state scaleIORef cursorIORef
 
@@ -219,6 +220,7 @@ startup filename traceName debug
                        MainWindow.setStatusMessage mainWin $
                          printf "%s (%d events, %.3fs)" file nevents timespan
 
+                       eventsWindowSetEvents eventsWin (Just (hecEventArray hecs))
                        --FIXME: the following is is a bad pattern. It updates shared IORefs
                        -- directly, followed by calling updates. It is too easy to forget
                        -- the update (indeed an earlier version of this code updated one
@@ -230,7 +232,6 @@ startup filename traceName debug
                        writeIORef hecsIORef (Just hecs)
                        writeIORef scaleIORef defaultScaleValue
                        newHECs state hecs
-                       eventsWindowResize eventsWin
                        timelineParamsChanged state timelineWin
 
                    return ()
