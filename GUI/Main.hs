@@ -67,7 +67,6 @@ startup filename traceName debug
        -- IORefs are used to communicate informaiton about the eventlog
        -- to the callback functions for windows, buttons etc.
        hecsIORef         <- newIORef Nothing
-       scaleIORef        <- newIORef defaultScaleValue
        cursorIORef       <- newIORef 0
 
        -- Bookmarks
@@ -168,7 +167,7 @@ startup filename traceName debug
 
            eventsWin <- eventsWindowNew builder
 
-           timelineWin <- timelineWindowNew debug builder bookmarkStore tracesStore hecsIORef scaleIORef cursorIORef
+           timelineWin <- timelineWindowNew debug builder bookmarkStore tracesStore cursorIORef
 
            sidebar <- sidebarNew tracesStore builder SidebarActions {
                sidebarTraceToggled = timelineParamsChanged timelineWin
@@ -184,18 +183,12 @@ startup filename traceName debug
                          printf "%s (%d events, %.3fs)" file nevents timespan
 
                        eventsWindowSetEvents eventsWin (Just (hecEventArray hecs))
-                       --FIXME: the following is is a bad pattern. It updates shared IORefs
-                       -- directly, followed by calling updates. It is too easy to forget
-                       -- the update (indeed an earlier version of this code updated one
-                       -- view component but not the other!).
-                       --
-                       -- We should eliminate the shared mutable state. Instead, we should
-                       -- send the new values directly to the view components.
-                       --
-                       writeIORef hecsIORef (Just hecs)
-                       writeIORef scaleIORef defaultScaleValue
+                       --FIXME: still have shared state between the timeline win and traces.
                        newHECs tracesStore hecs
-                       timelineParamsChanged timelineWin
+                       timelineWindowSetHECs timelineWin (Just hecs)
+
+                       -- note, this hecsIORef is not shared with the TimelineWindow
+                       writeIORef hecsIORef (Just hecs)
 
                    return ()
                  return ()

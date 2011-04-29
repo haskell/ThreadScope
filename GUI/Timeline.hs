@@ -4,11 +4,11 @@ module GUI.Timeline (
 
     timelineSetBWMode,
     timelineGetViewParameters,
+    timelineWindowSetHECs,
 
     --TODO: this group needs reviewing
     renderTraces,
     timelineParamsChanged,
-    defaultScaleValue,
     queueRedrawTimelines,
     setCursorToTime,
 
@@ -74,12 +74,20 @@ timelineGetViewParameters timelineWin@TimelineWindow{..} = do
            labelsMode = False
          }
 
+timelineWindowSetHECs :: TimelineWindow -> Maybe HECs -> IO ()
+timelineWindowSetHECs timelineWin@TimelineWindow{..} mhecs = do
+  writeIORef hecsIORef mhecs
+  writeIORef scaleIORef defaultScaleValue
+  queueRedrawTimelines  timelineWin
+  updateTimelineVScroll timelineWin
+
+
 -----------------------------------------------------------------------------
 
 timelineWindowNew :: Bool -> Builder
-                  -> ListStore Timestamp -> TreeStore (Trace, Bool) -> IORef (Maybe HECs) -> IORef Double -> IORef Timestamp --TODO: eliminate
+                  -> ListStore Timestamp -> TreeStore (Trace, Bool) -> IORef Timestamp --TODO: eliminate
                   -> IO TimelineWindow
-timelineWindowNew debug builder bookmarkStore tracesStore hecsIORef scaleIORef cursorIORef = do
+timelineWindowNew debug builder bookmarkStore tracesStore cursorIORef = do
 
   let getWidget cast = builderGetObject builder cast
   timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
@@ -91,6 +99,8 @@ timelineWindowNew debug builder bookmarkStore tracesStore hecsIORef scaleIORef c
   timelineVAdj             <- rangeGetAdjustment timelineVScrollbar
   showLabelsToggle         <- getWidget castToToggleToolButton "cpus_showlabels"
 
+  hecsIORef   <- newIORef Nothing
+  scaleIORef  <- newIORef defaultScaleValue
   bwmodeIORef <- newIORef False
   timelinePrevView <- newIORef Nothing
 
@@ -173,6 +183,7 @@ timelineWindowNew debug builder bookmarkStore tracesStore hecsIORef scaleIORef c
 -- Update the internal state and the timemline view after changing which
 -- traces are displayed, or the order of traces.
 
+--FIXME: this is still exported, means there's something wrong with the state management
 timelineParamsChanged :: TimelineWindow -> IO ()
 timelineParamsChanged timelineWin = do
   queueRedrawTimelines timelineWin
