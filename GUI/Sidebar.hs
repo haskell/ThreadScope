@@ -2,8 +2,6 @@ module GUI.Sidebar (
     Sidebar,
     sidebarNew,
     SidebarActions(..),
-
-    sidebarSetVisibility
   ) where
 
 import GUI.Types
@@ -14,7 +12,6 @@ import Graphics.UI.Gtk
 -- | Abstract sidebar object.
 --
 data Sidebar = Sidebar {
-       sidebarBox :: Widget
      }
 
 -- | The actions to take in response to sidebar events.
@@ -23,19 +20,12 @@ data SidebarActions = SidebarActions {
        sidebarTraceToggled :: IO ()
      }
 
-
-sidebarSetVisibility :: Sidebar -> Bool -> IO ()
-sidebarSetVisibility sidebar visible =
-  set (sidebarBox sidebar) [ widgetVisible := visible ]
-
-
 sidebarNew :: TreeStore (Trace, Bool) --TODO: eliminate this param
            -> Builder -> SidebarActions -> IO Sidebar
 sidebarNew tracesStore builder actions = do
 
     let getWidget cast = builderGetObject builder cast
 
-    sidebarBox      <- getWidget castToWidget   "sidebar"
     tracesTreeView  <- getWidget castToTreeView "traces_tree"
 
     traceColumn <- treeViewColumnNew

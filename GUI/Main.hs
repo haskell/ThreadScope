@@ -111,8 +111,8 @@ startup filename traceName debug
                    _                    -> return (),
 
                mainWinQuit          = mainQuit,
-               mainWinViewSidebar   = sidebarSetVisibility sidebar,
-               mainWinViewEvents    = eventsWindowSetVisibility eventsWin,
+               mainWinViewSidebar   = MainWindow.sidebarSetVisibility mainWin,
+               mainWinViewEvents    = MainWindow.eventsSetVisibility mainWin,
                mainWinViewBW        = timelineSetBWMode timelineWin,
                mainWinViewRefresh   = do
                  mb_filename <- readIORef filenameIORef

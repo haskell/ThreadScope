@@ -3,7 +3,6 @@ module GUI.EventsWindow (
     eventsWindowNew,
 
     eventsWindowSetEvents,
-    eventsWindowSetVisibility,
     eventsWindowGetCursorLine,
     eventsWindowJumpToBeginning,
     eventsWindowJumpToEnd,
@@ -28,17 +27,10 @@ data EventsWindow = EventsWindow {
        eventsFontExtents  :: FontExtents,
        eventsAdj          :: Adjustment,
        eventsDrawingArea  :: DrawingArea,
-       eventsBox          :: Widget,
 
        eventsCursorIORef  :: IORef (Maybe (Timestamp, Int)),
        eventsIORef        :: IORef (Maybe (Array Int CapEvent))
      }
-
--------------------------------------------------------------------------------
-
-eventsWindowSetVisibility :: EventsWindow -> Bool -> IO ()
-eventsWindowSetVisibility eventWin visible =
-  set (eventsBox eventWin) [ widgetVisible := visible ]
 
 -------------------------------------------------------------------------------
 
@@ -58,7 +50,6 @@ eventsWindowNew builder = do
   eventsCursorIORef  <- newIORef Nothing
 
   let getWidget cast = builderGetObject builder cast
-  eventsBox          <- getWidget castToWidget "eventsbox"
   eventsVScrollbar   <- getWidget castToVScrollbar "eventsVScroll"
   eventsAdj          <- rangeGetAdjustment eventsVScrollbar
   eventsDrawingArea  <- getWidget castToDrawingArea "eventsDrawingArea"

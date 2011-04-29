@@ -9,6 +9,8 @@ module GUI.MainWindow (
 
     setFileLoaded,
     setStatusMessage,
+    sidebarSetVisibility,
+    eventsSetVisibility,
 
   ) where
 
@@ -24,6 +26,10 @@ import System.Glib.GObject as Glib
 
 data MainWindow = MainWindow {
        mainWindow         :: Window,
+
+       sidebarBox,
+       eventsBox          :: Widget,
+
        statusBar          :: Statusbar,
        statusBarCxt       :: ContextId
      }
@@ -88,6 +94,14 @@ setStatusMessage mainWin msg = do
   statusbarPush (statusBar mainWin) (statusBarCxt mainWin) (' ':msg)
   return ()
 
+sidebarSetVisibility :: MainWindow -> Bool -> IO ()
+sidebarSetVisibility mainWin visible =
+  set (sidebarBox mainWin) [ widgetVisible := visible ]
+
+eventsSetVisibility :: MainWindow -> Bool -> IO ()
+eventsSetVisibility mainWin visible =
+  set (eventsBox mainWin) [ widgetVisible := visible ]
+
 -------------------------------------------------------------------------------
 
 mainWindowNew :: Builder -> MainWindowActions -> IO MainWindow
@@ -98,6 +112,9 @@ mainWindowNew builder actions = do
 
   mainWindow         <- getWidget castToWindow "main_window"
   statusBar          <- getWidget castToStatusbar "statusbar"
+
+  sidebarBox         <- getWidget castToWidget "sidebar"
+  eventsBox          <- getWidget castToWidget "eventsbox"
 
   bwToggle           <- getWidget castToCheckMenuItem "black_and_white"
   sidebarToggle      <- getWidget castToCheckMenuItem "view_sidebar"
