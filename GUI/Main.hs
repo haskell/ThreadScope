@@ -29,9 +29,8 @@ import Events.ReadEvents
 import GUI.EventsWindow
 import GUI.Timeline
 import GUI.Timeline.Motion (scrollLeft, scrollRight)
-import GUI.Traces (newHECs)
+import GUI.TraceView
 import GUI.SaveAs
-import GUI.Sidebar
 import qualified GUI.ConcurrencyControl as ConcurrencyControl
 import qualified GUI.ProgressView as ProgressView
 
@@ -82,11 +81,6 @@ startup filename traceName debug
        New.cellLayoutSetAttributes bookmarkColumn cell bookmarkStore
           (\record -> [New.cellText := show record ++ " ns"])
        New.treeViewAppendColumn bookmarkTreeView bookmarkColumn
-
-       -- Traces
-       --FIXME: this should almost certainly be constructed elsewhere
-       -- e.g. Traces or Sidebar
-       tracesStore <- treeStoreNew []
 
        concCtl <- ConcurrencyControl.start
 
@@ -168,10 +162,10 @@ startup filename traceName debug
 
            eventsWin <- eventsWindowNew builder
 
-           timelineWin <- timelineWindowNew debug builder bookmarkStore tracesStore cursorIORef
+           timelineWin <- timelineWindowNew debug builder bookmarkStore cursorIORef
 
-           sidebar <- sidebarNew tracesStore builder SidebarActions {
-               sidebarTraceToggled = timelineParamsChanged timelineWin
+           traceView <- traceViewNew builder TraceViewActions {
+               traceViewTracesChanged = timelineWindowSetTraces timelineWin
              }
 
            let loadEvents registerEvents = do
@@ -184,9 +178,10 @@ startup filename traceName debug
                          printf "%s (%d events, %.3fs)" file nevents timespan
 
                        eventsWindowSetEvents eventsWin (Just (hecEventArray hecs))
-                       --FIXME: still have shared state between the timeline win and traces.
-                       newHECs tracesStore hecs
+                       traceViewSetHECs traceView hecs
+                       traces' <- traceViewGetTraces traceView
                        timelineWindowSetHECs timelineWin (Just hecs)
+                       timelineWindowSetTraces timelineWin traces'
 
                        -- note, this hecsIORef is not shared with the TimelineWindow
                        writeIORef hecsIORef (Just hecs)

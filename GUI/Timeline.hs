@@ -5,6 +5,7 @@ module GUI.Timeline (
     timelineSetBWMode,
     timelineGetViewParameters,
     timelineWindowSetHECs,
+    timelineWindowSetTraces,
 
     --TODO: this group needs reviewing
     renderTraces,
@@ -24,7 +25,6 @@ import GUI.Timeline.Types (TimelineWindow(..))
 import GUI.Timeline.Motion
 import GUI.Timeline.Render
 import GUI.Timeline.Key
-import GUI.Traces (getViewTraces)
 
 import GUI.Types
 import GHC.RTS.Events
@@ -61,7 +61,7 @@ timelineGetViewParameters timelineWin@TimelineWindow{..} = do
   hadj_value0 <- adjustmentGetValue timelineAdj
   let hadj_value = toWholePixels scaleValue hadj_value0
 
-  traces <- getViewTraces tracesStore
+  traces <- readIORef tracesIORef
 
   return ViewParameters {
            width      = dAreaWidth,
@@ -78,16 +78,19 @@ timelineWindowSetHECs :: TimelineWindow -> Maybe HECs -> IO ()
 timelineWindowSetHECs timelineWin@TimelineWindow{..} mhecs = do
   writeIORef hecsIORef mhecs
   writeIORef scaleIORef defaultScaleValue
-  queueRedrawTimelines  timelineWin
-  updateTimelineVScroll timelineWin
+  timelineParamsChanged timelineWin
 
+timelineWindowSetTraces :: TimelineWindow -> [Trace] -> IO ()
+timelineWindowSetTraces timelineWin@TimelineWindow{tracesIORef} traces = do
+  writeIORef tracesIORef traces
+  timelineParamsChanged timelineWin
 
 -----------------------------------------------------------------------------
 
 timelineWindowNew :: Bool -> Builder
-                  -> ListStore Timestamp -> TreeStore (Trace, Bool) -> IORef Timestamp --TODO: eliminate
+                  -> ListStore Timestamp -> IORef Timestamp --TODO: eliminate
                   -> IO TimelineWindow
-timelineWindowNew debug builder bookmarkStore tracesStore cursorIORef = do
+timelineWindowNew debug builder bookmarkStore cursorIORef = do
 
   let getWidget cast = builderGetObject builder cast
   timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
@@ -100,6 +103,7 @@ timelineWindowNew debug builder bookmarkStore tracesStore cursorIORef = do
   showLabelsToggle         <- getWidget castToToggleToolButton "cpus_showlabels"
 
   hecsIORef   <- newIORef Nothing
+  tracesIORef <- newIORef []
   scaleIORef  <- newIORef defaultScaleValue
   bwmodeIORef <- newIORef False
   timelinePrevView <- newIORef Nothing

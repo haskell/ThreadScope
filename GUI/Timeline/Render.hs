@@ -18,7 +18,6 @@ import GUI.Timeline.WithViewScale
 
 import GUI.Types
 import GUI.ViewerColours
-import GUI.Traces
 import GUI.Timeline.CairoDrawing
 
 import GHC.RTS.Events hiding (Event)
@@ -45,7 +44,7 @@ exposeTraceView state@TimelineWindow{hecsIORef} bwmode exposeRegion = do
     Just hecs -> renderView state bwmode exposeRegion hecs
 
 renderView :: TimelineWindow -> Bool -> Region -> HECs -> IO ()
-renderView state@TimelineWindow{timelineDrawingArea, showLabelsToggle, timelineVAdj, timelineAdj, timelinePrevView, cursorIORef, bookmarkStore, tracesStore} bwmode exposeRegion hecs = do
+renderView state@TimelineWindow{timelineDrawingArea, showLabelsToggle, timelineVAdj, timelineAdj, timelinePrevView, cursorIORef, bookmarkStore, tracesIORef} bwmode exposeRegion hecs = do
 
   -- Get state information from user-interface components
   labels_mode <- toggleToolButtonGetActive showLabelsToggle
@@ -64,7 +63,7 @@ renderView state@TimelineWindow{timelineDrawingArea, showLabelsToggle, timelineV
   hadj_value0 <- adjustmentGetValue timelineAdj
   let hadj_value = toWholePixels scaleValue hadj_value0
 
-  traces    <- getViewTraces tracesStore
+  traces    <- readIORef tracesIORef
 
   let params = ViewParameters {
                         width     = dAreaWidth,
@@ -278,8 +277,8 @@ checkScaleValue state@TimelineWindow{scaleIORef}
 -------------------------------------------------------------------------------
 
 updateLabelDrawingArea :: TimelineWindow -> IO ()
-updateLabelDrawingArea TimelineWindow{timelineVAdj, timelineLabelDrawingArea, showLabelsToggle, tracesStore}
-   = do traces <- getViewTraces tracesStore
+updateLabelDrawingArea TimelineWindow{timelineVAdj, timelineLabelDrawingArea, showLabelsToggle, tracesIORef}
+   = do traces <- readIORef tracesIORef
         labels_mode <- toggleToolButtonGetActive showLabelsToggle
         win <- widgetGetDrawWindow timelineLabelDrawingArea
         vadj_value <- adjustmentGetValue timelineVAdj
@@ -317,8 +316,8 @@ showTrace _            = "?"
 --------------------------------------------------------------------------------
 
 calculateTotalTimelineHeight :: TimelineWindow -> IO Int
-calculateTotalTimelineHeight TimelineWindow{showLabelsToggle, tracesStore} = do
-   traces <- getViewTraces tracesStore
+calculateTotalTimelineHeight TimelineWindow{showLabelsToggle, tracesIORef} = do
+   traces <- readIORef tracesIORef
    labels_mode <- toggleToolButtonGetActive showLabelsToggle
    return $ last (traceYPositions labels_mode traces)
 

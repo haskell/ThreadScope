@@ -22,7 +22,8 @@ Executable threadscope
                      binary, array, mtl, filepath,
                      ghc-events >= 0.2,
                      containers >= 0.2 && < 0.5
-  extensions:        RecordWildCards, BangPatterns, PatternGuards,
+  extensions:        RecordWildCards, NamedFieldPuns,
+                     BangPatterns, PatternGuards,
                      CPP
   Other-Modules:     Events.EventDuration, 
                      Events.EventTree, 
@@ -33,9 +34,8 @@ Executable threadscope
                      GUI.EventsWindow, 
                      GUI.Dialogs,
                      GUI.SaveAs,
-                     GUI.Sidebar,
                      GUI.Timeline,
-                     GUI.Traces,
+                     GUI.TraceView,
                      GUI.Types,
                      GUI.ConcurrencyControl,
                      GUI.ViewerColours,

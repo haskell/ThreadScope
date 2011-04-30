@@ -29,8 +29,7 @@ data TimelineWindow = TimelineWindow {
 
        bookmarkStore     :: ListStore Timestamp,
 
-       --TODO: this is also a shared store still
-       tracesStore       :: TreeStore (Trace, Bool),
+       tracesIORef       :: IORef [Trace],
 
        --TODO: eliminate, these are **shared** not private IORefs !!
        -- Should instead have methods for updating the display state
