@@ -11,11 +11,6 @@ module GUI.Timeline (
     timelineWindowSetBookmarks,
     timelineSetCursor,
 
-    --TODO: this group needs reviewing
-    renderTraces,
-    timelineParamsChanged,
-    queueRedrawTimelines,
-
     timelineZoomIn,
     timelineZoomOut,
     timelineZoomToFit,
@@ -204,7 +199,7 @@ timelineWindowNew builder TimelineViewActions{..} = do
 -- Update the internal state and the timemline view after changing which
 -- traces are displayed, or the order of traces.
 
---FIXME: this is still exported, means there's something wrong with the state management
+--FIXME: we are still unclear about which state changes involve which updates
 timelineParamsChanged :: TimelineWindow -> IO ()
 timelineParamsChanged timelineWin = do
   queueRedrawTimelines timelineWin
