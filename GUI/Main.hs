@@ -54,7 +54,7 @@ runGUI filename traceName debug = do
 -------------------------------------------------------------------------------
 
 startup :: FilePath -> String -> Bool -> IO ()
-startup filename traceName debug
+startup filename traceName _debug --Note: debug not currently used
   = failOnGError $ do
 
        builder <- builderNew
@@ -121,7 +121,7 @@ startup filename traceName debug
 
            eventsWin <- eventsWindowNew builder
 
-           timelineWin <- timelineWindowNew debug builder TimelineViewActions {
+           timelineWin <- timelineWindowNew builder TimelineViewActions {
                timelineViewCursorChanged = \ts -> do
                  writeIORef cursorIORef ts
                  timelineSetCursor timelineWin ts

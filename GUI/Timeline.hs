@@ -39,8 +39,6 @@ import Graphics.Rendering.Cairo  as C
 import Data.Maybe
 import Data.IORef
 import Control.Monad
-import Text.Printf
--- import Debug.Trace
 
 -----------------------------------------------------------------------------
 -- The CPUs view
@@ -98,8 +96,8 @@ timelineWindowSetBookmarks timelineWin@TimelineWindow{bookmarkIORef} bookmarks =
 
 -----------------------------------------------------------------------------
 
-timelineWindowNew :: Bool -> Builder -> TimelineViewActions -> IO TimelineWindow
-timelineWindowNew debug builder TimelineViewActions{..} = do
+timelineWindowNew :: Builder -> TimelineViewActions -> IO TimelineWindow
+timelineWindowNew builder TimelineViewActions{..} = do
 
   let getWidget cast = builderGetObject builder cast
   timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
@@ -128,7 +126,6 @@ timelineWindowNew debug builder TimelineViewActions{..} = do
   -- MainWindow and manage actions in main interaction module.
   mainWindow <- getWidget castToWindow "main_window"
   onKeyPress mainWindow $ \Key { Old.eventKeyName = key, eventKeyChar = mch } -> do
-    -- when debug $ putStrLn ("key " ++ key)
     case key of
       "Escape" -> mainQuit >> return True
       "Right"  -> do scrollRight timelineWin; return True
@@ -168,7 +165,6 @@ timelineWindowNew debug builder TimelineViewActions{..} = do
   -- Mouse button
 
   onButtonPress timelineDrawingArea $ \button -> do
-     when debug $ putStrLn ("button pressed: " ++ show button)
      case button of
        Button{ Old.eventButton = LeftButton, Old.eventClick = SingleClick,
                -- eventModifier = [],  -- contains [Alt2] for me
