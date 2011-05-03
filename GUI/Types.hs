@@ -1,7 +1,8 @@
 module GUI.Types (
     ViewParameters(..),
     Trace(..),
-    HECs(..)
+    HECs(..),
+    Timestamp,
   ) where
 
 import Events.EventTree

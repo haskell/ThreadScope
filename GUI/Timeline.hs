@@ -1,6 +1,6 @@
 module GUI.Timeline (
-    TimelineWindow,
-    timelineWindowNew,
+    TimelineView,
+    timelineViewNew,
     TimelineViewActions(..),
 
     timelineSetBWMode,
@@ -14,18 +14,19 @@ module GUI.Timeline (
     timelineZoomIn,
     timelineZoomOut,
     timelineZoomToFit,
+    timelineScrollLeft,
+    timelineScrollRight,
     timelineScrollToBeginning,
     timelineScrollToEnd,
     timelineCentreOnCursor,
  ) where
 
-import GUI.Timeline.Types (TimelineWindow(..))
+import GUI.Timeline.Types (TimelineState(..))
 import GUI.Timeline.Motion
 import GUI.Timeline.Render
 import GUI.Timeline.Key
 
 import GUI.Types
-import GHC.RTS.Events
 
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Gdk.Events as Old hiding (eventModifier)
@@ -39,28 +40,40 @@ import Control.Monad
 -----------------------------------------------------------------------------
 -- The CPUs view
 
+data TimelineView = TimelineView {
+
+       timelineState   :: TimelineState,
+
+       hecsIORef       :: IORef (Maybe HECs),
+       tracesIORef     :: IORef [Trace],
+       bookmarkIORef   :: IORef [Timestamp],
+
+       cursorIORef     :: IORef Timestamp,
+       showLabelsIORef :: IORef Bool,
+       bwmodeIORef     :: IORef Bool
+     }
+
 data TimelineViewActions = TimelineViewActions {
        timelineViewCursorChanged :: Timestamp -> IO ()
      }
 
 -- | Draw some parts of the timeline in black and white rather than colour.
 --
-timelineSetBWMode :: TimelineWindow -> Bool -> IO ()
+timelineSetBWMode :: TimelineView -> Bool -> IO ()
 timelineSetBWMode timelineWin bwmode = do
   writeIORef (bwmodeIORef timelineWin) bwmode
-  widgetQueueDraw (timelineDrawingArea timelineWin)
+  widgetQueueDraw (timelineDrawingArea (timelineState timelineWin))
 
-timelineSetShowLabels :: TimelineWindow -> Bool -> IO ()
+timelineSetShowLabels :: TimelineView -> Bool -> IO ()
 timelineSetShowLabels timelineWin showLabels = do
   writeIORef (showLabelsIORef timelineWin) showLabels
-  widgetQueueDraw (timelineDrawingArea timelineWin)
+  widgetQueueDraw (timelineDrawingArea (timelineState timelineWin))
 
-timelineGetViewParameters :: TimelineWindow -> IO ViewParameters
-timelineGetViewParameters timelineWin@TimelineWindow{..} = do
+timelineGetViewParameters :: TimelineView -> IO ViewParameters
+timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, showLabelsIORef, timelineState=TimelineState{..}} = do
 
   (dAreaWidth,_) <- widgetGetSize timelineDrawingArea
   scaleValue <- readIORef scaleIORef
-  timelineHeight <- calculateTotalTimelineHeight timelineWin
 
   -- snap the view to whole pixels, to avoid blurring
   hadj_value0 <- adjustmentGetValue timelineAdj
@@ -68,7 +81,9 @@ timelineGetViewParameters timelineWin@TimelineWindow{..} = do
 
   traces <- readIORef tracesIORef
   bwmode <- readIORef bwmodeIORef
-  labels_mode <- readIORef showLabelsIORef
+  showLabels <- readIORef showLabelsIORef
+
+  let timelineHeight = calculateTotalTimelineHeight showLabels traces
 
   return ViewParameters {
            width      = dAreaWidth,
@@ -78,31 +93,32 @@ timelineGetViewParameters timelineWin@TimelineWindow{..} = do
            scaleValue = scaleValue,
            detail     = 3, --for now
            bwMode     = bwmode,
-           labelsMode = labels_mode
+           labelsMode = showLabels
          }
 
-timelineWindowSetHECs :: TimelineWindow -> Maybe HECs -> IO ()
-timelineWindowSetHECs timelineWin@TimelineWindow{..} mhecs = do
+
+timelineWindowSetHECs :: TimelineView -> Maybe HECs -> IO ()
+timelineWindowSetHECs timelineWin@TimelineView{..} mhecs = do
   writeIORef hecsIORef mhecs
-  writeIORef scaleIORef defaultScaleValue
+  writeIORef (scaleIORef timelineState) defaultScaleValue
   -- FIXME: this defaultScaleValue = -1 stuff is a terrible hack
-  zoomToFit timelineWin
+  zoomToFit timelineState mhecs
   timelineParamsChanged timelineWin
 
-timelineWindowSetTraces :: TimelineWindow -> [Trace] -> IO ()
-timelineWindowSetTraces timelineWin@TimelineWindow{tracesIORef} traces = do
+timelineWindowSetTraces :: TimelineView -> [Trace] -> IO ()
+timelineWindowSetTraces timelineWin@TimelineView{tracesIORef} traces = do
   writeIORef tracesIORef traces
   timelineParamsChanged timelineWin
 
-timelineWindowSetBookmarks :: TimelineWindow -> [Timestamp] -> IO ()
-timelineWindowSetBookmarks timelineWin@TimelineWindow{bookmarkIORef} bookmarks = do
+timelineWindowSetBookmarks :: TimelineView -> [Timestamp] -> IO ()
+timelineWindowSetBookmarks timelineWin@TimelineView{bookmarkIORef} bookmarks = do
   writeIORef bookmarkIORef bookmarks
   timelineParamsChanged timelineWin
 
 -----------------------------------------------------------------------------
 
-timelineWindowNew :: Builder -> TimelineViewActions -> IO TimelineWindow
-timelineWindowNew builder TimelineViewActions{..} = do
+timelineViewNew :: Builder -> TimelineViewActions -> IO TimelineView
+timelineViewNew builder TimelineViewActions{..} = do
 
   let getWidget cast = builderGetObject builder cast
   timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
@@ -122,7 +138,8 @@ timelineWindowNew builder TimelineViewActions{..} = do
   showLabelsIORef <- newIORef False
   timelinePrevView <- newIORef Nothing
 
-  let timelineWin = TimelineWindow {..}
+  let timelineState = TimelineState{..}
+      timelineWin   = TimelineView{..}
 
   ------------------------------------------------------------------------
   -- Key presses
@@ -131,14 +148,15 @@ timelineWindowNew builder TimelineViewActions{..} = do
   -- MainWindow and manage actions in main interaction module.
   mainWindow <- getWidget castToWindow "main_window"
   onKeyPress mainWindow $ \Key { Old.eventKeyName = key, eventKeyChar = mch } -> do
+    cursor <- readIORef cursorIORef
     case key of
       "Escape" -> mainQuit >> return True
-      "Right"  -> do scrollRight timelineWin; return True
-      "Left"   -> do scrollLeft  timelineWin; return True
+      "Right"  -> do scrollRight timelineState; return True
+      "Left"   -> do scrollLeft  timelineState; return True
       _ -> if isJust mch then
              case fromJust mch of
-               '+' -> do zoomIn  timelineWin; return True
-               '-' -> do zoomOut timelineWin; return True
+               '+' -> do zoomIn  timelineState cursor; return True
+               '-' -> do zoomOut timelineState cursor; return True
                _   -> return True
            else
              return True
@@ -146,7 +164,9 @@ timelineWindowNew builder TimelineViewActions{..} = do
   ------------------------------------------------------------------------
   -- Porgram the callback for the capability drawingArea
   timelineLabelDrawingArea `onExpose` \_ -> do
-    updateLabelDrawingArea timelineWin
+    traces <- readIORef tracesIORef
+    showLabels <- readIORef showLabelsIORef
+    updateLabelDrawingArea timelineState showLabels traces
     return True
 
   ------------------------------------------------------------------------
@@ -159,11 +179,12 @@ timelineWindowNew builder TimelineViewActions{..} = do
     dir <- eventScrollDirection
     mods <- eventModifier
     liftIO $ do
+    cursor <- readIORef cursorIORef
     case (dir,mods) of
-      (ScrollUp,   [Control]) -> zoomIn timelineWin
-      (ScrollDown, [Control]) -> zoomOut timelineWin
-      (ScrollUp,   [])        -> vscrollUp timelineWin
-      (ScrollDown, [])        -> vscrollDown timelineWin
+      (ScrollUp,   [Control]) -> zoomIn  timelineState cursor
+      (ScrollDown, [Control]) -> zoomOut timelineState cursor
+      (ScrollUp,   [])        -> vscrollUp timelineState
+      (ScrollDown, [])        -> vscrollDown timelineState
       _ -> return ()
 
   ------------------------------------------------------------------------
@@ -183,8 +204,8 @@ timelineWindowNew builder TimelineViewActions{..} = do
        _other -> do
            return False
 
-  onValueChanged timelineAdj  $ queueRedrawTimelines timelineWin
-  onValueChanged timelineVAdj $ queueRedrawTimelines timelineWin
+  onValueChanged timelineAdj  $ queueRedrawTimelines timelineState
+  onValueChanged timelineVAdj $ queueRedrawTimelines timelineState
 
   on timelineDrawingArea exposeEvent $ do
      exposeRegion <- New.eventRegion
@@ -204,7 +225,7 @@ timelineWindowNew builder TimelineViewActions{..} = do
            cursor    <- readIORef cursorIORef
            bookmarks <- readIORef bookmarkIORef
 
-           renderView timelineWin params' hecs cursor bookmarks exposeRegion
+           renderView timelineState params' hecs cursor bookmarks exposeRegion
 
      return True
 
@@ -219,19 +240,21 @@ timelineWindowNew builder TimelineViewActions{..} = do
 -- traces are displayed, or the order of traces.
 
 --FIXME: we are still unclear about which state changes involve which updates
-timelineParamsChanged :: TimelineWindow -> IO ()
-timelineParamsChanged timelineWin = do
-  queueRedrawTimelines timelineWin
+timelineParamsChanged :: TimelineView -> IO ()
+timelineParamsChanged timelineWin@TimelineView{timelineState} = do
+  queueRedrawTimelines timelineState
   updateTimelineVScroll timelineWin
 
-configureTimelineDrawingArea :: TimelineWindow -> IO ()
-configureTimelineDrawingArea timelineWin = do
+configureTimelineDrawingArea :: TimelineView -> IO ()
+configureTimelineDrawingArea timelineWin@TimelineView{timelineState} = do
   updateTimelineVScroll timelineWin
-  updateTimelineHPageSize timelineWin
+  updateTimelineHPageSize timelineState
 
-updateTimelineVScroll :: TimelineWindow -> IO ()
-updateTimelineVScroll timelineWin@TimelineWindow{..} = do
-  h <- calculateTotalTimelineHeight timelineWin
+updateTimelineVScroll :: TimelineView -> IO ()
+updateTimelineVScroll TimelineView{tracesIORef, showLabelsIORef, timelineState=TimelineState{..}} = do
+  traces <- readIORef tracesIORef
+  showLabels <- readIORef showLabelsIORef
+  let h = calculateTotalTimelineHeight showLabels traces
   (_,winh) <- widgetGetSize timelineDrawingArea
   let winh' = fromIntegral winh; h' = fromIntegral h
   adjustmentSetLower    timelineVAdj 0
@@ -249,8 +272,8 @@ updateTimelineVScroll timelineWin@TimelineWindow{..} = do
 -- when the drawing area is resized, we update the page size of the
 -- adjustment.  Everything else stays the same: we don't scale or move
 -- the view at all.
-updateTimelineHPageSize :: TimelineWindow -> IO ()
-updateTimelineHPageSize TimelineWindow{..} = do
+updateTimelineHPageSize :: TimelineState -> IO ()
+updateTimelineHPageSize TimelineState{..} = do
   (winw,_) <- widgetGetSize timelineDrawingArea
   scaleValue <- readIORef scaleIORef
   adjustmentSetPageSize timelineAdj (fromIntegral winw * scaleValue)
@@ -258,31 +281,47 @@ updateTimelineHPageSize TimelineWindow{..} = do
 -------------------------------------------------------------------------------
 -- Set the cursor to a new position
 
-timelineSetCursor :: TimelineWindow -> Timestamp -> IO ()
-timelineSetCursor timelineWin@TimelineWindow{..} ts = do
-       writeIORef cursorIORef ts
-       queueRedrawTimelines timelineWin
+timelineSetCursor :: TimelineView -> Timestamp -> IO ()
+timelineSetCursor TimelineView{..} ts = do
+  writeIORef cursorIORef ts
+  queueRedrawTimelines timelineState
 
 -------------------------------------------------------------------------------
 
-timelineZoomIn :: TimelineWindow -> IO ()
-timelineZoomIn timelineWin = zoomIn timelineWin
+timelineZoomIn :: TimelineView -> IO ()
+timelineZoomIn TimelineView{..} = do
+  cursor <- readIORef cursorIORef
+  zoomIn timelineState cursor
 
-timelineZoomOut :: TimelineWindow -> IO ()
-timelineZoomOut timelineWin = zoomOut timelineWin
+timelineZoomOut :: TimelineView -> IO ()
+timelineZoomOut TimelineView{..} = do
+  cursor <- readIORef cursorIORef
+  zoomOut timelineState cursor
 
-timelineZoomToFit :: TimelineWindow -> IO ()
-timelineZoomToFit timelineWin = zoomToFit timelineWin
+timelineZoomToFit :: TimelineView -> IO ()
+timelineZoomToFit TimelineView{..} = do
+  mhecs <- readIORef hecsIORef
+  zoomToFit timelineState mhecs
 
-timelineScrollToBeginning :: TimelineWindow -> IO ()
-timelineScrollToBeginning timelineWin = scrollToBeginning timelineWin
+timelineScrollLeft :: TimelineView -> IO ()
+timelineScrollLeft TimelineView{timelineState} = scrollLeft timelineState
 
-timelineScrollToEnd :: TimelineWindow -> IO ()
-timelineScrollToEnd timelineWin = scrollToEnd timelineWin
+timelineScrollRight :: TimelineView -> IO ()
+timelineScrollRight TimelineView{timelineState} = scrollRight timelineState
+
+timelineScrollToBeginning :: TimelineView -> IO ()
+timelineScrollToBeginning TimelineView{timelineState} =
+  scrollToBeginning timelineState
+
+timelineScrollToEnd :: TimelineView -> IO ()
+timelineScrollToEnd TimelineView{timelineState} =
+  scrollToEnd timelineState
 
 -- This one is especially evil since it relies on a shared cursor IORef
-timelineCentreOnCursor :: TimelineWindow -> IO ()
-timelineCentreOnCursor timelineWin = centreOnCursor timelineWin
+timelineCentreOnCursor :: TimelineView -> IO ()
+timelineCentreOnCursor TimelineView{..} = do
+  cursor <- readIORef cursorIORef
+  centreOnCursor timelineState cursor
 
 -------------------------------------------------------------------------------
 

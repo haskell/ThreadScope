@@ -24,14 +24,14 @@ import Control.Monad
 -- For example, zoom into the time range 1.0 3.0
 -- produces a new view with the time range 1.0 2.0
 
-zoomIn :: TimelineWindow -> IO ()
+zoomIn :: TimelineState -> Timestamp -> IO ()
 zoomIn  = zoom (/2)
 
-zoomOut :: TimelineWindow -> IO ()
+zoomOut :: TimelineState -> Timestamp -> IO ()
 zoomOut  = zoom (*2)
 
-zoom :: (Double->Double) -> TimelineWindow -> IO ()
-zoom factor state@TimelineWindow{timelineAdj, scaleIORef, cursorIORef} = do
+zoom :: (Double->Double) -> TimelineState -> Timestamp -> IO ()
+zoom factor state@TimelineState{timelineAdj, scaleIORef} cursor = do
        scaleValue <- readIORef scaleIORef
        let clampedFactor = if factor scaleValue < 1 then
                              id
@@ -40,7 +40,6 @@ zoom factor state@TimelineWindow{timelineAdj, scaleIORef, cursorIORef} = do
        let newScaleValue = clampedFactor scaleValue
        writeIORef scaleIORef newScaleValue
 
-       cursor <- readIORef cursorIORef
        hadj_value <- adjustmentGetValue timelineAdj
        hadj_pagesize <- adjustmentGetPageSize timelineAdj -- Get size of bar
 
@@ -62,11 +61,10 @@ zoom factor state@TimelineWindow{timelineAdj, scaleIORef, cursorIORef} = do
 
 -------------------------------------------------------------------------------
 
-zoomToFit :: TimelineWindow -> IO ()
-zoomToFit state@TimelineWindow{hecsIORef, scaleIORef, timelineAdj, timelineDrawingArea} = do
-  mb_hecs <- readIORef hecsIORef
+zoomToFit :: TimelineState -> Maybe HECs -> IO ()
+zoomToFit state@TimelineState{scaleIORef, timelineAdj, timelineDrawingArea} mb_hecs  = do
   case mb_hecs of
-    Nothing   -> writeIORef scaleIORef (-1.0)
+    Nothing   -> writeIORef scaleIORef (-1.0) --FIXME: ug!
     Just hecs -> do
        let lastTx = hecLastEventTime hecs
        (w, _) <- widgetGetSize timelineDrawingArea
@@ -93,21 +91,21 @@ zoomToFit state@TimelineWindow{hecsIORef, scaleIORef, timelineAdj, timelineDrawi
 
 -------------------------------------------------------------------------------
 
-scrollLeft, scrollRight, scrollToBeginning, scrollToEnd, centreOnCursor
-  :: TimelineWindow -> IO ()
+scrollLeft, scrollRight, scrollToBeginning, scrollToEnd :: TimelineState -> IO ()
 
 scrollLeft        = scroll (\val page l u -> l `max` (val - page/2))
 scrollRight       = scroll (\val page l u -> (u - page) `min` (val + page/2))
 scrollToBeginning = scroll (\_ _ l u -> l)
 scrollToEnd       = scroll (\_ _ l u -> u)
 
-centreOnCursor state@TimelineWindow{cursorIORef} = do
-  cursor <- readIORef cursorIORef
+centreOnCursor :: TimelineState -> Timestamp -> IO ()
+
+centreOnCursor state cursor =
   scroll (\_ page l u -> max l (fromIntegral cursor - page/2)) state
 
 scroll :: (Double -> Double -> Double -> Double -> Double)
-       -> TimelineWindow -> IO ()
-scroll adjust TimelineWindow{timelineAdj}
+       -> TimelineState -> IO ()
+scroll adjust TimelineState{timelineAdj}
   = do hadj_value <- adjustmentGetValue timelineAdj
        hadj_pagesize <- adjustmentGetPageSize timelineAdj
        hadj_lower <- adjustmentGetLower timelineAdj
@@ -117,13 +115,13 @@ scroll adjust TimelineWindow{timelineAdj}
        adjustmentSetValue timelineAdj newValue'
        adjustmentValueChanged timelineAdj
 
-vscrollDown, vscrollUp :: TimelineWindow -> IO ()
+vscrollDown, vscrollUp :: TimelineState -> IO ()
 vscrollDown = vscroll (\val page l u -> (u - page) `min` (val + page/8))
 vscrollUp   = vscroll (\val page l u -> l `max` (val - page/8))
 
 vscroll :: (Double -> Double -> Double -> Double -> Double)
-        -> TimelineWindow -> IO ()
-vscroll adjust TimelineWindow{timelineVAdj}
+        -> TimelineState -> IO ()
+vscroll adjust TimelineState{timelineVAdj}
   = do hadj_value <- adjustmentGetValue timelineVAdj
        hadj_pagesize <- adjustmentGetPageSize timelineVAdj
        hadj_lower <- adjustmentGetLower timelineVAdj
@@ -134,7 +132,7 @@ vscroll adjust TimelineWindow{timelineVAdj}
 
 -- -----------------------------------------------------------------------------
 
-queueRedrawTimelines :: TimelineWindow -> IO ()
+queueRedrawTimelines :: TimelineState -> IO ()
 queueRedrawTimelines state = do
   widgetQueueDraw (timelineDrawingArea state)
   widgetQueueDraw (timelineLabelDrawingArea state)

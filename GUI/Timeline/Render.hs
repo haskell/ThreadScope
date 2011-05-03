@@ -17,8 +17,6 @@ import GUI.Types
 import GUI.ViewerColours
 import GUI.Timeline.CairoDrawing
 
-import GHC.RTS.Events hiding (Event)
-
 import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk.Gdk.GC (GC, gcNew) --FIXME: eliminate old style drawing
@@ -31,11 +29,11 @@ import Control.Monad
 -- | This function redraws the currently visible part of the
 --   main trace canvas plus related canvases.
 --
-renderView :: TimelineWindow
+renderView :: TimelineState
            -> ViewParameters
            -> HECs -> Timestamp -> [Timestamp]
            -> Region -> IO ()
-renderView TimelineWindow{timelineDrawingArea, timelineVAdj, timelinePrevView}
+renderView TimelineState{timelineDrawingArea, timelineVAdj, timelinePrevView}
            params hecs cursor_t bookmarks exposeRegion = do
 
   -- Get state information from user-interface components
@@ -245,15 +243,13 @@ toWholePixels scale x = fromIntegral (truncate (x / scale)) * scale
 
 -------------------------------------------------------------------------------
 
-updateLabelDrawingArea :: TimelineWindow -> IO ()
-updateLabelDrawingArea TimelineWindow{timelineVAdj, timelineLabelDrawingArea, showLabelsIORef, tracesIORef}
-   = do traces <- readIORef tracesIORef
-        labels_mode <- readIORef showLabelsIORef
-        win <- widgetGetDrawWindow timelineLabelDrawingArea
+updateLabelDrawingArea :: TimelineState -> Bool -> [Trace] -> IO ()
+updateLabelDrawingArea TimelineState{timelineVAdj, timelineLabelDrawingArea} showLabels traces
+   = do win <- widgetGetDrawWindow timelineLabelDrawingArea
         vadj_value <- adjustmentGetValue timelineVAdj
         gc <- gcNew win
         let ys = map (subtract (round vadj_value)) $
-                      traceYPositions labels_mode traces
+                      traceYPositions showLabels traces
         zipWithM_ (drawLabel timelineLabelDrawingArea gc) traces ys
 
 drawLabel :: DrawingArea -> GC -> Trace -> Int -> IO ()
@@ -266,10 +262,10 @@ drawLabel canvas gc trace y
 --------------------------------------------------------------------------------
 
 traceYPositions :: Bool -> [Trace] -> [Int]
-traceYPositions labels_mode traces
+traceYPositions showLabels traces
   = scanl (\a b -> a + (traceHeight b) + extra + tracePad) firstTraceY traces
   where
-      extra = if labels_mode then hecLabelExtra else 0
+      extra = if showLabels then hecLabelExtra else 0
 
       traceHeight (TraceHEC _) = hecTraceHeight
       traceHeight TraceActivity = activityGraphHeight
@@ -284,10 +280,8 @@ showTrace _            = "?"
 
 --------------------------------------------------------------------------------
 
-calculateTotalTimelineHeight :: TimelineWindow -> IO Int
-calculateTotalTimelineHeight TimelineWindow{showLabelsIORef, tracesIORef} = do
-   traces <- readIORef tracesIORef
-   labels_mode <- readIORef showLabelsIORef
-   return $ last (traceYPositions labels_mode traces)
+calculateTotalTimelineHeight :: Bool -> [Trace] -> Int
+calculateTotalTimelineHeight showLabels traces =
+   last (traceYPositions showLabels traces)
 
 --------------------------------------------------------------------------------

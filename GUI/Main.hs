@@ -27,7 +27,6 @@ import GUI.Dialogs
 import Events.ReadEvents
 import GUI.EventsWindow
 import GUI.Timeline
-import GUI.Timeline.Motion (scrollLeft, scrollRight)
 import GUI.TraceView
 import GUI.BookmarkView
 import GUI.SaveAs
@@ -123,8 +122,8 @@ startup filename traceName _debug --Note: debug not currently used
                                          cursorpos <- eventsWindowGetCursorLine eventsWin
                                          eventsWindowJumpToPosition eventsWin cursorpos,
 
-               mainWinScrollLeft    = scrollLeft  timelineWin,
-               mainWinScrollRight   = scrollRight timelineWin,
+               mainWinScrollLeft    = timelineScrollLeft  timelineWin,
+               mainWinScrollRight   = timelineScrollRight timelineWin,
                mainWinJumpZoomIn    = timelineZoomIn    timelineWin,
                mainWinJumpZoomOut   = timelineZoomOut   timelineWin,
                mainWinJumpZoomFit   = timelineZoomToFit timelineWin,
@@ -133,7 +132,7 @@ startup filename traceName _debug --Note: debug not currently used
 
            eventsWin <- eventsWindowNew builder
 
-           timelineWin <- timelineWindowNew builder TimelineViewActions {
+           timelineWin <- timelineViewNew builder TimelineViewActions {
                timelineViewCursorChanged = \ts -> do
                  writeIORef cursorIORef ts
                  timelineSetCursor timelineWin ts
