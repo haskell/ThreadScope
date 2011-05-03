@@ -7,7 +7,6 @@ module GUI.Main (runGUI) where
 -- Imports for GTK
 import Graphics.UI.Gtk as Gtk
 import System.Glib.GError (failOnGError)
-import Graphics.UI.Gtk.ModelView as New
 
 -- Imports from Haskell library
 import Text.Printf
@@ -30,6 +29,7 @@ import GUI.EventsWindow
 import GUI.Timeline
 import GUI.Timeline.Motion (scrollLeft, scrollRight)
 import GUI.TraceView
+import GUI.BookmarkView
 import GUI.SaveAs
 import qualified GUI.ConcurrencyControl as ConcurrencyControl
 import qualified GUI.ProgressView as ProgressView
@@ -59,7 +59,6 @@ startup filename traceName debug
 
        builder <- builderNew
        builderAddFromFile builder =<< getDataFileName "threadscope.ui"
-       let getWidget cast name = builderGetObject builder cast name
 
        filenameIORef <- newIORef Nothing
 
@@ -67,20 +66,6 @@ startup filename traceName debug
        -- to the callback functions for windows, buttons etc.
        hecsIORef         <- newIORef Nothing
        cursorIORef       <- newIORef 0
-
-       -- Bookmarks
-       --FIXME: this should almost certainly be constructed elsewhere
-       bookmarkTreeView   <- getWidget castToTreeView "bookmark_list"
-       bookmarkStore <- New.listStoreNew []
-       New.treeViewSetModel bookmarkTreeView bookmarkStore
-       New.treeViewSetHeadersVisible bookmarkTreeView True
-       bookmarkColumn <- New.treeViewColumnNew
-       New.treeViewColumnSetTitle bookmarkColumn "Time"
-       cell <- New.cellRendererTextNew
-       New.treeViewColumnPackStart bookmarkColumn cell True
-       New.cellLayoutSetAttributes bookmarkColumn cell bookmarkStore
-          (\record -> [New.cellText := show record ++ " ns"])
-       New.treeViewAppendColumn bookmarkTreeView bookmarkColumn
 
        concCtl <- ConcurrencyControl.start
 
@@ -131,41 +116,31 @@ startup filename traceName debug
                mainWinJumpZoomIn    = timelineZoomIn    timelineWin,
                mainWinJumpZoomOut   = timelineZoomOut   timelineWin,
                mainWinJumpZoomFit   = timelineZoomToFit timelineWin,
-               mainWinDisplayLabels = timelineParamsChanged timelineWin,
-
-               mainWinAddBookmark    = do
-                 when debug $ putStrLn "Add bookmark\n"
-                 cursorPos <- readIORef cursorIORef
-                 New.listStoreAppend bookmarkStore cursorPos
-                 queueRedrawTimelines timelineWin,
-
-               mainWinRemoveBookmark = do
-                 when debug $ putStrLn "Delete bookmark\n"
-                 sel <- treeViewGetSelection bookmarkTreeView
-                 selection <- treeSelectionGetSelected sel
-                 case selection of
-                   Nothing -> return ()
-                   Just (TreeIter _ pos _ _) -> listStoreRemove bookmarkStore (fromIntegral pos)
-                 queueRedrawTimelines timelineWin,
-
-               mainWinGotoBookmark   = do
-                 sel <- treeViewGetSelection bookmarkTreeView
-                 selection <- treeSelectionGetSelected sel
-                 case selection of
-                   Nothing -> return ()
-                   Just (TreeIter _ pos _ _) -> do
-                     l <- listStoreToList bookmarkStore
-                     when debug $ putStrLn ("gotoBookmark: " ++ show l++ " pos = " ++ show pos)
-                     setCursorToTime timelineWin (l!!(fromIntegral pos))
-                 queueRedrawTimelines timelineWin
+               mainWinDisplayLabels = timelineParamsChanged timelineWin
              }
 
            eventsWin <- eventsWindowNew builder
 
-           timelineWin <- timelineWindowNew debug builder bookmarkStore cursorIORef
+           timelineWin <- timelineWindowNew debug builder cursorIORef
 
            traceView <- traceViewNew builder TraceViewActions {
                traceViewTracesChanged = timelineWindowSetTraces timelineWin
+             }
+
+           bookmarkView <- bookmarkViewNew builder BookmarkViewActions {
+               bookmarkViewAddBookmark = do
+                 cursorPos <- readIORef cursorIORef
+                 bookmarkViewAdd bookmarkView cursorPos
+                 timelineWindowSetBookmarks timelineWin =<< bookmarkViewGet bookmarkView,
+
+               bookmarkViewRemoveBookmark = \n -> do
+                 bookmarkViewRemove bookmarkView n
+                 timelineWindowSetBookmarks timelineWin =<< bookmarkViewGet bookmarkView,
+
+               bookmarkViewGotoBookmark = \ts -> do
+                 setCursorToTime timelineWin ts
+                 --FIXME: set the cursor in the evnets window too
+                 --eventsWindowJumpToTimestamp eventsWin ts
              }
 
            let loadEvents registerEvents = do

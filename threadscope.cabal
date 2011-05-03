@@ -36,6 +36,7 @@ Executable threadscope
                      GUI.SaveAs,
                      GUI.Timeline,
                      GUI.TraceView,
+                     GUI.BookmarkView,
                      GUI.Types,
                      GUI.ConcurrencyControl,
                      GUI.ViewerColours,

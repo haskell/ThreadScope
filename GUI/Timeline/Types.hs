@@ -27,8 +27,7 @@ data TimelineWindow = TimelineWindow {
        --TODO: this should be a bool state like the bwmodeIORef above
        showLabelsToggle  :: ToggleToolButton,
 
-       bookmarkStore     :: ListStore Timestamp,
-
+       bookmarkIORef     :: IORef [Timestamp],
        tracesIORef       :: IORef [Trace],
 
        --TODO: eliminate, these are **shared** not private IORefs !!

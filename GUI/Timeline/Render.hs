@@ -44,7 +44,7 @@ exposeTraceView state@TimelineWindow{hecsIORef} bwmode exposeRegion = do
     Just hecs -> renderView state bwmode exposeRegion hecs
 
 renderView :: TimelineWindow -> Bool -> Region -> HECs -> IO ()
-renderView state@TimelineWindow{timelineDrawingArea, showLabelsToggle, timelineVAdj, timelineAdj, timelinePrevView, cursorIORef, bookmarkStore, tracesIORef} bwmode exposeRegion hecs = do
+renderView state@TimelineWindow{timelineDrawingArea, showLabelsToggle, timelineVAdj, timelineAdj, timelinePrevView, cursorIORef, bookmarkIORef, tracesIORef} bwmode exposeRegion hecs = do
 
   -- Get state information from user-interface components
   labels_mode <- toggleToolButtonGetActive showLabelsToggle
@@ -130,7 +130,7 @@ renderView state@TimelineWindow{timelineDrawingArea, showLabelsToggle, timelineV
   setOperator OperatorSource
   paint
   when (scaleValue > 0) $ do
-    bookmarkList <- liftIO $ listStoreToList bookmarkStore
+    bookmarkList <- liftIO $ readIORef bookmarkIORef
     renderBookmarks bookmarkList params
     drawCursor cursor_t params
 

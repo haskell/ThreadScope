@@ -6,6 +6,7 @@ module GUI.Timeline (
     timelineGetViewParameters,
     timelineWindowSetHECs,
     timelineWindowSetTraces,
+    timelineWindowSetBookmarks,
 
     --TODO: this group needs reviewing
     renderTraces,
@@ -85,12 +86,17 @@ timelineWindowSetTraces timelineWin@TimelineWindow{tracesIORef} traces = do
   writeIORef tracesIORef traces
   timelineParamsChanged timelineWin
 
+timelineWindowSetBookmarks :: TimelineWindow -> [Timestamp] -> IO ()
+timelineWindowSetBookmarks timelineWin@TimelineWindow{bookmarkIORef} bookmarks = do
+  writeIORef bookmarkIORef bookmarks
+  timelineParamsChanged timelineWin
+
 -----------------------------------------------------------------------------
 
 timelineWindowNew :: Bool -> Builder
-                  -> ListStore Timestamp -> IORef Timestamp --TODO: eliminate
+                  -> IORef Timestamp --TODO: eliminate
                   -> IO TimelineWindow
-timelineWindowNew debug builder bookmarkStore cursorIORef = do
+timelineWindowNew debug builder cursorIORef = do
 
   let getWidget cast = builderGetObject builder cast
   timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
@@ -104,6 +110,7 @@ timelineWindowNew debug builder bookmarkStore cursorIORef = do
 
   hecsIORef   <- newIORef Nothing
   tracesIORef <- newIORef []
+  bookmarkIORef <- newIORef []
   scaleIORef  <- newIORef defaultScaleValue
   bwmodeIORef <- newIORef False
   timelinePrevView <- newIORef Nothing

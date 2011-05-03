@@ -67,13 +67,7 @@ data MainWindowActions = MainWindowActions {
        mainWinJumpZoomFit   :: IO (),
        mainWinScrollLeft    :: IO (),
        mainWinScrollRight   :: IO (),
-       mainWinDisplayLabels :: IO (),
-       
-       --TODO: decide if these should stay here or move to sidebar,
-       --      or alternatiely, merge sidebar here
-       mainWinAddBookmark    :: IO (),
-       mainWinRemoveBookmark :: IO (),
-       mainWinGotoBookmark   :: IO ()
+       mainWinDisplayLabels :: IO ()
      }
 
 -------------------------------------------------------------------------------
@@ -146,13 +140,6 @@ mainWindowNew builder actions = do
   --  eventsTextEntry    <- getWidget castToEntry      "events_entry"
   --  eventsFindButton   <- getWidget castToToolButton "events_find"
 
---  bookmarkTreeView   <- getWidget castToTreeView "bookmark_list"
-
-  -- Bookmarks
-  addBookmarkButton    <- getWidget castToToolButton "add_bookmark_button"
-  deleteBookmarkButton <- getWidget castToToolButton "delete_bookmark"
-  gotoBookmarkButton   <- getWidget castToToolButton "goto_bookmark_button"
-
   ------------------------------------------------------------------------
 
   widgetSetAppPaintable mainWindow True --TODO: Really?
@@ -207,12 +194,6 @@ mainWindowNew builder actions = do
       (_ , Just '-') -> mainWinJumpZoomOut actions
       _              -> return ()
     return True
-
-  -- Sidebar buttons
-  -- TODO: probably should move the bodies of these handlers elsewhere
-  onToolButtonClicked addBookmarkButton    $ mainWinAddBookmark    actions
-  onToolButtonClicked deleteBookmarkButton $ mainWinRemoveBookmark actions
-  onToolButtonClicked gotoBookmarkButton   $ mainWinGotoBookmark   actions
 
   ------------------------------------------------------------------------
   -- Show all windows
