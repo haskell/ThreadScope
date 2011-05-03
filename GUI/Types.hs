@@ -13,6 +13,8 @@ import Data.Array
 
 -----------------------------------------------------------------------------
 
+--TODO: probably belongs in a different module, it's not GUI specific.
+
 -- all the data from a .eventlog file
 data HECs = HECs {
     hecCount         :: Int,
@@ -20,6 +22,8 @@ data HECs = HECs {
     hecEventArray    :: Array Int GHCEvents.CapEvent,
     hecLastEventTime :: Timestamp
   }
+
+-----------------------------------------------------------------------------
 
 data Trace
   = TraceHEC      Int
