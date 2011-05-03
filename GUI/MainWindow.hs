@@ -67,7 +67,7 @@ data MainWindowActions = MainWindowActions {
        mainWinJumpZoomFit   :: IO (),
        mainWinScrollLeft    :: IO (),
        mainWinScrollRight   :: IO (),
-       mainWinDisplayLabels :: IO ()
+       mainWinDisplayLabels :: Bool -> IO ()
      }
 
 -------------------------------------------------------------------------------
@@ -183,7 +183,8 @@ mainWindowNew builder actions = do
   onToolButtonClicked zoomOutButton $ mainWinJumpZoomOut actions
   onToolButtonClicked zoomFitButton $ mainWinJumpZoomFit actions
    
-  onToolButtonToggled showLabelsToggle $ mainWinDisplayLabels actions
+  onToolButtonToggled showLabelsToggle $
+    toggleToolButtonGetActive showLabelsToggle >>= mainWinDisplayLabels actions
 
   -- Key bindings
   onKeyPress mainWindow $ \Key { Old.eventKeyName = key, eventKeyChar = mch } -> do

@@ -25,7 +25,7 @@ data TimelineWindow = TimelineWindow {
        timelinePrevView  :: IORef (Maybe (ViewParameters, Surface)),
 
        --TODO: this should be a bool state like the bwmodeIORef above
-       showLabelsToggle  :: ToggleToolButton,
+       showLabelsIORef   :: IORef Bool,
 
        bookmarkIORef     :: IORef [Timestamp],
        tracesIORef       :: IORef [Trace],

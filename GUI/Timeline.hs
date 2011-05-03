@@ -4,6 +4,7 @@ module GUI.Timeline (
     TimelineViewActions(..),
 
     timelineSetBWMode,
+    timelineSetShowLabels,
     timelineGetViewParameters,
     timelineWindowSetHECs,
     timelineWindowSetTraces,
@@ -52,6 +53,11 @@ data TimelineViewActions = TimelineViewActions {
 timelineSetBWMode :: TimelineWindow -> Bool -> IO ()
 timelineSetBWMode timelineWin bwmode = do
   writeIORef (bwmodeIORef timelineWin) bwmode
+  widgetQueueDraw (timelineDrawingArea timelineWin)
+
+timelineSetShowLabels :: TimelineWindow -> Bool -> IO ()
+timelineSetShowLabels timelineWin showLabels = do
+  writeIORef (showLabelsIORef timelineWin) showLabels
   widgetQueueDraw (timelineDrawingArea timelineWin)
 
 timelineGetViewParameters :: TimelineWindow -> IO ViewParameters
@@ -107,7 +113,6 @@ timelineWindowNew builder TimelineViewActions{..} = do
   timelineVScrollbar       <- getWidget castToVScrollbar "timeline_vscroll"
   timelineAdj              <- rangeGetAdjustment timelineHScrollbar
   timelineVAdj             <- rangeGetAdjustment timelineVScrollbar
-  showLabelsToggle         <- getWidget castToToggleToolButton "cpus_showlabels"
 
   hecsIORef   <- newIORef Nothing
   tracesIORef <- newIORef []
@@ -115,6 +120,7 @@ timelineWindowNew builder TimelineViewActions{..} = do
   scaleIORef  <- newIORef defaultScaleValue
   cursorIORef <- newIORef 0
   bwmodeIORef <- newIORef False
+  showLabelsIORef <- newIORef False
   timelinePrevView <- newIORef Nothing
 
   let timelineWin = TimelineWindow {..}

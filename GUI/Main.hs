@@ -116,7 +116,7 @@ startup filename traceName _debug --Note: debug not currently used
                mainWinJumpZoomIn    = timelineZoomIn    timelineWin,
                mainWinJumpZoomOut   = timelineZoomOut   timelineWin,
                mainWinJumpZoomFit   = timelineZoomToFit timelineWin,
-               mainWinDisplayLabels = timelineParamsChanged timelineWin
+               mainWinDisplayLabels = timelineSetShowLabels timelineWin
              }
 
            eventsWin <- eventsWindowNew builder

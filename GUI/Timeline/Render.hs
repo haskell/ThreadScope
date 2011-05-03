@@ -42,10 +42,10 @@ exposeTraceView state@TimelineWindow{hecsIORef} bwmode exposeRegion = do
     Just hecs -> renderView state bwmode exposeRegion hecs
 
 renderView :: TimelineWindow -> Bool -> Region -> HECs -> IO ()
-renderView state@TimelineWindow{timelineDrawingArea, showLabelsToggle, timelineVAdj, timelineAdj, timelinePrevView, cursorIORef, bookmarkIORef, tracesIORef} bwmode exposeRegion hecs = do
+renderView state@TimelineWindow{timelineDrawingArea, showLabelsIORef, timelineVAdj, timelineAdj, timelinePrevView, cursorIORef, bookmarkIORef, tracesIORef} bwmode exposeRegion hecs = do
 
   -- Get state information from user-interface components
-  labels_mode <- toggleToolButtonGetActive showLabelsToggle
+  labels_mode <- readIORef showLabelsIORef
   (dAreaWidth,dAreaHeight) <- widgetGetSize timelineDrawingArea
 
   scaleValue <- checkScaleValue state
@@ -295,9 +295,9 @@ checkScaleValue state@TimelineWindow{scaleIORef}
 -------------------------------------------------------------------------------
 
 updateLabelDrawingArea :: TimelineWindow -> IO ()
-updateLabelDrawingArea TimelineWindow{timelineVAdj, timelineLabelDrawingArea, showLabelsToggle, tracesIORef}
+updateLabelDrawingArea TimelineWindow{timelineVAdj, timelineLabelDrawingArea, showLabelsIORef, tracesIORef}
    = do traces <- readIORef tracesIORef
-        labels_mode <- toggleToolButtonGetActive showLabelsToggle
+        labels_mode <- readIORef showLabelsIORef
         win <- widgetGetDrawWindow timelineLabelDrawingArea
         vadj_value <- adjustmentGetValue timelineVAdj
         gc <- gcNew win
@@ -334,9 +334,9 @@ showTrace _            = "?"
 --------------------------------------------------------------------------------
 
 calculateTotalTimelineHeight :: TimelineWindow -> IO Int
-calculateTotalTimelineHeight TimelineWindow{showLabelsToggle, tracesIORef} = do
+calculateTotalTimelineHeight TimelineWindow{showLabelsIORef, tracesIORef} = do
    traces <- readIORef tracesIORef
-   labels_mode <- toggleToolButtonGetActive showLabelsToggle
+   labels_mode <- readIORef showLabelsIORef
    return $ last (traceYPositions labels_mode traces)
 
 --------------------------------------------------------------------------------
