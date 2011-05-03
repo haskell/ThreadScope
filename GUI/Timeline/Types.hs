@@ -29,11 +29,6 @@ data TimelineWindow = TimelineWindow {
 
        bookmarkIORef     :: IORef [Timestamp],
        tracesIORef       :: IORef [Trace],
-
-       --TODO: eliminate, these are **shared** not private IORefs !!
-       -- Should instead have methods for updating the display state
-       -- and events for when the cursor is changed. Let the interaction
-       -- module hold the state.
        scaleIORef        :: IORef Double, -- in ns/pixel
        cursorIORef       :: IORef Timestamp,
        hecsIORef         :: IORef (Maybe HECs)

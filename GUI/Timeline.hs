@@ -1,18 +1,19 @@
 module GUI.Timeline (
     TimelineWindow,
     timelineWindowNew,
+    TimelineViewActions(..),
 
     timelineSetBWMode,
     timelineGetViewParameters,
     timelineWindowSetHECs,
     timelineWindowSetTraces,
     timelineWindowSetBookmarks,
+    timelineSetCursor,
 
     --TODO: this group needs reviewing
     renderTraces,
     timelineParamsChanged,
     queueRedrawTimelines,
-    setCursorToTime,
 
     timelineZoomIn,
     timelineZoomOut,
@@ -43,6 +44,10 @@ import Text.Printf
 
 -----------------------------------------------------------------------------
 -- The CPUs view
+
+data TimelineViewActions = TimelineViewActions {
+       timelineViewCursorChanged :: Timestamp -> IO ()
+     }
 
 -- | Draw some parts of the timeline in black and white rather than colour.
 --
@@ -93,10 +98,8 @@ timelineWindowSetBookmarks timelineWin@TimelineWindow{bookmarkIORef} bookmarks =
 
 -----------------------------------------------------------------------------
 
-timelineWindowNew :: Bool -> Builder
-                  -> IORef Timestamp --TODO: eliminate
-                  -> IO TimelineWindow
-timelineWindowNew debug builder cursorIORef = do
+timelineWindowNew :: Bool -> Builder -> TimelineViewActions -> IO TimelineWindow
+timelineWindowNew debug builder TimelineViewActions{..} = do
 
   let getWidget cast = builderGetObject builder cast
   timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
@@ -112,6 +115,7 @@ timelineWindowNew debug builder cursorIORef = do
   tracesIORef <- newIORef []
   bookmarkIORef <- newIORef []
   scaleIORef  <- newIORef defaultScaleValue
+  cursorIORef <- newIORef 0
   bwmodeIORef <- newIORef False
   timelinePrevView <- newIORef Nothing
 
@@ -169,7 +173,11 @@ timelineWindowNew debug builder cursorIORef = do
        Button{ Old.eventButton = LeftButton, Old.eventClick = SingleClick,
                -- eventModifier = [],  -- contains [Alt2] for me
                eventX = x } -> do
-           setCursor debug timelineWin x
+           hadjValue <- adjustmentGetValue timelineAdj
+           scaleValue <- readIORef scaleIORef
+           let cursor = round (hadjValue + x * scaleValue)
+           timelineViewCursorChanged cursor
+
            return True
        _other -> do
            return False
@@ -234,22 +242,9 @@ updateTimelineHPageSize TimelineWindow{..} = do
 -------------------------------------------------------------------------------
 -- Set the cursor to a new position
 
-setCursor :: Bool -> TimelineWindow -> Double -> IO ()
-setCursor debug timelineWin@TimelineWindow{..} x = do
-  hadjValue <- adjustmentGetValue timelineAdj
-  scaleValue <- readIORef scaleIORef
-  let cursor = round (hadjValue + x * scaleValue)
-  when debug $ printf "cursor set to: %d\n" cursor
-  writeIORef cursorIORef cursor
-  queueRedrawTimelines timelineWin
-
--------------------------------------------------------------------------------
-
-setCursorToTime :: TimelineWindow -> Timestamp -> IO ()
-setCursorToTime timelineWin@TimelineWindow{..} x
-  = do writeIORef cursorIORef x
-       pageSize <- adjustmentGetPageSize timelineAdj
-       adjustmentSetValue timelineAdj ((fromIntegral x - pageSize/2) `max` 0)
+timelineSetCursor :: TimelineWindow -> Timestamp -> IO ()
+timelineSetCursor timelineWin@TimelineWindow{..} ts = do
+       writeIORef cursorIORef ts
        queueRedrawTimelines timelineWin
 
 -------------------------------------------------------------------------------

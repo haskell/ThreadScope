@@ -121,7 +121,11 @@ startup filename traceName debug
 
            eventsWin <- eventsWindowNew builder
 
-           timelineWin <- timelineWindowNew debug builder cursorIORef
+           timelineWin <- timelineWindowNew debug builder TimelineViewActions {
+               timelineViewCursorChanged = \ts -> do
+                 writeIORef cursorIORef ts
+                 timelineSetCursor timelineWin ts
+             }
 
            traceView <- traceViewNew builder TraceViewActions {
                traceViewTracesChanged = timelineWindowSetTraces timelineWin
@@ -138,7 +142,8 @@ startup filename traceName debug
                  timelineWindowSetBookmarks timelineWin =<< bookmarkViewGet bookmarkView,
 
                bookmarkViewGotoBookmark = \ts -> do
-                 setCursorToTime timelineWin ts
+                 timelineSetCursor timelineWin ts
+                 timelineCentreOnCursor timelineWin
                  --FIXME: set the cursor in the evnets window too
                  --eventsWindowJumpToTimestamp eventsWin ts
              }
