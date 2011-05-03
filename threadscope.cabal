@@ -46,10 +46,8 @@ Executable threadscope
                      GUI.Timeline.Key,
                      GUI.Timeline.Motion,
                      GUI.Timeline.Render,
-                     GUI.Timeline.RenderBookmarks,
                      GUI.Timeline.Ticks,
                      GUI.Timeline.Types,
-                     GUI.Timeline.WithViewScale,
                      GUI.Timeline.Render.Constants
 
   ghc-options:  -Wall -fwarn-tabs

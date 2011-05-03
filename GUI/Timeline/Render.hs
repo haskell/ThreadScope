@@ -13,8 +13,6 @@ import GUI.Timeline.Motion
 import GUI.Timeline.Ticks
 import GUI.Timeline.HEC
 import GUI.Timeline.Activity
-import GUI.Timeline.RenderBookmarks
-import GUI.Timeline.WithViewScale
 
 import GUI.Types
 import GUI.ViewerColours
@@ -78,6 +76,7 @@ renderView state@TimelineWindow{timelineDrawingArea, showLabelsToggle, timelineV
 
   prev_view <- readIORef timelinePrevView
   cursor_t  <- readIORef cursorIORef
+  bookmarks <- readIORef bookmarkIORef
 
   rect <- regionGetClipbox exposeRegion
 
@@ -129,18 +128,28 @@ renderView state@TimelineWindow{timelineDrawingArea, showLabelsToggle, timelineV
           -- ^^ this is where we adjust for the vertical scrollbar
   setOperator OperatorSource
   paint
-  when (scaleValue > 0) $ do
-    bookmarkList <- liftIO $ readIORef bookmarkIORef
-    renderBookmarks bookmarkList params
-    drawCursor cursor_t params
+  when (scaleValue > 0) $
+    withViewScale params $ do
+      renderBookmarks bookmarks params
+      drawCursor cursor_t params
 
 -------------------------------------------------------------------------------
+
+renderBookmarks :: [Timestamp] -> ViewParameters -> Render ()
+renderBookmarks bookmarks ViewParameters{height} = do
+    -- Render the bookmarks
+    -- First set the line width to one pixel and set the line colour
+    (onePixel, _) <- deviceToUserDistance 1 0
+    setLineWidth onePixel
+    setSourceRGBAhex bookmarkColour 1.0
+    sequence_
+      [ draw_line (bookmark, 0) (bookmark, height)
+      | bookmark <- bookmarks ]
 
 -------------------------------------------------------------------------------
 
 drawCursor :: Timestamp -> ViewParameters -> Render ()
-drawCursor cursor_t param@ViewParameters{..} = do
-  withViewScale param $ do
+drawCursor cursor_t ViewParameters{height} = do
     (threePixels, _) <- deviceToUserDistance 3 0
     setLineWidth threePixels
     setOperator OperatorOver
@@ -149,6 +158,15 @@ drawCursor cursor_t param@ViewParameters{..} = do
     lineTo (fromIntegral cursor_t) (fromIntegral height)
     stroke
 
+-------------------------------------------------------------------------------
+
+withViewScale :: ViewParameters -> Render () -> Render ()
+withViewScale ViewParameters{scaleValue, hadjValue} inner = do
+   save
+   scale (1/scaleValue) 1.0
+   translate (-hadjValue) 0
+   inner
+   restore
 
 -------------------------------------------------------------------------------
 -- This function draws the current view of all the HECs with Cario
