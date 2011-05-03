@@ -67,6 +67,8 @@ timelineGetViewParameters timelineWin@TimelineWindow{..} = do
   let hadj_value = toWholePixels scaleValue hadj_value0
 
   traces <- readIORef tracesIORef
+  bwmode <- readIORef bwmodeIORef
+  labels_mode <- readIORef showLabelsIORef
 
   return ViewParameters {
            width      = dAreaWidth,
@@ -74,15 +76,17 @@ timelineGetViewParameters timelineWin@TimelineWindow{..} = do
            viewTraces = traces,
            hadjValue  = hadj_value,
            scaleValue = scaleValue,
-           detail     = 1,
-           bwMode     = False,
-           labelsMode = False
+           detail     = 3, --for now
+           bwMode     = bwmode,
+           labelsMode = labels_mode
          }
 
 timelineWindowSetHECs :: TimelineWindow -> Maybe HECs -> IO ()
 timelineWindowSetHECs timelineWin@TimelineWindow{..} mhecs = do
   writeIORef hecsIORef mhecs
   writeIORef scaleIORef defaultScaleValue
+  -- FIXME: this defaultScaleValue = -1 stuff is a terrible hack
+  zoomToFit timelineWin
   timelineParamsChanged timelineWin
 
 timelineWindowSetTraces :: TimelineWindow -> [Trace] -> IO ()
@@ -185,8 +189,23 @@ timelineWindowNew builder TimelineViewActions{..} = do
   on timelineDrawingArea exposeEvent $ do
      exposeRegion <- New.eventRegion
      liftIO $ do
-       bwmode <- readIORef bwmodeIORef
-       exposeTraceView timelineWin bwmode exposeRegion
+       maybeEventArray <- readIORef hecsIORef
+
+       -- Check to see if an event trace has been loaded
+       case maybeEventArray of
+         Nothing   -> return ()
+         Just hecs -> do
+           params <- timelineGetViewParameters timelineWin
+           -- render either the whole height of the timeline, or the window, whichever
+           -- is larger (this just ensure we fill the background if the timeline is
+           -- smaller than the window).
+           (_,dAreaHeight) <- widgetGetSize timelineDrawingArea
+           let params' = params { height = max (height params) dAreaHeight }
+           cursor    <- readIORef cursorIORef
+           bookmarks <- readIORef bookmarkIORef
+
+           renderView timelineWin params' hecs cursor bookmarks exposeRegion
+
      return True
 
   on timelineDrawingArea configureEvent $ do

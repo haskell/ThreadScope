@@ -74,19 +74,31 @@ startup filename traceName _debug --Note: debug not currently used
                                         loadEvents (registerEventsFromFile filename)
                                         writeIORef filenameIORef (Just filename),
                mainWinSavePDF       = do
+                 --FIXME: sort out the view paramater state issue
                  viewParams <- timelineGetViewParameters timelineWin
+                 let viewParams' = viewParams {
+                                     detail     = 1,
+                                     bwMode     = False,
+                                     labelsMode = False
+                                   }
                  mb_fn   <- readIORef filenameIORef
                  mb_hecs <- readIORef hecsIORef
                  case (mb_fn, mb_hecs) of
-                   (Just fn, Just hecs) -> saveAsPDF fn hecs viewParams
+                   (Just fn, Just hecs) -> saveAsPDF fn hecs viewParams'
                    _                    -> return (),
 
                mainWinSavePNG       = do
+                 --FIXME: eliminate the duplication between the two save formats
                  viewParams <- timelineGetViewParameters timelineWin
+                 let viewParams' = viewParams {
+                                     detail     = 1,
+                                     bwMode     = False,
+                                     labelsMode = False
+                                   }
                  mb_fn   <- readIORef filenameIORef
                  mb_hecs <- readIORef hecsIORef
                  case (mb_fn, mb_hecs) of
-                   (Just fn, Just hecs) -> saveAsPNG fn hecs viewParams
+                   (Just fn, Just hecs) -> saveAsPNG fn hecs viewParams'
                    _                    -> return (),
 
                mainWinQuit          = mainQuit,

@@ -18,12 +18,11 @@ saveAsPDF fn hecs viewParams =
 
     withPDFSurface (fn <.> "pdf") w' h' $ \surface ->
       renderWith surface $
-        renderTraces viewParams traces hecs (Rectangle 0 0 w h)
+        renderTraces viewParams hecs (Rectangle 0 0 w h)
 
   where
     w = width  viewParams; w' = fromIntegral w
     h = height viewParams; h' = fromIntegral h
-    traces = viewTraces viewParams
 
 -------------------------------------------------------------------------------
 
@@ -32,12 +31,11 @@ saveAsPNG fn hecs viewParams =
 
     withImageSurface FormatARGB32 w' h' $ \surface -> do
       renderWith surface $
-        renderTraces viewParams traces hecs (Rectangle 0 0 w h)
+        renderTraces viewParams hecs (Rectangle 0 0 w h)
       surfaceWriteToPNG surface (fn <.> "png")
 
   where
     w = width  viewParams; w' = fromIntegral w
     h = height viewParams; h' = fromIntegral h
-    traces = viewTraces viewParams
 
 -------------------------------------------------------------------------------

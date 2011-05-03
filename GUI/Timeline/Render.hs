@@ -1,6 +1,6 @@
 {-# LANGUAGE NamedFieldPuns #-}
 module GUI.Timeline.Render (
-    exposeTraceView,
+    renderView,
     renderTraces,
     updateLabelDrawingArea,
     calculateTotalTimelineHeight,
@@ -9,7 +9,6 @@ module GUI.Timeline.Render (
 
 import GUI.Timeline.Types
 import GUI.Timeline.Render.Constants
-import GUI.Timeline.Motion
 import GUI.Timeline.Ticks
 import GUI.Timeline.HEC
 import GUI.Timeline.Activity
@@ -28,55 +27,22 @@ import Data.IORef
 import Control.Monad
 
 -------------------------------------------------------------------------------
--- |The 'updateProfileDrawingArea' function is called when an expose event
---  occurs. This function redraws the currently visible part of the
---  main trace canvas plus related canvases.
 
-exposeTraceView :: TimelineWindow -> Bool -> Region -> IO ()
-exposeTraceView state@TimelineWindow{hecsIORef} bwmode exposeRegion = do
-  maybeEventArray <- readIORef hecsIORef
-
-  -- Check to see if an event trace has been loaded
-  case maybeEventArray of
-    Nothing   -> return ()
-    Just hecs -> renderView state bwmode exposeRegion hecs
-
-renderView :: TimelineWindow -> Bool -> Region -> HECs -> IO ()
-renderView state@TimelineWindow{timelineDrawingArea, showLabelsIORef, timelineVAdj, timelineAdj, timelinePrevView, cursorIORef, bookmarkIORef, tracesIORef} bwmode exposeRegion hecs = do
+-- | This function redraws the currently visible part of the
+--   main trace canvas plus related canvases.
+--
+renderView :: TimelineWindow
+           -> ViewParameters
+           -> HECs -> Timestamp -> [Timestamp]
+           -> Region -> IO ()
+renderView TimelineWindow{timelineDrawingArea, timelineVAdj, timelinePrevView}
+           params hecs cursor_t bookmarks exposeRegion = do
 
   -- Get state information from user-interface components
-  labels_mode <- readIORef showLabelsIORef
-  (dAreaWidth,dAreaHeight) <- widgetGetSize timelineDrawingArea
-
-  scaleValue <- checkScaleValue state
+  (dAreaWidth, _) <- widgetGetSize timelineDrawingArea
   vadj_value <- adjustmentGetValue timelineVAdj
 
-  totalHeight <- calculateTotalTimelineHeight state
-  let timelineHeight = max totalHeight dAreaHeight
-  -- render either the whole height of the timeline, or the window, whichever
-  -- is larger (this just ensure we fill the background if the timeline is
-  -- smaller than the window).
-
-  -- snap the view to whole pixels, to avoid blurring
-  hadj_value0 <- adjustmentGetValue timelineAdj
-  let hadj_value = toWholePixels scaleValue hadj_value0
-
-  traces    <- readIORef tracesIORef
-
-  let params = ViewParameters {
-                        width     = dAreaWidth,
-                        height    = timelineHeight,
-                        viewTraces = traces,
-                        hadjValue = hadj_value,
-                        scaleValue = scaleValue,
-                        detail = 3, -- for now
-                        bwMode = bwmode,
-                        labelsMode = labels_mode
-                    }
-
   prev_view <- readIORef timelinePrevView
-  cursor_t  <- readIORef cursorIORef
-  bookmarks <- readIORef bookmarkIORef
 
   rect <- regionGetClipbox exposeRegion
 
@@ -86,10 +52,10 @@ renderView state@TimelineWindow{timelineDrawingArea, showLabelsIORef, timelineVA
   let renderToNewSurface = do
         new_surface <- withTargetSurface $ \surface ->
                          liftIO $ createSimilarSurface surface ContentColor
-                                    dAreaWidth timelineHeight
+                                    dAreaWidth (height params)
         renderWith new_surface $ do
              clearWhite
-             renderTraces params traces hecs rect
+             renderTraces params hecs rect
         return new_surface
 
   surface <-
@@ -106,14 +72,14 @@ renderView state@TimelineWindow{timelineDrawingArea, showLabelsIORef, timelineVA
                if old_params { hadjValue = hadjValue params } == params
                   -- only the hadjValue changed
                   && abs (hadjValue params - hadjValue old_params) <
-                     fromIntegral (width params) * scaleValue
+                     fromIntegral (width params) * scaleValue params
                   -- and the views overlap...
                   then do
-                       scrollView surface old_params params traces hecs
+                       scrollView surface old_params params hecs
 
                   else do
                        renderWith surface $ do
-                          clearWhite; renderTraces params traces hecs rect
+                          clearWhite; renderTraces params hecs rect
                        return surface
 
          | otherwise
@@ -128,7 +94,7 @@ renderView state@TimelineWindow{timelineDrawingArea, showLabelsIORef, timelineVA
           -- ^^ this is where we adjust for the vertical scrollbar
   setOperator OperatorSource
   paint
-  when (scaleValue > 0) $
+  when (scaleValue params > 0) $
     withViewScale params $ do
       renderBookmarks bookmarks params
       drawCursor cursor_t params
@@ -171,10 +137,10 @@ withViewScale ViewParameters{scaleValue, hadjValue} inner = do
 -------------------------------------------------------------------------------
 -- This function draws the current view of all the HECs with Cario
 
-renderTraces :: ViewParameters -> [Trace] -> HECs -> Rectangle
+renderTraces :: ViewParameters -> HECs -> Rectangle
              -> Render ()
 
-renderTraces params@ViewParameters{..} traces hecs (Rectangle rx _ry rw _rh)
+renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh)
   = do
     let
         scale_rx    = fromIntegral rx * scaleValue
@@ -215,17 +181,17 @@ renderTraces params@ViewParameters{..} traces hecs (Rectangle rx _ry rw _rh)
                    return ()
             restore
        -- Now rennder all the HECs.
-      zipWithM_ renderTrace traces (traceYPositions labelsMode traces)
+      zipWithM_ renderTrace viewTraces (traceYPositions labelsMode viewTraces)
 
 -------------------------------------------------------------------------------
 
 -- parameters differ only in the hadjValue, we can scroll ...
 scrollView :: Surface
            -> ViewParameters -> ViewParameters
-           -> [Trace] -> HECs
+           -> HECs
            -> Render Surface
 
-scrollView surface old new traces hecs = do
+scrollView surface old new hecs = do
 
 --   scrolling on the same surface seems not to work, I get garbled results.
 --   Not sure what the best way to do this is.
@@ -266,7 +232,7 @@ scrollView surface old new traces hecs = do
        setSourceRGBA 0xffff 0xffff 0xffff 0xffff
        fill
 
-       renderTraces new traces hecs rect
+       renderTraces new hecs rect
 
    surfaceFinish surface
    return new_surface
@@ -276,21 +242,6 @@ scrollView surface old new traces hecs = do
 toWholePixels :: Double -> Double -> Double
 toWholePixels 0    _x = 0
 toWholePixels scale x = fromIntegral (truncate (x / scale)) * scale
-
--------------------------------------------------------------------------------
--- This function returns a value which can be used to scale
--- Timestamp event log values to pixels.
--- If the scale has previous been computed then it is resued.
--- An "uncomputed" scale value is represetned as -1.0 (defaultScaleValue)
--- We estimate the width of the vertical scrollbar at 20 pixels
-
-checkScaleValue :: TimelineWindow -> IO Double
-checkScaleValue state@TimelineWindow{scaleIORef}
-  = do scaleValue <- readIORef scaleIORef
-       if scaleValue < 0.0
-          then do zoomToFit state
-                  readIORef scaleIORef
-          else return scaleValue
 
 -------------------------------------------------------------------------------
 
