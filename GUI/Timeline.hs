@@ -33,7 +33,6 @@ import Graphics.UI.Gtk.Gdk.Events as Old hiding (eventModifier)
 import Graphics.UI.Gtk.Gdk.EventM as New
 import Graphics.Rendering.Cairo  as C
 
-import Data.Maybe
 import Data.IORef
 import Control.Monad
 
@@ -140,26 +139,6 @@ timelineViewNew builder TimelineViewActions{..} = do
 
   let timelineState = TimelineState{..}
       timelineWin   = TimelineView{..}
-
-  ------------------------------------------------------------------------
-  -- Key presses
-
-  --TODO: should not have access to mainWindow here, should attach events in
-  -- MainWindow and manage actions in main interaction module.
-  mainWindow <- getWidget castToWindow "main_window"
-  onKeyPress mainWindow $ \Key { Old.eventKeyName = key, eventKeyChar = mch } -> do
-    cursor <- readIORef cursorIORef
-    case key of
-      "Escape" -> mainQuit >> return True
-      "Right"  -> do scrollRight timelineState; return True
-      "Left"   -> do scrollLeft  timelineState; return True
-      _ -> if isJust mch then
-             case fromJust mch of
-               '+' -> do zoomIn  timelineState cursor; return True
-               '-' -> do zoomOut timelineState cursor; return True
-               _   -> return True
-           else
-             return True
 
   ------------------------------------------------------------------------
   -- Porgram the callback for the capability drawingArea

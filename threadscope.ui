@@ -423,8 +423,11 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkViewport" id="viewport1">
+                          <object class="GtkViewport" id="timeline_viewport">
                             <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="has_focus">True</property>
+                            <property name="events">GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK | GDK_STRUCTURE_MASK</property>
                             <property name="resize_mode">queue</property>
                             <child>
                               <object class="GtkTable" id="table2">

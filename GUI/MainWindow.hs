@@ -120,6 +120,7 @@ mainWindowNew builder actions = do
   quitMenuItem       <- getWidget castToMenuItem "quitMenuItem"
   aboutMenuItem      <- getWidget castToMenuItem "aboutMenuItem"
 
+  timelineViewport   <- getWidget castToWidget "timeline_viewport"
 --  timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
 --  timelineLabelDrawingArea <- getWidget castToDrawingArea "timeline_labels_drawingarea"
 --  timelineHScrollbar  <- getWidget castToHScrollbar "timeline_hscroll"
@@ -187,14 +188,15 @@ mainWindowNew builder actions = do
     toggleToolButtonGetActive showLabelsToggle >>= mainWinDisplayLabels actions
 
   -- Key bindings
-  onKeyPress mainWindow $ \Key { Old.eventKeyName = key, eventKeyChar = mch } -> do
+  --TODO: move these to the timeline module
+  onKeyPress timelineViewport $ \Key { Old.eventKeyName = key, eventKeyChar = mch } ->
     case (key, mch) of
-      ("Right", _)   -> mainWinScrollLeft  actions
-      ("Left",  _)   -> mainWinScrollRight actions
-      (_ , Just '+') -> mainWinJumpZoomIn  actions
-      (_ , Just '-') -> mainWinJumpZoomOut actions
-      _              -> return ()
-    return True
+      ("Right", _)   -> mainWinScrollRight actions >> return True
+      ("Left",  _)   -> mainWinScrollLeft  actions >> return True
+      (_ , Just '+') -> mainWinJumpZoomIn  actions >> return True
+      (_ , Just '-') -> mainWinJumpZoomOut actions >> return True
+      _              -> return False
+
 
   ------------------------------------------------------------------------
   -- Show all windows
