@@ -29,6 +29,7 @@ import GUI.EventsWindow
 import GUI.Timeline
 import GUI.TraceView
 import GUI.BookmarkView
+import GUI.KeyView
 import GUI.SaveAs
 import qualified GUI.ConcurrencyControl as ConcurrencyControl
 import qualified GUI.ProgressView as ProgressView
@@ -159,6 +160,8 @@ startup filename traceName _debug --Note: debug not currently used
                  --eventsWindowJumpToTimestamp eventsWin ts
              }
 
+           _keyview <- keyViewNew builder
+
            let loadEvents registerEvents = do
                  forkIO $ do
                    ConcurrencyControl.fullSpeed concCtl $
@@ -190,7 +193,6 @@ startup filename traceName _debug --Note: debug not currently used
                                  else
                                    Just filename)
 
-       ------------------------------------------------------------------------
        -- When a filename for an event log is specified open and
        -- parse the event log file and update the IORefs for
        -- the capabilities and event array.

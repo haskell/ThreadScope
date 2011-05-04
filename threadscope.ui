@@ -265,11 +265,47 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <child>
-                  <object class="GtkTreeView" id="traces_tree">
+                  <object class="GtkScrolledWindow" id="scrolledwindow2">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
-                    <property name="headers_visible">False</property>
+                    <property name="hscrollbar_policy">automatic</property>
+                    <property name="vscrollbar_policy">automatic</property>
+                    <child>
+                      <object class="GtkTreeView" id="key_list">
+                        <property name="visible">True</property>
+                        <property name="headers_visible">False</property>
+                        <property name="enable_search">False</property>
+                      </object>
+                    </child>
                   </object>
+                </child>
+                <child type="tab">
+                  <object class="GtkLabel" id="label5">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">Key</property>
+                  </object>
+                  <packing>
+                    <property name="position">2</property>
+                    <property name="tab_fill">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkScrolledWindow" id="scrolledwindow1">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="hscrollbar_policy">automatic</property>
+                    <property name="vscrollbar_policy">automatic</property>
+                    <child>
+                      <object class="GtkTreeView" id="traces_tree">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="headers_visible">False</property>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="position">1</property>
+                  </packing>
                 </child>
                 <child type="tab">
                   <object class="GtkLabel" id="label1">
@@ -277,6 +313,7 @@
                     <property name="label" translatable="yes">Traces</property>
                   </object>
                   <packing>
+                    <property name="position">1</property>
                     <property name="tab_fill">False</property>
                   </packing>
                 </child>
@@ -349,7 +386,7 @@
                     </child>
                   </object>
                   <packing>
-                    <property name="position">1</property>
+                    <property name="position">2</property>
                   </packing>
                 </child>
                 <child type="tab">
@@ -358,7 +395,7 @@
                     <property name="label" translatable="yes">Bookmarks</property>
                   </object>
                   <packing>
-                    <property name="position">1</property>
+                    <property name="position">2</property>
                     <property name="tab_fill">False</property>
                   </packing>
                 </child>
@@ -430,22 +467,17 @@
                             <property name="events">GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK | GDK_STRUCTURE_MASK</property>
                             <property name="resize_mode">queue</property>
                             <child>
-                              <object class="GtkTable" id="table2">
+                              <object class="GtkHBox" id="hbox1">
                                 <property name="visible">True</property>
-                                <property name="n_rows">2</property>
-                                <property name="n_columns">2</property>
-                                <property name="row_spacing">4</property>
                                 <child>
-                                  <object class="GtkDrawingArea" id="timeline_key_drawingarea">
-                                    <property name="height_request">30</property>
+                                  <object class="GtkDrawingArea" id="timeline_labels_drawingarea">
+                                    <property name="width_request">80</property>
                                     <property name="visible">True</property>
                                   </object>
                                   <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">1</property>
-                                    <property name="bottom_attach">2</property>
-                                    <property name="y_options">GTK_FILL</property>
+                                    <property name="expand">False</property>
+                                    <property name="fill">False</property>
+                                    <property name="position">0</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -453,20 +485,7 @@
                                     <property name="visible">True</property>
                                   </object>
                                   <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <placeholder/>
-                                </child>
-                                <child>
-                                  <object class="GtkDrawingArea" id="timeline_labels_drawingarea">
-                                    <property name="width_request">80</property>
-                                    <property name="visible">True</property>
-                                  </object>
-                                  <packing>
-                                    <property name="x_options">GTK_FILL</property>
+                                    <property name="position">1</property>
                                   </packing>
                                 </child>
                               </object>

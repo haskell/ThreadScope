@@ -24,7 +24,6 @@ module GUI.Timeline (
 import GUI.Timeline.Types (TimelineState(..))
 import GUI.Timeline.Motion
 import GUI.Timeline.Render
-import GUI.Timeline.Key
 
 import GUI.Types
 
@@ -122,7 +121,6 @@ timelineViewNew builder TimelineViewActions{..} = do
   let getWidget cast = builderGetObject builder cast
   timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
   timelineLabelDrawingArea <- getWidget castToDrawingArea "timeline_labels_drawingarea"
-  timelineKeyDrawingArea   <- getWidget castToDrawingArea "timeline_key_drawingarea"
   timelineHScrollbar       <- getWidget castToHScrollbar "timeline_hscroll"
   timelineVScrollbar       <- getWidget castToVScrollbar "timeline_vscroll"
   timelineAdj              <- rangeGetAdjustment timelineHScrollbar
@@ -147,10 +145,6 @@ timelineViewNew builder TimelineViewActions{..} = do
     showLabels <- readIORef showLabelsIORef
     updateLabelDrawingArea timelineState showLabels traces
     return True
-
-  ------------------------------------------------------------------------
-  -- Set-up the key timelineDrawingArea.
-  timelineKeyDrawingArea `onExpose` updateKeyDrawingArea timelineKeyDrawingArea
 
   ------------------------------------------------------------------------
   -- Allow mouse wheel to be used for zoom in/out

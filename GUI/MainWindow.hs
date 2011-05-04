@@ -197,7 +197,6 @@ mainWindowNew builder actions = do
       (_ , Just '-') -> mainWinJumpZoomOut actions >> return True
       _              -> return False
 
-
   ------------------------------------------------------------------------
   -- Show all windows
   widgetShowAll mainWindow
