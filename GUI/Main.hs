@@ -126,7 +126,6 @@ startup filename traceName _debug --Note: debug not currently used
                                                  snd (bounds hecEventArray)
                                          eventsViewScrollToLine eventsView end,
                mainWinJumpCursor    = do timelineCentreOnCursor timelineWin
-                                         --FIXME: sync the cursor of the timeline and events windows
                                          mcursorpos <- eventsViewGetCursor eventsView
                                          case mcursorpos of
                                            Nothing        -> return ()
@@ -142,13 +141,20 @@ startup filename traceName _debug --Note: debug not currently used
 
            eventsView <- eventsViewNew builder EventsViewActions {
                timelineViewCursorChanged = \n -> do
+                 Just hecs <- readIORef hecsIORef
+                 let ts = eventIndexToTimestamp hecs n
+                 writeIORef cursorIORef ts
+                 timelineSetCursor timelineWin ts
                  eventsViewSetCursor eventsView n
              }
 
            timelineWin <- timelineViewNew builder TimelineViewActions {
                timelineViewCursorChanged = \ts -> do
+                 Just hecs <- readIORef hecsIORef
+                 let n = timestampToEventIndex hecs ts
                  writeIORef cursorIORef ts
                  timelineSetCursor timelineWin ts
+                 eventsViewSetCursor eventsView n
              }
 
            traceView <- traceViewNew builder TraceViewActions {
