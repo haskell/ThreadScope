@@ -9,6 +9,7 @@ module GUI.Timeline.Motion (
 import GUI.Timeline.Types
 import GUI.Timeline.Render.Constants
 import GUI.Types
+import Events.HECs
 
 import Graphics.UI.Gtk
 

@@ -26,6 +26,7 @@ import GUI.Timeline.Motion
 import GUI.Timeline.Render
 
 import GUI.Types
+import Events.HECs
 
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Gdk.Events as Old hiding (eventModifier)

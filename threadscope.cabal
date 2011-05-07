@@ -25,7 +25,8 @@ Executable threadscope
   extensions:        RecordWildCards, NamedFieldPuns,
                      BangPatterns, PatternGuards,
                      CPP
-  Other-Modules:     Events.EventDuration, 
+  Other-Modules:     Events.HECs,
+                     Events.EventDuration,
                      Events.EventTree, 
                      Events.ReadEvents,
                      Events.TestEvents,

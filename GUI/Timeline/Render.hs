@@ -13,6 +13,7 @@ import GUI.Timeline.Ticks
 import GUI.Timeline.HEC
 import GUI.Timeline.Activity
 
+import Events.HECs
 import GUI.Types
 import GUI.ViewerColours
 import GUI.Timeline.CairoDrawing

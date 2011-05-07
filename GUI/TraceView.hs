@@ -6,6 +6,7 @@ module GUI.TraceView (
     traceViewGetTraces,
   ) where
 
+import Events.HECs
 import GUI.Types
 
 import Graphics.UI.Gtk

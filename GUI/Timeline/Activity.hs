@@ -4,9 +4,10 @@ module GUI.Timeline.Activity (
 
 import GUI.Timeline.Render.Constants
 
-import GUI.Types
+import Events.HECs
 import Events.EventTree
 import Events.EventDuration
+import GUI.Types
 import GUI.ViewerColours
 
 import GHC.RTS.Events hiding (Event, GCWork, GCIdle)

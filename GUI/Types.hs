@@ -1,28 +1,9 @@
 module GUI.Types (
     ViewParameters(..),
     Trace(..),
-    HECs(..),
-    Timestamp,
   ) where
 
-import Events.EventTree
-
-import qualified GHC.RTS.Events as GHCEvents
-import GHC.RTS.Events hiding (Event)
-
-import Data.Array
-
------------------------------------------------------------------------------
-
---TODO: probably belongs in a different module, it's not GUI specific.
-
--- all the data from a .eventlog file
-data HECs = HECs {
-    hecCount         :: Int,
-    hecTrees         :: [(DurationTree,EventTree)],
-    hecEventArray    :: Array Int GHCEvents.CapEvent,
-    hecLastEventTime :: Timestamp
-  }
+import GHC.RTS.Events
 
 -----------------------------------------------------------------------------
 

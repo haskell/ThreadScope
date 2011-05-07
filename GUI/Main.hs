@@ -24,6 +24,7 @@ import Paths_threadscope
 -- Imports for ThreadScope
 import GUI.MainWindow as MainWindow
 import GUI.Types
+import Events.HECs
 import GUI.Dialogs
 import Events.ReadEvents
 import GUI.EventsView
