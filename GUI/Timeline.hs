@@ -180,6 +180,8 @@ timelineViewNew builder TimelineViewActions{..} = do
 
   onValueChanged timelineAdj  $ queueRedrawTimelines timelineState
   onValueChanged timelineVAdj $ queueRedrawTimelines timelineState
+  onAdjChanged   timelineAdj  $ queueRedrawTimelines timelineState
+  onAdjChanged   timelineVAdj $ queueRedrawTimelines timelineState
 
   on timelineDrawingArea exposeEvent $ do
      exposeRegion <- New.eventRegion
@@ -212,6 +214,11 @@ timelineViewNew builder TimelineViewActions{..} = do
 -------------------------------------------------------------------------------
 -- Update the internal state and the timemline view after changing which
 -- traces are displayed, or the order of traces.
+
+queueRedrawTimelines :: TimelineState -> IO ()
+queueRedrawTimelines TimelineState{..} = do
+  widgetQueueDraw timelineDrawingArea
+  widgetQueueDraw timelineLabelDrawingArea
 
 --FIXME: we are still unclear about which state changes involve which updates
 timelineParamsChanged :: TimelineView -> IO ()

@@ -3,7 +3,6 @@ module GUI.Timeline.Motion (
     zoomIn, zoomOut, zoomToFit,
     scrollLeft, scrollRight, scrollToBeginning, scrollToEnd, centreOnCursor,
     vscrollDown, vscrollUp,
-    queueRedrawTimelines
   ) where
 
 import GUI.Timeline.Types
@@ -32,7 +31,7 @@ zoomOut :: TimelineState -> Timestamp -> IO ()
 zoomOut  = zoom (*2)
 
 zoom :: (Double->Double) -> TimelineState -> Timestamp -> IO ()
-zoom factor state@TimelineState{timelineAdj, scaleIORef} cursor = do
+zoom factor TimelineState{timelineAdj, scaleIORef} cursor = do
        scaleValue <- readIORef scaleIORef
        let clampedFactor = if factor scaleValue < 1 then
                              id
@@ -58,12 +57,10 @@ zoom factor state@TimelineState{timelineAdj, scaleIORef} cursor = do
        adjustmentSetStepIncrement timelineAdj nudge
        adjustmentSetPageIncrement timelineAdj pageshift
 
-       queueRedrawTimelines state
-
 -------------------------------------------------------------------------------
 
 zoomToFit :: TimelineState -> Maybe HECs -> IO ()
-zoomToFit state@TimelineState{scaleIORef, timelineAdj, timelineDrawingArea} mb_hecs  = do
+zoomToFit TimelineState{scaleIORef, timelineAdj, timelineDrawingArea} mb_hecs  = do
   case mb_hecs of
     Nothing   -> writeIORef scaleIORef (-1.0) --FIXME: ug!
     Just hecs -> do
@@ -87,8 +84,6 @@ zoomToFit state@TimelineState{scaleIORef, timelineAdj, timelineDrawingArea} mb_h
        -- TODO: this seems suspicious:
        adjustmentSetStepIncrement timelineAdj 0
        adjustmentSetPageIncrement timelineAdj 0
-
-       queueRedrawTimelines state
 
 -------------------------------------------------------------------------------
 
@@ -132,8 +127,3 @@ vscroll adjust TimelineState{timelineVAdj}
        adjustmentValueChanged timelineVAdj
 
 -- -----------------------------------------------------------------------------
-
-queueRedrawTimelines :: TimelineState -> IO ()
-queueRedrawTimelines state = do
-  widgetQueueDraw (timelineDrawingArea state)
-  widgetQueueDraw (timelineLabelDrawingArea state)
