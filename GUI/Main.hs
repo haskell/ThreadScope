@@ -17,6 +17,7 @@ import System.Posix
 #endif
 import Control.Exception
 import Control.Concurrent
+import Data.Array
 
 import Paths_threadscope
 
@@ -25,7 +26,7 @@ import GUI.MainWindow as MainWindow
 import GUI.Types
 import GUI.Dialogs
 import Events.ReadEvents
-import GUI.EventsWindow
+import GUI.EventsView
 import GUI.Timeline
 import GUI.TraceView
 import GUI.BookmarkView
@@ -115,13 +116,20 @@ startup filename traceName _debug --Note: debug not currently used
 
                -- Toolbar actions
                mainWinJumpStart     = do timelineScrollToBeginning timelineWin
-                                         eventsWindowJumpToEnd eventsWin,
+                                         eventsViewScrollToLine eventsView 0,
                mainWinJumpEnd       = do timelineScrollToEnd timelineWin
-                                         eventsWindowJumpToEnd eventsWin,
+                                         mhecs <- readIORef hecsIORef
+                                         let end = case mhecs of
+                                               Nothing                  -> 0
+                                               Just HECs{hecEventArray} ->
+                                                 snd (bounds hecEventArray)
+                                         eventsViewScrollToLine eventsView end,
                mainWinJumpCursor    = do timelineCentreOnCursor timelineWin
                                          --FIXME: sync the cursor of the timeline and events windows
-                                         cursorpos <- eventsWindowGetCursorLine eventsWin
-                                         eventsWindowJumpToPosition eventsWin cursorpos,
+                                         mcursorpos <- eventsViewGetCursor eventsView
+                                         case mcursorpos of
+                                           Nothing        -> return ()
+                                           Just cursorpos -> eventsViewScrollToLine eventsView cursorpos,
 
                mainWinScrollLeft    = timelineScrollLeft  timelineWin,
                mainWinScrollRight   = timelineScrollRight timelineWin,
@@ -131,7 +139,10 @@ startup filename traceName _debug --Note: debug not currently used
                mainWinDisplayLabels = timelineSetShowLabels timelineWin
              }
 
-           eventsWin <- eventsWindowNew builder
+           eventsView <- eventsViewNew builder EventsViewActions {
+               timelineViewCursorChanged = \n -> do
+                 eventsViewSetCursor eventsView n
+             }
 
            timelineWin <- timelineViewNew builder TimelineViewActions {
                timelineViewCursorChanged = \ts -> do
@@ -166,12 +177,13 @@ startup filename traceName _debug --Note: debug not currently used
                  forkIO $ do
                    ConcurrencyControl.fullSpeed concCtl $
                      ProgressView.withProgress mainWin $ \progress -> do
+                       --TODO: set state to be empty during loading
                        (hecs, file, nevents, timespan) <- registerEvents progress
                        MainWindow.setFileLoaded mainWin (Just file)
                        MainWindow.setStatusMessage mainWin $
                          printf "%s (%d events, %.3fs)" file nevents timespan
 
-                       eventsWindowSetEvents eventsWin (Just (hecEventArray hecs))
+                       eventsViewSetEvents eventsView (Just (hecEventArray hecs))
                        traceViewSetHECs traceView hecs
                        traces' <- traceViewGetTraces traceView
                        timelineWindowSetHECs timelineWin (Just hecs)
@@ -200,3 +212,5 @@ startup filename traceName _debug --Note: debug not currently used
 
        -- Likewise for test traces
        when (traceName /= "") $ loadEvents (registerEventsFromTrace traceName)
+
+-------------------------------------------------------------------------------

@@ -18,7 +18,7 @@ Synopsis:            A graphical thread profiler.
 Executable threadscope
   Main-is:           Main.hs
   Build-Depends:     base >= 4.0 && < 5, 
-                     gtk >= 0.11, cairo, glib,
+                     gtk >= 0.11, cairo, glib, pango,
                      binary, array, mtl, filepath,
                      ghc-events >= 0.2,
                      containers >= 0.2 && < 0.5
@@ -31,7 +31,7 @@ Executable threadscope
                      Events.TestEvents,
                      GUI.Main,
                      GUI.MainWindow,
-                     GUI.EventsWindow, 
+                     GUI.EventsView,
                      GUI.Dialogs,
                      GUI.SaveAs,
                      GUI.Timeline,
@@ -48,7 +48,8 @@ Executable threadscope
                      GUI.Timeline.Render,
                      GUI.Timeline.Ticks,
                      GUI.Timeline.Types,
-                     GUI.Timeline.Render.Constants
+                     GUI.Timeline.Render.Constants,
+                     GUI.GtkExtras
 
   ghc-options:  -Wall -fwarn-tabs
                 -fno-warn-type-defaults -fno-warn-name-shadowing
