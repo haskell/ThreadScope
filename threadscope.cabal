@@ -4,7 +4,7 @@ Description:         A graphical viewer for GHC eventlog traces.
 License:             BSD3
 License-file:        LICENSE
 Copyright:           Released under the GHC license
-Author:              Donnie Jones, Simon Marlow, Satnam Singh
+Author:              Donnie Jones, Simon Marlow, Satnam Singh, Duncan Coutts
 Maintainer:          Satnam Singh <s.singh@ieee.org>
 Bug-reports:	     Satnam Singh <s.singh@ieee.org>
 Stability:	     Preliminary release.
