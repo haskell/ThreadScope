@@ -172,6 +172,7 @@ timelineViewNew builder TimelineViewActions{..} = do
            hadjValue <- adjustmentGetValue timelineAdj
            scaleValue <- readIORef scaleIORef
            let cursor = round (hadjValue + x * scaleValue)
+           widgetGrabFocus timelineDrawingArea
            timelineViewCursorChanged cursor
 
            return True

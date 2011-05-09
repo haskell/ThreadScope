@@ -94,23 +94,6 @@ eventsViewNew builder EventsViewActions{..} = do
     return True
 
   -----------------------------------------------------------------------------
-  -- Focus
-
-  onFocusIn drawArea $ \_ -> do
-    ViewState{eventsState} <- readIORef stateRef
-    set drawArea [ GtkExt.widgetState := case eventsState of
-                                           EventsEmpty  {} -> StateNormal
-                                           EventsLoaded {} -> StateSelected ]
-    return True
-
-  onFocusOut drawArea $ \_ -> do
-    ViewState{eventsState} <- readIORef stateRef
-    set drawArea [ GtkExt.widgetState := case eventsState of
-                                           EventsEmpty  {} -> StateNormal
-                                           EventsLoaded {} -> StateActive ]
-    return True
-
-  -----------------------------------------------------------------------------
   -- Key navigation
 
   on drawArea keyPressEvent $ do
@@ -162,10 +145,10 @@ eventsViewNew builder EventsViewActions{..} = do
     liftIO $ do
       viewState <- readIORef stateRef
       yOffset <- get adj adjustmentValue
+      widgetGrabFocus drawArea
       case hitpointToLine viewState yOffset y of
         Nothing -> return ()
         Just n  -> timelineViewCursorChanged n
-      widgetGrabFocus drawArea
 
   on drawArea scrollEvent $ do
     dir <- eventScrollDirection
@@ -223,7 +206,6 @@ eventsViewSetCursor eventsView@EventsView{drawArea, stateRef} n = do
       writeIORef stateRef viewState {
         eventsState = eventsState { cursorPos = n' }
       }
-      set drawArea [ GtkExt.widgetState := StateSelected ]
       eventsViewScrollToLine eventsView  n'
       widgetQueueDraw drawArea
 
@@ -280,7 +262,9 @@ drawEvents EventsView{drawArea, adj}
 
   win   <- widgetGetDrawWindow drawArea
   style <- get drawArea widgetStyle
-  state <- get drawArea GtkExt.widgetState
+  focused <- get drawArea widgetIsFocus
+  let state | focused   = StateSelected
+            | otherwise = StateActive
 
   pangoCtx <- widgetGetPangoContext drawArea
   layout   <- layoutEmpty pangoCtx

@@ -6,35 +6,14 @@ module GUI.GtkExtras where
 
 import Graphics.UI.GtkInternals
 import Graphics.UI.Gtk (Rectangle)
-import System.Glib.Attributes
 import Graphics.Rendering.Pango.Types
 import Graphics.Rendering.Pango.BasicTypes
 import Graphics.UI.Gtk.General.Enums (StateType, ShadowType)
 import Foreign
 import Foreign.C
-import Control.Monad
-
-
-widgetState :: WidgetClass self => Attr self StateType
-widgetState = newAttr
-  widgetGetState
-  widgetSetState
-
-widgetGetState :: WidgetClass self => self -> IO StateType
-widgetGetState widget =
-  liftM (toEnum . fromIntegral) $
-  (\(Widget arg1) -> withForeignPtr arg1 $ \argPtr1 -> gtk_widget_get_state argPtr1)
-    (toWidget widget)
-
-widgetSetState :: WidgetClass self => self -> StateType -> IO ()
-widgetSetState widget state =
-  (\(Widget arg1) arg2 -> withForeignPtr arg1 $ \argPtr1 -> gtk_widget_set_state argPtr1 arg2)
-    (toWidget widget)
-    ((fromIntegral . fromEnum) state)
 
 
 -------------------------------------------------------------------------------
-
 
 stylePaintFlatBox :: WidgetClass widget
                   => Style
@@ -88,12 +67,6 @@ stylePaintLayout style window stateType useText
     layout
 
 -------------------------------------------------------------------------------
-
-foreign import ccall safe "gtk_widget_get_state"
-  gtk_widget_get_state :: Ptr Widget -> IO CInt
-
-foreign import ccall safe "gtk_widget_set_state"
-  gtk_widget_set_state :: Ptr Widget -> CInt -> IO ()
 
 foreign import ccall safe "gtk_paint_flat_box"
   gtk_paint_flat_box :: Ptr Style -> Ptr DrawWindow -> CInt -> CInt -> Ptr () -> Ptr Widget -> Ptr CChar -> CInt -> CInt -> CInt -> CInt -> IO ()
