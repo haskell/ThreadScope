@@ -11,6 +11,7 @@ module GUI.ProgressView (
 
 import Graphics.UI.Gtk as Gtk hiding (eventKeyName)
 import Graphics.UI.Gtk.Gdk.Events
+import GUI.GtkExtras
 
 import qualified Control.Concurrent as Concurrent
 import Control.Exception
@@ -63,14 +64,14 @@ startPulse view = do
   thread <- Concurrent.forkIO $
               pulse `catch` \OperationInterrupted -> return ()
   let stop = throwTo thread OperationInterrupted
+  waitGUI
   return stop
 
 setProgress :: ProgressView -> Int -> Int -> IO ()
-setProgress view total current =
-  let frac = fromIntegral current / fromIntegral total in
-  set (progressBar view) [
-    progressBarFraction := frac
-  ]
+setProgress view total current = do
+  let frac = fromIntegral current / fromIntegral total
+  set (progressBar view) [ progressBarFraction := frac ]
+  waitGUI
 
 close :: ProgressView -> IO ()
 close view = widgetDestroy (progressWindow view)

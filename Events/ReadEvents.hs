@@ -130,6 +130,9 @@ buildEventLog progress from =
 
        zipWithM_ treeProgress [0..] trees
 
+       --TODO: fully evaluate HECs before returning because othewise the last
+       -- bit of work gets done after the progress window has been closed.
+
        return (hecs, name, n_events, fromIntegral lastTx * 1.0e-9)
 
 -------------------------------------------------------------------------------

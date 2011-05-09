@@ -6,12 +6,20 @@ module GUI.GtkExtras where
 
 import Graphics.UI.GtkInternals
 import Graphics.UI.Gtk (Rectangle)
+import System.Glib.MainLoop
 import Graphics.Rendering.Pango.Types
 import Graphics.Rendering.Pango.BasicTypes
 import Graphics.UI.Gtk.General.Enums (StateType, ShadowType)
+
 import Foreign
 import Foreign.C
+import Control.Concurrent.MVar
 
+waitGUI :: IO ()
+waitGUI = do
+  resultVar <- newEmptyMVar
+  idleAdd (putMVar resultVar () >> return False) priorityDefaultIdle
+  takeMVar resultVar
 
 -------------------------------------------------------------------------------
 
