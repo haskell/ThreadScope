@@ -215,7 +215,7 @@ eventLoop uienv@UIEnv{..} eventlogState = do
                         }
       case format of
         FormatPDF -> saveAsPDF filename hecs viewParams'
-        FormatPNG -> saveAsPDF filename hecs viewParams'
+        FormatPNG -> saveAsPNG filename hecs viewParams'
       continue
 
     dispatch EventAboutDialog _ = do
