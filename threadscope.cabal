@@ -11,13 +11,13 @@ Stability:	     Preliminary release.
 Build-Type:          Simple
 Cabal-Version:       >=1.2
 Data-files:	     threadscope.ui, threadscope.png
-cabal-version: 	     >= 1.6
+cabal-version:       >= 1.6
 Category:            Thread profiling utility
 Synopsis:            A graphical thread profiler.
 
 Executable threadscope
   Main-is:           Main.hs
-  Build-Depends:     base >= 4.0 && < 5, 
+  Build-Depends:     base >= 4.0 && < 5,
                      gtk >= 0.12, cairo, glib, pango,
                      binary, array, mtl, filepath,
                      ghc-events >= 0.2,
@@ -27,7 +27,7 @@ Executable threadscope
                      CPP
   Other-Modules:     Events.HECs,
                      Events.EventDuration,
-                     Events.EventTree, 
+                     Events.EventTree,
                      Events.ReadEvents,
                      Events.TestEvents,
                      GUI.Main,
@@ -43,7 +43,7 @@ Executable threadscope
                      GUI.ConcurrencyControl,
                      GUI.ViewerColours,
                      GUI.Timeline.Activity,
-                     GUI.Timeline.CairoDrawing, 
+                     GUI.Timeline.CairoDrawing,
                      GUI.Timeline.HEC,
                      GUI.Timeline.Motion,
                      GUI.Timeline.Render,
@@ -68,7 +68,7 @@ Executable threadscope
      build-depends: unix >= 2.3 && < 2.5
 
 -- Not yet: gtk2hs doesn't support -threaded at the moment.
---  ghc-options: -threaded 
+--  ghc-options: -threaded
 
   c-sources: ghcrts.c
 
