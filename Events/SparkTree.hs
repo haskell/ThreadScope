@@ -1,6 +1,7 @@
 module Events.SparkTree (
      SparkTree(..),
      mkSparkTree,
+     eventsToSparkDurations,
   ) where
 
 import Data.Word (Word64)
@@ -52,7 +53,7 @@ data SparkNode
   | SparkTreeLeaf
       SparkCounters  -- spark stats at the start
       SparkCounters  -- spark stats at the end
-  | SparkTreeEmpty   -- before the first GC and after the last GC
+  | SparkTreeEmpty   -- after the last GC
 
   deriving Show
 
@@ -135,3 +136,22 @@ subtractSparkCounters
       (sparksFizzled2 - sparksFizzled1)
       (sparksGCd2 - sparksGCd1)
       (sparksRemaining2 - sparksRemaining1)
+
+
+-- Warning: cannot be applied to a suffix of the log (assumes start at time 0).
+eventsToSparkDurations :: [GHC.Event] -> [SparkDuration]
+eventsToSparkDurations es =
+  let aux _startTime _startCounters [] = []
+      aux startTime startCounters (event : events) =
+        case spec event of
+          SparkCounters crt dud ovf cnv fiz gcd rem ->
+            let endTime = time event
+                endCounters = SparkCount crt dud ovf cnv fiz gcd rem
+                sd = SparkDuration
+                       { startT = startTime,
+                         endT = endTime,
+                         startCount = startCounters,
+                         endCount = endCounters }
+            in sd : aux endTime endCounters events
+          _otherEvent -> aux startTime startCounters events
+  in aux 0 (SparkCount 0 0 0 0 0 0 0) es
