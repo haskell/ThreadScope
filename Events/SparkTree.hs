@@ -1,8 +1,9 @@
 module Events.SparkTree (
-     SparkTree(..),
+     SparkTree(..), SparkNode(..),
      mkSparkTree,
      eventsToSparkDurations,
      sparkProfile,
+     sparkTreeMaxDepth,
   ) where
 
 import Data.Word (Word64)
@@ -238,3 +239,12 @@ sparkProfile slice start0 end0 t
            zeroSparkCounters
          | SparkTree _ _ (SparkSplit _ _ _ cDelta) <- t  =
            cDelta
+
+
+sparkTreeMaxDepth :: SparkTree -> Int
+sparkTreeMaxDepth (SparkTree _ _ t) = sparkNodeMaxDepth t
+
+sparkNodeMaxDepth :: SparkNode -> Int
+sparkNodeMaxDepth (SparkSplit _ lhs rhs _)
+  = 1 + sparkNodeMaxDepth lhs `max` sparkNodeMaxDepth rhs
+sparkNodeMaxDepth _ = 1
