@@ -2,12 +2,13 @@ module Events.SparkTree (
      SparkTree(..),
      mkSparkTree,
      eventsToSparkDurations,
+     sparkProfile,
   ) where
 
 import Data.Word (Word64)
 
 import qualified GHC.RTS.Events as GHC
-import GHC.RTS.Events hiding (Event)
+import GHC.RTS.Events (Timestamp)
 
 import Text.Printf
 
@@ -30,10 +31,10 @@ data SparkDuration =
   deriving Show
 
 data SparkCounters =
-  SparkCount { sparksCreated, sparksDud, sparksOverflowed,
-               sparksConverted, sparksFizzled, sparksGCd,
-               sparksRemaining :: {-# UNPACK #-}! Word64 }
-  deriving Show
+  SparkCounters { sparksCreated, sparksDud, sparksOverflowed,
+                  sparksConverted, sparksFizzled, sparksGCd,
+                  sparksRemaining :: {-# UNPACK #-}! Word64 }
+  deriving (Show, Eq)
 
 data SparkTree
   = SparkTree
@@ -119,16 +120,34 @@ splitSparkList (e:es) acc !tsplit !tmax
   where
     t = startT e
 
+addSparkCounters :: SparkCounters -> SparkCounters -> SparkCounters
+addSparkCounters
+  (SparkCounters sparksCreated1 sparksDud1 sparksOverflowed1
+                 sparksConverted1 sparksFizzled1 sparksGCd1
+                 sparksRemaining1)
+  (SparkCounters sparksCreated2 sparksDud2 sparksOverflowed2
+                 sparksConverted2 sparksFizzled2 sparksGCd2
+                 sparksRemaining2)
+  = SparkCounters
+      (sparksCreated2 + sparksCreated1)
+      (sparksDud2 + sparksDud1)
+      (sparksOverflowed2 + sparksOverflowed1)
+      (sparksConverted2 +  sparksConverted1)
+      (sparksFizzled2 + sparksFizzled1)
+      (sparksGCd2 + sparksGCd1)
+      (sparksRemaining2 + sparksRemaining1)
 
+-- Warning: the values in the second counter has to be greater or equal
+-- to the values int he first counter.
 subtractSparkCounters :: SparkCounters -> SparkCounters -> SparkCounters
 subtractSparkCounters
-  (SparkCount sparksCreated1 sparksDud1 sparksOverflowed1
-              sparksConverted1 sparksFizzled1 sparksGCd1
-              sparksRemaining1)
-  (SparkCount sparksCreated2 sparksDud2 sparksOverflowed2
-              sparksConverted2 sparksFizzled2 sparksGCd2
-              sparksRemaining2)
-  = SparkCount
+  (SparkCounters sparksCreated1 sparksDud1 sparksOverflowed1
+                 sparksConverted1 sparksFizzled1 sparksGCd1
+                 sparksRemaining1)
+  (SparkCounters sparksCreated2 sparksDud2 sparksOverflowed2
+                 sparksConverted2 sparksFizzled2 sparksGCd2
+                 sparksRemaining2)
+  = SparkCounters
       (sparksCreated2 - sparksCreated1)
       (sparksDud2 - sparksDud1)
       (sparksOverflowed2 - sparksOverflowed1)
@@ -137,16 +156,19 @@ subtractSparkCounters
       (sparksGCd2 - sparksGCd1)
       (sparksRemaining2 - sparksRemaining1)
 
+zeroSparkCounters :: SparkCounters
+zeroSparkCounters = SparkCounters 0 0 0 0 0 0 0
+
 
 -- Warning: cannot be applied to a suffix of the log (assumes start at time 0).
 eventsToSparkDurations :: [GHC.Event] -> [SparkDuration]
 eventsToSparkDurations es =
   let aux _startTime _startCounters [] = []
       aux startTime startCounters (event : events) =
-        case spec event of
-          SparkCounters crt dud ovf cnv fiz gcd rem ->
-            let endTime = time event
-                endCounters = SparkCount crt dud ovf cnv fiz gcd rem
+        case GHC.spec event of
+          GHC.SparkCounters crt dud ovf cnv fiz gcd rem ->
+            let endTime = GHC.time event
+                endCounters = SparkCounters crt dud ovf cnv fiz gcd rem
                 sd = SparkDuration
                        { startT = startTime,
                          endT = endTime,
@@ -154,4 +176,65 @@ eventsToSparkDurations es =
                          endCount = endCounters }
             in sd : aux endTime endCounters events
           _otherEvent -> aux startTime startCounters events
-  in aux 0 (SparkCount 0 0 0 0 0 0 0) es
+  in aux 0 zeroSparkCounters es
+
+
+-- For each timeslice, gives the number of spark transitions during that period.
+-- Approximated from the aggregated data at the level of the spark tree
+-- covering intervals of the size similar to the timeslice size.
+sparkProfile :: Timestamp -> Timestamp -> Timestamp -> SparkTree ->
+                [SparkCounters]
+sparkProfile slice start0 end0 t
+  = {- trace (show flat) $ -} chopped
+
+  where
+   -- do an extra slice at both ends
+   start = if start0 < slice then start0 else start0 - slice
+   end   = end0 + slice
+
+   flat = flatten start t []
+   chopped0 = chop zeroSparkCounters start flat
+
+   chopped | start0 < slice = zeroSparkCounters : chopped0
+           | otherwise      = chopped0
+
+   flatten :: Timestamp -> SparkTree -> [SparkTree] -> [SparkTree]
+   flatten _start (SparkTree _s _e SparkTreeEmpty) rest = rest
+   flatten start t@(SparkTree s e (SparkSplit split l r _)) rest
+     | e   <= start   = rest
+     | end <= s       = rest
+     | start >= split = flatten start (SparkTree split e r) rest
+     | end   <= split = flatten start (SparkTree s split l) rest
+     | e - s > slice  = flatten start (SparkTree s split l) $
+                        flatten start (SparkTree split e r) rest
+     | otherwise      = t : rest
+   flatten _start t@(SparkTree _s _e (SparkTreeLeaf _ _)) rest
+     = t : rest
+
+   chop :: SparkCounters -> Timestamp -> [SparkTree] -> [SparkCounters]
+   chop sofar start _ts
+     | start >= end = if sofar /= zeroSparkCounters then [sofar] else []
+   chop sofar start []
+     = sofar : chop zeroSparkCounters (start+slice) []
+   chop sofar start (t : ts)
+     | e <= start
+     = if sofar /= zeroSparkCounters
+          then error "chop"
+          else chop sofar start ts
+     | s >= start + slice
+     = sofar : chop zeroSparkCounters (start + slice) (t : ts)
+     | e > start + slice
+     = (addSparkCounters sofar created_in_this_slice) :
+       chop zeroSparkCounters (start + slice) (t : ts)
+     | otherwise
+     = chop (addSparkCounters sofar created_in_this_slice) start ts
+     where
+       (s, e) | SparkTree s e _ <- t  = (s, e)
+
+       created_in_this_slice
+         | SparkTree _ _ (SparkTreeLeaf sc ec)     <- t  =
+           subtractSparkCounters ec sc
+         | SparkTree _ _ (SparkTreeEmpty)          <- t  =
+           zeroSparkCounters
+         | SparkTree _ _ (SparkSplit _ _ _ cDelta) <- t  =
+           cDelta
