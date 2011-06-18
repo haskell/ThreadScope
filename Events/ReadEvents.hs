@@ -3,6 +3,7 @@ module Events.ReadEvents (
   ) where
 
 import Events.EventTree
+import Events.SparkTree
 import Events.HECs (HECs(..))
 import Events.TestEvents
 import Events.EventDuration
@@ -38,16 +39,19 @@ import Control.Exception
 -------------------------------------------------------------------------------
 
 rawEventsToHECs :: [(Maybe Int, [GHCEvents.Event])] -> Timestamp
-                -> [(DurationTree,EventTree)]
+                -> [(DurationTree, EventTree, SparkTree)]
 rawEventsToHECs eventList endTime
   = map (toTree . flip lookup heclists)  [0 .. maximum0 (map fst heclists)]
   where
     heclists = [ (h,events) | (Just h,events) <- eventList ]
 
-    toTree Nothing    = (DurationTreeEmpty, EventTree 0 0 (EventTreeLeaf []))
+    toTree Nothing    = (DurationTreeEmpty,
+                         EventTree 0 0 (EventTreeLeaf []),
+                         SparkTree 0 0 SparkTreeEmpty)
     toTree (Just evs) =
        ( mkDurationTree (eventsToDurations nondiscrete) endTime,
-         mkEventTree discrete endTime )
+         mkEventTree discrete endTime,
+         mkSparkTree (eventsToSparkDurations nondiscrete) endTime)
        where (discrete,nondiscrete) = partition isDiscreteEvent evs
 
 -------------------------------------------------------------------------------
@@ -119,13 +123,14 @@ buildEventLog progress from =
                   hecLastEventTime = lastTx
                }
 
-         treeProgress :: Int -> (DurationTree,EventTree) -> IO ()
-         treeProgress hec (tree1,tree2) = do
+         treeProgress :: Int -> (DurationTree, EventTree, SparkTree) -> IO ()
+         treeProgress hec (tree1, tree2, tree3) = do
             ProgressView.setText progress $
                      printf "Building HEC %d/%d" (hec+1) hec_count
             ProgressView.setProgress progress hec_count hec
             evaluate tree1
             evaluate (eventTreeMaxDepth tree2)
+            evaluate (sparkTreeMaxDepth tree3)
             return ()
 
        zipWithM_ treeProgress [0..] trees

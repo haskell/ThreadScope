@@ -5,6 +5,7 @@ module GUI.Timeline.HEC (
 import GUI.Timeline.Render.Constants
 
 import Events.EventTree
+import Events.SparkTree
 import Events.EventDuration
 import GUI.Types
 import GUI.Timeline.CairoDrawing
@@ -20,9 +21,9 @@ import GHC.RTS.Events hiding (Event, GCWork, GCIdle)
 import Control.Monad
 
 renderHEC :: Int -> ViewParameters
-          -> Timestamp -> Timestamp -> (DurationTree,EventTree)
+          -> Timestamp -> Timestamp -> (DurationTree, EventTree, SparkTree)
           -> Render ()
-renderHEC cap params@ViewParameters{..} start end (dtree,etree) = do
+renderHEC cap params@ViewParameters{..} start end (dtree, etree, _stree{-TODO-}) = do
   renderDurations cap params start end dtree
   when (scaleValue < detailThreshold) $
      case etree of

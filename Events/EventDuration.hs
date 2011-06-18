@@ -110,6 +110,7 @@ isDiscreteEvent e =
     GHC.GCWork{} -> False
     GHC.GCIdle{} -> False
     GHC.GCDone{} -> False
+    GHC.SparkCounters{} -> False
     _            -> True
 
 gcStart :: Timestamp -> [GHC.Event] -> [EventDuration]

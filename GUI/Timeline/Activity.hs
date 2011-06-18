@@ -34,7 +34,8 @@ renderActivity ViewParameters{..} hecs start0 end0 = do
       start = (start0 `div` slice) * slice
       end   = ((end0 + slice) `div` slice) * slice
 
-      hec_profs  = map (actProfile slice start end) (map fst (hecTrees hecs))
+      hec_profs  = map (actProfile slice start end)
+                     (map (\ (t, _, _) -> t) (hecTrees hecs))
       total_prof = map sum (transpose hec_profs)
   --
 --  liftIO $ printf "%s\n" (show (map length hec_profs))

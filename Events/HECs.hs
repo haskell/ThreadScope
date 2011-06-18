@@ -9,6 +9,7 @@ module Events.HECs (
   ) where
 
 import Events.EventTree
+import Events.SparkTree
 import GHC.RTS.Events
 
 import Data.Array
@@ -18,7 +19,7 @@ import Data.Array
 -- all the data from a .eventlog file
 data HECs = HECs {
        hecCount         :: Int,
-       hecTrees         :: [(DurationTree,EventTree)],
+       hecTrees         :: [(DurationTree, EventTree, SparkTree)],
        hecEventArray    :: Array Int CapEvent,
        hecLastEventTime :: Timestamp
      }
