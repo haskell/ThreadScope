@@ -29,6 +29,7 @@ Executable threadscope
                      Events.EventDuration,
                      Events.EventTree,
                      Events.ReadEvents,
+                     Events.SparkCounters,
                      Events.SparkTree,
                      Events.TestEvents,
                      GUI.Main,

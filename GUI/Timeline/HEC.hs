@@ -5,7 +5,8 @@ module GUI.Timeline.HEC (
 import GUI.Timeline.Render.Constants
 
 import Events.EventTree
-import Events.SparkTree as SparkTree
+import Events.SparkTree
+import qualified Events.SparkCounters as SparkCounters
 import Events.EventDuration
 import GUI.Types
 import GUI.Timeline.CairoDrawing
@@ -79,13 +80,13 @@ renderSparks ViewParameters{..} !start0 !end0 t = do
 activity_detail :: Int
 activity_detail = 4 -- in pixels
 
-drawSparks :: Timestamp -> Timestamp -> Timestamp -> [SparkCounters]
+drawSparks :: Timestamp -> Timestamp -> Timestamp -> [SparkCounters.SparkCounters]
               -> Render ()
 drawSparks start end slice ts = do
   case ts of
    [] -> return ()
    t:ts -> do
-     liftIO $ printf "ts: %s\n" (show (map SparkTree.sparksConverted (t:ts)))
+     liftIO $ printf "ts: %s\n" (show (map SparkCounters.sparksConverted (t:ts)))
      liftIO $ printf "off: %s\n" (show (map off (t:ts) :: [Double]))
      let dstart = fromIntegral start
          dend   = fromIntegral end
@@ -109,9 +110,9 @@ drawSparks start end slice ts = do
 -}
 
   where
-    off :: SparkCounters -> Double
+    off :: SparkCounters.SparkCounters -> Double
     off t = -- fromIntegral activityGraphHeight -
-            fromIntegral (SparkTree.sparksConverted t)
+            fromIntegral (SparkCounters.sparksConverted t)
             * fromIntegral activityGraphHeight
             / 15000.0  --TODO
 
