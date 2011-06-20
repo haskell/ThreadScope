@@ -1,5 +1,5 @@
 module Events.SparkTree (
-     SparkTree(..), SparkNode(..),
+     SparkTree(..), SparkNode(..), SparkCounters(..),
      mkSparkTree,
      eventsToSparkDurations,
      sparkProfile,
@@ -12,6 +12,7 @@ import qualified GHC.RTS.Events as GHC
 import GHC.RTS.Events (Timestamp)
 
 import Text.Printf
+import Debug.Trace
 
 -- We map the events onto a binary search tree, so that we can easily
 -- find the events that correspond to a particular view of the
@@ -85,11 +86,11 @@ splitSparks es !endTime
   = splitSparks es lhs_end
 
   | null lhs
-  = error (printf "null lhs: len = %d, startTime = %d, endTime = %d, lhs_len = %d\n" (length es) startTime endTime ++ '\n': show es)
+  = error (printf "null lhs: len = %d, startTime = %d, endTime = %d\n" (length es) startTime endTime ++ '\n': show es)
 
   | otherwise
-  = -- trace (printf "len = %d, startTime = %d, endTime = %d, lhs_len = %d\n" len startTime endTime lhs_len) $
-    -- if len /= length es || length lhs + length rhs /= len then error (printf "splitSparks3; %d %d %d %d %d" len (length es) (length lhs) lhs_len (length rhs))  else
+  = -- trace (printf "len = %d, startTime = %d, endTime = %d\n" (length es) startTime endTime) $
+    if length lhs + length rhs /= length es then error (printf "splitSparks3; %d %d %d" (length es) (length lhs) (length rhs)) else
     SparkSplit (startT $ head rhs)
                ltree
                rtree
@@ -121,44 +122,41 @@ splitSparkList (e:es) acc !tsplit !tmax
   where
     t = startT e
 
-addSparkCounters :: SparkCounters -> SparkCounters -> SparkCounters
-addSparkCounters
-  (SparkCounters sparksCreated1 sparksDud1 sparksOverflowed1
-                 sparksConverted1 sparksFizzled1 sparksGCd1
-                 sparksRemaining1)
-  (SparkCounters sparksCreated2 sparksDud2 sparksOverflowed2
-                 sparksConverted2 sparksFizzled2 sparksGCd2
-                 sparksRemaining2)
-  = SparkCounters
-      (sparksCreated2 + sparksCreated1)
-      (sparksDud2 + sparksDud1)
-      (sparksOverflowed2 + sparksOverflowed1)
-      (sparksConverted2 +  sparksConverted1)
-      (sparksFizzled2 + sparksFizzled1)
-      (sparksGCd2 + sparksGCd1)
-      (sparksRemaining2 + sparksRemaining1)
-
--- Warning: the values in the second counter has to be greater or equal
--- to the values int he first counter.
-subtractSparkCounters :: SparkCounters -> SparkCounters -> SparkCounters
-subtractSparkCounters
-  (SparkCounters sparksCreated1 sparksDud1 sparksOverflowed1
-                 sparksConverted1 sparksFizzled1 sparksGCd1
-                 sparksRemaining1)
-  (SparkCounters sparksCreated2 sparksDud2 sparksOverflowed2
-                 sparksConverted2 sparksFizzled2 sparksGCd2
-                 sparksRemaining2)
-  = SparkCounters
-      (sparksCreated2 - sparksCreated1)
-      (sparksDud2 - sparksDud1)
-      (sparksOverflowed2 - sparksOverflowed1)
-      (sparksConverted2 -  sparksConverted1)
-      (sparksFizzled2 - sparksFizzled1)
-      (sparksGCd2 - sparksGCd1)
-      (sparksRemaining2 - sparksRemaining1)
 
 zeroSparkCounters :: SparkCounters
 zeroSparkCounters = SparkCounters 0 0 0 0 0 0 0
+
+mapSparkCounters :: (Word64 -> Word64 -> Word64) ->
+                    SparkCounters -> SparkCounters -> SparkCounters
+mapSparkCounters f
+  (SparkCounters sparksCreated1 sparksDud1 sparksOverflowed1
+                 sparksConverted1 sparksFizzled1 sparksGCd1
+                 sparksRemaining1)
+  (SparkCounters sparksCreated2 sparksDud2 sparksOverflowed2
+                 sparksConverted2 sparksFizzled2 sparksGCd2
+                 sparksRemaining2)
+  = SparkCounters
+      (f sparksCreated1 sparksCreated2)
+      (f sparksDud1 sparksDud2)
+      (f sparksOverflowed1 sparksOverflowed2)
+      (f sparksConverted1 sparksConverted2)
+      (f sparksFizzled1 sparksFizzled2)
+      (f sparksGCd1 sparksGCd2)
+      (f sparksRemaining1 sparksRemaining2)
+
+addSparkCounters :: SparkCounters -> SparkCounters -> SparkCounters
+addSparkCounters = mapSparkCounters (+)
+
+-- The values in the second counter have to be greater or equal
+-- to the values int he first counter.
+subtractSparkCounters :: SparkCounters -> SparkCounters -> SparkCounters
+subtractSparkCounters = mapSparkCounters (-)
+
+-- Scale has to be positive.
+rescaleSparkCounters :: Double -> SparkCounters -> SparkCounters
+rescaleSparkCounters scale c =
+  let f w _ = round (fromIntegral w * scale)
+  in mapSparkCounters f c zeroSparkCounters
 
 
 -- Warning: cannot be applied to a suffix of the log (assumes start at time 0).
