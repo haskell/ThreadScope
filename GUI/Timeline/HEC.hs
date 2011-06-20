@@ -5,7 +5,7 @@ module GUI.Timeline.HEC (
 import GUI.Timeline.Render.Constants
 
 import Events.EventTree
-import Events.SparkTree
+import Events.SparkTree as SparkTree
 import Events.EventDuration
 import GUI.Types
 import GUI.Timeline.CairoDrawing
@@ -20,11 +20,14 @@ import GHC.RTS.Events hiding (Event, GCWork, GCIdle)
 
 import Control.Monad
 
+import Text.Printf
+
 renderHEC :: Int -> ViewParameters
           -> Timestamp -> Timestamp -> (DurationTree, EventTree, SparkTree)
           -> Render ()
-renderHEC cap params@ViewParameters{..} start end (dtree, etree, _stree{-TODO-}) = do
+renderHEC cap params@ViewParameters{..} start end (dtree, etree, stree) = do
   renderDurations cap params start end dtree
+  renderSparks params start end stree
   when (scaleValue < detailThreshold) $
      case etree of
        EventTree ltime etime tree ->
@@ -60,6 +63,57 @@ renderDurations !c params@ViewParameters{..} !startPos !endPos
          renderDurations c params startPos endPos lhs
        when (endPos >= splitTime) $
          renderDurations c params startPos endPos rhs
+
+-------------------------------------------------------------------------------
+
+renderSparks :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
+                -> Render ()
+renderSparks ViewParameters{..} !start0 !end0 t = do
+  let slice = round (fromIntegral activity_detail * scaleValue)
+      -- round the start time down, and the end time up, to a slice boundary
+      start = (start0 `div` slice) * slice
+      end   = ((end0 + slice) `div` slice) * slice
+      prof  = sparkProfile slice start end t
+  drawSparks start end slice prof
+
+activity_detail :: Int
+activity_detail = 4 -- in pixels
+
+drawSparks :: Timestamp -> Timestamp -> Timestamp -> [SparkCounters]
+              -> Render ()
+drawSparks start end slice ts = do
+  case ts of
+   [] -> return ()
+   t:ts -> do
+     liftIO $ printf "ts: %s\n" (show (map SparkTree.sparksConverted (t:ts)))
+     liftIO $ printf "off: %s\n" (show (map off (t:ts) :: [Double]))
+     let dstart = fromIntegral start
+         dend   = fromIntegral end
+         dslice = fromIntegral slice
+         dheight = fromIntegral activityGraphHeight
+
+     newPath
+     moveTo (dstart-dslice/2) (off t)
+     zipWithM_ lineTo (tail [dstart-dslice/2, dstart+dslice/2 ..]) (map off ts)
+     setSourceRGBAhex black 1.0
+     save
+     identityMatrix
+     setLineWidth 1
+     strokePreserve
+     restore
+{-
+     lineTo dend   dheight
+     lineTo dstart dheight
+     setSourceRGB 0 1 0
+     fill
+-}
+
+  where
+    off :: SparkCounters -> Double
+    off t = -- fromIntegral activityGraphHeight -
+            fromIntegral (SparkTree.sparksConverted t)
+            * fromIntegral activityGraphHeight
+            / 15000.0  --TODO
 
 -------------------------------------------------------------------------------
 
