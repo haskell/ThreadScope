@@ -1,7 +1,7 @@
 module Events.SparkTree (
      SparkTree(..), SparkNode(..),
-     mkSparkTree,
      eventsToSparkDurations,
+     mkSparkTree,
      sparkProfile,
      sparkTreeMaxDepth,
   ) where
@@ -53,6 +53,26 @@ data SparkNode
   | SparkTreeEmpty   -- after the last GC
 
   deriving Show
+
+
+-- Warning: cannot be applied to a suffix of the log (assumes start at time 0).
+eventsToSparkDurations :: [GHC.Event] -> [SparkDuration]
+eventsToSparkDurations es =
+  let aux _startTime _startCounters [] = []
+      aux startTime startCounters (event : events) =
+        case GHC.spec event of
+          GHC.SparkCounters crt dud ovf cnv fiz gcd rem ->
+            let endTime = GHC.time event
+                endCounters =
+                  SparkCounters.SparkCounters crt dud ovf cnv fiz gcd rem
+                sd = SparkDuration
+                       { startT = startTime,
+                         endT = endTime,
+                         startCount = startCounters,
+                         endCount = endCounters }
+            in sd : aux endTime endCounters events
+          _otherEvent -> aux startTime startCounters events
+  in aux 0 SparkCounters.zero es
 
 
 mkSparkTree :: [SparkDuration] -> Timestamp -> SparkTree
@@ -115,26 +135,6 @@ splitSparkList (e:es) acc !tsplit !tmax
   = (reverse acc, tmax, e:es)
   where
     t = startT e
-
-
--- Warning: cannot be applied to a suffix of the log (assumes start at time 0).
-eventsToSparkDurations :: [GHC.Event] -> [SparkDuration]
-eventsToSparkDurations es =
-  let aux _startTime _startCounters [] = []
-      aux startTime startCounters (event : events) =
-        case GHC.spec event of
-          GHC.SparkCounters crt dud ovf cnv fiz gcd rem ->
-            let endTime = GHC.time event
-                endCounters =
-                  SparkCounters.SparkCounters crt dud ovf cnv fiz gcd rem
-                sd = SparkDuration
-                       { startT = startTime,
-                         endT = endTime,
-                         startCount = startCounters,
-                         endCount = endCounters }
-            in sd : aux endTime endCounters events
-          _otherEvent -> aux startTime startCounters events
-  in aux 0 SparkCounters.zero es
 
 
 -- For each timeslice, gives the number of spark transitions during that period.
@@ -200,6 +200,7 @@ sparkProfile slice start0 end0 t
            SparkCounters.zero
          | SparkTree _ _ (SparkSplit _ _ _ cDelta) <- t  =
            SparkCounters.rescale scale cDelta
+
 
 sparkTreeMaxDepth :: SparkTree -> Int
 sparkTreeMaxDepth (SparkTree _ _ t) = sparkNodeMaxDepth t
