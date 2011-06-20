@@ -230,14 +230,16 @@ sparkProfile slice start0 end0 t
      where
        (s, e) | SparkTree s e _ <- t  = (s, e)
 
+       duration = min (start + slice) e - max start s
+       scale = fromIntegral duration / fromIntegral (e - s)
+
        created_in_this_slice
          | SparkTree _ _ (SparkTreeLeaf sc ec)     <- t  =
            subtractSparkCounters ec sc
          | SparkTree _ _ (SparkTreeEmpty)          <- t  =
            zeroSparkCounters
          | SparkTree _ _ (SparkSplit _ _ _ cDelta) <- t  =
-           cDelta
-
+           rescaleSparkCounters scale cDelta
 
 sparkTreeMaxDepth :: SparkTree -> Int
 sparkTreeMaxDepth (SparkTree _ _ t) = sparkNodeMaxDepth t
