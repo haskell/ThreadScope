@@ -102,9 +102,9 @@ drawSparkCreation :: Timestamp -> Timestamp -> Timestamp
                      -> Render ()
 drawSparkCreation start end slice ts = do
   let f0 c = 0
-      f1 c = fromIntegral $ f0 c + SparkCounters.sparksDud c
-      f2 c = fromIntegral $ f1 c + SparkCounters.sparksCreated c
-      f3 c = fromIntegral $ f2 c + SparkCounters.sparksOverflowed c
+      f1 c = f0 c + fromIntegral (SparkCounters.sparksDud c)
+      f2 c = f1 c + fromIntegral (SparkCounters.sparksCreated c)
+      f3 c = f2 c + fromIntegral (SparkCounters.sparksOverflowed c)
   addSparks (0.5, 0.5, 0.5) f0 f1 start end slice ts
   addSparks (0, 1, 0) f1 f2 start end slice ts
   addSparks (1, 0, 0) f2 f3 start end slice ts
@@ -114,9 +114,9 @@ drawSparkConversion :: Timestamp -> Timestamp -> Timestamp
                        -> Render ()
 drawSparkConversion start end slice ts = do
   let f0 c = 0
-      f1 c = fromIntegral $ f0 c + SparkCounters.sparksFizzled c
-      f2 c = fromIntegral $ f1 c + SparkCounters.sparksConverted c
-      f3 c = fromIntegral $ f2 c + SparkCounters.sparksGCd c
+      f1 c = f0 c + fromIntegral (SparkCounters.sparksFizzled c)
+      f2 c = f1 c + fromIntegral (SparkCounters.sparksConverted c)
+      f3 c = f2 c + fromIntegral (SparkCounters.sparksGCd c)
   addSparks (0.5, 0.5, 0.5) f0 f1 start end slice ts
   addSparks (0, 1, 0) f1 f2 start end slice ts
   addSparks (1, 0, 0) f2 f3 start end slice ts
@@ -147,8 +147,11 @@ addSparks (cR, cG, cB) f0 f1 start end slice ts = do
          t1 = zip points (map (off f1) ts)
 
      newPath
-     lineTo dstart dheight
+     moveTo (dstart-dslice/2) (snd $ head t1)
      mapM_ (uncurry lineTo) t1
+     mapM_ (uncurry lineTo) (reverse t0)
+     setSourceRGB cR cG cB
+     fillPreserve
 {-
      setSourceRGB 0 0 0
      save
@@ -157,10 +160,6 @@ addSparks (cR, cG, cB) f0 f1 start end slice ts = do
      strokePreserve
      restore
 -}
-     mapM_ (uncurry lineTo) (reverse t0)
-     setSourceRGB cR cG cB
-     fill
-
 -------------------------------------------------------------------------------
 
 renderEvents :: Int -> ViewParameters
