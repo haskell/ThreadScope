@@ -101,67 +101,65 @@ drawSparkCreation :: Timestamp -> Timestamp -> Timestamp
                      -> [SparkCounters.SparkCounters]
                      -> Render ()
 drawSparkCreation start end slice ts = do
-  let gap  = 2 * spark_per_pixel  -- a gap for fill and to avoid brown colour
-      s1 c = fromIntegral $ SparkCounters.sparksDud c
-      f1 c = s1 c
-      s2 c = fromIntegral $ s1 c + SparkCounters.sparksCreated c
-      f2 c = gap + s2 c
-      s3 c = fromIntegral $ s2 c + SparkCounters.sparksOverflowed c
-      f3 c = gap + gap + s3 c
-  addSparks (0.5, 0.5, 0.5) f1 start end slice ts
-  addSparks (0, 1, 0) f2 start end slice ts
-  addSparks (1, 0, 0) f3 start end slice ts
+  let f0 c = 0
+      f1 c = fromIntegral $ f0 c + SparkCounters.sparksDud c
+      f2 c = fromIntegral $ f1 c + SparkCounters.sparksCreated c
+      f3 c = fromIntegral $ f2 c + SparkCounters.sparksOverflowed c
+  addSparks (0.5, 0.5, 0.5) f0 f1 start end slice ts
+  addSparks (0, 1, 0) f1 f2 start end slice ts
+  addSparks (1, 0, 0) f2 f3 start end slice ts
 
 drawSparkConversion :: Timestamp -> Timestamp -> Timestamp
                        -> [SparkCounters.SparkCounters]
                        -> Render ()
 drawSparkConversion start end slice ts = do
-  let gap  = 2 * spark_per_pixel  -- a gap for fill and to avoid brown colour
-      s1 c = fromIntegral $ SparkCounters.sparksFizzled c
-      f1 c = s1 c
-      s2 c = fromIntegral $ s1 c + SparkCounters.sparksConverted c
-      f2 c = gap + s2 c
-      s3 c = fromIntegral $ s2 c + SparkCounters.sparksGCd c
-      f3 c = gap + gap + s3 c
-  addSparks (0.5, 0.5, 0.5) f1 start end slice ts
-  addSparks (0, 1, 0) f2 start end slice ts
-  addSparks (1, 0, 0) f3 start end slice ts
+  let f0 c = 0
+      f1 c = fromIntegral $ f0 c + SparkCounters.sparksFizzled c
+      f2 c = fromIntegral $ f1 c + SparkCounters.sparksConverted c
+      f3 c = fromIntegral $ f2 c + SparkCounters.sparksGCd c
+  addSparks (0.5, 0.5, 0.5) f0 f1 start end slice ts
+  addSparks (0, 1, 0) f1 f2 start end slice ts
+  addSparks (1, 0, 0) f2 f3 start end slice ts
+
+off :: (SparkCounters.SparkCounters -> Double)
+       -> SparkCounters.SparkCounters
+       -> Double
+off f t = fromIntegral hecSparksHeight - f t / spark_per_pixel
 
 addSparks :: (Double, Double, Double)
+             -> (SparkCounters.SparkCounters -> Double)
              -> (SparkCounters.SparkCounters -> Double)
              -> Timestamp -> Timestamp -> Timestamp
              -> [SparkCounters.SparkCounters]
              -> Render ()
-addSparks (cR, cG, cB) f start end slice ts = do
+addSparks (cR, cG, cB) f0 f1 start end slice ts = do
   case ts of
    [] -> return ()
-   t:ts -> do
-     -- liftIO $ printf "ts: %s\n" (show (map f (t:ts)))
-     -- liftIO $ printf "off: %s\n" (show (map off (t:ts) :: [Double]))
+   ts -> do
+     -- liftIO $ printf "ts: %s\n" (show (map f1 (ts)))
+     -- liftIO $ printf "off: %s\n" (show (map (off f1) (ts) :: [Double]))
      let dstart = fromIntegral start
          dend   = fromIntegral end
          dslice = fromIntegral slice
          dheight = fromIntegral hecSparksHeight
+         points = [dstart-dslice/2, dstart+dslice/2 ..]
+         t0 = zip points (map (off f0) ts)
+         t1 = zip points (map (off f1) ts)
 
      newPath
-     moveTo (dstart-dslice/2) (off t)
-     zipWithM_ lineTo (tail [dstart-dslice/2, dstart+dslice/2 ..]) (map off ts)
-     setSourceRGB cR cG cB
-     -- setSourceRGBAhex black 1.0
+     lineTo dstart dheight
+     mapM_ (uncurry lineTo) t1
+{-
+     setSourceRGB 0 0 0
      save
      identityMatrix
      setLineWidth 1
      strokePreserve
      restore
-{-
-     lineTo dend   dheight
-     lineTo dstart dheight
+-}
+     mapM_ (uncurry lineTo) (reverse t0)
      setSourceRGB cR cG cB
      fill
--}
-  where
-    off :: SparkCounters.SparkCounters -> Double
-    off t = fromIntegral hecSparksHeight - f t / spark_per_pixel
 
 -------------------------------------------------------------------------------
 
