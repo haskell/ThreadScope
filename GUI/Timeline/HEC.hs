@@ -22,7 +22,7 @@ import GHC.RTS.Events hiding (Event, GCWork, GCIdle)
 
 import Control.Monad
 
-import Text.Printf
+-- import Text.Printf
 
 renderHEC :: Int -> ViewParameters
           -> Timestamp -> Timestamp -> (DurationTree, EventTree, SparkTree)
@@ -70,23 +70,47 @@ renderDurations !c params@ViewParameters{..} !startPos !endPos
 renderSparks :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                 -> Render ()
 renderSparks ViewParameters{..} !start0 !end0 t = do
-  let slice = round (fromIntegral activity_detail * scaleValue)
+  let slice = round (fromIntegral spark_detail * scaleValue)
       -- round the start time down, and the end time up, to a slice boundary
       start = (start0 `div` slice) * slice
       end   = ((end0 + slice) `div` slice) * slice
       prof  = sparkProfile slice start end t
   drawSparks start end slice prof
 
-activity_detail :: Int
-activity_detail = 4 -- in pixels
+spark_detail :: Int
+spark_detail = 4 -- in pixels
 
-drawSparks :: Timestamp -> Timestamp -> Timestamp -> [SparkCounters.SparkCounters]
+spark_max, spark_per_pixel :: Double
+-- Maximum value of s3 in current data. TODO: calculate
+spark_max = 35000.0
+-- Sparks per pixel for current data.
+spark_per_pixel = spark_max / fromIntegral hecSparksHeight
+
+drawSparks :: Timestamp -> Timestamp -> Timestamp
+              -> [SparkCounters.SparkCounters]
               -> Render ()
 drawSparks start end slice ts = do
+  let gap  = 2 * spark_per_pixel  -- a gap for fill and to avoid brown colour
+      s1 c = fromIntegral $ SparkCounters.sparksFizzled c
+      f1 c = s1 c
+      s2 c = fromIntegral $ s1 c + SparkCounters.sparksConverted c
+      f2 c = gap + s2 c
+      s3 c = fromIntegral $ s2 c + SparkCounters.sparksGCd c
+      f3 c = gap + gap + s3 c
+  addSparks (0.5, 0.5, 0.5) f1 start end slice ts
+  addSparks (0, 1, 0) f2 start end slice ts
+  addSparks (1, 0, 0) f3 start end slice ts
+
+addSparks :: (Double, Double, Double)
+             -> (SparkCounters.SparkCounters -> Double)
+             -> Timestamp -> Timestamp -> Timestamp
+             -> [SparkCounters.SparkCounters]
+             -> Render ()
+addSparks (cR, cG, cB) f start end slice ts = do
   case ts of
    [] -> return ()
    t:ts -> do
-     -- liftIO $ printf "ts: %s\n" (show (map SparkCounters.sparksConverted (t:ts)))
+     -- liftIO $ printf "ts: %s\n" (show (map f (t:ts)))
      -- liftIO $ printf "off: %s\n" (show (map off (t:ts) :: [Double]))
      let dstart = fromIntegral start
          dend   = fromIntegral end
@@ -96,24 +120,22 @@ drawSparks start end slice ts = do
      newPath
      moveTo (dstart-dslice/2) (off t)
      zipWithM_ lineTo (tail [dstart-dslice/2, dstart+dslice/2 ..]) (map off ts)
-     setSourceRGBAhex black 1.0
+     setSourceRGB cR cG cB
+     -- setSourceRGBAhex black 1.0
      save
      identityMatrix
      setLineWidth 1
      strokePreserve
      restore
-
+{-
      lineTo dend   dheight
      lineTo dstart dheight
-     setSourceRGB 0 1 0
+     setSourceRGB cR cG cB
      fill
-
+-}
   where
     off :: SparkCounters.SparkCounters -> Double
-    off t = fromIntegral hecSparksHeight -
-            fromIntegral (SparkCounters.sparksConverted t)
-            * fromIntegral hecSparksHeight
-            / 25000.0  --TODO
+    off t = fromIntegral hecSparksHeight - f t / spark_per_pixel
 
 -------------------------------------------------------------------------------
 
