@@ -30,7 +30,7 @@ tracePad = 20
 hecTraceHeight, hecSparksHeight, hecBarHeight, hecBarOff, hecLabelExtra :: Int
 
 hecTraceHeight  = 40
-hecSparksHeight = 2 * activityGraphHeight
+hecSparksHeight = activityGraphHeight
 hecBarHeight    = 20
 hecBarOff       = 10
 

@@ -1,6 +1,7 @@
 module GUI.Timeline.HEC (
     renderHEC,
-    renderSparks,
+    renderSparkCreation,
+    renderSparkConversion,
   ) where
 
 import GUI.Timeline.Render.Constants
@@ -67,15 +68,25 @@ renderDurations !c params@ViewParameters{..} !startPos !endPos
 
 -------------------------------------------------------------------------------
 
-renderSparks :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
-                -> Render ()
-renderSparks ViewParameters{..} !start0 !end0 t = do
+renderSparkCreation :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
+                       -> Render ()
+renderSparkCreation ViewParameters{..} !start0 !end0 t = do
   let slice = round (fromIntegral spark_detail * scaleValue)
       -- round the start time down, and the end time up, to a slice boundary
       start = (start0 `div` slice) * slice
       end   = ((end0 + slice) `div` slice) * slice
       prof  = sparkProfile slice start end t
-  drawSparks start end slice prof
+  drawSparkCreation start end slice prof
+
+renderSparkConversion :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
+                         -> Render ()
+renderSparkConversion ViewParameters{..} !start0 !end0 t = do
+  let slice = round (fromIntegral spark_detail * scaleValue)
+      -- round the start time down, and the end time up, to a slice boundary
+      start = (start0 `div` slice) * slice
+      end   = ((end0 + slice) `div` slice) * slice
+      prof  = sparkProfile slice start end t
+  drawSparkConversion start end slice prof
 
 spark_detail :: Int
 spark_detail = 4 -- in pixels
@@ -86,10 +97,25 @@ spark_max = 35000.0
 -- Sparks per pixel for current data.
 spark_per_pixel = spark_max / fromIntegral hecSparksHeight
 
-drawSparks :: Timestamp -> Timestamp -> Timestamp
-              -> [SparkCounters.SparkCounters]
-              -> Render ()
-drawSparks start end slice ts = do
+drawSparkCreation :: Timestamp -> Timestamp -> Timestamp
+                     -> [SparkCounters.SparkCounters]
+                     -> Render ()
+drawSparkCreation start end slice ts = do
+  let gap  = 2 * spark_per_pixel  -- a gap for fill and to avoid brown colour
+      s1 c = fromIntegral $ SparkCounters.sparksDud c
+      f1 c = s1 c
+      s2 c = fromIntegral $ s1 c + SparkCounters.sparksCreated c
+      f2 c = gap + s2 c
+      s3 c = fromIntegral $ s2 c + SparkCounters.sparksOverflowed c
+      f3 c = gap + gap + s3 c
+  addSparks (0.5, 0.5, 0.5) f1 start end slice ts
+  addSparks (0, 1, 0) f2 start end slice ts
+  addSparks (1, 0, 0) f3 start end slice ts
+
+drawSparkConversion :: Timestamp -> Timestamp -> Timestamp
+                       -> [SparkCounters.SparkCounters]
+                       -> Render ()
+drawSparkConversion start end slice ts = do
   let gap  = 2 * spark_per_pixel  -- a gap for fill and to avoid brown colour
       s1 c = fromIntegral $ SparkCounters.sparksFizzled c
       f1 c = s1 c

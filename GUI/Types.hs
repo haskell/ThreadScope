@@ -9,7 +9,8 @@ import GHC.RTS.Events
 
 data Trace
   = TraceHEC      Int
-  | SparksHEC     Int
+  | SparkCreationHEC Int
+  | SparkConversionHEC Int
   | TraceThread   ThreadId
   | TraceGroup    String
   | TraceActivity
