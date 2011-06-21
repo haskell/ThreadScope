@@ -58,9 +58,10 @@ traceViewNew builder actions = do
     return traceview
 
   where
-    renderTrace (TraceGroup str) = str
     renderTrace (TraceHEC    n)  = show n
+    renderTrace (SparksHEC   n)  = show n
     renderTrace (TraceThread n)  = show n
+    renderTrace (TraceGroup str) = str
     renderTrace (TraceActivity)  = "Activity Profile"
 
 -- Find the HEC traces in the treeStore and replace them
@@ -70,20 +71,30 @@ traceViewSetHECs TraceView{tracesStore} hecs = do
     go 0
     treeStoreInsert tracesStore [] 0 (TraceActivity, True)
   where
-    newt = Node { rootLabel = (TraceGroup "HECs", True),
-                  subForest = [ Node { rootLabel = (TraceHEC n, True),
+    newt = Node { rootLabel = (TraceGroup "HEC Traces", True),
+                  subForest = [ Node { rootLabel = (TraceHEC k, True),
                                        subForest = [] }
-                              | n <- [ 0 .. hecCount hecs - 1 ] ] }
-
+                              | k <- [ 0 .. hecCount hecs - 1 ] ] }
+    news = Node { rootLabel = (TraceGroup "HEC Sparks", True),
+                  subForest = [ Node { rootLabel = (SparksHEC k, True),
+                                       subForest = [] }
+                              | k <- [ 0 .. hecCount hecs - 1 ] ] }
     go n = do
       m <- treeStoreLookup tracesStore [n]
       case m of
-        Nothing -> treeStoreInsertTree tracesStore [] 0 newt
+        Nothing -> do
+          treeStoreInsertTree tracesStore [] 0 news
+          treeStoreInsertTree tracesStore [] 0 newt
         Just t  ->
           case t of
-             Node { rootLabel = (TraceGroup "HECs", _) } -> do
+             Node { rootLabel = (TraceGroup "HEC Traces", _) } -> do
                treeStoreRemove tracesStore [n]
                treeStoreInsertTree tracesStore [] n newt
+               go (n+1)
+             Node { rootLabel = (TraceGroup "HEC Sparks", _) } -> do
+               treeStoreRemove tracesStore [n]
+               treeStoreInsertTree tracesStore [] n news
+               go (n+1)
              Node { rootLabel = (TraceActivity, _) } -> do
                treeStoreRemove tracesStore [n]
                go (n+1)

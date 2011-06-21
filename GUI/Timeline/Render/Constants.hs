@@ -1,6 +1,6 @@
 module GUI.Timeline.Render.Constants (
     ox, oy, firstTraceY, tracePad,
-    hecTraceHeight, hecBarOff, hecBarHeight, hecLabelExtra,
+    hecTraceHeight, hecSparksHeight, hecBarOff, hecBarHeight, hecLabelExtra,
     activityGraphHeight,
     ticksHeight, ticksPad
   ) where
@@ -27,11 +27,12 @@ tracePad = 20
 
 -- HEC bar height
 
-hecTraceHeight, hecBarHeight, hecBarOff, hecLabelExtra :: Int
+hecTraceHeight, hecSparksHeight, hecBarHeight, hecBarOff, hecLabelExtra :: Int
 
-hecTraceHeight = 40
-hecBarHeight   = 20
-hecBarOff      = 10
+hecTraceHeight  = 40
+hecSparksHeight = 2 * activityGraphHeight
+hecBarHeight    = 20
+hecBarOff       = 10
 
 -- extra space to allow between HECs when labels are on.
 -- ToDo: should be calculated somehow

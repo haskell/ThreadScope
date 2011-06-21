@@ -1,5 +1,6 @@
 module GUI.Timeline.HEC (
-    renderHEC
+    renderHEC,
+    renderSparks,
   ) where
 
 import GUI.Timeline.Render.Constants
@@ -26,9 +27,8 @@ import Text.Printf
 renderHEC :: Int -> ViewParameters
           -> Timestamp -> Timestamp -> (DurationTree, EventTree, SparkTree)
           -> Render ()
-renderHEC cap params@ViewParameters{..} start end (dtree, etree, stree) = do
+renderHEC cap params@ViewParameters{..} start end (dtree, etree, _stree) = do
   renderDurations cap params start end dtree
-  renderSparks params start end stree
   when (scaleValue < detailThreshold) $
      case etree of
        EventTree ltime etime tree ->
@@ -86,12 +86,12 @@ drawSparks start end slice ts = do
   case ts of
    [] -> return ()
    t:ts -> do
-     liftIO $ printf "ts: %s\n" (show (map SparkCounters.sparksConverted (t:ts)))
-     liftIO $ printf "off: %s\n" (show (map off (t:ts) :: [Double]))
+     -- liftIO $ printf "ts: %s\n" (show (map SparkCounters.sparksConverted (t:ts)))
+     -- liftIO $ printf "off: %s\n" (show (map off (t:ts) :: [Double]))
      let dstart = fromIntegral start
          dend   = fromIntegral end
          dslice = fromIntegral slice
-         dheight = fromIntegral activityGraphHeight
+         dheight = fromIntegral hecSparksHeight
 
      newPath
      moveTo (dstart-dslice/2) (off t)
@@ -102,19 +102,18 @@ drawSparks start end slice ts = do
      setLineWidth 1
      strokePreserve
      restore
-{-
+
      lineTo dend   dheight
      lineTo dstart dheight
      setSourceRGB 0 1 0
      fill
--}
 
   where
     off :: SparkCounters.SparkCounters -> Double
-    off t = -- fromIntegral activityGraphHeight -
+    off t = fromIntegral hecSparksHeight -
             fromIntegral (SparkCounters.sparksConverted t)
-            * fromIntegral activityGraphHeight
-            / 15000.0  --TODO
+            * fromIntegral hecSparksHeight
+            / 25000.0  --TODO
 
 -------------------------------------------------------------------------------
 
