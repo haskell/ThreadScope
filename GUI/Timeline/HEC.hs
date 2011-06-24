@@ -102,9 +102,8 @@ drawSparkCreation start end slice ts = do
       f2 c = f1 c + fromIntegral (SparkCounters.sparksCreated c)
       f3 c = f2 c + fromIntegral (SparkCounters.sparksOverflowed c)
       spark_max, spark_per_detail, spark_per_pixel :: Double
-      -- Maximum value of s3 in current data. TODO: calculate
-      spark_max = 4000.0
-      -- Sparks per pixel for current data.
+      spark_max = maximum (1 : map f3 ts)
+      -- Sparks per pixel/minimal detail size, for current data.
       spark_per_detail = spark_max / fromIntegral hecSparksHeight
       spark_per_pixel = spark_per_detail / fromIntegral spark_detail
       f4 c = f3 c + spark_per_pixel  --- 1 pixel above f3
@@ -122,9 +121,8 @@ drawSparkConversion start end slice ts = do
       f2 c = f1 c + fromIntegral (SparkCounters.sparksConverted c)
       f3 c = f2 c + fromIntegral (SparkCounters.sparksGCd c)
       spark_max, spark_per_detail, spark_per_pixel :: Double
-      -- Maximum value of s3 in current data. TODO: calculate
-      spark_max = 35000.0
-      -- Sparks per pixel for current data.
+      spark_max = maximum (1 : map f3 ts)
+      -- Sparks per pixel/minimal detail size, for current data.
       spark_per_detail = spark_max / fromIntegral hecSparksHeight
       spark_per_pixel = spark_per_detail / fromIntegral spark_detail
       f4 c = f3 c + spark_per_pixel  --- 1 pixel above f3
