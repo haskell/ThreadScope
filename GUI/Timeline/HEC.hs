@@ -108,10 +108,10 @@ drawSparkCreation start end slice ts = do
       spark_per_detail = spark_max / fromIntegral hecSparksHeight
       spark_per_pixel = spark_per_detail / fromIntegral spark_detail
       f4 c = f3 c + spark_per_pixel  --- 1 pixel above f3
+  outlineSparks spark_per_detail f4 start end slice ts
   addSparks (0.5, 0.5, 0.5) spark_per_detail f0 f1 start end slice ts
   addSparks (0, 1, 0) spark_per_detail f1 f2 start end slice ts
   addSparks (1, 0, 0) spark_per_detail f2 f3 start end slice ts
-  outlineSparks spark_per_detail f4 start end slice ts
 
 drawSparkConversion :: Timestamp -> Timestamp -> Timestamp
                        -> [SparkCounters.SparkCounters]
@@ -128,10 +128,10 @@ drawSparkConversion start end slice ts = do
       spark_per_detail = spark_max / fromIntegral hecSparksHeight
       spark_per_pixel = spark_per_detail / fromIntegral spark_detail
       f4 c = f3 c + spark_per_pixel  --- 1 pixel above f3
+  outlineSparks spark_per_detail f4 start end slice ts
   addSparks (0.5, 0.5, 0.5) spark_per_detail f0 f1 start end slice ts
   addSparks (0, 1, 0) spark_per_detail f1 f2 start end slice ts
   addSparks (1, 0, 0) spark_per_detail f2 f3 start end slice ts
-  outlineSparks spark_per_detail f4 start end slice ts
 
 outlineSparks :: Double
                  -> (SparkCounters.SparkCounters -> Double)
@@ -148,15 +148,13 @@ outlineSparks spark_per_detail f start end slice ts = do
           dheight = fromIntegral hecSparksHeight
           points = [dstart-dslice/2, dstart+dslice/2 ..]
           t = zip points (map (off spark_per_detail f) ts)
-          -- HACK: compensate for the lines looking thicker than in drawActivity
-          hack_mult_width = 0.7
       newPath
       moveTo (dstart-dslice/2) (snd $ head t)
       mapM_ (uncurry lineTo) t
       setSourceRGBAhex black 1.0
       save
       identityMatrix
-      setLineWidth (1 * hack_mult_width)
+      setLineWidth 1
       stroke
       restore
 
