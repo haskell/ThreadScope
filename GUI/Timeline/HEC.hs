@@ -93,13 +93,6 @@ renderSparkConversion ViewParameters{..} !start0 !end0 t = do
 spark_detail :: Int
 spark_detail = 4 -- in pixels
 
-spark_max, spark_per_detail, spark_per_pixel :: Double
--- Maximum value of s3 in current data. TODO: calculate
-spark_max = 35000.0
--- Sparks per pixel for current data.
-spark_per_detail = spark_max / fromIntegral hecSparksHeight
-spark_per_pixel = spark_per_detail / fromIntegral spark_detail
-
 drawSparkCreation :: Timestamp -> Timestamp -> Timestamp
                      -> [SparkCounters.SparkCounters]
                      -> Render ()
@@ -108,11 +101,17 @@ drawSparkCreation start end slice ts = do
       f1 c = f0 c + fromIntegral (SparkCounters.sparksDud c)
       f2 c = f1 c + fromIntegral (SparkCounters.sparksCreated c)
       f3 c = f2 c + fromIntegral (SparkCounters.sparksOverflowed c)
+      spark_max, spark_per_detail, spark_per_pixel :: Double
+      -- Maximum value of s3 in current data. TODO: calculate
+      spark_max = 4000.0
+      -- Sparks per pixel for current data.
+      spark_per_detail = spark_max / fromIntegral hecSparksHeight
+      spark_per_pixel = spark_per_detail / fromIntegral spark_detail
       f4 c = f3 c + spark_per_pixel  --- 1 pixel above f3
-  addSparks (0.5, 0.5, 0.5) f0 f1 start end slice ts
-  addSparks (0, 1, 0) f1 f2 start end slice ts
-  addSparks (1, 0, 0) f2 f3 start end slice ts
-  outlineSparks f4 start end slice ts
+  addSparks (0.5, 0.5, 0.5) spark_per_detail f0 f1 start end slice ts
+  addSparks (0, 1, 0) spark_per_detail f1 f2 start end slice ts
+  addSparks (1, 0, 0) spark_per_detail f2 f3 start end slice ts
+  outlineSparks spark_per_detail f4 start end slice ts
 
 drawSparkConversion :: Timestamp -> Timestamp -> Timestamp
                        -> [SparkCounters.SparkCounters]
@@ -122,17 +121,24 @@ drawSparkConversion start end slice ts = do
       f1 c = f0 c + fromIntegral (SparkCounters.sparksFizzled c)
       f2 c = f1 c + fromIntegral (SparkCounters.sparksConverted c)
       f3 c = f2 c + fromIntegral (SparkCounters.sparksGCd c)
+      spark_max, spark_per_detail, spark_per_pixel :: Double
+      -- Maximum value of s3 in current data. TODO: calculate
+      spark_max = 35000.0
+      -- Sparks per pixel for current data.
+      spark_per_detail = spark_max / fromIntegral hecSparksHeight
+      spark_per_pixel = spark_per_detail / fromIntegral spark_detail
       f4 c = f3 c + spark_per_pixel  --- 1 pixel above f3
-  addSparks (0.5, 0.5, 0.5) f0 f1 start end slice ts
-  addSparks (0, 1, 0) f1 f2 start end slice ts
-  addSparks (1, 0, 0) f2 f3 start end slice ts
-  outlineSparks f4 start end slice ts
+  addSparks (0.5, 0.5, 0.5) spark_per_detail f0 f1 start end slice ts
+  addSparks (0, 1, 0) spark_per_detail f1 f2 start end slice ts
+  addSparks (1, 0, 0) spark_per_detail f2 f3 start end slice ts
+  outlineSparks spark_per_detail f4 start end slice ts
 
-outlineSparks :: (SparkCounters.SparkCounters -> Double)
+outlineSparks :: Double
+                 -> (SparkCounters.SparkCounters -> Double)
                  -> Timestamp -> Timestamp -> Timestamp
                  -> [SparkCounters.SparkCounters]
                  -> Render ()
-outlineSparks f start end slice ts = do
+outlineSparks spark_per_detail f start end slice ts = do
   case ts of
     [] -> return ()
     ts -> do
@@ -141,7 +147,7 @@ outlineSparks f start end slice ts = do
           dslice = fromIntegral slice
           dheight = fromIntegral hecSparksHeight
           points = [dstart-dslice/2, dstart+dslice/2 ..]
-          t = zip points (map (off f) ts)
+          t = zip points (map (off spark_per_detail f) ts)
           -- HACK: compensate for the lines looking thicker than in drawActivity
           hack_mult_width = 0.7
       newPath
@@ -155,24 +161,25 @@ outlineSparks f start end slice ts = do
       restore
 
 addSparks :: (Double, Double, Double)
+             -> Double
              -> (SparkCounters.SparkCounters -> Double)
              -> (SparkCounters.SparkCounters -> Double)
              -> Timestamp -> Timestamp -> Timestamp
              -> [SparkCounters.SparkCounters]
              -> Render ()
-addSparks (cR, cG, cB) f0 f1 start end slice ts = do
+addSparks (cR, cG, cB) spark_per_detail f0 f1 start end slice ts = do
   case ts of
     [] -> return ()
     ts -> do
       -- liftIO $ printf "ts: %s\n" (show (map f1 (ts)))
-      -- liftIO $ printf "off: %s\n" (show (map (off f1) (ts) :: [Double]))
+      -- liftIO $ printf "off: %s\n" (show (map (off spark_per_detail f1) (ts) :: [Double]))
       let dstart = fromIntegral start
           dend   = fromIntegral end
           dslice = fromIntegral slice
           dheight = fromIntegral hecSparksHeight
           points = [dstart-dslice/2, dstart+dslice/2 ..]
-          t0 = zip points (map (off f0) ts)
-          t1 = zip points (map (off f1) ts)
+          t0 = zip points (map (off spark_per_detail f0) ts)
+          t1 = zip points (map (off spark_per_detail f1) ts)
       newPath
       moveTo (dstart-dslice/2) (snd $ head t1)
       mapM_ (uncurry lineTo) t1
@@ -180,10 +187,10 @@ addSparks (cR, cG, cB) f0 f1 start end slice ts = do
       setSourceRGB cR cG cB
       fill
 
-off :: (SparkCounters.SparkCounters -> Double)
+off :: Double -> (SparkCounters.SparkCounters -> Double)
        -> SparkCounters.SparkCounters
        -> Double
-off f t = fromIntegral hecSparksHeight - f t / spark_per_detail
+off spark_per_detail f t = fromIntegral hecSparksHeight - f t / spark_per_detail
 
 -------------------------------------------------------------------------------
 
