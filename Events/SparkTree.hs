@@ -63,8 +63,10 @@ eventsToSparkDurations es =
         case GHC.spec event of
           GHC.SparkCounters crt dud ovf cnv fiz gcd rem ->
             let endTime = GHC.time event
+                i = fromIntegral
                 endCounters =
-                  SparkCounters.SparkCounters crt dud ovf cnv fiz gcd rem
+                  SparkCounters.SparkCounters
+                    (i crt) (i dud) (i ovf) (i cnv) (i fiz) (i gcd) (i rem)
                 subC = SparkCounters.sub endCounters startCounters
                 duration = endTime - startTime
                 newMaxSparkValue = maxSparkRenderedValue subC duration
@@ -82,12 +84,12 @@ eventsToSparkDurations es =
 -- It's smoothed out (so lower values) at lower zoom levels.
 maxSparkRenderedValue :: SparkCounters.SparkCounters -> Timestamp -> Double
 maxSparkRenderedValue c duration =
-  fromIntegral (max (SparkCounters.sparksDud c +
-                     SparkCounters.sparksCreated c +
-                     SparkCounters.sparksOverflowed c)
-                    (SparkCounters.sparksFizzled c +
-                     SparkCounters.sparksConverted c +
-                     SparkCounters.sparksGCd c))
+  max (SparkCounters.sparksDud c +
+       SparkCounters.sparksCreated c +
+       SparkCounters.sparksOverflowed c)
+      (SparkCounters.sparksFizzled c +
+       SparkCounters.sparksConverted c +
+       SparkCounters.sparksGCd c)
   / fromIntegral duration
 
 

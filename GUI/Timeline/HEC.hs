@@ -71,17 +71,17 @@ renderDurations !c params@ViewParameters{..} !startPos !endPos
 renderSparkCreation :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                        -> Double -> Render ()
 renderSparkCreation params !start0 !end0 t !maxSparkValue = do
-  let f1 c =        fromIntegral (SparkCounters.sparksDud c)
-      f2 c = f1 c + fromIntegral (SparkCounters.sparksCreated c)
-      f3 c = f2 c + fromIntegral (SparkCounters.sparksOverflowed c)
+  let f1 c =        SparkCounters.sparksDud c
+      f2 c = f1 c + SparkCounters.sparksCreated c
+      f3 c = f2 c + SparkCounters.sparksOverflowed c
   renderSpark params start0 end0 t f1 f2 f3 maxSparkValue
 
 renderSparkConversion :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                          -> Double -> Render ()
 renderSparkConversion params !start0 !end0 t !maxSparkValue = do
-  let f1 c =        fromIntegral (SparkCounters.sparksFizzled c)
-      f2 c = f1 c + fromIntegral (SparkCounters.sparksConverted c)
-      f3 c = f2 c + fromIntegral (SparkCounters.sparksGCd c)
+  let f1 c =        SparkCounters.sparksFizzled c
+      f2 c = f1 c + SparkCounters.sparksConverted c
+      f3 c = f2 c + SparkCounters.sparksGCd c
   renderSpark params start0 end0 t f1 f2 f3 maxSparkValue
 
 renderSpark :: ViewParameters -> Timestamp -> Timestamp -> SparkTree

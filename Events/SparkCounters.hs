@@ -3,18 +3,16 @@ module Events.SparkCounters (
      zero, add, sub, rescale,
   ) where
 
-import Data.Word (Word64)
-
 data SparkCounters =
   SparkCounters { sparksCreated, sparksDud, sparksOverflowed,
                   sparksConverted, sparksFizzled, sparksGCd,
-                  sparksRemaining :: {-# UNPACK #-}! Word64 }
+                  sparksRemaining :: {-# UNPACK #-}! Double }
   deriving (Show, Eq)
 
 zero :: SparkCounters
 zero = SparkCounters 0 0 0 0 0 0 0
 
-map2 :: (Word64 -> Word64 -> Word64) ->
+map2 :: (Double -> Double -> Double) ->
        SparkCounters -> SparkCounters -> SparkCounters
 map2 f
   (SparkCounters sparksCreated1 sparksDud1 sparksOverflowed1
@@ -43,5 +41,5 @@ sub = map2 (-)
 -- Scale has to be positive.
 rescale :: Double -> SparkCounters -> SparkCounters
 rescale scale c =
-  let f w _ = round (fromIntegral w * scale)
+  let f w _ = w * scale
   in map2 f c zero
