@@ -28,7 +28,7 @@ import Text.Printf
 -- below it.
 
 data SparkDuration =
-  SparkDuration { startT, endT :: Timestamp,
+  SparkDuration { startT :: Timestamp,
                   deltaC :: SparkCounters.SparkCounters }
   deriving Show
 
@@ -72,7 +72,6 @@ eventsToSparkDurations es =
                 newMaxSparkPool = SparkCounters.sparksRemaining delta / fromIntegral duration
                 sd = SparkDuration
                        { startT = startTime,
-                         endT = endTime,
                          deltaC = delta }
                 ((oldMaxSparkValue, oldMaxSparkPool), l) =
                   aux endTime endCounters events
