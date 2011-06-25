@@ -101,11 +101,10 @@ drawSparkCreation start slice ts maxSparkValue = do
       f1 c = f0 c + fromIntegral (SparkCounters.sparksDud c)
       f2 c = f1 c + fromIntegral (SparkCounters.sparksCreated c)
       f3 c = f2 c + fromIntegral (SparkCounters.sparksOverflowed c)
-      -- Sparks per pixel for current data.
+      -- Sparks per vertical pixel for current data.
       spark_per_pixel =
         fromIntegral slice * maxSparkValue / fromIntegral hecSparksHeight
-      f4 c = f3 c + spark_per_pixel  --- 1 pixel above f3
-  outlineSparks spark_per_pixel f4 start slice ts
+  outlineSparks spark_per_pixel f3 start slice ts
   addSparks (0.5, 0.5, 0.5) spark_per_pixel f0 f1 start slice ts
   addSparks (0, 1, 0) spark_per_pixel f1 f2 start slice ts
   addSparks (1, 0, 0) spark_per_pixel f2 f3 start slice ts
@@ -118,11 +117,10 @@ drawSparkConversion start slice ts maxSparkValue = do
       f1 c = f0 c + fromIntegral (SparkCounters.sparksFizzled c)
       f2 c = f1 c + fromIntegral (SparkCounters.sparksConverted c)
       f3 c = f2 c + fromIntegral (SparkCounters.sparksGCd c)
-      -- Sparks per pixel for current data.
+      -- Sparks per vertical pixel for current data.
       spark_per_pixel =
         fromIntegral slice * maxSparkValue / fromIntegral hecSparksHeight
-      f4 c = f3 c + spark_per_pixel  --- 1 pixel above f3
-  outlineSparks spark_per_pixel f4 start slice ts
+  outlineSparks spark_per_pixel f3 start slice ts
   addSparks (0.5, 0.5, 0.5) spark_per_pixel f0 f1 start slice ts
   addSparks (0, 1, 0) spark_per_pixel f1 f2 start slice ts
   addSparks (1, 0, 0) spark_per_pixel f2 f3 start slice ts
