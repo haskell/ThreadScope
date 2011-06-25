@@ -11,6 +11,7 @@ data Trace
   = TraceHEC      Int
   | SparkCreationHEC Int
   | SparkConversionHEC Int
+  | SparkPoolHEC  Int
   | TraceThread   ThreadId
   | TraceGroup    String
   | TraceActivity

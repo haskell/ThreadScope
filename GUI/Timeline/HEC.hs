@@ -2,6 +2,7 @@ module GUI.Timeline.HEC (
     renderHEC,
     renderSparkCreation,
     renderSparkConversion,
+    renderSparkPool,
   ) where
 
 import GUI.Timeline.Render.Constants
@@ -79,6 +80,15 @@ renderSparkCreation params !start0 !end0 t !maxSparkValue = do
 renderSparkConversion :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                          -> Double -> Render ()
 renderSparkConversion params !start0 !end0 t !maxSparkValue = do
+  let f1 c =        SparkCounters.sparksFizzled c
+      f2 c = f1 c + SparkCounters.sparksConverted c
+      f3 c = f2 c + SparkCounters.sparksGCd c
+  renderSpark params start0 end0 t f1 f2 f3 maxSparkValue
+
+renderSparkPool :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
+                         -> Double -> Render ()
+renderSparkPool params !start0 !end0 t !maxSparkValue = do
+  -- TODO:
   let f1 c =        SparkCounters.sparksFizzled c
       f2 c = f1 c + SparkCounters.sparksConverted c
       f3 c = f2 c + SparkCounters.sparksGCd c

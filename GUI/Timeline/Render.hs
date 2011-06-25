@@ -182,6 +182,10 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh)
                  let (_, _, stree) = hecTrees hecs !! c
                      maxV = maxSparkValue hecs
                  in renderSparkConversion params startPos endPos stree maxV
+               SparkPoolHEC c ->
+                 let (_, _, stree) = hecTrees hecs !! c
+                     maxP = maxSparkPool hecs
+                 in renderSparkPool params startPos endPos stree maxP
                TraceActivity ->
                    renderActivity params hecs startPos endPos
                _   ->
@@ -279,6 +283,7 @@ traceYPositions showLabels traces
       traceHeight (TraceHEC _)  = hecTraceHeight
       traceHeight (SparkCreationHEC _) = hecSparksHeight
       traceHeight (SparkConversionHEC _) = hecSparksHeight
+      traceHeight (SparkPoolHEC _) = hecSparksHeight
       traceHeight TraceActivity = activityGraphHeight
       traceHeight _             = 0
 
@@ -288,6 +293,7 @@ showTrace :: Trace -> String
 showTrace (TraceHEC n)  = "HEC " ++ show n
 showTrace (SparkCreationHEC n) = "HEC " ++ show n
 showTrace (SparkConversionHEC n) = "HEC " ++ show n
+showTrace (SparkPoolHEC n) = "HEC " ++ show n
 showTrace TraceActivity = "Activity"
 showTrace _             = "?"
 

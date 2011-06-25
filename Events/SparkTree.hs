@@ -56,9 +56,9 @@ data SparkNode
 
 
 -- Warning: cannot be applied to a suffix of the log (assumes start at time 0).
-eventsToSparkDurations :: [GHC.Event] -> (Double, [SparkDuration])
+eventsToSparkDurations :: [GHC.Event] -> ((Double, Double), [SparkDuration])
 eventsToSparkDurations es =
-  let aux _startTime _startCounters [] = (0, [])
+  let aux _startTime _startCounters [] = ((0, 0), [])
       aux startTime startCounters (event : events) =
         case GHC.spec event of
           GHC.SparkCounters crt dud ovf cnv fiz gcd rem ->
@@ -70,13 +70,17 @@ eventsToSparkDurations es =
                 subC = SparkCounters.sub endCounters startCounters
                 duration = endTime - startTime
                 newMaxSparkValue = maxSparkRenderedValue subC duration
+                newMaxSparkPool = maxSparkRenderedValue subC duration  -- TODO: SparkCounters.sparksRemaining endCounters
                 sd = SparkDuration
                        { startT = startTime,
                          endT = endTime,
                          startCount = startCounters,
                          endCount = endCounters }
-                (oldMaxSparkValue, l) = aux endTime endCounters events
-            in (max oldMaxSparkValue newMaxSparkValue, sd : l)
+                ((oldMaxSparkValue, oldMaxSparkPool), l) =
+                  aux endTime endCounters events
+            in ((max oldMaxSparkValue newMaxSparkValue,
+                 max oldMaxSparkPool newMaxSparkPool),
+                sd : l)
           _otherEvent -> aux startTime startCounters events
   in aux 0 SparkCounters.zero es
 
