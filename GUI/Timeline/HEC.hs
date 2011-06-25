@@ -87,12 +87,12 @@ renderSparkConversion params !start0 !end0 t !maxSparkValue = do
 
 renderSparkPool :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                          -> Double -> Render ()
-renderSparkPool params !start0 !end0 t !maxSparkValue = do
-  -- TODO:
-  let f1 c =        SparkCounters.sparksFizzled c
-      f2 c = f1 c + SparkCounters.sparksConverted c
-      f3 c = f2 c + SparkCounters.sparksGCd c
-  renderSpark params start0 end0 t f1 f2 f3 maxSparkValue
+renderSparkPool params !start0 !end0 t !maxSparkPool = do
+  -- TODO: min, max, percentiles, etc.
+  let f1 _ = 0
+      f2 c = SparkCounters.sparksRemaining c
+      f3 c = f2 c
+  renderSpark params start0 end0 t f1 f2 f3 maxSparkPool
 
 renderSpark :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                -> (SparkCounters.SparkCounters -> Double)
