@@ -34,8 +34,8 @@ data SparkDuration =
 
 data SparkTree
   = SparkTree
-      {-#UNPACK#-}!Timestamp  -- start time of this span
-      {-#UNPACK#-}!Timestamp  -- end time of this span
+      {-#UNPACK#-}!Timestamp  -- start time of the span represented by the tree
+      {-#UNPACK#-}!Timestamp  -- end time of the span represented by the tree
       SparkNode
   deriving Show
 
@@ -165,6 +165,10 @@ sparkProfile slice start0 end0 t
      | end   <= split = flatten start (SparkTree s split l) rest
      | e - s > slice  = flatten start (SparkTree s split l) $
                         flatten start (SparkTree split e r) rest
+     -- A rule of thumb: if a node is narrower than slice, don't drill down,
+     -- even if the node sits astride slice boundaries and so the readings
+     -- for each of the two neigbouring slices will not be accurate,
+     -- but for the pair as a whole, they will be. Smooths the curve down.
      | otherwise      = t : rest
    flatten _start t@(SparkTree _s _e (SparkTreeLeaf _ _)) rest
      = t : rest
@@ -178,8 +182,8 @@ sparkProfile slice start0 end0 t
    chop sofar start (t : ts)
      | e <= start
      = if sofar /= SparkCounters.zero
-          then error "chop"
-          else chop sofar start ts
+       then error "chop"
+       else chop sofar start ts
      | s >= start + slice
      = sofar : chop SparkCounters.zero (start + slice) (t : ts)
      | e > start + slice
@@ -195,7 +199,7 @@ sparkProfile slice start0 end0 t
 
        created_in_this_slice
          | SparkTree _ _ (SparkTreeLeaf sc ec)     <- t  =
-           SparkCounters.sub ec sc
+           SparkCounters.rescale scale (SparkCounters.sub ec sc)
          | SparkTree _ _ (SparkTreeEmpty)          <- t  =
            SparkCounters.zero
          | SparkTree _ _ (SparkSplit _ _ _ cDelta) <- t  =

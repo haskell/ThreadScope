@@ -68,7 +68,7 @@ renderDurations !c params@ViewParameters{..} !startPos !endPos
 
 -------------------------------------------------------------------------------
 
--- TODO: refactor all of the above
+-- TODO: refactor all of the code below
 
 renderSparkCreation :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                        -> Render ()
