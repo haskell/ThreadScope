@@ -6,7 +6,7 @@ module Events.SparkTree (
      sparkTreeMaxDepth,
   ) where
 
-import qualified Events.SparkCounters as SparkCounters
+import qualified Events.SparkStats as SparkStats
 
 import qualified GHC.RTS.Events as GHC
 import GHC.RTS.Events (Timestamp)
@@ -29,7 +29,7 @@ import Text.Printf
 
 data SparkDuration =
   SparkDuration { startT :: Timestamp,
-                  deltaC :: SparkCounters.SparkCounters }
+                  deltaC :: SparkStats.SparkStats }
   deriving Show
 
 data SparkTree
@@ -46,9 +46,9 @@ data SparkNode
                  -- start and split
       SparkNode  -- the RHS split; all data lies completely between
                  -- split and end
-      SparkCounters.SparkCounters  -- the delta of spark stats at end and start
+      SparkStats.SparkStats  -- the delta of spark stats at end and start
   | SparkTreeLeaf
-      SparkCounters.SparkCounters  -- the delta of spark stats at end and start
+      SparkStats.SparkStats  -- the delta of spark stats at end and start
   | SparkTreeEmpty   -- after the last GC
 
   deriving Show
@@ -64,12 +64,12 @@ eventsToSparkDurations es =
             let endTime = GHC.time event
                 i = fromIntegral
                 endCounters =
-                  SparkCounters.SparkCounters
+                  SparkStats.SparkStats
                     (i crt) (i dud) (i ovf) (i cnv) (i fiz) (i gcd) (i rem)
-                delta = SparkCounters.sub endCounters startCounters
+                delta = SparkStats.sub endCounters startCounters
                 duration = endTime - startTime
                 newMaxSparkValue = maxSparkRenderedValue delta duration
-                newMaxSparkPool = SparkCounters.sparksRemaining delta / fromIntegral duration
+                newMaxSparkPool = SparkStats.sparksRemaining delta / fromIntegral duration
                 sd = SparkDuration
                        { startT = startTime,
                          deltaC = delta }
@@ -79,18 +79,18 @@ eventsToSparkDurations es =
                  max oldMaxSparkPool newMaxSparkPool),
                 sd : l)
           _otherEvent -> aux startTime startCounters events
-  in aux 0 SparkCounters.zero es
+  in aux 0 SparkStats.zero es
 
 -- This is the maximal raw value, to be displayed at total zoom in.
 -- It's smoothed out (so lower values) at lower zoom levels.
-maxSparkRenderedValue :: SparkCounters.SparkCounters -> Timestamp -> Double
+maxSparkRenderedValue :: SparkStats.SparkStats -> Timestamp -> Double
 maxSparkRenderedValue c duration =
-  max (SparkCounters.sparksDud c +
-       SparkCounters.sparksCreated c +
-       SparkCounters.sparksOverflowed c)
-      (SparkCounters.sparksFizzled c +
-       SparkCounters.sparksConverted c +
-       SparkCounters.sparksGCd c)
+  max (SparkStats.sparksDud c +
+       SparkStats.sparksCreated c +
+       SparkStats.sparksOverflowed c)
+      (SparkStats.sparksFizzled c +
+       SparkStats.sparksConverted c +
+       SparkStats.sparksGCd c)
   / fromIntegral duration
 
 
@@ -158,7 +158,7 @@ splitSparkList (e:es) acc !tsplit !tmax
 -- Approximated from the aggregated data at the level of the spark tree
 -- covering intervals of the size similar to the timeslice size.
 sparkProfile :: Timestamp -> Timestamp -> Timestamp -> SparkTree
-                -> [SparkCounters.SparkCounters]
+                -> [SparkStats.SparkStats]
 sparkProfile slice start0 end0 t
   = {- trace (show flat) $ -} chopped
 
@@ -168,9 +168,9 @@ sparkProfile slice start0 end0 t
    end   = end0 + slice
 
    flat = flatten start t []
-   chopped0 = chop SparkCounters.zero start flat
+   chopped0 = chop SparkStats.zero start flat
 
-   chopped | start0 < slice = SparkCounters.zero : chopped0
+   chopped | start0 < slice = SparkStats.zero : chopped0
            | otherwise      = chopped0
 
    flatten :: Timestamp -> SparkTree -> [SparkTree] -> [SparkTree]
@@ -190,24 +190,24 @@ sparkProfile slice start0 end0 t
    flatten _start t@(SparkTree _s _e (SparkTreeLeaf _)) rest
      = t : rest
 
-   chop :: SparkCounters.SparkCounters -> Timestamp -> [SparkTree]
-           -> [SparkCounters.SparkCounters]
+   chop :: SparkStats.SparkStats -> Timestamp -> [SparkTree]
+           -> [SparkStats.SparkStats]
    chop sofar start _ts
-     | start >= end = if sofar /= SparkCounters.zero then [sofar] else []
+     | start >= end = if sofar /= SparkStats.zero then [sofar] else []
    chop sofar start []
-     = sofar : chop SparkCounters.zero (start+slice) []
+     = sofar : chop SparkStats.zero (start+slice) []
    chop sofar start (t : ts)
      | e <= start
-     = if sofar /= SparkCounters.zero
+     = if sofar /= SparkStats.zero
        then error "chop"
        else chop sofar start ts
      | s >= start + slice
-     = sofar : chop SparkCounters.zero (start + slice) (t : ts)
+     = sofar : chop SparkStats.zero (start + slice) (t : ts)
      | e > start + slice
-     = (SparkCounters.add sofar created_in_this_slice) :
-       chop SparkCounters.zero (start + slice) (t : ts)
+     = (SparkStats.add sofar created_in_this_slice) :
+       chop SparkStats.zero (start + slice) (t : ts)
      | otherwise
-     = chop (SparkCounters.add sofar created_in_this_slice) start ts
+     = chop (SparkStats.add sofar created_in_this_slice) start ts
      where
        (s, e) | SparkTree s e _ <- t  = (s, e)
 
@@ -216,11 +216,11 @@ sparkProfile slice start0 end0 t
 
        created_in_this_slice
          | SparkTree _ _ (SparkTreeLeaf delta)    <- t  =
-           SparkCounters.rescale scale delta
+           SparkStats.rescale scale delta
          | SparkTree _ _ (SparkTreeEmpty)          <- t  =
-           SparkCounters.zero
+           SparkStats.zero
          | SparkTree _ _ (SparkSplit _ _ _ delta) <- t  =
-           SparkCounters.rescale scale delta
+           SparkStats.rescale scale delta
 
 
 sparkTreeMaxDepth :: SparkTree -> Int

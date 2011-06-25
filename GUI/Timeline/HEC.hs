@@ -9,7 +9,7 @@ import GUI.Timeline.Render.Constants
 
 import Events.EventTree
 import Events.SparkTree
-import qualified Events.SparkCounters as SparkCounters
+import qualified Events.SparkStats as SparkStats
 import Events.EventDuration
 import GUI.Types
 import GUI.Timeline.CairoDrawing
@@ -72,17 +72,17 @@ renderDurations !c params@ViewParameters{..} !startPos !endPos
 renderSparkCreation :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                        -> Double -> Render ()
 renderSparkCreation params !start0 !end0 t !maxSparkValue = do
-  let f1 c =        SparkCounters.sparksDud c
-      f2 c = f1 c + SparkCounters.sparksCreated c
-      f3 c = f2 c + SparkCounters.sparksOverflowed c
+  let f1 c =        SparkStats.sparksDud c
+      f2 c = f1 c + SparkStats.sparksCreated c
+      f3 c = f2 c + SparkStats.sparksOverflowed c
   renderSpark params start0 end0 t f1 f2 f3 maxSparkValue
 
 renderSparkConversion :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                          -> Double -> Render ()
 renderSparkConversion params !start0 !end0 t !maxSparkValue = do
-  let f1 c =        SparkCounters.sparksFizzled c
-      f2 c = f1 c + SparkCounters.sparksConverted c
-      f3 c = f2 c + SparkCounters.sparksGCd c
+  let f1 c =        SparkStats.sparksFizzled c
+      f2 c = f1 c + SparkStats.sparksConverted c
+      f3 c = f2 c + SparkStats.sparksGCd c
   renderSpark params start0 end0 t f1 f2 f3 maxSparkValue
 
 renderSparkPool :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
@@ -90,14 +90,14 @@ renderSparkPool :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
 renderSparkPool params !start0 !end0 t !maxSparkPool = do
   -- TODO: min, max, percentiles, etc.
   let f1 _ = 0
-      f2 c = SparkCounters.sparksRemaining c
+      f2 c = SparkStats.sparksRemaining c
       f3 c = f2 c
   renderSpark params start0 end0 t f1 f2 f3 maxSparkPool
 
 renderSpark :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
-               -> (SparkCounters.SparkCounters -> Double)
-               -> (SparkCounters.SparkCounters -> Double)
-               -> (SparkCounters.SparkCounters -> Double)
+               -> (SparkStats.SparkStats -> Double)
+               -> (SparkStats.SparkStats -> Double)
+               -> (SparkStats.SparkStats -> Double)
                -> Double -> Render ()
 renderSpark ViewParameters{..} start0 end0 t f1 f2 f3 maxSparkValue = do
   let slice = round (fromIntegral spark_detail * scaleValue)
@@ -115,15 +115,15 @@ renderSpark ViewParameters{..} start0 end0 t f1 f2 f3 maxSparkValue = do
 spark_detail :: Int
 spark_detail = 4 -- in pixels
 
-off :: Double -> (SparkCounters.SparkCounters -> Double)
-       -> SparkCounters.SparkCounters
+off :: Double -> (SparkStats.SparkStats -> Double)
+       -> SparkStats.SparkStats
        -> Double
 off maxSliceSpark f t = fromIntegral hecSparksHeight * (1 - f t / maxSliceSpark)
 
 outlineSparks :: Double
-                 -> (SparkCounters.SparkCounters -> Double)
+                 -> (SparkStats.SparkStats -> Double)
                  -> Timestamp -> Timestamp
-                 -> [SparkCounters.SparkCounters]
+                 -> [SparkStats.SparkStats]
                  -> Render ()
 outlineSparks maxSliceSpark f start slice ts = do
   case ts of
@@ -145,10 +145,10 @@ outlineSparks maxSliceSpark f start slice ts = do
 
 addSparks :: (Double, Double, Double)
              -> Double
-             -> (SparkCounters.SparkCounters -> Double)
-             -> (SparkCounters.SparkCounters -> Double)
+             -> (SparkStats.SparkStats -> Double)
+             -> (SparkStats.SparkStats -> Double)
              -> Timestamp -> Timestamp
-             -> [SparkCounters.SparkCounters]
+             -> [SparkStats.SparkStats]
              -> Render ()
 addSparks (cR, cG, cB) maxSliceSpark f0 f1 start slice ts = do
   case ts of
