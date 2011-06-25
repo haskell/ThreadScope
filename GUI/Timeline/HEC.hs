@@ -95,13 +95,12 @@ renderSpark ViewParameters{..} start0 end0 t f1 f2 f3 maxSparkValue = do
       start = (start0 `div` slice) * slice
       end   = ((end0 + slice) `div` slice) * slice
       prof  = sparkProfile slice start end t
-      -- Sparks per vertical pixel for current data.
-      spark_per_pixel =
-        fromIntegral slice * maxSparkValue / fromIntegral hecSparksHeight
-  outlineSparks spark_per_pixel f3 start slice prof
-  addSparks (0.5, 0.5, 0.5) spark_per_pixel (const 0) f1 start slice prof
-  addSparks (0, 1, 0) spark_per_pixel f1 f2 start slice prof
-  addSparks (1, 0, 0) spark_per_pixel f2 f3 start slice prof
+      -- Maximum number of sparks per slice for current data.
+      maxSliceSpark = fromIntegral slice * maxSparkValue
+  outlineSparks maxSliceSpark f3 start slice prof
+  addSparks (0.5, 0.5, 0.5) maxSliceSpark (const 0) f1 start slice prof
+  addSparks (0, 1, 0) maxSliceSpark f1 f2 start slice prof
+  addSparks (1, 0, 0) maxSliceSpark f2 f3 start slice prof
 
 spark_detail :: Int
 spark_detail = 4 -- in pixels
@@ -109,21 +108,21 @@ spark_detail = 4 -- in pixels
 off :: Double -> (SparkCounters.SparkCounters -> Double)
        -> SparkCounters.SparkCounters
        -> Double
-off spark_per_pixel f t = fromIntegral hecSparksHeight - f t / spark_per_pixel
+off maxSliceSpark f t = fromIntegral hecSparksHeight * (1 - f t / maxSliceSpark)
 
 outlineSparks :: Double
                  -> (SparkCounters.SparkCounters -> Double)
                  -> Timestamp -> Timestamp
                  -> [SparkCounters.SparkCounters]
                  -> Render ()
-outlineSparks spark_per_pixel f start slice ts = do
+outlineSparks maxSliceSpark f start slice ts = do
   case ts of
     [] -> return ()
     ts -> do
       let dstart = fromIntegral start
           dslice = fromIntegral slice
           points = [dstart-dslice/2, dstart+dslice/2 ..]
-          t = zip points (map (off spark_per_pixel f) ts)
+          t = zip points (map (off maxSliceSpark f) ts)
       newPath
       moveTo (dstart-dslice/2) (snd $ head t)
       mapM_ (uncurry lineTo) t
@@ -141,17 +140,17 @@ addSparks :: (Double, Double, Double)
              -> Timestamp -> Timestamp
              -> [SparkCounters.SparkCounters]
              -> Render ()
-addSparks (cR, cG, cB) spark_per_pixel f0 f1 start slice ts = do
+addSparks (cR, cG, cB) maxSliceSpark f0 f1 start slice ts = do
   case ts of
     [] -> return ()
     ts -> do
       -- liftIO $ printf "ts: %s\n" (show (map f1 (ts)))
-      -- liftIO $ printf "off: %s\n" (show (map (off spark_per_pixel f1) (ts) :: [Double]))
+      -- liftIO $ printf "off: %s\n" (show (map (off maxSliceSpark f1) (ts) :: [Double]))
       let dstart = fromIntegral start
           dslice = fromIntegral slice
           points = [dstart-dslice/2, dstart+dslice/2 ..]
-          t0 = zip points (map (off spark_per_pixel f0) ts)
-          t1 = zip points (map (off spark_per_pixel f1) ts)
+          t0 = zip points (map (off maxSliceSpark f0) ts)
+          t1 = zip points (map (off maxSliceSpark f1) ts)
       newPath
       moveTo (dstart-dslice/2) (snd $ head t1)
       mapM_ (uncurry lineTo) t1
