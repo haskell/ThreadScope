@@ -66,7 +66,7 @@ eventsToSparkDurations es =
                 endCounters =
                   SparkStats.SparkStats
                     (i crt) (i dud) (i ovf) (i cnv) (i fiz) (i gcd) (i rem)
-                delta = SparkStats.sub endCounters startCounters
+                delta = SparkStats.create endCounters startCounters
                 duration = endTime - startTime
                 newMaxSparkValue = maxSparkRenderedValue delta duration
                 newMaxSparkPool = SparkStats.sparksRemaining delta / fromIntegral duration
@@ -85,12 +85,12 @@ eventsToSparkDurations es =
 -- It's smoothed out (so lower values) at lower zoom levels.
 maxSparkRenderedValue :: SparkStats.SparkStats -> Timestamp -> Double
 maxSparkRenderedValue c duration =
-  max (SparkStats.sparksDud c +
-       SparkStats.sparksCreated c +
-       SparkStats.sparksOverflowed c)
-      (SparkStats.sparksFizzled c +
-       SparkStats.sparksConverted c +
-       SparkStats.sparksGCd c)
+  max (SparkStats.rateDud c +
+       SparkStats.rateCreated c +
+       SparkStats.rateOverflowed c)
+      (SparkStats.rateFizzled c +
+       SparkStats.rateConverted c +
+       SparkStats.rateGCd c)
   / fromIntegral duration
 
 
@@ -204,10 +204,10 @@ sparkProfile slice start0 end0 t
      | s >= start + slice
      = sofar : chop SparkStats.zero (start + slice) (t : ts)
      | e > start + slice
-     = (SparkStats.add sofar created_in_this_slice) :
+     = (SparkStats.aggregate sofar created_in_this_slice) :
        chop SparkStats.zero (start + slice) (t : ts)
      | otherwise
-     = chop (SparkStats.add sofar created_in_this_slice) start ts
+     = chop (SparkStats.aggregate sofar created_in_this_slice) start ts
      where
        (s, e) | SparkTree s e _ <- t  = (s, e)
 

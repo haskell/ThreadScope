@@ -1,11 +1,11 @@
 module Events.SparkStats (
   SparkStats(..),
-  zero, add, sub, rescale,
+  zero, aggregate, create, rescale,
   ) where
 
 data SparkStats =
-  SparkStats { sparksCreated, sparksDud, sparksOverflowed,
-               sparksConverted, sparksFizzled, sparksGCd,
+  SparkStats { rateCreated, rateDud, rateOverflowed,
+               rateConverted, rateFizzled, rateGCd,
                sparksRemaining :: {-# UNPACK #-}! Double }
   deriving (Show, Eq)
 
@@ -15,28 +15,28 @@ zero = SparkStats 0 0 0 0 0 0 0
 map2 :: (Double -> Double -> Double) ->
         SparkStats -> SparkStats -> SparkStats
 map2 f
-  (SparkStats sparksCreated1 sparksDud1 sparksOverflowed1
-              sparksConverted1 sparksFizzled1 sparksGCd1
+  (SparkStats rateCreated1 rateDud1 rateOverflowed1
+              rateConverted1 rateFizzled1 rateGCd1
               sparksRemaining1)
-  (SparkStats sparksCreated2 sparksDud2 sparksOverflowed2
-              sparksConverted2 sparksFizzled2 sparksGCd2
+  (SparkStats rateCreated2 rateDud2 rateOverflowed2
+              rateConverted2 rateFizzled2 rateGCd2
               sparksRemaining2)
   = SparkStats
-      (f sparksCreated1 sparksCreated2)
-      (f sparksDud1 sparksDud2)
-      (f sparksOverflowed1 sparksOverflowed2)
-      (f sparksConverted1 sparksConverted2)
-      (f sparksFizzled1 sparksFizzled2)
-      (f sparksGCd1 sparksGCd2)
+      (f rateCreated1 rateCreated2)
+      (f rateDud1 rateDud2)
+      (f rateOverflowed1 rateOverflowed2)
+      (f rateConverted1 rateConverted2)
+      (f rateFizzled1 rateFizzled2)
+      (f rateGCd1 rateGCd2)
       (f sparksRemaining1 sparksRemaining2)
 
-add :: SparkStats -> SparkStats -> SparkStats
-add = map2 (+)
+aggregate :: SparkStats -> SparkStats -> SparkStats
+aggregate = map2 (+)
 
 -- The values in the second counter have to be greater or equal
 -- to the values int he first counter.
-sub :: SparkStats -> SparkStats -> SparkStats
-sub = map2 (-)
+create :: SparkStats -> SparkStats -> SparkStats
+create = map2 (-)
 
 -- Scale has to be positive.
 rescale :: Double -> SparkStats -> SparkStats
