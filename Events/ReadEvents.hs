@@ -39,20 +39,23 @@ import Control.Exception
 -------------------------------------------------------------------------------
 
 rawEventsToHECs :: [(Maybe Int, [GHCEvents.Event])] -> Timestamp
-                -> [(DurationTree, EventTree, SparkTree)]
+                -> [(Double, (DurationTree, EventTree, SparkTree))]
 rawEventsToHECs eventList endTime
   = map (toTree . flip lookup heclists)  [0 .. maximum0 (map fst heclists)]
   where
     heclists = [ (h,events) | (Just h,events) <- eventList ]
 
-    toTree Nothing    = (DurationTreeEmpty,
-                         EventTree 0 0 (EventTreeLeaf []),
-                         SparkTree 0 0 SparkTreeEmpty)
+    toTree Nothing    = ( 0,
+                          ( DurationTreeEmpty,
+                            EventTree 0 0 (EventTreeLeaf []),
+                            SparkTree 0 0 SparkTreeEmpty ) )
     toTree (Just evs) =
-       ( mkDurationTree (eventsToDurations nondiscrete) endTime,
-         mkEventTree discrete endTime,
-         mkSparkTree (eventsToSparkDurations nondiscrete) endTime)
-       where (discrete,nondiscrete) = partition isDiscreteEvent evs
+       ( maxSparkValue,
+         ( mkDurationTree (eventsToDurations nondiscrete) endTime,
+           mkEventTree discrete endTime,
+           mkSparkTree sparkD endTime ) )
+       where (discrete, nondiscrete) = partition isDiscreteEvent evs
+             (maxSparkValue, sparkD) = eventsToSparkDurations nondiscrete
 
 -------------------------------------------------------------------------------
 
@@ -108,7 +111,9 @@ buildEventLog progress from =
          lastTx = maximum (0 : map eventBlockEnd (events (dat evs)))
 
          groups = groupEvents (events (dat evs))
-         trees = rawEventsToHECs groups lastTx
+         maxTrees = rawEventsToHECs groups lastTx
+         maxSparkValue = maximum (0 : map fst maxTrees)
+         trees = map snd maxTrees
 
          -- sort the events by time and put them in an array
          sorted    = sortGroups groups
@@ -120,8 +125,9 @@ buildEventLog progress from =
                   hecCount         = hec_count,
                   hecTrees         = trees,
                   hecEventArray    = event_arr,
-                  hecLastEventTime = lastTx
-               }
+                  hecLastEventTime = lastTx,
+                  maxSparkValue    = maxSparkValue
+                }
 
          treeProgress :: Int -> (DurationTree, EventTree, SparkTree) -> IO ()
          treeProgress hec (tree1, tree2, tree3) = do

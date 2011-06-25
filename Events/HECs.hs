@@ -21,7 +21,8 @@ data HECs = HECs {
        hecCount         :: Int,
        hecTrees         :: [(DurationTree, EventTree, SparkTree)],
        hecEventArray    :: Array Int CapEvent,
-       hecLastEventTime :: Timestamp
+       hecLastEventTime :: Timestamp,
+       maxSparkValue    :: Double
      }
 
 -----------------------------------------------------------------------------

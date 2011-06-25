@@ -56,23 +56,39 @@ data SparkNode
 
 
 -- Warning: cannot be applied to a suffix of the log (assumes start at time 0).
-eventsToSparkDurations :: [GHC.Event] -> [SparkDuration]
+eventsToSparkDurations :: [GHC.Event] -> (Double, [SparkDuration])
 eventsToSparkDurations es =
-  let aux _startTime _startCounters [] = []
+  let aux _startTime _startCounters [] = (0, [])
       aux startTime startCounters (event : events) =
         case GHC.spec event of
           GHC.SparkCounters crt dud ovf cnv fiz gcd rem ->
             let endTime = GHC.time event
                 endCounters =
                   SparkCounters.SparkCounters crt dud ovf cnv fiz gcd rem
+                subC = SparkCounters.sub endCounters startCounters
+                duration = endTime - startTime
+                newMaxSparkValue = maxSparkRenderedValue subC duration
                 sd = SparkDuration
                        { startT = startTime,
                          endT = endTime,
                          startCount = startCounters,
                          endCount = endCounters }
-            in sd : aux endTime endCounters events
+                (oldMaxSparkValue, l) = aux endTime endCounters events
+            in (max oldMaxSparkValue newMaxSparkValue, sd : l)
           _otherEvent -> aux startTime startCounters events
   in aux 0 SparkCounters.zero es
+
+-- This is the maximal raw value, to be displayed at total zoom in.
+-- It's smoothed out (so lower values) at lower zoom levels.
+maxSparkRenderedValue :: SparkCounters.SparkCounters -> Timestamp -> Double
+maxSparkRenderedValue c duration =
+  fromIntegral (max (SparkCounters.sparksDud c +
+                     SparkCounters.sparksCreated c +
+                     SparkCounters.sparksOverflowed c)
+                    (SparkCounters.sparksFizzled c +
+                     SparkCounters.sparksConverted c +
+                     SparkCounters.sparksGCd c))
+  / fromIntegral duration
 
 
 mkSparkTree :: [SparkDuration] -> Timestamp -> SparkTree

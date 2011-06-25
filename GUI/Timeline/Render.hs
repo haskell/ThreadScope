@@ -176,10 +176,12 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh)
                    renderHEC c params startPos endPos (hecTrees hecs !! c)
                SparkCreationHEC c ->
                  let (_, _, stree) = hecTrees hecs !! c
-                 in renderSparkCreation params startPos endPos stree
+                     maxV = maxSparkValue hecs
+                 in renderSparkCreation params startPos endPos stree maxV
                SparkConversionHEC c ->
                  let (_, _, stree) = hecTrees hecs !! c
-                 in renderSparkConversion params startPos endPos stree
+                     maxV = maxSparkValue hecs
+                 in renderSparkConversion params startPos endPos stree maxV
                TraceActivity ->
                    renderActivity params hecs startPos endPos
                _   ->
