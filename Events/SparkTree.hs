@@ -29,7 +29,7 @@ import Text.Printf
 
 data SparkDuration =
   SparkDuration { startT, endT :: Timestamp,
-                  startCount, endCount :: SparkCounters.SparkCounters }
+                  deltaC :: SparkCounters.SparkCounters }
   deriving Show
 
 data SparkTree
@@ -48,8 +48,7 @@ data SparkNode
                  -- split and end
       SparkCounters.SparkCounters  -- the delta of spark stats at end and start
   | SparkTreeLeaf
-      SparkCounters.SparkCounters  -- spark stats at the start
-      SparkCounters.SparkCounters  -- spark stats at the end
+      SparkCounters.SparkCounters  -- the delta of spark stats at end and start
   | SparkTreeEmpty   -- after the last GC
 
   deriving Show
@@ -67,15 +66,14 @@ eventsToSparkDurations es =
                 endCounters =
                   SparkCounters.SparkCounters
                     (i crt) (i dud) (i ovf) (i cnv) (i fiz) (i gcd) (i rem)
-                subC = SparkCounters.sub endCounters startCounters
+                delta = SparkCounters.sub endCounters startCounters
                 duration = endTime - startTime
-                newMaxSparkValue = maxSparkRenderedValue subC duration
-                newMaxSparkPool = SparkCounters.sparksRemaining subC / fromIntegral duration
+                newMaxSparkValue = maxSparkRenderedValue delta duration
+                newMaxSparkPool = SparkCounters.sparksRemaining delta / fromIntegral duration
                 sd = SparkDuration
                        { startT = startTime,
                          endT = endTime,
-                         startCount = startCounters,
-                         endCount = endCounters }
+                         deltaC = delta }
                 ((oldMaxSparkValue, oldMaxSparkPool), l) =
                   aux endTime endCounters events
             in ((max oldMaxSparkValue newMaxSparkValue,
@@ -115,7 +113,7 @@ splitSparks [] !_endTime =
   SparkTreeEmpty
 
 splitSparks [e] !_endTime =
-  SparkTreeLeaf (startCount e) (endCount e)
+  SparkTreeLeaf (deltaC e)
 
 splitSparks es !endTime
   | null rhs
@@ -130,10 +128,8 @@ splitSparks es !endTime
     SparkSplit (startT $ head rhs)
                ltree
                rtree
-               (SparkCounters.sub endCounter startCounter)
+               (deltaC $ head es)
     where
-    startCounter = startCount $ head es
-    endCounter = endCount $ last rhs
     startTime = startT $ head es
     splitTime = startTime + (endTime - startTime) `div` 2
 
@@ -192,7 +188,7 @@ sparkProfile slice start0 end0 t
      -- for each of the two neigbouring slices will not be accurate,
      -- but for the pair as a whole, they will be. Smooths the curve down.
      | otherwise      = t : rest
-   flatten _start t@(SparkTree _s _e (SparkTreeLeaf _ _)) rest
+   flatten _start t@(SparkTree _s _e (SparkTreeLeaf _)) rest
      = t : rest
 
    chop :: SparkCounters.SparkCounters -> Timestamp -> [SparkTree]
@@ -220,12 +216,12 @@ sparkProfile slice start0 end0 t
        scale = fromIntegral duration / fromIntegral (e - s)
 
        created_in_this_slice
-         | SparkTree _ _ (SparkTreeLeaf sc ec)     <- t  =
-           SparkCounters.rescale scale (SparkCounters.sub ec sc)
+         | SparkTree _ _ (SparkTreeLeaf delta)    <- t  =
+           SparkCounters.rescale scale delta
          | SparkTree _ _ (SparkTreeEmpty)          <- t  =
            SparkCounters.zero
-         | SparkTree _ _ (SparkSplit _ _ _ cDelta) <- t  =
-           SparkCounters.rescale scale cDelta
+         | SparkTree _ _ (SparkSplit _ _ _ delta) <- t  =
+           SparkCounters.rescale scale delta
 
 
 sparkTreeMaxDepth :: SparkTree -> Int
