@@ -87,13 +87,21 @@ renderSparkConversion params !start0 !end0 t !maxSparkValue = do
 
 renderSparkPool :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                          -> Double -> Render ()
-renderSparkPool params@ViewParameters{..} !start0 !end0 t !maxSparkPool = do
-  -- TODO: percentiles
-  let slice = round (fromIntegral spark_detail * scaleValue)  -- TODO: hack
+renderSparkPool ViewParameters{..} !start0 !end0 t !maxSparkPool = do
+  let slice = round (fromIntegral spark_detail * scaleValue)
+      -- round the start time down, and the end time up, to a slice boundary
+      start = (start0 `div` slice) * slice
+      end   = ((end0 + slice) `div` slice) * slice
+      prof  = sparkProfile slice start end t
       f1 c = SparkStats.minPool c
       f2 c = SparkStats.meanPool c
       f3 c = SparkStats.maxPool c
-  renderSpark params start0 end0 t f1 f2 f3 (maxSparkPool / fromIntegral slice)
+  -- TODO: sample points are probably shifted, wrongly averaged, etc.
+  addSparks colourOuterPercentiles maxSparkPool f1 f2 start slice prof
+  addSparks colourOuterPercentiles maxSparkPool f2 f3 start slice prof
+  -- TODO: make f2 median, not mean; add other percentiles
+  outlineSparks maxSparkPool f2 start slice prof
+  outlineSparks maxSparkPool (const 0) start slice prof
 
 renderSpark :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                -> (SparkStats.SparkStats -> Double)
@@ -109,12 +117,15 @@ renderSpark ViewParameters{..} start0 end0 t f1 f2 f3 maxSparkValue = do
       -- Maximum number of sparks per slice for current data.
       maxSliceSpark = fromIntegral slice * maxSparkValue
   outlineSparks maxSliceSpark f3 start slice prof
-  addSparks (0.5, 0.5, 0.5) maxSliceSpark (const 0) f1 start slice prof
+  addSparks colourFizzledDuds maxSliceSpark (const 0) f1 start slice prof
   addSparks (0, 1, 0) maxSliceSpark f1 f2 start slice prof
   addSparks (1, 0, 0) maxSliceSpark f2 f3 start slice prof
 
 spark_detail :: Int
 spark_detail = 4 -- in pixels
+
+colourOuterPercentiles = (0.8, 0.8, 0.8)
+colourFizzledDuds      = (0.5, 0.5, 0.5)
 
 off :: Double -> (SparkStats.SparkStats -> Double)
        -> SparkStats.SparkStats
