@@ -65,14 +65,15 @@ eventsToSparkDurations es =
                 i = fromIntegral
                 endCounters =
                   SparkStats.SparkStats
-                    (i crt) (i dud) (i ovf) (i cnv) (i fiz) (i gcd) (i rem)
+                    (i crt) (i dud) (i ovf)
+                    (i cnv) (i fiz) (i gcd)
+                    (i rem) (i rem) (i rem)
                 delta = SparkStats.create endCounters startCounters
                 duration = endTime - startTime
                 newMaxSparkValue = maxSparkRenderedValue delta duration
-                newMaxSparkPool = SparkStats.sparksRemaining delta / fromIntegral duration
-                sd = SparkDuration
-                       { startT = startTime,
-                         deltaC = delta }
+                newMaxSparkPool = SparkStats.maxPool delta
+                sd = SparkDuration { startT = startTime,
+                                     deltaC = delta }
                 ((oldMaxSparkValue, oldMaxSparkPool), l) =
                   aux endTime endCounters events
             in ((max oldMaxSparkValue newMaxSparkValue,
@@ -168,7 +169,7 @@ sparkProfile slice start0 end0 t
    end   = end0 + slice
 
    flat = flatten start t []
-   chopped0 = chop SparkStats.zero start flat
+   chopped0 = chop Nothing start flat
 
    chopped | start0 < slice = SparkStats.zero : chopped0
            | otherwise      = chopped0
@@ -190,24 +191,29 @@ sparkProfile slice start0 end0 t
    flatten _start t@(SparkTree _s _e (SparkTreeLeaf _)) rest
      = t : rest
 
-   chop :: SparkStats.SparkStats -> Timestamp -> [SparkTree]
+   chop :: Maybe SparkStats.SparkStats -> Timestamp -> [SparkTree]
            -> [SparkStats.SparkStats]
    chop sofar start _ts
-     | start >= end = if sofar /= SparkStats.zero then [sofar] else []
+     | start >= end
+     = case sofar of
+       Just c -> [c]
+       _ -> []
    chop sofar start []
-     = sofar : chop SparkStats.zero (start+slice) []
+     = SparkStats.aggrMaybe sofar SparkStats.zero
+       : chop Nothing (start+slice) []
    chop sofar start (t : ts)
      | e <= start
-     = if sofar /= SparkStats.zero
-       then error "chop"
-       else chop sofar start ts
+     = case sofar of
+       Just _ -> error "chop"
+       _ -> chop sofar start ts
      | s >= start + slice
-     = sofar : chop SparkStats.zero (start + slice) (t : ts)
+     = SparkStats.aggrMaybe sofar SparkStats.zero
+       : chop Nothing (start + slice) (t : ts)
      | e > start + slice
-     = (SparkStats.aggregate sofar created_in_this_slice) :
-       chop SparkStats.zero (start + slice) (t : ts)
+     = (SparkStats.aggrMaybe sofar created_in_this_slice) :
+       chop Nothing (start + slice) (t : ts)
      | otherwise
-     = chop (SparkStats.aggregate sofar created_in_this_slice) start ts
+     = chop (Just (SparkStats.aggrMaybe sofar created_in_this_slice)) start ts
      where
        (s, e) | SparkTree s e _ <- t  = (s, e)
 
@@ -217,7 +223,7 @@ sparkProfile slice start0 end0 t
        created_in_this_slice
          | SparkTree _ _ (SparkTreeLeaf delta)    <- t  =
            SparkStats.rescale scale delta
-         | SparkTree _ _ (SparkTreeEmpty)          <- t  =
+         | SparkTree _ _ (SparkTreeEmpty)         <- t  =
            SparkStats.zero
          | SparkTree _ _ (SparkSplit _ _ _ delta) <- t  =
            SparkStats.rescale scale delta

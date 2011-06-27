@@ -87,12 +87,13 @@ renderSparkConversion params !start0 !end0 t !maxSparkValue = do
 
 renderSparkPool :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                          -> Double -> Render ()
-renderSparkPool params !start0 !end0 t !maxSparkPool = do
-  -- TODO: min, max, percentiles, etc.
-  let f1 _ = 0
-      f2 c = SparkStats.sparksRemaining c
-      f3 c = f2 c
-  renderSpark params start0 end0 t f1 f2 f3 maxSparkPool
+renderSparkPool params@ViewParameters{..} !start0 !end0 t !maxSparkPool = do
+  -- TODO: percentiles
+  let slice = round (fromIntegral spark_detail * scaleValue)  -- TODO: hack
+      f1 c = SparkStats.minPool c
+      f2 c = SparkStats.meanPool c
+      f3 c = SparkStats.maxPool c
+  renderSpark params start0 end0 t f1 f2 f3 (maxSparkPool / fromIntegral slice)
 
 renderSpark :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                -> (SparkStats.SparkStats -> Double)
