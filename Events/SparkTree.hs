@@ -11,6 +11,7 @@ import qualified Events.SparkStats as SparkStats
 import qualified GHC.RTS.Events as GHC
 import GHC.RTS.Events (Timestamp)
 
+import Data.Maybe
 import Text.Printf
 -- import Debug.Trace
 
@@ -194,21 +195,21 @@ sparkProfile slice start0 end0 t
        Just c -> [c]
        _ -> []
    chop sofar start []
-     = SparkStats.aggrMaybe sofar SparkStats.zero  -- TODO: wrong for pool size
-       : chop Nothing (start+slice) []
+     = let c = SparkStats.extrMaybe sofar
+       in fromMaybe c sofar : chop (Just c) (start + slice) []
    chop sofar start (t : ts)
      | e <= start
      = case sofar of
        Just _ -> error "chop"
        _ -> chop sofar start ts
      | s >= start + slice
-     = SparkStats.aggrMaybe sofar SparkStats.zero
+     = fromMaybe SparkStats.zero sofar
        : chop Nothing (start + slice) (t : ts)
      | e > start + slice
      = (SparkStats.aggrMaybe sofar created_in_this_slice) :
        chop Nothing (start + slice) (t : ts)
      | otherwise
-     = chop (Just (SparkStats.aggrMaybe sofar created_in_this_slice)) start ts
+     = chop (Just (SparkStats.aggrMaybe sofar created_in_this_slice)) start ts -- TODO: wrong mean calculation
      where
        (s, e) | SparkTree s e _ <- t  = (s, e)
 
@@ -219,7 +220,7 @@ sparkProfile slice start0 end0 t
          | SparkTree _ _ (SparkTreeLeaf delta)    <- t  =
            SparkStats.rescale scale delta
          | SparkTree _ _ (SparkTreeEmpty)         <- t  =
-           SparkStats.zero
+           SparkStats.extrMaybe sofar
          | SparkTree _ _ (SparkSplit _ _ _ delta) <- t  =
            SparkStats.rescale scale delta
 

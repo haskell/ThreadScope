@@ -1,6 +1,6 @@
 module Events.SparkStats (
   SparkStats(..),
-  zero, aggregate, aggrMaybe, create, rescale,
+  zero, create, aggrMaybe, extrMaybe,rescale,
   ) where
 
 import Data.Word (Word64)
@@ -65,3 +65,12 @@ rescale :: Double -> SparkStats -> SparkStats
 rescale scale s =
   let f w _ = scale * w
   in map2 f (meanPool s) (maxPool s) (minPool s) s zero
+
+extrapolate :: SparkStats -> SparkStats
+extrapolate s =
+  let f w _ = 0 * w
+  in map2 f (meanPool s) (maxPool s) (minPool s) s zero
+
+extrMaybe :: Maybe SparkStats -> SparkStats
+extrMaybe Nothing  = zero
+extrMaybe (Just s) = extrapolate s
