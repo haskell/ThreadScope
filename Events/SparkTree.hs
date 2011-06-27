@@ -11,7 +11,6 @@ import qualified Events.SparkStats as SparkStats
 import qualified GHC.RTS.Events as GHC
 import GHC.RTS.Events (Timestamp)
 
-import Data.Maybe
 import Text.Printf
 -- import Debug.Trace
 
@@ -124,7 +123,7 @@ splitSparks es !endTime
     SparkSplit (startT $ head rhs)
                ltree
                rtree
-               (deltaC $ head es)
+               (SparkStats.aggregate (subDelta ltree ++ subDelta rtree))
     where
     startTime = startT $ head es
     splitTime = startTime + (endTime - startTime) `div` 2
@@ -133,6 +132,10 @@ splitSparks es !endTime
 
     ltree = splitSparks lhs lhs_end
     rtree = splitSparks rhs endTime
+
+    subDelta (SparkSplit _ _ _ delta) = [delta]
+    subDelta (SparkTreeLeaf delta)    = [delta]
+    subDelta SparkTreeEmpty           = []
 
 
 splitSparkList :: [SparkDuration]
@@ -165,7 +168,7 @@ sparkProfile slice start0 end0 t
    end   = end0 + slice
 
    flat = flatten start t []
-   chopped0 = chop Nothing start flat
+   chopped0 = chop SparkStats.zero [] start flat
 
    chopped | start0 < slice = SparkStats.zero : chopped0
            | otherwise      = chopped0
@@ -187,42 +190,42 @@ sparkProfile slice start0 end0 t
    flatten _start t@(SparkTree _s _e (SparkTreeLeaf _)) rest
      = t : rest
 
-   chop :: Maybe SparkStats.SparkStats -> Timestamp -> [SparkTree]
-           -> [SparkStats.SparkStats]
-   chop sofar start _ts
-     | start >= end
+   chop :: SparkStats.SparkStats -> [SparkStats.SparkStats]
+           -> Timestamp -> [SparkTree] -> [SparkStats.SparkStats]
+   chop _previous sofar start1 _ts
+     | start1 >= end
      = case sofar of
-       Just c -> [c]
-       _ -> []
-   chop sofar start []
-     = let c = SparkStats.extrMaybe sofar
-       in fromMaybe c sofar : chop (Just c) (start + slice) []
-   chop sofar start (t : ts)
-     | e <= start
+       _ : _ -> [SparkStats.aggregate sofar]
+       [] -> []
+   chop previous sofar start1 []  -- data too short for the viewport
+     = let (c, p) = SparkStats.agEx sofar previous
+       in c : chop p [] (start1 + slice) []
+   chop previous sofar start1 (t : ts)
+     | e <= start1  -- skipping data left of the slice
      = case sofar of
-       Just _ -> error "chop"
-       _ -> chop sofar start ts
-     | s >= start + slice
-     = fromMaybe SparkStats.zero sofar
-       : chop Nothing (start + slice) (t : ts)
-     | e > start + slice
-     = (SparkStats.aggrMaybe sofar created_in_this_slice) :
-       chop Nothing (start + slice) (t : ts)
+       _ : _ -> error "chop"
+       [] -> chop previous sofar start1 ts
+     | s >= start1 + slice  -- postponing data right of the slice
+     = let (c, p) = SparkStats.agEx sofar previous
+       in c : chop p [] (start1 + slice) (t : ts)
+     | e > start1 + slice
+     = let (c, p) = SparkStats.agEx (created_in_this_slice ++ sofar) previous
+       in c : chop p [] (start1 + slice) (t : ts)
      | otherwise
-     = chop (Just (SparkStats.aggrMaybe sofar created_in_this_slice)) start ts -- TODO: wrong mean calculation
+     = chop previous (created_in_this_slice ++ sofar) start1 ts
      where
        (s, e) | SparkTree s e _ <- t  = (s, e)
 
-       duration = min (start + slice) e - max start s
+       duration = min (start1 + slice) e - max start1 s
        scale = fromIntegral duration / fromIntegral (e - s)
 
        created_in_this_slice
          | SparkTree _ _ (SparkTreeLeaf delta)    <- t  =
-           SparkStats.rescale scale delta
+           [SparkStats.rescale scale delta]
          | SparkTree _ _ (SparkTreeEmpty)         <- t  =
-           SparkStats.extrMaybe sofar
+           []
          | SparkTree _ _ (SparkSplit _ _ _ delta) <- t  =
-           SparkStats.rescale scale delta
+           [SparkStats.rescale scale delta]
 
 
 sparkTreeMaxDepth :: SparkTree -> Int

@@ -1,6 +1,6 @@
 module Events.SparkStats (
   SparkStats(..),
-  zero, create, aggrMaybe, extrMaybe,rescale,
+  zero, create, aggregate, agEx, rescale,
   ) where
 
 import Data.Word (Word64)
@@ -31,46 +31,39 @@ create (crt1, dud1, ovf1, cnv1, fiz1, gcd1, rem1)
       pool1 = fromIntegral rem1
   in SparkStats crt dud ovf cnv fiz gcd pool1 pool1 pool1
 
-map2 :: (Double -> Double -> Double) -> Double -> Double -> Double
-        -> SparkStats -> SparkStats -> SparkStats
-map2 f meanP maxP minP
-  (SparkStats rateCreated1 rateDud1 rateOverflowed1
-              rateConverted1 rateFizzled1 rateGCd1
-              _ _ _)
-  (SparkStats rateCreated2 rateDud2 rateOverflowed2
-              rateConverted2 rateFizzled2 rateGCd2
-              _ _ _)
+foldStats :: (Double -> Double -> Double) -> Double -> Double -> Double
+        -> [SparkStats] -> SparkStats
+foldStats f meanP maxP minP l
   = SparkStats
-      (f rateCreated1 rateCreated2)
-      (f rateDud1 rateDud2)
-      (f rateOverflowed1 rateOverflowed2)
-      (f rateConverted1 rateConverted2)
-      (f rateFizzled1 rateFizzled2)
-      (f rateGCd1 rateGCd2)
+      (foldr f 0 (map rateCreated l))
+      (foldr f 0 (map rateDud l))
+      (foldr f 0 (map rateOverflowed l))
+      (foldr f 0 (map rateConverted l))
+      (foldr f 0 (map rateFizzled l))
+      (foldr f 0 (map rateGCd l))
       meanP maxP minP
 
-aggregate :: SparkStats -> SparkStats -> SparkStats
-aggregate s1 s2 =
-  let meanP = (meanPool s1 + meanPool s2) / 2  -- TODO: not accurate
-      maxP  = max (maxPool s1) (maxPool s2)
-      minP  = min (minPool s1) (minPool s2)
-  in map2 (+) meanP maxP minP s1 s2
-
-aggrMaybe :: Maybe SparkStats -> SparkStats -> SparkStats
-aggrMaybe Nothing s2 = s2
-aggrMaybe (Just s1) s2 = aggregate s1 s2
+aggregate :: [SparkStats] -> SparkStats
+aggregate [s] = s  -- optimization
+aggregate l =
+  let meanP = sum (map meanPool l) / fromIntegral (length l) -- TODO: inaccurate
+      maxP  = maximum (map maxPool l)
+      minP  = minimum (map minPool l)
+  in foldStats (+) meanP maxP minP l
 
 -- Scale has to be positive.
 rescale :: Double -> SparkStats -> SparkStats
 rescale scale s =
   let f w _ = scale * w
-  in map2 f (meanPool s) (maxPool s) (minPool s) s zero
+  in foldStats f (meanPool s) (maxPool s) (minPool s) [s]
 
+-- Rates of change extrapolate by dropping to 0, absolute pools size values
+-- by staying constant.
 extrapolate :: SparkStats -> SparkStats
 extrapolate s =
   let f w _ = 0 * w
-  in map2 f (meanPool s) (maxPool s) (minPool s) s zero
+  in foldStats f (meanPool s) (maxPool s) (minPool s) [s]
 
-extrMaybe :: Maybe SparkStats -> SparkStats
-extrMaybe Nothing  = zero
-extrMaybe (Just s) = extrapolate s
+agEx :: [SparkStats] -> SparkStats -> (SparkStats, SparkStats)
+agEx [] s = (extrapolate s, s)
+agEx l@(s:_) _ = (aggregate l, s)

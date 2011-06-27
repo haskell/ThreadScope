@@ -124,6 +124,7 @@ renderSpark ViewParameters{..} start0 end0 t f1 f2 f3 maxSparkValue = do
 spark_detail :: Int
 spark_detail = 4 -- in pixels
 
+colourOuterPercentiles, colourFizzledDuds :: (Double, Double, Double)
 colourOuterPercentiles = (0.8, 0.8, 0.8)
 colourFizzledDuds      = (0.5, 0.5, 0.5)
 
