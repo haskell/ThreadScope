@@ -62,13 +62,8 @@ eventsToSparkDurations es =
         case GHC.spec event of
           GHC.SparkCounters crt dud ovf cnv fiz gcd rem ->
             let endTime = GHC.time event
-                i = fromIntegral
-                endCounters =
-                  SparkStats.SparkStats
-                    (i crt) (i dud) (i ovf)
-                    (i cnv) (i fiz) (i gcd)
-                    (i rem) (i rem) (i rem)
-                delta = SparkStats.create endCounters startCounters
+                endCounters = (crt, dud, ovf, cnv, fiz, gcd, rem)
+                delta = SparkStats.create startCounters endCounters
                 duration = endTime - startTime
                 newMaxSparkValue = maxSparkRenderedValue delta duration
                 newMaxSparkPool = SparkStats.maxPool delta
@@ -80,7 +75,7 @@ eventsToSparkDurations es =
                  max oldMaxSparkPool newMaxSparkPool),
                 sd : l)
           _otherEvent -> aux startTime startCounters events
-  in aux 0 SparkStats.zero es
+  in aux 0 (0,0,0,0,0,0,0) es
 
 -- This is the maximal raw value, to be displayed at total zoom in.
 -- It's smoothed out (so lower values) at lower zoom levels.
@@ -199,7 +194,7 @@ sparkProfile slice start0 end0 t
        Just c -> [c]
        _ -> []
    chop sofar start []
-     = SparkStats.aggrMaybe sofar SparkStats.zero
+     = SparkStats.aggrMaybe sofar SparkStats.zero  -- TODO: wrong for pool size
        : chop Nothing (start+slice) []
    chop sofar start (t : ts)
      | e <= start
