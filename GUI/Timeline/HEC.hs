@@ -98,12 +98,12 @@ renderSparkPool ViewParameters{..} !start0 !end0 t !maxSparkPool = do
       f1 c = SparkStats.minPool c
       f2 c = SparkStats.meanPool c
       f3 c = SparkStats.maxPool c
-  -- TODO: sample points are probably shifted, wrongly averaged, etc.
   addSparks colourOuterPercentiles maxSparkPool f1 f2 start slice prof
   addSparks colourOuterPercentiles maxSparkPool f2 f3 start slice prof
   -- TODO: make f2 median, not mean; add other percentiles
   outlineSparks maxSparkPool f2 start slice prof
   outlineSparks maxSparkPool (const 0) start slice prof
+  addScale maxSparkPool start end
 
 renderSpark :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                -> (SparkStats.SparkStats -> Double) -> (Double, Double, Double)
@@ -122,6 +122,7 @@ renderSpark ViewParameters{..} start0 end0 t f1 c1 f2 c2 f3 c3 maxSparkValue= do
   addSparks c1 maxSliceSpark (const 0) f1 start slice prof
   addSparks c2 maxSliceSpark f1 f2 start slice prof
   addSparks c3 maxSliceSpark f2 f3 start slice prof
+  addScale maxSliceSpark start end
 
 spark_detail :: Int
 spark_detail = 4 -- in pixels
@@ -134,6 +135,14 @@ off :: Double -> (SparkStats.SparkStats -> Double)
        -> SparkStats.SparkStats
        -> Double
 off maxSliceSpark f t = fromIntegral hecSparksHeight * (1 - f t / maxSliceSpark)
+
+dashedLine1 = do
+  save
+  identityMatrix
+  setDash [10,10] 0.0
+  setLineWidth 1
+  stroke
+  restore
 
 outlineSparks :: Double
                  -> (SparkStats.SparkStats -> Double)
@@ -182,6 +191,29 @@ addSparks (cR, cG, cB) maxSliceSpark f0 f1 start slice ts = do
       mapM_ (uncurry lineTo) (reverse t0)
       setSourceRGB cR cG cB
       fill
+
+addScale :: Double -> Timestamp -> Timestamp -> Render ()
+addScale maxSliceSpark start end = do
+  let dstart = fromIntegral start
+      dend = fromIntegral end
+      dheight = fromIntegral hecSparksHeight
+  newPath
+  moveTo dstart 0
+  lineTo dstart dheight
+  setSourceRGBAhex black 1.0
+  save
+  identityMatrix
+  setLineWidth 1
+  stroke
+  restore
+  save
+  forM_ [0 .. 1] $ \h -> do
+    let y = fromIntegral (floor (fromIntegral h * dheight / 2)) - 0.5
+    setSourceRGBAhex black 0.3
+    moveTo dstart y
+    lineTo dend y
+    dashedLine1
+  restore
 
 -------------------------------------------------------------------------------
 
