@@ -104,7 +104,6 @@ splitSparks :: [SparkDuration]  -- events
             -> Timestamp        -- end time of last event in the list
             -> SparkNode
 splitSparks [] !_endTime =
-  -- if len /= 0 then error "splitSparks0" else
   SparkTreeEmpty
 
 splitSparks [e] !_endTime =

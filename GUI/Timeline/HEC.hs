@@ -81,8 +81,8 @@ renderSparkConversion :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                          -> Double -> Render ()
 renderSparkConversion params !start0 !end0 t !maxSparkValue = do
   let f1 c =        SparkStats.rateFizzled c
-      f2 c = f1 c + SparkStats.rateConverted c
-      f3 c = f2 c + SparkStats.rateGCd c
+      f2 c = f1 c + SparkStats.rateGCd c
+      f3 c = f2 c + SparkStats.rateConverted c
   renderSpark params start0 end0 t f1 f2 f3 maxSparkValue
 
 renderSparkPool :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
