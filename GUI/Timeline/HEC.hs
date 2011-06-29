@@ -120,11 +120,13 @@ renderSpark params@ViewParameters{..} start0 end0 t f1 c1 f2 c2 f3 c3 maxSparkVa
       prof  = sparkProfile slice start end t
       -- Maximum number of sparks per slice for current data.
       maxSliceSpark = fromIntegral slice * maxSparkValue
+      -- Maximum spark transition rate in spark/ms.
+      maxSlice = maxSparkValue * 1000000
   outlineSparks maxSliceSpark f3 start slice prof
   addSparks c1 maxSliceSpark (const 0) f1 start slice prof
   addSparks c2 maxSliceSpark f1 f2 start slice prof
   addSparks c3 maxSliceSpark f2 f3 start slice prof
-  addScale params maxSliceSpark start end
+  addScale params maxSlice start end
 
 spark_detail :: Int
 spark_detail = 4 -- in pixels
@@ -200,15 +202,15 @@ addSparks colour maxSliceSpark f0 f1 start slice ts = do
 -- The x-position on the drawing canvas is in milliseconds (ms) (1e-3).
 -- scaleValue is used to divide a timestamp value to yield a pixel value.
 addScale :: ViewParameters -> Double -> Timestamp -> Timestamp -> Render ()
-addScale ViewParameters{..} maxSliceSpark start end = do
+addScale ViewParameters{..} maxSpark start end = do
   let dstart = fromIntegral start
       dend = fromIntegral end
       dheight = fromIntegral hecSparksHeight
       -- TODO: this is slightly incorrect, but probably at most 1 pixel off
-      maxSpark = if maxSliceSpark < 100
-                 then maxSliceSpark  -- to small, accuracy would suffer
-                 else fromIntegral (2 * (ceiling maxSliceSpark ` div` 2))
-      -- TODO: divide maxSliceSpark instead, for nicer round numbers display
+      maxS = if maxSpark < 100
+             then maxSpark  -- to small, accuracy would suffer
+             else fromIntegral (2 * (ceiling maxSpark ` div` 2))
+      -- TODO: divide maxSpark instead, for nicer round numbers display
       incr = hecSparksHeight `div` 10
       majorTick = 10 * incr
   newPath
@@ -236,12 +238,12 @@ addScale ViewParameters{..} maxSliceSpark start end = do
   save
   scale scaleValue 1.0
   setLineWidth 0.5
-  drawTicks maxSpark start scaleValue 0 incr majorTick hecSparksHeight
+  drawTicks maxS start scaleValue 0 incr majorTick hecSparksHeight
   restore
 
 -- TODO: make it more robust when parameters change, e.g., if incr is too small
 drawTicks :: Double -> Timestamp -> Double -> Int -> Int -> Int -> Int -> Render ()
-drawTicks maxSpark offset scaleValue pos incr majorTick endPos
+drawTicks maxS offset scaleValue pos incr majorTick endPos
   = if pos <= endPos then do
       draw_line (x0, hecSparksHeight - y0) (x1, hecSparksHeight - y1)
       when (pos > 0
@@ -256,13 +258,13 @@ drawTicks maxSpark offset scaleValue pos incr majorTick endPos
               textPath tickText
               C.fill
             setMatrix m
-      drawTicks maxSpark offset scaleValue (pos+incr) incr majorTick endPos
+      drawTicks maxS offset scaleValue (pos+incr) incr majorTick endPos
     else
       return ()
     where
     tickWidthInPixels :: Int
     tickWidthInPixels = truncate ((fromIntegral incr) / scaleValue)
-    tickText = showTickText (maxSpark * fromIntegral pos
+    tickText = showTickText (maxS * fromIntegral pos
                              / fromIntegral hecSparksHeight)
     atMidTick = pos `mod` (majorTick `div` 2) == 0
     atMajorTick = pos `mod` majorTick == 0
