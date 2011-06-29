@@ -85,7 +85,7 @@ renderSparkConversion params !start0 !end0 t !maxSparkValue = do
       f2 c = f1 c + SparkStats.rateGCd c
       f3 c = f2 c + SparkStats.rateConverted c
   renderSpark params start0 end0 t
-    f1 colourFizzledDuds f2 (0.5, 0.5, 0.5) f3 (0, 1, 0) maxSparkValue
+    f1 colourFizzledDuds f2 (1, 0.5, 0) {-gcColour-} f3 (0, 1, 0) maxSparkValue
 
 renderSparkPool :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                          -> Double -> Render ()
@@ -129,7 +129,7 @@ spark_detail = 4 -- in pixels
 
 colourOuterPercentiles, colourFizzledDuds :: (Double, Double, Double)
 colourOuterPercentiles = (0.8, 0.8, 0.8)
-colourFizzledDuds      = (1, 1, 0)
+colourFizzledDuds      = (0.5, 0.5, 0.5)
 
 off :: Double -> (SparkStats.SparkStats -> Double)
        -> SparkStats.SparkStats
@@ -206,10 +206,11 @@ addScale ViewParameters{..} maxSliceSpark start end = do
   let dstart = fromIntegral start
       dend = fromIntegral end
       dheight = fromIntegral hecSparksHeight
-      -- TODO: divide maxSliceSpark, for better number display
+      -- TODO: this is slightly incorrect, but probably at most 1 pixel off
       maxSpark = if maxSliceSpark < 100
                  then maxSliceSpark  -- to small, accuracy would suffer
                  else fromIntegral (2 * (ceiling maxSliceSpark ` div` 2))
+      -- TODO: divide maxSliceSpark instead, for nicer round numbers display
       incr = hecSparksHeight `div` 10
       majorTick = 10 * incr
   newPath
