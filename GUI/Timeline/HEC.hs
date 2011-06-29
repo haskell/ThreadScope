@@ -207,6 +207,9 @@ addScale ViewParameters{..} maxSliceSpark start end = do
       dend = fromIntegral end
       dheight = fromIntegral hecSparksHeight
       -- TODO: divide maxSliceSpark, for better number display
+      maxSpark = if maxSliceSpark < 100
+                 then maxSliceSpark  -- to small, accuracy would suffer
+                 else fromIntegral (2 * (ceiling maxSliceSpark ` div` 2))
       incr = hecSparksHeight `div` 10
       majorTick = 10 * incr
   newPath
@@ -234,12 +237,12 @@ addScale ViewParameters{..} maxSliceSpark start end = do
   save
   scale scaleValue 1.0
   setLineWidth 0.5
-  drawTicks maxSliceSpark start scaleValue 0 incr majorTick hecSparksHeight
+  drawTicks maxSpark start scaleValue 0 incr majorTick hecSparksHeight
   restore
 
 -- TODO: make it more robust when parameters change, e.g., if incr is too small
 drawTicks :: Double -> Timestamp -> Double -> Int -> Int -> Int -> Int -> Render ()
-drawTicks maxSliceSpark offset scaleValue pos incr majorTick endPos
+drawTicks maxSpark offset scaleValue pos incr majorTick endPos
   = if pos <= endPos then do
       draw_line (x0, hecSparksHeight - y0) (x1, hecSparksHeight - y1)
       when (pos > 0
@@ -254,13 +257,13 @@ drawTicks maxSliceSpark offset scaleValue pos incr majorTick endPos
               textPath tickText
               C.fill
             setMatrix m
-      drawTicks maxSliceSpark offset scaleValue (pos+incr) incr majorTick endPos
+      drawTicks maxSpark offset scaleValue (pos+incr) incr majorTick endPos
     else
       return ()
     where
     tickWidthInPixels :: Int
     tickWidthInPixels = truncate ((fromIntegral incr) / scaleValue)
-    tickText = showTickText (maxSliceSpark * fromIntegral pos
+    tickText = showTickText (maxSpark * fromIntegral pos
                              / fromIntegral hecSparksHeight)
     atMidTick = pos `mod` (majorTick `div` 2) == 0
     atMajorTick = pos `mod` majorTick == 0
@@ -274,7 +277,16 @@ drawTicks maxSliceSpark offset scaleValue pos incr majorTick endPos
 
 showTickText :: Double -> String
 showTickText pos
-  = printf "%.2f" pos
+  = deZero (printf "%.2f" pos)
+
+deZero :: String -> String
+deZero str
+  = if length str >= 4 && take 3 revstr == "00." then
+      reverse (drop 3 revstr)
+    else
+      str
+    where
+    revstr = reverse str
 
 -------------------------------------------------------------------------------
 
