@@ -105,7 +105,7 @@ renderSparkPool params@ViewParameters{..} !start0 !end0 t !maxSparkPool = do
   -- TODO: make f2 median, not mean; add other percentiles
   outlineSparks maxSparkPool f2 start slice prof
   outlineSparks maxSparkPool (const 0) start slice prof
-  addScale params maxSparkPool start end
+  when (start0 == 0) $ addScale params maxSparkPool start end
 
 renderSpark :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                -> (SparkStats.SparkStats -> Double) -> Color
@@ -126,7 +126,7 @@ renderSpark params@ViewParameters{..} start0 end0 t f1 c1 f2 c2 f3 c3 maxSparkVa
   addSparks c1 maxSliceSpark (const 0) f1 start slice prof
   addSparks c2 maxSliceSpark f1 f2 start slice prof
   addSparks c3 maxSliceSpark f2 f3 start slice prof
-  addScale params maxSlice start end
+  when (start0 == 0) $ addScale params maxSlice start end
 
 spark_detail :: Int
 spark_detail = 4 -- in pixels
