@@ -212,7 +212,7 @@ addScale ViewParameters{..} maxSliceSpark start end = do
   newPath
   moveTo dstart 0
   lineTo dstart dheight
-  setSourceRGBAhex black 1.0
+  setSourceRGBAhex blue 1.0
   save
   identityMatrix
   setLineWidth 1
@@ -230,7 +230,7 @@ addScale ViewParameters{..} maxSliceSpark start end = do
 
   selectFontFace "sans serif" FontSlantNormal FontWeightNormal
   setFontSize 12
-  setSourceRGBAhex black 1.0
+  setSourceRGBAhex blue 1.0
   save
   scale scaleValue 1.0
   setLineWidth 0.5
