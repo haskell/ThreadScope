@@ -24,7 +24,7 @@ import GHC.RTS.Events hiding (Event, GCWork, GCIdle)
 
 import Control.Monad
 
--- import Text.Printf
+import Text.Printf
 
 renderHEC :: Int -> ViewParameters
           -> Timestamp -> Timestamp -> (DurationTree, EventTree, SparkTree)
@@ -194,14 +194,21 @@ addSparks (cR, cG, cB) maxSliceSpark f0 f1 start slice ts = do
       fill
 
 
+-- There are ten minor ticks to a major tick and a semi-major tick
+-- occurs half way through a major tick (overlapping the corresponding
+-- minor tick).
+-- The timestamp values are in nanos-seconds (1e-9) i.e.
+-- a timestamp value of 1000000000 represents 1s.
+-- The x-position on the drawing canvas is in milliseconds (ms) (1e-3).
+-- scaleValue is used to divide a timestamp value to yield a pixel value.
 addScale :: ViewParameters -> Double -> Timestamp -> Timestamp -> Render ()
 addScale ViewParameters{..} maxSliceSpark start end = do
   let dstart = fromIntegral start
       dend = fromIntegral end
       dheight = fromIntegral hecSparksHeight
       -- TODO: divide maxSliceSpark, for better number display
-      tickDuration = hecSparksHeight `div` 10
-      majorTick = 10 * tickDuration
+      incr = hecSparksHeight `div` 10
+      majorTick = 10 * incr
   newPath
   moveTo dstart 0
   lineTo dstart dheight
@@ -221,32 +228,52 @@ addScale ViewParameters{..} maxSliceSpark start end = do
     dashedLine1
   restore
 
+  selectFontFace "sans serif" FontSlantNormal FontWeightNormal
+  setFontSize 12
   setSourceRGBAhex black 1.0
   save
   scale scaleValue 1.0
   setLineWidth 0.5
-  drawTicks start 0 tickDuration majorTick hecSparksHeight
+  drawTicks maxSliceSpark start scaleValue 0 incr majorTick hecSparksHeight
   restore
 
 -- TODO: make it more robust when parameters change, e.g., if incr is too small
-drawTicks :: Timestamp -> Int -> Int -> Int -> Int -> Render ()
-drawTicks offset pos incr majorTick endPos
+drawTicks :: Double -> Timestamp -> Double -> Int -> Int -> Int -> Int -> Render ()
+drawTicks maxSliceSpark offset scaleValue pos incr majorTick endPos
   = if pos <= endPos then do
       draw_line (x0, hecSparksHeight - y0) (x1, hecSparksHeight - y1)
-      drawTicks offset (pos+incr) incr majorTick endPos
+      when (atMajorTick || atMidTick || tickWidthInPixels > 30) $ do
+            move_to (offset + 15,
+                     fromIntegral hecSparksHeight - pos + 4)
+            m <- getMatrix
+            identityMatrix
+            tExtent <- textExtents tickText
+            (fourPixels, _) <- deviceToUserDistance 4 0
+            when (textExtentsWidth tExtent + fourPixels < fromIntegral tickWidthInPixels || atMidTick || atMajorTick) $ do
+              textPath tickText
+              C.fill
+            setMatrix m
+      drawTicks maxSliceSpark offset scaleValue (pos+incr) incr majorTick endPos
     else
       return ()
     where
---    tickTimeText = showTickTime pos
+    tickWidthInPixels :: Int
+    tickWidthInPixels = truncate ((fromIntegral incr) / scaleValue)
+    tickText = showTickText (maxSliceSpark * fromIntegral pos
+                             / fromIntegral hecSparksHeight)
     atMidTick = pos `mod` (majorTick `div` 2) == 0
     atMajorTick = pos `mod` majorTick == 0
     (x0, y0, x1, y1) = if atMajorTick then
-                         (offset, pos, offset+16, pos)
+                         (offset, pos, offset+13, pos)
                        else
                          if atMidTick then
-                           (offset, pos, offset+12, pos)
+                           (offset, pos, offset+10, pos)
                          else
-                           (offset, pos, offset+8, pos)
+                           (offset, pos, offset+6, pos)
+
+showTickText :: Double -> String
+showTickText pos
+  = printf "%.2f" pos
 
 -------------------------------------------------------------------------------
 
