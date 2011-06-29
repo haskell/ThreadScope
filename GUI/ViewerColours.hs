@@ -57,6 +57,14 @@ labelTextColour = black
 bookmarkColour :: Color
 bookmarkColour = Color 0xff00 0x0000 0xff00 -- pinkish
 
+fizzledDudsColour, createdConvertedColour, overflowedColour :: Color
+fizzledDudsColour      = grey
+createdConvertedColour = green
+overflowedColour       = red
+
+outerPercentilesColour :: Color
+outerPercentilesColour = lightGrey
+
 -------------------------------------------------------------------------------
 
 black :: Color
@@ -64,6 +72,12 @@ black = Color 0 0 0
 
 grey :: Color
 grey = Color 0x8000 0x8000 0x8000
+
+lightGrey :: Color
+lightGrey = Color 0xD000 0xD000 0xD000
+
+red :: Color
+red = Color 0xFFFF 0 0
 
 green :: Color
 green = Color 0 0xFFFF 0

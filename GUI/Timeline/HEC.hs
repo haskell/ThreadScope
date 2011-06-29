@@ -76,7 +76,8 @@ renderSparkCreation params !start0 !end0 t !maxSparkValue = do
       f2 c = f1 c + SparkStats.rateCreated c
       f3 c = f2 c + SparkStats.rateOverflowed c
   renderSpark params start0 end0 t
-    f1 colourFizzledDuds f2 (0, 1, 0) f3 (1, 0, 0) maxSparkValue
+    f1 fizzledDudsColour f2 createdConvertedColour f3 overflowedColour
+    maxSparkValue
 
 renderSparkConversion :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                          -> Double -> Render ()
@@ -85,7 +86,8 @@ renderSparkConversion params !start0 !end0 t !maxSparkValue = do
       f2 c = f1 c + SparkStats.rateGCd c
       f3 c = f2 c + SparkStats.rateConverted c
   renderSpark params start0 end0 t
-    f1 colourFizzledDuds f2 (1, 0.5, 0) {-gcColour-} f3 (0, 1, 0) maxSparkValue
+    f1 fizzledDudsColour f2 gcColour f3 createdConvertedColour
+    maxSparkValue
 
 renderSparkPool :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                          -> Double -> Render ()
@@ -98,17 +100,17 @@ renderSparkPool params@ViewParameters{..} !start0 !end0 t !maxSparkPool = do
       f1 c = SparkStats.minPool c
       f2 c = SparkStats.meanPool c
       f3 c = SparkStats.maxPool c
-  addSparks colourOuterPercentiles maxSparkPool f1 f2 start slice prof
-  addSparks colourOuterPercentiles maxSparkPool f2 f3 start slice prof
+  addSparks outerPercentilesColour maxSparkPool f1 f2 start slice prof
+  addSparks outerPercentilesColour maxSparkPool f2 f3 start slice prof
   -- TODO: make f2 median, not mean; add other percentiles
   outlineSparks maxSparkPool f2 start slice prof
   outlineSparks maxSparkPool (const 0) start slice prof
   addScale params maxSparkPool start end
 
 renderSpark :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
-               -> (SparkStats.SparkStats -> Double) -> (Double, Double, Double)
-               -> (SparkStats.SparkStats -> Double) -> (Double, Double, Double)
-               -> (SparkStats.SparkStats -> Double) -> (Double, Double, Double)
+               -> (SparkStats.SparkStats -> Double) -> Color
+               -> (SparkStats.SparkStats -> Double) -> Color
+               -> (SparkStats.SparkStats -> Double) -> Color
                -> Double -> Render ()
 renderSpark params@ViewParameters{..} start0 end0 t f1 c1 f2 c2 f3 c3 maxSparkValue = do
   let slice = round (fromIntegral spark_detail * scaleValue)
@@ -126,10 +128,6 @@ renderSpark params@ViewParameters{..} start0 end0 t f1 c1 f2 c2 f3 c3 maxSparkVa
 
 spark_detail :: Int
 spark_detail = 4 -- in pixels
-
-colourOuterPercentiles, colourFizzledDuds :: (Double, Double, Double)
-colourOuterPercentiles = (0.8, 0.8, 0.8)
-colourFizzledDuds      = (0.5, 0.5, 0.5)
 
 off :: Double -> (SparkStats.SparkStats -> Double)
        -> SparkStats.SparkStats
@@ -168,14 +166,14 @@ outlineSparks maxSliceSpark f start slice ts = do
       stroke
       restore
 
-addSparks :: (Double, Double, Double)
+addSparks :: Color
              -> Double
              -> (SparkStats.SparkStats -> Double)
              -> (SparkStats.SparkStats -> Double)
              -> Timestamp -> Timestamp
              -> [SparkStats.SparkStats]
              -> Render ()
-addSparks (cR, cG, cB) maxSliceSpark f0 f1 start slice ts = do
+addSparks colour maxSliceSpark f0 f1 start slice ts = do
   case ts of
     [] -> return ()
     ts -> do
@@ -190,7 +188,7 @@ addSparks (cR, cG, cB) maxSliceSpark f0 f1 start slice ts = do
       moveTo (dstart-dslice/2) (snd $ head t1)
       mapM_ (uncurry lineTo) t1
       mapM_ (uncurry lineTo) (reverse t0)
-      setSourceRGB cR cG cB
+      setSourceRGBAhex colour 1.0
       fill
 
 
