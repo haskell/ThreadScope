@@ -242,7 +242,8 @@ drawTicks :: Double -> Timestamp -> Double -> Int -> Int -> Int -> Int -> Render
 drawTicks maxSliceSpark offset scaleValue pos incr majorTick endPos
   = if pos <= endPos then do
       draw_line (x0, hecSparksHeight - y0) (x1, hecSparksHeight - y1)
-      when (atMajorTick || atMidTick || tickWidthInPixels > 30) $ do
+      when (pos > 0
+            && (atMajorTick || atMidTick || tickWidthInPixels > 30)) $ do
             move_to (offset + 15,
                      fromIntegral hecSparksHeight - pos + 4)
             m <- getMatrix
