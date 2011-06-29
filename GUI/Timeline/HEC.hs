@@ -89,7 +89,7 @@ renderSparkConversion params !start0 !end0 t !maxSparkValue = do
 
 renderSparkPool :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                          -> Double -> Render ()
-renderSparkPool ViewParameters{..} !start0 !end0 t !maxSparkPool = do
+renderSparkPool params@ViewParameters{..} !start0 !end0 t !maxSparkPool = do
   let slice = round (fromIntegral spark_detail * scaleValue)
       -- round the start time down, and the end time up, to a slice boundary
       start = (start0 `div` slice) * slice
@@ -103,14 +103,14 @@ renderSparkPool ViewParameters{..} !start0 !end0 t !maxSparkPool = do
   -- TODO: make f2 median, not mean; add other percentiles
   outlineSparks maxSparkPool f2 start slice prof
   outlineSparks maxSparkPool (const 0) start slice prof
-  addScale maxSparkPool start end
+  addScale params maxSparkPool start end
 
 renderSpark :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                -> (SparkStats.SparkStats -> Double) -> (Double, Double, Double)
                -> (SparkStats.SparkStats -> Double) -> (Double, Double, Double)
                -> (SparkStats.SparkStats -> Double) -> (Double, Double, Double)
                -> Double -> Render ()
-renderSpark ViewParameters{..} start0 end0 t f1 c1 f2 c2 f3 c3 maxSparkValue= do
+renderSpark params@ViewParameters{..} start0 end0 t f1 c1 f2 c2 f3 c3 maxSparkValue = do
   let slice = round (fromIntegral spark_detail * scaleValue)
       -- round the start time down, and the end time up, to a slice boundary
       start = (start0 `div` slice) * slice
@@ -122,7 +122,7 @@ renderSpark ViewParameters{..} start0 end0 t f1 c1 f2 c2 f3 c3 maxSparkValue= do
   addSparks c1 maxSliceSpark (const 0) f1 start slice prof
   addSparks c2 maxSliceSpark f1 f2 start slice prof
   addSparks c3 maxSliceSpark f2 f3 start slice prof
-  addScale maxSliceSpark start end
+  addScale params maxSliceSpark start end
 
 spark_detail :: Int
 spark_detail = 4 -- in pixels
@@ -136,6 +136,7 @@ off :: Double -> (SparkStats.SparkStats -> Double)
        -> Double
 off maxSliceSpark f t = fromIntegral hecSparksHeight * (1 - f t / maxSliceSpark)
 
+dashedLine1 :: Render ()
 dashedLine1 = do
   save
   identityMatrix
@@ -192,11 +193,15 @@ addSparks (cR, cG, cB) maxSliceSpark f0 f1 start slice ts = do
       setSourceRGB cR cG cB
       fill
 
-addScale :: Double -> Timestamp -> Timestamp -> Render ()
-addScale maxSliceSpark start end = do
+
+addScale :: ViewParameters -> Double -> Timestamp -> Timestamp -> Render ()
+addScale ViewParameters{..} maxSliceSpark start end = do
   let dstart = fromIntegral start
       dend = fromIntegral end
       dheight = fromIntegral hecSparksHeight
+      -- TODO: divide maxSliceSpark, for better number display
+      tickDuration = hecSparksHeight `div` 10
+      majorTick = 10 * tickDuration
   newPath
   moveTo dstart 0
   lineTo dstart dheight
@@ -206,14 +211,42 @@ addScale maxSliceSpark start end = do
   setLineWidth 1
   stroke
   restore
+
+  setSourceRGBAhex black 0.3
   save
   forM_ [0 .. 1] $ \h -> do
-    let y = fromIntegral (floor (fromIntegral h * dheight / 2)) - 0.5
-    setSourceRGBAhex black 0.3
+    let y = fromIntegral (floor (fromIntegral h * fromIntegral majorTick / 2)) - 0.5
     moveTo dstart y
     lineTo dend y
     dashedLine1
   restore
+
+  setSourceRGBAhex black 1.0
+  save
+  scale scaleValue 1.0
+  setLineWidth 0.5
+  drawTicks start 0 tickDuration majorTick hecSparksHeight
+  restore
+
+-- TODO: make it more robust when parameters change, e.g., if incr is too small
+drawTicks :: Timestamp -> Int -> Int -> Int -> Int -> Render ()
+drawTicks offset pos incr majorTick endPos
+  = if pos <= endPos then do
+      draw_line (x0, hecSparksHeight - y0) (x1, hecSparksHeight - y1)
+      drawTicks offset (pos+incr) incr majorTick endPos
+    else
+      return ()
+    where
+--    tickTimeText = showTickTime pos
+    atMidTick = pos `mod` (majorTick `div` 2) == 0
+    atMajorTick = pos `mod` majorTick == 0
+    (x0, y0, x1, y1) = if atMajorTick then
+                         (offset, pos, offset+16, pos)
+                       else
+                         if atMidTick then
+                           (offset, pos, offset+12, pos)
+                         else
+                           (offset, pos, offset+8, pos)
 
 -------------------------------------------------------------------------------
 
