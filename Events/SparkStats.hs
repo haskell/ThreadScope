@@ -2,7 +2,7 @@ module Events.SparkStats (
   SparkStats(rateCreated, rateDud, rateOverflowed,
              rateConverted, rateFizzled, rateGCd,
              meanPool, maxPool, minPool),
-  initial, create, aggregate, agEx, rescale,
+  initial, create, rescale, aggregate, agEx,
   ) where
 
 import Data.Word (Word64)
@@ -18,6 +18,10 @@ data SparkStats =
 initial :: SparkStats
 initial = SparkStats 0 0 0 0 0 0 0 0 0
 
+-- | Create spark stats for a duration (time interval), given absolute
+-- numbers of sparks in all categories at the start and end of the duration.
+-- The units for spark transitions (first 6 counters) is spark/duration;
+-- the fact that intervals may have different lenghts is ignored here.
 -- The values in the second counter have to be greater or equal
 -- to the values in the first counter, except for the spark pool size.
 create :: (Word64, Word64, Word64, Word64, Word64, Word64, Word64) ->
@@ -35,8 +39,10 @@ create (crt1, dud1, ovf1, cnv1, fiz1, gcd1, rem1)
       pool1 = fromIntegral rem1
   in SparkStats crt dud ovf cnv fiz gcd pool1 pool1 pool1
 
-foldStats :: (Double -> Double -> Double) -> Double -> Double -> Double
-        -> [SparkStats] -> SparkStats
+-- | Reduce a list of spark stats; spark pool stats are overwritten.
+foldStats :: (Double -> Double -> Double)
+             -> Double -> Double -> Double
+             -> [SparkStats] -> SparkStats
 foldStats f meanP maxP minP l
   = SparkStats
       (foldr f 0 (map rateCreated l))
@@ -47,6 +53,15 @@ foldStats f meanP maxP minP l
       (foldr f 0 (map rateGCd l))
       meanP maxP minP
 
+-- | Rescale the spark transition stats, e.g., to change their units.
+rescale :: Double -> SparkStats -> SparkStats
+rescale scale s =
+  let f w _ = scale * w
+  in foldStats f (meanPool s) (maxPool s) (minPool s) [s]
+
+-- | Derive spark stats for an interval from a list of spark stats,
+-- in reverse chronological order, of consecutive subintervals
+-- that sum up to the original one.
 aggregate :: [SparkStats] -> SparkStats
 aggregate [s] = s  -- optimization
 aggregate l =
@@ -55,19 +70,19 @@ aggregate l =
       minP  = minimum (map minPool l)
   in foldStats (+) meanP maxP minP l
 
--- Scale has to be positive.
-rescale :: Double -> SparkStats -> SparkStats
-rescale scale s =
-  let f w _ = scale * w
-  in foldStats f (meanPool s) (maxPool s) (minPool s) [s]
-
--- Rates of change extrapolate by dropping to 0, absolute pools size values
--- by staying constant.
+-- | Extrapolate spark stats from previous data.
+-- Absolute pools size values extrapolate by staying constant,
+-- rates of change of spark status extrapolate by dropping to 0
+-- (which corresponds to absolute numbers of sparks staying constant).
 extrapolate :: SparkStats -> SparkStats
 extrapolate s =
   let f w _ = 0 * w
   in foldStats f (meanPool s) (maxPool s) (minPool s) [s]
 
+-- | Aggregate, if any data provided, extrapolate from previous data, otherwise.
+-- In both cases, the second component is the new choice of "previous data".
+-- | The list of stats is expected in reverse chronological order,
+-- as for aggregate.
 agEx :: [SparkStats] -> SparkStats -> (SparkStats, SparkStats)
 agEx [] s = (extrapolate s, s)
 agEx l@(s:_) _ = (aggregate l, s)

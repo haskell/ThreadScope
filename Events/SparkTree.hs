@@ -126,7 +126,7 @@ splitSparks es !endTime
     SparkSplit (startT $ head rhs)
                ltree
                rtree
-               (SparkStats.aggregate (subDelta ltree ++ subDelta rtree))
+               (SparkStats.aggregate (subDelta rtree ++ subDelta ltree))
     where
     startTime = startT $ head es
     splitTime = startTime + (endTime - startTime) `div` 2
@@ -223,9 +223,12 @@ sparkProfile slice start0 end0 t
      where
        (s, e) | SparkTree s e _ <- t  = (s, e)
 
-       duration = min (start1 + slice) e - max start1 s
-       scale = fromIntegral duration / fromIntegral (e - s)
+       -- | The common part of the slice and the duration.
+       common = min (start1 + slice) e - max start1 s
+       scale = fromIntegral common / fromIntegral (e - s)
 
+       -- | Spark transitions in the tree are in units spark/duration.
+       -- Here the numbers are rescaled so that the units are spark/ms.
        created_in_this_slice
          | SparkTree _ _ (SparkTreeLeaf delta)    <- t  =
            [SparkStats.rescale scale delta]
