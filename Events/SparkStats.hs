@@ -2,7 +2,7 @@ module Events.SparkStats (
   SparkStats(rateCreated, rateDud, rateOverflowed,
              rateConverted, rateFizzled, rateGCd,
              meanPool, maxPool, minPool),
-  zero, create, aggregate, agEx, rescale,
+  initial, create, aggregate, agEx, rescale,
   ) where
 
 import Data.Word (Word64)
@@ -13,8 +13,10 @@ data SparkStats =
                meanPool, maxPool, minPool :: {-# UNPACK #-}!Double }
   deriving (Show, Eq)
 
-zero :: SparkStats
-zero = SparkStats 0 0 0 0 0 0 0 0 0
+-- | Initial, default value of spark stats, at the start of runtime,
+-- before any spark activity is recorded.
+initial :: SparkStats
+initial = SparkStats 0 0 0 0 0 0 0 0 0
 
 -- The values in the second counter have to be greater or equal
 -- to the values in the first counter, except for the spark pool size.

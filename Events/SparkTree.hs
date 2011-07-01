@@ -171,9 +171,13 @@ sparkProfile slice start0 end0 t
    end   = end0 + slice
 
    flat = flatten start t []
-   chopped0 = chop SparkStats.zero [] start flat
+   -- TODO: redefine chop so that it's obvious this undefined will not crash
+   -- e.g., catch pathological cases, like big tree with only SparkTreeEmpty
+   -- inside, already in chop, and/or make it tail-recursive instead of
+   -- taking the 'previous' argument
+   chopped0 = chop undefined [] start flat
 
-   chopped | start0 < slice = SparkStats.zero : chopped0
+   chopped | start0 < slice = SparkStats.initial : chopped0
            | otherwise      = chopped0
 
    flatten :: Timestamp -> SparkTree -> [SparkTree] -> [SparkTree]
