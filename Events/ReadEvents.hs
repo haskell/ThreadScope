@@ -48,7 +48,7 @@ rawEventsToHECs eventList endTime
     toTree Nothing    = ( (0, 0),
                           ( DurationTreeEmpty,
                             EventTree 0 0 (EventTreeLeaf []),
-                            SparkTree 0 0 SparkTreeEmpty ) )
+                            emptySparkTree ) )
     toTree (Just evs) =
        ( (maxSparkValue, maxSparkPool),
          ( mkDurationTree (eventsToDurations nondiscrete) endTime,

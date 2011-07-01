@@ -1,9 +1,10 @@
 module Events.SparkTree (
-     SparkTree(..), SparkNode(..),
-     eventsToSparkDurations,
-     mkSparkTree,
-     sparkProfile,
-     sparkTreeMaxDepth,
+  SparkTree,
+  emptySparkTree,
+  eventsToSparkDurations,
+  mkSparkTree,
+  sparkProfile,
+  sparkTreeMaxDepth,
   ) where
 
 import qualified Events.SparkStats as SparkStats
@@ -89,6 +90,9 @@ maxSparkRenderedValue c duration =
        SparkStats.rateGCd c)
   / fromIntegral duration
 
+
+emptySparkTree :: SparkTree
+emptySparkTree = SparkTree 0 0 SparkTreeEmpty
 
 mkSparkTree :: [SparkDuration] -> Timestamp -> SparkTree
 mkSparkTree es endTime =

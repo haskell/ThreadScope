@@ -1,5 +1,7 @@
 module Events.SparkStats (
-  SparkStats(..),
+  SparkStats(rateCreated, rateDud, rateOverflowed,
+             rateConverted, rateFizzled, rateGCd,
+             meanPool, maxPool, minPool),
   zero, create, aggregate, agEx, rescale,
   ) where
 
@@ -8,7 +10,7 @@ import Data.Word (Word64)
 data SparkStats =
   SparkStats { rateCreated, rateDud, rateOverflowed,
                rateConverted, rateFizzled, rateGCd,
-               meanPool, maxPool, minPool :: {-# UNPACK #-}! Double }
+               meanPool, maxPool, minPool :: {-# UNPACK #-}!Double }
   deriving (Show, Eq)
 
 zero :: SparkStats
