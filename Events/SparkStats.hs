@@ -7,6 +7,11 @@ module Events.SparkStats (
 
 import Data.Word (Word64)
 
+-- | Sparks change state. Each state transition process has a duration.
+-- Spark statistics, for a given duration, record the spark transition rate
+-- (the number of sparks that enter a given state within the interval)
+-- and the absolute mean, maximal and minimal number of sparks
+-- in the spark pool within the duration.
 data SparkStats =
   SparkStats { rateCreated, rateDud, rateOverflowed,
                rateConverted, rateFizzled, rateGCd,
@@ -18,17 +23,18 @@ data SparkStats =
 initial :: SparkStats
 initial = SparkStats 0 0 0 0 0 0 0 0 0
 
--- | Create spark stats for a duration (time interval), given absolute
+-- | Create spark stats for a duration, given absolute
 -- numbers of sparks in all categories at the start and end of the duration.
--- The units for spark transitions (first 6 counters) is spark/duration;
+-- The units for spark transitions (first 6 counters) is [spark/duration]:
 -- the fact that intervals may have different lenghts is ignored here.
+-- The units for the pool stats are just [spark].
 -- The values in the second counter have to be greater or equal
 -- to the values in the first counter, except for the spark pool size.
 create :: (Word64, Word64, Word64, Word64, Word64, Word64, Word64) ->
           (Word64, Word64, Word64, Word64, Word64, Word64, Word64) ->
           SparkStats
-create (crt1, dud1, ovf1, cnv1, fiz1, gcd1, rem1)
-       (crt2, dud2, ovf2, cnv2, fiz2, gcd2, _rem2) =
+create (crt1, dud1, ovf1, cnv1, fiz1, gcd1, remaining1)
+       (crt2, dud2, ovf2, cnv2, fiz2, gcd2, remaining2) =
   let (crt, dud, ovf, cnv, fiz, gcd) =
         (fromIntegral $ crt2 - crt1,
          fromIntegral $ dud2 - dud1,
@@ -36,8 +42,10 @@ create (crt1, dud1, ovf1, cnv1, fiz1, gcd1, rem1)
          fromIntegral $ cnv2 - cnv1,
          fromIntegral $ fiz2 - fiz1,
          fromIntegral $ gcd2 - gcd1)
-      pool1 = fromIntegral rem1
-  in SparkStats crt dud ovf cnv fiz gcd pool1 pool1 pool1
+      meanP = fromIntegral (remaining1 + remaining2) / 2  -- TODO: inaccurate
+      maxP  = fromIntegral $ max remaining1 remaining2
+      minP  = fromIntegral $ min remaining1 remaining2
+  in SparkStats crt dud ovf cnv fiz gcd meanP maxP minP
 
 -- | Reduce a list of spark stats; spark pool stats are overwritten.
 foldStats :: (Double -> Double -> Double)
@@ -61,7 +69,7 @@ rescale scale s =
 
 -- | Derive spark stats for an interval from a list of spark stats,
 -- in reverse chronological order, of consecutive subintervals
--- that sum up to the original one.
+-- that sum up to the original interval.
 aggregate :: [SparkStats] -> SparkStats
 aggregate [s] = s  -- optimization
 aggregate l =
@@ -79,9 +87,9 @@ extrapolate s =
   let f w _ = 0 * w
   in foldStats f (meanPool s) (maxPool s) (minPool s) [s]
 
--- | Aggregate, if any data provided, extrapolate from previous data, otherwise.
+-- | Aggregate, if any data provided. Extrapolate from previous data, otherwise.
 -- In both cases, the second component is the new choice of "previous data".
--- | The list of stats is expected in reverse chronological order,
+-- The list of stats is expected in reverse chronological order,
 -- as for aggregate.
 agEx :: [SparkStats] -> SparkStats -> (SparkStats, SparkStats)
 agEx [] s = (extrapolate s, s)
