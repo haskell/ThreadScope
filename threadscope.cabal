@@ -1,19 +1,29 @@
 Name:                threadscope
 Version:             0.1.4
+Category:            Development, Profiling, Trace
+Synopsis:            A graphical thread profiler.
 Description:         A graphical viewer for GHC eventlog traces.
 License:             BSD3
 License-file:        LICENSE
-Copyright:           Released under the GHC license
-Author:              Donnie Jones, Simon Marlow, Satnam Singh, Duncan Coutts
+Copyright:           2009-2010 Satnam Singh,
+                     2009-2011 Simon Marlow,
+                     2009 Donnie Jones,
+                     2011 Duncan Coutts,
+                     2011 Mikolaj Konarski
+Author:              Satnam Singh <s.singh@ieee.org>,
+                     Simon Marlow <marlowsd@gmail.com>,
+                     Donnie Jones <donnie@darthik.com>,
+                     Duncan Coutts <duncan@well-typed.com>,
+                     Mikolaj Konarski <mikolaj.konarski@gmail.com>
 Maintainer:          Satnam Singh <s.singh@ieee.org>
-Bug-reports:	     Satnam Singh <s.singh@ieee.org>
-Stability:	     Preliminary release.
+Bug-reports:         Satnam Singh <s.singh@ieee.org>
 Build-Type:          Simple
-Cabal-Version:       >=1.2
-Data-files:	     threadscope.ui, threadscope.png
 cabal-version:       >= 1.6
-Category:            Thread profiling utility
-Synopsis:            A graphical thread profiler.
+Data-files:          threadscope.ui, threadscope.png
+
+source-repository head
+  type:     darcs
+  location: http://code.haskell.org/ThreadScope/
 
 Executable threadscope
   Main-is:           Main.hs
@@ -73,7 +83,3 @@ Executable threadscope
 --  ghc-options: -threaded
 
   c-sources: ghcrts.c
-
-source-repository head
-  type:     darcs
-  location: http://code.haskell.org/ThreadScope/
