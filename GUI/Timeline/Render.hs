@@ -291,9 +291,9 @@ traceYPositions showLabels traces
 
 showTrace :: Trace -> String
 showTrace (TraceHEC n)  = "HEC " ++ show n
-showTrace (SparkCreationHEC n) = "HEC " ++ show n
-showTrace (SparkConversionHEC n) = "HEC " ++ show n
-showTrace (SparkPoolHEC n) = "HEC " ++ show n
+showTrace (SparkCreationHEC n) = "Spark\ncreation\nrate\n(spark/ms)\nHEC " ++ show n
+showTrace (SparkConversionHEC n) = "Spark\nconversion\nrate\n(spark/ms)\nHEC " ++ show n
+showTrace (SparkPoolHEC n) = "Spark pool\nsize\nHEC " ++ show n
 showTrace TraceActivity = "Activity"
 showTrace _             = "?"
 
