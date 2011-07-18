@@ -446,8 +446,6 @@ drawEvent :: Int -> ViewParameters -> GHC.Event -> Render ()
 drawEvent c params@ViewParameters{..} event
   = case spec event of
       CreateThread{}   -> renderInstantEvent params event createThreadColour
-      RunSpark{}       -> renderInstantEvent params event runSparkColour
-      StealSpark{}     -> renderInstantEvent params event stealSparkColour
       ThreadRunnable{} -> renderInstantEvent params event threadRunnableColour
       RequestSeqGC{}   -> renderInstantEvent params event seqGCReqColour
       RequestParGC{}   -> renderInstantEvent params event parGCReqColour
@@ -467,7 +465,7 @@ renderInstantEvent ViewParameters{..} event color = do
      setLineWidth (3 * scaleValue)
      let t = time event
      draw_line (t, hecBarOff-4) (t, hecBarOff+hecBarHeight+4)
-     labelAt labelsMode t $ showEventTypeSpecificInfo (spec event)
+     labelAt labelsMode t $ showEventInfo (spec event)
 
 
 drawTooManyEvents :: Int -> ViewParameters -> Timestamp -> Timestamp

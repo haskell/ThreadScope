@@ -330,7 +330,7 @@ drawEvents EventsView{drawArea, adj}
           UnknownEvent{ref} -> "unknown event; " ++ show ref
           Message     msg   -> msg
           UserMessage msg   -> msg
-          _                 -> showEventTypeSpecificInfo spec
+          _                 -> showEventInfo spec
 
 -------------------------------------------------------------------------------
 

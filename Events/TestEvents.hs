@@ -310,7 +310,7 @@ makeChequered currentThread numThreads basicDuration runLength
   = Event 0 eventBlock :
     makeChequered (currentThread+1) numThreads (2*basicDuration) runLength
     where
-    eventBlock :: EventTypeSpecificInfo
+    eventBlock :: EventInfo
     eventBlock = EventBlock runLength (fromIntegral (currentThread-1))
                  (Event 0 (CreateThread currentThread)
                  : chequeredPattern currentThread 0 basicDuration runLength)
