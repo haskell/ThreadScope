@@ -59,6 +59,7 @@ Executable threadscope
                      GUI.Timeline.HEC,
                      GUI.Timeline.Motion,
                      GUI.Timeline.Render,
+                     GUI.Timeline.Sparks,
                      GUI.Timeline.Ticks,
                      GUI.Timeline.Types,
                      GUI.Timeline.Render.Constants,

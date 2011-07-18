@@ -11,6 +11,7 @@ import GUI.Timeline.Types
 import GUI.Timeline.Render.Constants
 import GUI.Timeline.Ticks
 import GUI.Timeline.HEC
+import GUI.Timeline.Sparks
 import GUI.Timeline.Activity
 
 import Events.HECs
@@ -173,7 +174,8 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh)
             translate 0 (fromIntegral y)
             case trace of
                TraceHEC c ->
-                   renderHEC c params startPos endPos (hecTrees hecs !! c)
+                 let (dtree, etree, _) = hecTrees hecs !! c
+                 in renderHEC c params startPos endPos (dtree, etree)
                SparkCreationHEC c ->
                  let (_, _, stree) = hecTrees hecs !! c
                      maxV = maxSparkValue hecs
