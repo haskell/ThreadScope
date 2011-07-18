@@ -27,12 +27,6 @@ gcEndColour   = orange
 createThreadColour :: Color
 createThreadColour = lightBlue
 
-runSparkColour :: Color
-runSparkColour = darkBlue
-
-stealSparkColour :: Color
-stealSparkColour = magenta
-
 threadRunnableColour :: Color
 threadRunnableColour = darkGreen
 

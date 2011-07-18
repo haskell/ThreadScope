@@ -57,7 +57,7 @@ keyData :: [(String, KeyStyle, Color)]
 keyData = [ ("running",         Box,      runningColour)
           , ("GC",              Box,      gcColour)
           , ("create thread",   Vertical, createThreadColour)
-          , ("run spark",       Vertical, runSparkColour)
+          , ("run spark",       Vertical, createdConvertedColour)
           , ("thread runnable", Vertical, threadRunnableColour)
           , ("seq GC req",      Vertical, seqGCReqColour)
           , ("par GC req",      Vertical, parGCReqColour)

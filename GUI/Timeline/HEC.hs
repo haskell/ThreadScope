@@ -453,6 +453,14 @@ drawEvent c params@ViewParameters{..} event
       WakeupThread{}   -> renderInstantEvent params event threadRunnableColour
       Shutdown{}       -> renderInstantEvent params event shutdownColour
 
+      SparkCreate{}    -> renderInstantEvent params event createdConvertedColour
+      SparkDud{}       -> renderInstantEvent params event fizzledDudsColour
+      SparkOverflow{}  -> renderInstantEvent params event overflowedColour
+      SparkRun{}       -> renderInstantEvent params event createdConvertedColour
+      SparkSteal{}     -> renderInstantEvent params event createdConvertedColour
+      SparkFizzle{}    -> renderInstantEvent params event fizzledDudsColour
+      SparkGC{}        -> renderInstantEvent params event fizzledDudsColour
+
       RunThread{}  -> return ()
       StopThread{} -> return ()
       StartGC{}    -> return ()
