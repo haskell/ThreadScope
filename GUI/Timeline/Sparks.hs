@@ -22,8 +22,15 @@ import Control.Monad
 
 import Text.Printf
 
+-- Rendering sparks. No approximation nor extrapolation is going on here.
+-- The sample data, recalculated for a given slice size in sparkProfile,
+-- is straightforwardly rendered.
 
--------------------------------------------------------------------------------
+-- TODO; Function sparkProfile, for a given slice size and viewport,
+-- is called separately by each render* function, The unused parts of the result
+-- won't get computed, but the drilling down the tree and allocating
+-- thunks is repeated for each graph, while it could be done just once,
+-- for a given zoom level and scroll directive.
 
 renderSparkCreation :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                        -> Double -> Render ()
@@ -58,7 +65,6 @@ renderSparkPool params@ViewParameters{..} !start0 !end0 t !maxSparkPool = do
       f3 c = SparkStats.maxPool c
   addSparks outerPercentilesColour maxSparkPool f1 f2 start slice prof
   addSparks outerPercentilesColour maxSparkPool f2 f3 start slice prof
-  -- TODO: make f2 median, not mean; add other percentiles
   outlineSparks maxSparkPool f2 start slice prof
   outlineSparks maxSparkPool (const 0) start slice prof
   when (start0 == 0) $ addScale params maxSparkPool start end
@@ -68,7 +74,8 @@ renderSpark :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                -> (SparkStats.SparkStats -> Double) -> Color
                -> (SparkStats.SparkStats -> Double) -> Color
                -> Double -> Render ()
-renderSpark params@ViewParameters{..} start0 end0 t f1 c1 f2 c2 f3 c3 maxSparkValue = do
+renderSpark params@ViewParameters{..} start0 end0 t
+            f1 c1 f2 c2 f3 c3 maxSparkValue = do
   let slice = round (fromIntegral spark_detail * scaleValue)
       -- round the start time down, and the end time up, to a slice boundary
       start = (start0 `div` slice) * slice
@@ -136,7 +143,8 @@ addSparks colour maxSliceSpark f0 f1 start slice ts = do
     [] -> return ()
     ts -> do
       -- liftIO $ printf "ts: %s\n" (show (map f1 (ts)))
-      -- liftIO $ printf "off: %s\n" (show (map (off maxSliceSpark f1) (ts) :: [Double]))
+      -- liftIO $ printf "off: %s\n"
+      --   (show (map (off maxSliceSpark f1) (ts) :: [Double]))
       let dstart = fromIntegral start
           dslice = fromIntegral slice
           points = [dstart-dslice/2, dstart+dslice/2 ..]
@@ -150,10 +158,12 @@ addSparks colour maxSliceSpark f0 f1 start slice ts = do
       fill
 
 
+-- TODO: redesign and refactor the scales code after some feedback and testing.
+
 -- There are ten minor ticks to a major tick and a semi-major tick
 -- occurs half way through a major tick (overlapping the corresponding
 -- minor tick).
--- The timestamp values are in nanos-seconds (1e-9) i.e.
+-- The timestamp values are in nanoseconds (1e-9), i.e.,
 -- a timestamp value of 1000000000 represents 1s.
 -- The x-position on the drawing canvas is in milliseconds (ms) (1e-3).
 -- scaleValue is used to divide a timestamp value to yield a pixel value.
@@ -164,7 +174,7 @@ addScale ViewParameters{..} maxSpark start end = do
       dheight = fromIntegral hecSparksHeight
       -- TODO: this is slightly incorrect, but probably at most 1 pixel off
       maxS = if maxSpark < 100
-             then maxSpark  -- to small, accuracy would suffer
+             then maxSpark  -- too small, accuracy would suffer
              else fromIntegral (2 * (ceiling maxSpark ` div` 2))
       -- TODO: divide maxSpark instead, for nicer round numbers display
       incr = hecSparksHeight `div` 10
