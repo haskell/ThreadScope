@@ -30,11 +30,18 @@ initial = SparkStats 0 0 0 0 0 0 0 0 0
 -- The units for the pool stats are just [spark].
 -- The values in the second counter have to be greater or equal
 -- to the values in the first counter, except for the spark pool size.
+-- For pool size, we take into account only the first sample,
+-- to visualize more detail at high zoom levels, at the cost
+-- of a slight shift of the graph. Mathematically, this corresponds
+-- to taking the initial durations as centered around samples,
+-- but to have the same tree for rates and pool sizes, we then have
+-- to shift the durations by half interval size to the right
+-- (which would be neglectable if the interval was small and even).
 create :: (Word64, Word64, Word64, Word64, Word64, Word64, Word64) ->
           (Word64, Word64, Word64, Word64, Word64, Word64, Word64) ->
           SparkStats
 create (crt1, dud1, ovf1, cnv1, fiz1, gcd1, remaining1)
-       (crt2, dud2, ovf2, cnv2, fiz2, gcd2, remaining2) =
+       (crt2, dud2, ovf2, cnv2, fiz2, gcd2, _remaining2) =
   let (crt, dud, ovf, cnv, fiz, gcd) =
         (fromIntegral $ crt2 - crt1,
          fromIntegral $ dud2 - dud1,
@@ -42,10 +49,8 @@ create (crt1, dud1, ovf1, cnv1, fiz1, gcd1, remaining1)
          fromIntegral $ cnv2 - cnv1,
          fromIntegral $ fiz2 - fiz1,
          fromIntegral $ gcd2 - gcd1)
-      meanP = fromIntegral (remaining1 + remaining2) / 2  -- TODO: inaccurate
-      maxP  = fromIntegral $ max remaining1 remaining2
-      minP  = fromIntegral $ min remaining1 remaining2
-  in SparkStats crt dud ovf cnv fiz gcd meanP maxP minP
+      p = fromIntegral remaining1
+  in SparkStats crt dud ovf cnv fiz gcd p p p
 
 -- | Reduce a list of spark stats; spark pool stats are overwritten.
 foldStats :: (Double -> Double -> Double)
