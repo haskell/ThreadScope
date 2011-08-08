@@ -190,11 +190,11 @@ sparkProfile slice start0 end0 t
    end   = end0 + slice
 
    flat = flatten start t []
-   -- TODO: redefine chop so that it's obvious this undefined will not crash
-   -- e.g., catch pathological cases, like big tree with only SparkTreeEmpty
-   -- inside, already in chop, and/or make it tail-recursive instead of
+   -- TODO: redefine chop so that it's obvious this error will not happen
+   -- e.g., catch pathological cases, like a tree with only SparkTreeEmpty
+   -- inside and/or make it tail-recursive instead of
    -- taking the 'previous' argument
-   chopped0 = chop undefined [] start flat
+   chopped0 = chop (error "Fatal error in sparkProfile.") [] start flat
 
    chopped | start0 < slice = SparkStats.initial : chopped0
            | otherwise      = chopped0
@@ -224,9 +224,11 @@ sparkProfile slice start0 end0 t
      = case sofar of
        _ : _ -> [SparkStats.aggregate sofar]
        [] -> []
-   chop previous sofar start1 []  -- data too short for the viewport
-     = let (c, p) = SparkStats.agEx sofar previous
-       in c : chop p [] (start1 + slice) []
+   chop _previous sofar _start1 []  -- data too short for the redrawn area
+     | null sofar  -- no data at all in the redrawn area
+     = []
+     | otherwise
+     = [SparkStats.aggregate sofar]
    chop previous sofar start1 (t : ts)
      | e <= start1  -- skipping data left of the slice
      = case sofar of
