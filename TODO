@@ -19,7 +19,7 @@ Simon:
 
 FIRST RELEASE ---------------------------------------------------------------
 
-All of above 
+All of above
 
 BUGS ------------------------------------------------------------------------
 
@@ -28,7 +28,7 @@ NOT QUITE DONE: - crash when zooming in too far (negative exponent)
   causing a thick line
 - scrolling when event labels are on chops off some labels
 - rendering bug when scrolling: we need to clip to the rectangle being
-  drawn, otherwise we overwrite other parts of the window when there 
+  drawn, otherwise we overwrite other parts of the window when there
   are long bars being drawn, which makes some events disappear.
 - scrolling to the right at the end of the trace leaves an extra blue
   line at the top.
@@ -52,8 +52,8 @@ UI
   - draw lines/arrows between the events?
 - event list view
   - respond to page up / page down / arrows (FOCUS)
-  - interact with bookmarks  
-- left pane for 
+  - interact with bookmarks
+- left pane for
   - bookmarks
   - list of traces
     - traces would be a tree-view, e.g.
@@ -65,7 +65,6 @@ UI
         * 1 etc.
       * RTS
         * live heap
-        * sparks (per HEC ..)
       * ETW / Linux Performance counters
         * cache misses
         * stalls
@@ -78,7 +77,7 @@ UI
 - a better progress bar
 
 OTHER
-- catch exceptions in event handlers and emit a helpful error message of some 
+- catch exceptions in event handlers and emit a helpful error message of some
   kind.  tryEvent swallows exceptions, so it's not good enough.
 - move the text entents stuff out of drawing ThreadRuns
 - overlay ETW events
@@ -86,16 +85,16 @@ OTHER
 - colour threads differently
 - thread names rather than numbers
 - live heap graph
-- spark pool size graph
-- summary analysis 
+- summary analysis
 
 
 DONE
   - tidy up menu option
-  - DONE: overlaps should be gone now. fix ticks
-  - DONE: key is messed up (we shouldn't be using fixed coordinates here, font
+  - overlaps should be gone now. fix ticks
+  - key is messed up (we shouldn't be using fixed coordinates here, font
     sizes are variable)
-  - DONE. when there are no events, we crash in last
-  - DONE: fix event colours (key doesn't match)
-  - DONE: fix the ticks: labels overlap sometimes
-  - DONE: don't draw overlapping labels
+  - when there are no events, we crash in last
+  - fix event colours (key doesn't match)
+  - fix the ticks: labels overlap sometimes
+  - don't draw overlapping labels
+  - spark conversion and spark pool size graphs
