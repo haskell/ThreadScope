@@ -67,7 +67,7 @@ renderSparkPool params@ViewParameters{..} !start0 !end0 t !maxSparkPool = do
   addSparks outerPercentilesColour maxSparkPool f2 f3 start slice prof
   outlineSparks maxSparkPool f2 start slice prof
   outlineSparks maxSparkPool (const 0) start slice prof
-  when (start0 == 0) $ addScale params maxSparkPool start end
+  addScale params maxSparkPool start end
 
 renderSpark :: ViewParameters -> Timestamp -> Timestamp -> SparkTree
                -> (SparkStats.SparkStats -> Double) -> Color
@@ -89,7 +89,7 @@ renderSpark params@ViewParameters{..} start0 end0 t
   addSparks c1 maxSliceSpark (const 0) f1 start slice prof
   addSparks c2 maxSliceSpark f1 f2 start slice prof
   addSparks c3 maxSliceSpark f2 f3 start slice prof
-  when (start0 == 0) $ addScale params maxSlice start end
+  addScale params maxSlice start end
 
 spark_detail :: Int
 spark_detail = 4 -- in pixels
@@ -179,16 +179,8 @@ addScale ViewParameters{..} maxSpark start end = do
       -- TODO: divide maxSpark instead, for nicer round numbers display
       incr = hecSparksHeight `div` 10
       majorTick = 10 * incr
-  newPath
-  moveTo dstart 0
-  lineTo dstart dheight
-  setSourceRGBAhex blue 1.0
-  save
-  identityMatrix
-  setLineWidth 1
-  stroke
-  restore
 
+  -- dashed lines across the graphs
   setSourceRGBAhex black 0.3
   save
   forM_ [0 .. 1] $ \h -> do
@@ -198,14 +190,30 @@ addScale ViewParameters{..} maxSpark start end = do
     dashedLine1
   restore
 
-  selectFontFace "sans serif" FontSlantNormal FontWeightNormal
-  setFontSize 12
-  setSourceRGBAhex blue 1.0
-  save
-  scale scaleValue 1.0
-  setLineWidth 0.5
-  drawTicks maxS start scaleValue 0 incr majorTick hecSparksHeight
-  restore
+  -- draw scales only if the drawn area includes the very start
+  -- TODO: this draws the scale too often, because the drawn area begins
+  -- to the left of the 0 mark; will be fixed when scales are moved outside
+  -- the scrollable area.
+  when (start == 0) $ do
+
+    newPath
+    moveTo dstart 0
+    lineTo dstart dheight
+    setSourceRGBAhex blue 1.0
+    save
+    identityMatrix
+    setLineWidth 1
+    stroke
+    restore
+
+    selectFontFace "sans serif" FontSlantNormal FontWeightNormal
+    setFontSize 12
+    setSourceRGBAhex blue 1.0
+    save
+    scale scaleValue 1.0
+    setLineWidth 0.5
+    drawTicks maxS start scaleValue 0 incr majorTick hecSparksHeight
+    restore
 
 -- TODO: make it more robust when parameters change, e.g., if incr is too small
 drawTicks :: Double -> Timestamp -> Double -> Int -> Int -> Int -> Int -> Render ()
