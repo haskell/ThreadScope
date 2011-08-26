@@ -1,0 +1,620 @@
+\documentclass[twocolumn,9pt]{sigplanconf}
+
+\usepackage{url}
+% \usepackage{code}
+\usepackage{graphicx}
+\usepackage{enumerate}
+
+\usepackage{listings}
+\lstset{basicstyle=\fontfamily{cmss} \small, columns=fullflexible, language=Haskell, numbers=none, numberstyle=\tiny, numbersep=2pt, literate={->}{$\rightarrow$\ }{2}{<-}{$\leftarrow$\ }{2}}
+
+\newcommand{\codef}[1]{{\fontfamily{cmss}\small#1}}
+\newcommand{\boldcode}[1]{{\bf\fontfamily{cmss}\small#1}}
+
+\usepackage{natbib}
+\bibpunct();A{},
+\let\cite=\citep
+
+\nocaptionrule
+
+\title{Parallel Performance Tuning for Haskell}
+
+\authorinfo{Don Jones Jr.}{University of Kentucky}
+           {donnie@darthik.com}
+\authorinfo{Simon Marlow}{Microsoft Research}
+           {simonmar@microsoft.com}
+\authorinfo{Satnam Singh}{Microsoft Research}
+           {satnams@microsoft.com}
+
+\begin{document}
+
+\maketitle
+%\makeatactive
+
+\begin{abstract}
+Parallel Haskell programming has entered the mainstream with support
+now included in GHC for multiple parallel programming models, along
+with multicore execution support in the runtime.  However, tuning
+programs for parallelism is still something of a black art.  Without
+much in the way of feedback provided by the runtime system, it is a
+matter of trial and error combined with experience to achieve good
+parallel speedups.
+
+This paper describes an early prototype of a parallel profiling system
+for multicore programming with GHC.  The system comprises three parts:
+fast event tracing in the runtime, a Haskell library for reading the
+resulting trace files, and a number of tools built on this library for
+presenting the information to the programmer.  We focus on one tool in
+particular, a graphical timeline browser called ThreadScope.
+
+The paper illustrates the use of ThreadScope through a number of case
+studies, and describes some useful methodologies for parallelizing
+Haskell programs.
+\end{abstract}
+
+\category{D.1.1}{Applicative (Functional) Programming}{}
+\category{D.1.3}{Concurrent Programming}{}
+
+\terms{Performance and Measurement}
+
+\keywords{Parallel functional programming, performance tuning}
+
+\section{Introduction}
+
+Life has never been better for the Parallel Haskell programmer: GHC
+supports multicore execution out of the box, including multiple
+parallel programming models: Strategies \cite{spj:trin98b}, Concurrent
+Haskell \cite{jones96concurrent} with STM \cite{stm}, and Data Parallel Haskell
+\cite{dph}.  Performance of the runtime system has received 
+attention recently, with significant improvements in parallel
+performance available in the forthcoming GHC release \cite{multicore-ghc}.
+Many of the runtime bottlenecks that hampered parallel performance in
+earlier GHC versions are much reduced, with the result that it should
+now be easier to achieve parallel speedups.
+
+However, optimizing the runtime only addresses half of the problem;
+the other half being how to tune a given Haskell program to run
+effectively in parallel.  The programmer still has control over task
+granularity, data dependencies, speculation, and to some extent
+evaluation order.  Getting these wrong can be disastrous for parallel
+performance. For example, the granularity should neither be too fine
+nor too coarse.  Too coarse and the runtime will not be able to
+effectively load-balance to keep all CPUs constantly busy; too fine
+and the costs of creating and scheduling the tiny tasks outweigh the
+benefits of executing them in parallel.
+
+Current methods for tuning parallel Haskell programs rely largely on
+trial and error, experience, and an eye for understanding the limited
+statistics produced at the end of a program's run by the runtime
+system.  What we need are effective ways to measure and collect
+information about the runtime behaviour of parallel Haskell programs,
+and tools to communicate this information to the programmer in a
+way that they can understand and use to solve performance problems
+with their programs.
+
+In this paper we describe a new profiling system developed for the
+purposes of understanding the parallel execution of Haskell programs.
+In particular, our system includes a tool called ThreadScope that
+allows the programmer to interactively browse the parallel execution
+profile.
+
+This paper contributes the following:
+
+\begin{itemize}
+\item We describe the design of our parallel profiling system, and
+  the ThreadScope tool for understanding parallel execution.  Our
+  trace file format is fully extensible, and profiling tools built
+  using our framework are both backwards- and forward-compatible with
+  different versions of GHC.
+
+\item Through several case studies, we explore how to use ThreadScope
+  for identifying parallel performance problems, and describe a
+  selection of methodologies for parallelising Haskell code.
+\end{itemize}
+
+Earlier methodologies for parallelising Haskell code exist
+\cite{spj:trin98b}, but there are two crucial differences in the
+multicore GHC setting.  Firstly, the trade-offs are likely to be
+different, since we are working with a shared-memory heap, and
+communication is therefore cheap\footnote{though not entirely free,
+  since memory cache hierarchies mean data still has to be shuffled
+  between processors even if that shuffling is not explicitly
+  programmed.}.  Secondly, it has recently been discovered that
+Strategies interact badly with garbage collection
+\cite{multicore-ghc}, so in this paper we avoid the use of the
+original Strategies library, relying instead on our own simple
+hand-rolled parallel combinators.
+
+Our work is at an early stage.  The ThreadScope tool displays only one
+particular view of the execution of Parallel Haskell programs (albeit
+a very useful one).  There are a wealth of possibilities, both for
+improving ThreadScope itself and for building new tools.  We cover
+some of the possibilities in Section~\ref{s:conclusion}.
+
+\input{motivation}
+
+\section{Case Studies}
+
+\input{bsort}
+
+\subsection{Soda}
+
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.3]{soda1.png}
+\end{center}
+\caption{Soda ThreadScope profile}
+\label{f:soda-threadscope}
+\end{figure*}
+
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.3]{soda2.png}
+\end{center}
+\caption{Soda ThreadScope profile (zoomed initial portion)}
+\label{f:soda-threadscope2}
+\end{figure*}
+
+Soda is a program for solving word-search problems: given a
+rectangular grid of letters, find occurrences of a word from a
+supplied list, where a word can appear horizontally, vertically, or
+diagonally, in either direction (giving a total of eight possible
+orientations).
+
+The program has a long history as a Parallel Haskell benchmark \cite{Runciman93profilingparallel}.
+The version we start with here is a recent incarnation,
+using a random initial grid with a tunable size.  The words do not in
+fact appear in the grid; the program just fruitlessly searches the
+entire grid for a predefined list of words.  One advantage of this
+formulation for benchmark purposes is that the program's performance
+does not depend on the search order, however a disadvantage is that
+the parallel structure is unrealistically regular.
+
+The parallelism is expressed using \codef{parListWHNF} to avoid the
+space leak issues with the standard strategy implementation of
+\codef{parList} \cite{multicore-ghc}.  The \codef{parListWHNF}
+function is straightforwardly defined thus:
+
+\begin{verbatim}
+parListWHNF :: [a] -> ()
+parListWHNF [] = ()
+parListWHNF (x:xs) = x `par` parListWHNF xs
+\end{verbatim}
+
+To establish the baseline performance, we run the program using GHC's
+\texttt{+RTS -s} flags, below is an excerpt of the output:
+
+\begin{verbatim}
+  SPARKS: 12 (12 converted, 0 pruned)
+
+  INIT  time    0.00s  (  0.00s elapsed)
+  MUT   time    7.27s  (  7.28s elapsed)
+  GC    time    0.61s  (  0.72s elapsed)
+  EXIT  time    0.00s  (  0.00s elapsed)
+  Total time    7.88s  (  8.00s elapsed)
+\end{verbatim}
+
+We can see that there are only 12 sparks generated by this program: in
+fact the program creates one spark per word in the search list, of
+which there are 12.  This rather coarse granularity will certainly
+limit the ability of the runtime to effectively load-balance as we
+increase the number of cores, but that won't be an issue with a small
+number of cores.
+
+Initially we try with 4 cores, and with GHC's parallel GC enabled:
+
+\begin{verbatim}
+  SPARKS: 12 (11 converted, 0 pruned)
+
+  INIT  time    0.00s  (  0.00s elapsed)
+  MUT   time    8.15s  (  2.21s elapsed)
+  GC    time    4.50s  (  1.17s elapsed)
+  EXIT  time    0.00s  (  0.00s elapsed)
+  Total time   12.65s  (  3.38s elapsed)
+\end{verbatim}
+
+Not bad: 8.00/3.38 is a speedup of around 2.4 on 4 cores.  But since
+this program has a highly parallel structure, we might hope to do
+better.  
+
+Figure~\ref{f:soda-threadscope} shows the ThreadScope profile for this
+version of soda.  We can see that while an overall view of the runtime
+shows a reasonable parallelization, if we zoom into the initial part
+of the run (Figure~\ref{f:soda-threadscope2}) we can see that HEC 0 is
+running continuously, but threads on the other HECs are running very
+briefly and then immediately getting blocked (zooming in further would
+show the individual events).
+
+Going back to the program, we can see that the grid of letters is
+generated lazily by a function \codef{mk\_grid}.  What is happening here is
+that the main thread creates sparks before the grid has been
+evaluated, and then proceeds to evaluate the grid.  As each spark
+runs, it blocks almost immediately waiting for the main thread to
+complete evaluation of the grid.
+
+This type of blocking is often not disastrous, since a thread will become
+unblocked soon after the thunk on which it is blocking is evaluated
+(see the discussion of ``blackholes'' in \citet{multicore-ghc}).  There
+is nevertheless a short delay between the thread becoming runnable
+again and the runtime noticing this and moving the thread to the run
+queue.  Sometimes this delay can be hidden if the program has other
+sparks it can run in the meantime, but that is not the case
+here.  There are also costs associated with blocking the thread and waking
+it up again, which we would like to avoid if possible.
+
+One way to avoid this is to evaluate the whole grid before creating
+any sparks.  This is achieved by adding a call to \codef{rnf}:
+
+\begin{lstlisting}
+        -- force the grid to be evaluated:
+        evaluate (rnf grid)
+\end{lstlisting}
+
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.3]{soda3.png}
+\end{center}
+\caption{Soda ThreadScope profile (evaluating the input grid eagerly)}
+\label{f:soda-threadscope3}
+\end{figure*}
+
+The effect on the profile is fairly dramatic
+(Figure~\ref{f:soda-threadscope3}).  We can see that the parallel
+execution doesn't begin until around 500ms into the execution:
+creating the grid is taking quite a while.  The program also runs
+slightly faster in parallel now (a 6\% improvement, or a parallel
+speedup of 2.5 compared to 2.4):
+
+\begin{verbatim}
+  SPARKS: 12 (11 converted, 0 pruned)
+
+  INIT  time    0.00s  (  0.00s elapsed)
+  MUT   time    7.62s  (  2.31s elapsed)
+  GC    time    3.35s  (  0.86s elapsed)
+  EXIT  time    0.00s  (  0.00s elapsed)
+  Total time   10.97s  (  3.18s elapsed)
+\end{verbatim}
+which we attribute to less blocking and unblocking of threads.  We can
+also see that this program now has a significant sequential section -
+around 15\% of the execution time - which limits the maximum speedup
+we can achieve with 4 cores to 2.7, and we are already very close to
+that at 2.5.
+
+To improve parallelism further with this example we would have to
+parallelize the creation of the initial grid; this probably isn't
+hard, but it would be venturing beyond the realms of realism somewhat
+to optimize the creation of the input data for a synthetic benchmark,
+so we conclude the case study here.  It has been instructional to see
+how thread blocking appears in the ThreadScope profile, and how to
+avoid it by pre-evaluating data that is needed on multiple CPUs.
+
+Here are a couple more factors that may be affecting the speedup we
+see in this example:
+
+\begin{itemize}
+\item The static grid data is created on one CPU and has to be fetched
+  into the caches of the other CPUs.  We hope in the future to be able
+  to show the rate of cache misses (and similar characteristics) on
+  each CPU alongside the other information in the ThreadScope profile,
+  which would highlight issues such as this.
+\item The granularity is too large: we can see that the HECs finish
+  unevenly, losing a little parallelism at the end of the run.
+\end{itemize}
+
+\subsection{minimax}
+
+Minimax is another historical Parallel Haskell program.  It is based
+on an implementation of alpha-beta searching for the game tic-tac-toe,
+from Hughes' influential paper ``Why Functional Programming Matters''
+\cite{hughes:why-fp-matters}.  For the purposes of this paper we have generalized the
+program to use a game board of arbitrary size: the original program
+used a fixed 3x3 grid, which is too quickly solved to be a useful
+parallelism benchmark nowadays.  However 4x4 still represents a
+sufficient challenge without optimizing the program further.
+
+For the examples that follow, the benchmark is to evaluate the game
+tree 6 moves ahead, on a 4x4 grid in which the first 4 moves have
+already been randomly played.  This requires evaluating a maximum of
+roughly 500,000,000 positions, although parts of the game tree will be
+pruned, as we shall describe shortly.
+
+We will explore a few different parallelizations of this program using
+ThreadScope.  The function for calculating the best line in the game
+is \codef{alternate}:
+
+\begin{lstlisting}[columns=flexible]
+alternate depth player f g board
+ = move : alternate depth opponent g f board'
+ where
+   move@(board',_) = best f possibles scores
+   scores          = map (bestMove depth opponent g f) possibles
+   possibles       = newPositions player board
+   opponent        = opposite player
+\end{lstlisting}
+
+This function calculates the sequence of moves in the game that give
+the best outcome (as calculated by the alpha-beta search) for each
+player.  At each stage, we generate the list of possible moves
+(\codef{newPositions}), evaluate each move by alpha-beta search on the
+game tree (\codef{bestMove}), and pick the best one (\codef{best}).
+
+Let's run the program sequentially first to establish the baseline
+runtime:
+
+\begin{verbatim}
+  14,484,898,888 bytes allocated in the heap
+
+  INIT  time    0.00s  (  0.00s elapsed)
+  MUT   time    8.44s  (  8.49s elapsed)
+  GC    time    3.49s  (  3.51s elapsed)
+  EXIT  time    0.00s  (  0.00s elapsed)
+  Total time   11.94s  ( 12.00s elapsed)
+\end{verbatim}
+
+One obvious way to parallelize this problem is to evaluate each of the
+possible moves in parallel.  This is easy to achieve with a
+\codef{parListWHNF} strategy:
+
+\begin{lstlisting}
+  scores = map (bestMove depth opponent g f) possibles
+             `using` parListWHNF
+\end{lstlisting}
+where \codef{using} is defined to apply its first argument to its second argument and then return the result evaluated to weak-head normal form.
+\begin{lstlisting}
+x `using` s = s x `seq` x
+\end{lstlisting}
+And indeed this does yield a reasonable speedup:
+
+\begin{verbatim}
+  14,485,148,912 bytes allocated in the heap
+
+  SPARKS: 12 (11 converted, 0 pruned)
+
+  INIT  time    0.00s  (  0.00s elapsed)
+  MUT   time    9.19s  (  2.76s elapsed)
+  GC    time    7.01s  (  1.75s elapsed)
+  EXIT  time    0.00s  (  0.00s elapsed)
+  Total time   16.20s  (  4.52s elapsed)
+\end{verbatim}
+
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.3]{minimax1.png}
+\end{center}
+\caption{Minimax ThreadScope profile}
+\label{f:minimax-threadscope1}
+\end{figure*}
+
+A speedup of 2.7 on 4 processors is a good start!  However, looking at
+the ThreadScope profile (Figure~\ref{f:minimax-threadscope1}), we can
+see that there is a jagged edge on the right: our granularity is too
+large, and we don't have enough work to keep all the processors busy
+until the end.  What's more, as we can see from the runtime
+statistics, there were only 12 sparks, corresponding to the 12
+possible moves in the 4x4 grid after 4 moves have already been played.
+In order to scale to more CPUs we will need to find more parallelism.
+
+The game tree evaluation is defined as follows:
+
+\begin{lstlisting}[columns=flexible]
+bestMove :: Int -> Piece -> Player -> Player -> Board
+         -> Evaluation
+bestMove depth p f g 
+  = mise f g 
+  . cropTree
+  . mapTree static
+  . prune depth
+  . searchTree p
+\end{lstlisting}
+
+Where \codef{searchTree} lazily generates a search tree starting
+from the current position, with player \texttt{p} to play next.  The
+function \codef{prune} prunes the search tree to the given depth, and
+\codef{mapTree static} applies a static evaluation function to each
+node in the tree.  The function \codef{cropTree} prunes branches below
+a node in which the game has been won by either player.  Finally,
+\codef{mise} performs the alpha-beta search, where \codef{f} and
+\codef{g} are the min and max functions over evaluations for the
+current player \codef{p}.
+
+We must be careful with parallelization here, because the algorithm is
+relying heavily on lazy evaluation to avoid evaluating parts of the
+game tree.  Certainly we don't want to evaluate beyond the prune
+depth, and we also don't want to evaluate beyond a node in which one
+player has already won (\codef{cropTree} prunes further moves after a
+win).  The alpha-beta search will prune even more of the tree, since
+there is no point exploring any further down a branch if it has
+already been established that there is a winning move.  So unless we
+are careful, some of the parallelism we add here may be wasted
+speculation.
+
+The right place to parallelize is in the alpha-beta search itself.
+Here is the sequential code:
+
+\begin{lstlisting}[columns=flexible]
+mise :: Player -> Player -> Tree Evaluation -> Evaluation
+mise f g (Branch a []) = a
+mise f g (Branch _ l) = foldr f (g OWin XWin) (map (mise g f) l)
+\end{lstlisting}
+
+The first equation looks for a leaf, and returns the evaluation of the
+board at that point.  A leaf is either a completed game (either drawn
+or a winning position for one player), or the result of pruning the
+search tree.  The second equation is the interesting one: \codef{foldr
+  f} picks the best option for the current player from the list of
+evaluations at the next level.  The next level evaluations are given
+by \codef{map (mise g f) l}, which picks the best options for the
+\emph{other} player (which is why the \codef{f} and \codef{g} are
+reversed).
+
+The \codef{map} here is a good opportunity for parallelism.  Adding
+a \codef{parListWHNF} strategy should be enough:
+
+\begin{lstlisting}
+mise f g (Branch _ l) = foldr f (g OWin XWin) 
+                         (map (mise g f) l `using` parListWHNF)
+\end{lstlisting}
+However, this will try to parallelize every level of the search,
+leading to some sparks with very fine granularity.  Also it may
+introduce too much speculation: elements in each list after a win do
+not need to be evaluated.  Indeed, if we try this we get:
+
+\begin{verbatim}
+  22,697,543,448 bytes allocated in the heap
+
+  SPARKS: 4483767 (639031 converted, 3457369 pruned)
+
+  INIT  time    0.00s  (  0.01s elapsed)
+  MUT   time   16.19s  (  4.13s elapsed)
+  GC    time   27.21s  (  6.82s elapsed)
+  EXIT  time    0.00s  (  0.00s elapsed)
+  Total time   43.41s  ( 10.95s elapsed)
+\end{verbatim}
+
+We ran a lot of sparks (600k), but we didn't achieve much speedup over
+the sequential version.
+One clue that we are actually speculating useless work is the amount
+of allocation.  In the sequential run the runtime reported 14GB
+allocated, but this parallel version allocated 22GB\footnote{CPU time
+  is not a good measure of speculative work, because in the parallel
+  runtime threads can sometimes be spinning while waiting for work,
+  particularly in the GC.}.
+
+In order to eliminate some of the smaller sparks, we can
+parallelize the alpha-beta to a fixed depth.  This is done by
+introducing a new variant of \codef{mise}, \codef{parMise}, that
+applies the \codef{parListWHNF} strategy up to a certain depth, and then
+calls the sequential \codef{mise} beyond that.  Just using a depth of
+one gives quite good results:
+
+\begin{verbatim}
+  SPARKS: 132 (120 converted, 12 pruned)
+
+  INIT  time    0.00s  (  0.00s elapsed)
+  MUT   time    8.82s  (  2.59s elapsed)
+  GC    time    6.65s  (  1.70s elapsed)
+  EXIT  time    0.00s  (  0.00s elapsed)
+  Total time   15.46s  (  4.30s elapsed)
+\end{verbatim}
+
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.3]{minimax2.png}
+\end{center}
+\caption{Minimax ThreadScope profile (with parMise 1)}
+\label{f:minimax-threadscope2}
+\end{figure*}
+
+Though as we can see from the ThreadScope profile
+(Figure~\ref{f:minimax-threadscope2}), there are some gaps.
+Increasing the threshold to two works nicely:
+
+\begin{verbatim}
+  SPARKS: 1452 (405 converted, 1046 pruned)
+
+  INIT  time    0.00s  (  0.03s elapsed)
+  MUT   time    8.86s  (  2.31s elapsed)
+  GC    time    6.32s  (  1.57s elapsed)
+  EXIT  time    0.00s  (  0.00s elapsed)
+  Total time   15.19s  (  3.91s elapsed)
+\end{verbatim}
+
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.3]{minimax3.png}
+\end{center}
+\caption{Minimax ThreadScope profile (with parMise 2)}
+\label{f:minimax-threadscope3}
+\end{figure*}
+
+We have now achieved a speedup of 3.1 on 4 cores against the
+sequential code, and as we can see from the final ThreadScope profile
+(Figure~\ref{f:minimax-threadscope3}) all our cores are kept busy.
+
+We found that increasing the threshold to 3 starts to cause
+speculation of unnecessary work.  In 4x4 tic-tac-toe most positions
+are a draw, so it turns out that there is little speculation in the
+upper levels of the alpha-beta search, but as we get deeper in the
+tree, we find positions that are a certain win for one player or
+another, which leads to speculative work if we evaluate all the moves
+in parallel.  
+
+Ideally GHC would have better support for speculation: right now,
+speculative sparks are not garbage collected when they are found to be
+unreachable.  We do plan to improve this in the future, but
+unfortunately changing the GC policy for sparks is incompatible with
+the current formulation of Strategies \cite{multicore-ghc}.
+
+\input{threadring}
+
+\input{infrastructure}
+
+\input{related-work}
+
+\section{Conclusions and Further work}
+\label{s:conclusion}
+We have shown how thread-based profile information can be effectively
+used to help understand and fix parallel performance bugs in both
+Parallel Haskell and Concurrent Haskell programs, and we expect these
+profiling tools to also be of benefit to developers using Data
+Parallel Haskell in the future.
+
+The ability to profile parallel Haskell programs plays an important
+part in the development of such programs because the analysis
+process motivates the need to develop specialized strategies to
+help control evaluation order, extent and granularity as we demonstrated in
+the minmax example.
+
+Here are some of the future directions we would like to take this
+work:
+
+\begin{itemize}
+\item Improve the user interface and navigation of ThreadScope.  For
+  example, it would be nice to filter the display to show just a
+  subset of the threads, in order to focus on the behaviour of a
+  particular thread or group of threads.
+
+\item It would also be useful to understand how threads interact with each 
+   other via \codef{MVars} e.g. to make it easier to see which 
+   threads are blocked on read and write accesses to \codef{MVar}s.
+
+\item The programmer should be able to generate events
+  programmatically, in order to mark positions in the timeline so that
+  different parts of the program's execution can easily be identified
+  and separated in ThreadScope.
+
+\item It would be straightforward to produce graphs similar to those
+  from the GpH and GranSim programming tools \cite{trinder:02,loidl},
+  either by writing a Haskell program to translate the GHC trace files
+  into the appropriate input for these tools, or by rewriting the
+  tools themselves in Haskell.
+
+\item Combine the timeline profile with information from the OS and
+  CPU.  For example, for IO-bound concurrent programs we might like to
+  see IO or network activity displayed on the timeline.  Information
+  from CPU performance counters could also be superimposed or
+  displayed alongside the thread timelines, providing insight into
+  cache behaviour, for example.
+
+\item Have the runtime system generate more tracing information, so
+  that ThreadScope can display information about such things as memory
+  usage, run queue sizes, spark pool sizes, and foreign call activity.
+\end{itemize}
+
+\section*{Acknowledgments}
+
+The authors would like to acknowledge the work of the developers
+of previous Haskell concurrent and parallel profiling systems
+which have provided much inspiration for our own work. Specifically
+work on GpH, GranSim and Eden was particularly useful.
+
+We wish to thank Microsoft Research for funding Donnie Jones' visit to
+Cambridge in 2008 during which he developed an early prototype of
+event tracing in GHC.
+
+{\small
+\bibliographystyle{plainnat}
+\bibliography{ghc-parallel-tuning}
+}
+
+\end{document}

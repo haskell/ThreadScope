@@ -1,0 +1,92 @@
+{
+hunk ./Events/SparkStats.hs 91
+-      p75  = p50  -- percentiles disabled  mms L.!! ((3 * length mms) `div` 4)
++      p75  = mms L.!! ((3 * length mms) `div` 4)
+hunk ./Events/SparkStats.hs 89
+-      p25  = p50  -- percentiles disabled  mms L.!! (length mms `div` 4)
++      p25  = mms L.!! (length mms `div` 4)
+hunk ./GUI/ViewerColours.hs 77
+-lightGrey = Color 0xE000 0xE000 0xE000
++lightGrey = Color 0xD000 0xD000 0xD000
+hunk ./GUI/ViewerColours.hs 73
+-mediumGrey :: Color
+-mediumGrey = Color 0xB000 0xB000 0xB000
+-
+hunk ./GUI/ViewerColours.hs 62
+-innerPercentilesColour :: Color
+-innerPercentilesColour = mediumGrey
+-
+hunk ./GUI/Timeline/Sparks.hs 69
+-  addSparks innerPercentilesColour maxSparkPool f2 f4 start slice prof
+-  addSparks outerPercentilesColour maxSparkPool f4 f5 start slice prof
+-  outlineSparks maxSparkPool f3 start slice prof
++  addSparks outerPercentilesColour maxSparkPool f2 f3 start slice prof
++  outlineSparks maxSparkPool f2 start slice prof
+hunk ./GUI/Timeline/Sparks.hs 63
+-      f1 c = SparkStats.poolMin c
+-      f2 c = SparkStats.pool25 c
+-      f3 c = SparkStats.pool50 c
+-      f4 c = SparkStats.pool75 c
+-      f5 c = SparkStats.poolMax c
++      f1 c = SparkStats.minPool c
++      f2 c = SparkStats.meanPool c
++      f3 c = SparkStats.maxPool c
+hunk ./Events/SparkTree.hs 41
+-                newMaxSparkPool = SparkStats.poolMax delta
++                newMaxSparkPool = SparkStats.maxPool delta
+hunk ./Events/SparkStats.hs 102
+-  in foldStats f (poolMin s) (pool25 s) (pool50 s) (pool75 s) (poolMax s) [s]
++  in foldStats f (meanPool s) (maxPool s) (minPool s) [s]
+hunk ./Events/SparkStats.hs 86
+-  -- TODO: this is only a mockup: p25, p50 and p75 are crude approximations
+-  let mms  = L.sort $ map pool25 l ++ map pool50 l ++ map pool75 l
+-      pMin = minimum (map poolMin l)
+-      p25  = mms L.!! (length mms `div` 4)
+-      p50  = sum (map pool50 l) / fromIntegral (length l)
+-      p75  = mms L.!! ((3 * length mms) `div` 4)
+-      pMax = maximum (map poolMax l)
+-  in foldStats (+) pMin p25 p50 p75 pMax l
++  let meanP = sum (map meanPool l) / fromIntegral (length l) -- TODO: inaccurate
++      maxP  = maximum (map maxPool l)
++      minP  = minimum (map minPool l)
++  in foldStats (+) meanP maxP minP l
+hunk ./Events/SparkStats.hs 78
+-  in foldStats f (poolMin s) (pool25 s) (pool50 s) (pool75 s) (poolMax s) [s]
++  in foldStats f (meanPool s) (maxPool s) (minPool s) [s]
+hunk ./Events/SparkStats.hs 72
+-      pMin p25 p50 p75 pMax
++      meanP maxP minP
+hunk ./Events/SparkStats.hs 64
+-foldStats f pMin p25 p50 p75 pMax l
++foldStats f meanP maxP minP l
+hunk ./Events/SparkStats.hs 62
+-             -> Double -> Double -> Double -> Double -> Double
++             -> Double -> Double -> Double
+hunk ./Events/SparkStats.hs 58
+-  in SparkStats crt dud ovf cnv fiz gcd p p p p p
++  in SparkStats crt dud ovf cnv fiz gcd p p p
+hunk ./Events/SparkStats.hs 29
+-initial = SparkStats 0 0 0 0 0 0 0 0 0 0 0
++initial = SparkStats 0 0 0 0 0 0 0 0 0
+hunk ./Events/SparkStats.hs 20
+-  SparkStats
+-    { rateCreated, rateDud, rateOverflowed,
+-      rateConverted, rateFizzled, rateGCd,
+-      poolMin, pool25, pool50, pool75, poolMax :: {-# UNPACK #-}!Double }
++  SparkStats { rateCreated, rateDud, rateOverflowed,
++               rateConverted, rateFizzled, rateGCd,
++               meanPool, maxPool, minPool :: {-# UNPACK #-}!Double }
+hunk ./Events/SparkStats.hs 14
+--- and the absolute minimal and maximal number of sparks
+--- in the spark pool within the duration and their statistical percentiles
+--- (TODO: the percentiles are only crude approximations;
+--- in particular, the median is here really a mean, which is correct only
+--- if we do a very fine-grained resampling first).
++-- and the absolute mean, maximal and minimal number of sparks
++-- in the spark pool within the duration.
+hunk ./Events/SparkStats.hs 9
+-import qualified Data.List as L
+hunk ./Events/SparkStats.hs 4
+-             poolMin, pool25, pool50, pool75, poolMax),
++             meanPool, maxPool, minPool),
+}

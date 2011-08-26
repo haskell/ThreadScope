@@ -1,0 +1,322 @@
+TODO ------------------------------------------------------------------------
+
+Satnam:
+
+Simon:
+  - ThreadScope DEADLOCKs occasionally, more often with --debuug, why?
+  - X Window System error sometimes?
+  - opening a non-existent file failure
+  - background of some widgets on Windows are white when they are grey in Linux
+  - when nothing is loaded, show a message to that effect in the window
+  - Make ^C work on Windows
+
+- resizing the panes causes a grab lockup?
+- jump to bookmark doesn't work in events window
+- sort bookmark view by time?
+- double-click a bookmark to jump to it?
+- Delete key deletes bookmarks?
+- hotkey to add a bookmark?
+
+- fix, rewrite or disable partial redrawing of the graphs pane
+that causes many of the graphical bugs reported in ThreadScope/TODO
+
+- [GUI] (temporarily fixed on the offending display by increasing
+timeline_labels_drawingarea width from 80 to 100)
+I see "Spark poo size" as the left hand size label of the pool graphs,
+with my Ubuntu gtk fonts; explanation: it's the wrapping
+or rather the lack thereof; the wrapping is currently manual when
+it should be automatic; what we should do is to calculate the width
+based on the label size and let it do automatic wrapping
+
+- 25%/50%/75% percentiles for pool size, see
+http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.10.6199
+figure 15
+WARNING: unlike mean, the median and other percentiles can't be computed
+from percentiles of subnodes of the trees --- they need the whole data
+for the interval in question at each level of the tree. This increases
+the cost from O(n) to O(n * log n), where n is the total number of samples.
+Additional log n factor, in comparison with mean, is probably inevitable
+unless we put the data in an array, because otherwise we have to
+sort the data for each interval to find the k-th element.
+An extra problem is that to get accurate percentiles for splices
+that do not match a single subtree node, we have to get the whole
+data for the splice again, completely repeating the calculations.
+Then the preprocessing via creating the tree would only be useful
+if the tree stores the whole data at each tree level, already partitioned
+and the data for each slice may be gathered cheaply (but a bit inaccurately,
+see the use of SparkStats.rescale in the current code) by only looking
+at a few nodes of the tree at a single level, instead of traversing
+a very long list. There are better data structures than the spark tree
+for quick lookup of sorted data, so let's remove the pool sizes from
+the spark tree altogether and hack them separately.
+IDEA (dcoutts): http://en.wikipedia.org/wiki/Mipmap,
+basic idea is that we store something like a bitmap
+(perhaps just 1D) at multiple resolutions
+and resample from the nearest pre-computed bitmap;
+which incidentally might be a good technique generally
+might even take less memory than the current method
+
+- resample the data (morally) uniformly, unless the sampling
+is changed from GC time points to equal intervals
+(note that with resampling, with enough extra inserted sample points,
+the median approaches the mean, so calculating the median for pool size
+does not make sense; however, percentiles still make sense --- they are
+not just mean*(n/m), e.g., for y=5, all percentiles are 5,
+while for y=x, from 0 to 10, they differ, regardless of sample density
+and uniformity, except trivial cases)
+
+- remove the grey halo in trivial cases of pool size,
+like the line:  ___/----, but keep min/max for ___/\___
+
+- draw the scales (horizontal and vertical) in such a way that they're
+always visible, regardless of scrolling
+
+- review and document vertical scales and pool size graph code,
+after they are rewritten
+
+- [GUI] mark vertical scale units in the trace pane:
+a long label might be "spark creation/conversion rate, unit spark/ms"
+or "fizzled sparks/millisecond" or "Spark creation rate (sparks/millisecond)"
+NOTE: DONE? this seems to have been done in the labels_drawingarea instead.
+
+- [GUI] in the key, label the coloured areas, according to what they represent
+the title of the plot is "spark creation rate" and the key will have things
+for each colour; separate sections of the Key for
+the activity vs sparks vs next-thing; make sure the user understands
+that the _areas_ are proportional to the total number and graphs to rates
+
+- [GUI] either fix tickboxes for HEC sets or make it two dimensional: one column
+of tickboxes for activity, one column for spark creation, spark conversion
+
+- the same aggregate style for the activity graph, to see min/max
+(the green are does not convey any extra information, unlike
+the tricolour areas in rate graphs)
+
+- [GUI] put all the HEC0 bits together, both in the trace and in the timeline view
+ie in the timeline, top -> bottom: activity HEC0, sparks HEC0,
+ activity HEC1, sparks HEC1, ...
+
+- [GUI] in the trace window, enable/disable traces, but also
+reorder them by just dragging and dropping
+
+- test, in particular the quality of sampling, on the parfib suite;
+ideally generate sampled events from accurate events and compare visually
+and/or numerically
+
+
+FIRST RELEASE ---------------------------------------------------------------
+
+All of above
+
+BUGS ------------------------------------------------------------------------
+
+NOT QUITE DONE: - crash when zooming in too far (negative exponent)
+- scrolling to the right, we get some over-rendering at the boundary
+  causing a thick line
+- scrolling when event labels are on chops off some labels
+- rendering bug when scrolling: we need to clip to the rectangle being
+  drawn, otherwise we overwrite other parts of the window when there
+  are long bars being drawn, which makes some events disappear.
+- scrolling to the right at the end of the trace leaves an extra blue
+  line at the top.
+- the vertical blue cursor line vanishes is some zoom levels
+- sideways scrolling leaves curve rendering artifacts (e.g., the thicker
+  fragments of the flat line at the end of the Activity graph)
+- sometimes 2 labels are written on top of each other even at max zoom,
+  e.g. "thread 3 yielding" and "thread 3 is runnable"
+- sometimes 2 tick labels (showing time) overlap
+- may be a feature: filling graphs with colours is from line 1 upwards,
+  not line 0, so lines at level 0 seem under the filled area, not level with it
+- the light blue vertical lines get sometimes randomly darker when scrolling
+  by moving the scrollbar handle slowly to the right (probably caused
+  by testing an x coordinate up to integral division by slice or without
+  taking into account the hadj_value, so the line is drawn
+  many times when scrolling)
+- a few levels of zoom in and then zoom out sometimes results in only
+  a right fragment of the timeline shown, no indication in the scrollbar
+  that scroll is possible, but scrolling indeed fixes the view
+
+IDEAS ------------------------------------------------------------------------
+
+NAVIGATION
+- click and drag the view
+- shift-click and drag to zoom to a region
+- draw the detailed view in the background
+- bookmarks
+
+  - add/remove
+  - save
+  - measure the time between two markers
+- search for events in the event window
+
+UI
+- render averaged areas properly
+- indicate when one thread wakes up another thread, or a thread is migrated
+  - draw lines/arrows between the events?
+- event list view
+  - respond to page up / page down / arrows (FOCUS)
+  - interact with bookmarks
+- left pane for
+  - bookmarks
+  - list of traces
+    - traces would be a tree-view, e.g.
+      * HECs
+        * 0
+        * 1 etc.
+      * Threads
+        * 0
+        * 1 etc.
+      * RTS
+        * live heap
+      * ETW / Linux Performance counters
+        * cache misses
+        * stalls
+        * etc.
+     - clicking on a trace adds that trace to the view, clicking again
+       removes it
+     - some way to reorder the traces?
+     - when rendering threads, we want some way to indicate the time
+       between creation and death - colour grey?
+- a better progress bar
+
+- [GUI] animate zoom level transitions:
+ways to make the zoom in/out less confusing for users
+(e.g. the sudden appearance of spikiness once thresholds)
+animating the transitions would make it clearer
+generate the bitmap of the higher resolution new view,
+and animate it expanding to cover the new view
+it'd be quick since it's just bitmap scaling
+so the user can see the region in the old view
+that is expanding out to become the new view
+
+- [GUI] let the user set the interval size/scale,
+as an advanced option, _separately_ for each graph stack,
+each HEC, each visible region at the current zoom level,
+each selected region (if they are implemented)
+
+- [GUI] a button for vertical zoom (clip graphs if they don't fit at that zoom)
+and/or select regions of time in the view
+and zoom only that region of display;
+
+- [GUI] an option to automatically change scale at zoom in to take
+into account only the visible and smoothed part of the graphs
+
+- [GUI] select a region and display it in a separate tab
+(e.g. next to the events tab) and/or show in the tab for that selected time
+period how many sparks of each kind in that time: summary statistics
+for points in time, or periods of time; make the height of the graph
+in the tab configurable/resizable with mouse, or just take the whole screen
+
+- [GUI] scroll around the graph image via a small zoomed out window
+"The Information Mural: A Technique for Displaying
+and Navigating Large Information Spaces"
+
+- [GUI] label coloured areas with a mouseover, according to what they represent
+
+
+OTHER
+- catch exceptions in event handlers and emit a helpful error message of some
+  kind.  tryEvent swallows exceptions, so it's not good enough.
+- move the text entents stuff out of drawing ThreadRuns
+- overlay ETW events
+- integrate strace events in the event view on Linux
+- colour threads differently
+- thread names rather than numbers
+- live heap graph
+- summary analysis
+
+- perhaps draw the graphs even if only the fully-accurate,
+per-spark events are present in the logs (by transforming them
+to the sampled format)
+
+- and/or extrapolate data for large zoom levels with scarce samples
+by slated lines, not just horizontal lines (which work great with
+numerous enough samples, though)
+
+- merge adjacent 0 samples:
+if we have equal adjacent samples we just take the second/last
+can be done when it's still a list, before making the tree;
+simple linear pass, and lazy too;
+does not make sense in per-spark events mode
+
+- use the extra info about when the spark pool gets full and empty;
+we know when the spark pool becomes empty because we can observe
+that the threads evaluating sparks terminate; similarly, we know overflow
+only occurs when the pool is full; but note the following:
+"dcoutts: also noticed that we cannot currently reliably discover when the spark
+queue is empty. I had thought that "the" spark thread terminating
+implied that the queue is empty, however there can be multiple spark
+threads and they can also terminate when there are other threads on that
+capability's run queue (normal forkIO work takes precedence over
+evaluating sparks)"
+
+- consider making the graphs more accurate by drilling down the tree
+to the base events at each slice borders:
+they don't go down to the base events at each slice boundary
+but only at the two viewport borders (hence the extra slices
+at the ends dcoutts noticed).
+The current state generally this results in smoothing the curve,
+but a side-effect is that the graphs grow higher visually
+(the max is higher) as the zoom level increases.
+
+- or increase the accuracy by dividing increments not by the slice
+length (implicitly), but the length of the sum of tree node spans
+that cover the slice, similarly as in gnuplot graphs
+
+- perhaps we should change the spark event sampling to emit events
+every N sparks rather than at GC; but only if experiments (do more accurate
+sampling and compare the general look of the graphs)
+show that linear extrapolation of the GC data is not correct
+(large spark transitions happen in the long periods between GC
+and we don't know when exactly) (the 4K pool size guarantees that at least
+with large visible absolute spark transition, the invisible transitions
+can't be huge in proportion to the visible ones, so then linear extrapolation
+is correct))
+
+- integrate info about the time taken by sparks, via shades of green
+(a shade per pixel of vertical line, indicating the average size
+of sparks represented by the pixel/line (started/converted there))
+or via scaling the creation/conversion graphs by the spark size
+(instead of the area being the number of sparks,
+it's proportional to the amount of work (ie eval time)
+of the sparks in the interval)
+
+- use adaptive interval, depending on the sample density at the viewed fragment
+
+- perhaps, depending on sample density, alternate between raw data,
+min/max, percentiles; so the raw data line slowly explodes into a band,
+a big smudge, like a string of beads, that gets even more detailed
+and perhaps wider, when data density/uniformity allows it;
+in other words: a thin line means we only guess that's where the data might be
+a thicker one, with mix/max means we have some data,
+but too irregular/scarce to say more, and full thickness line,
+with percentiles means we have enough data or evenly distributed enough
+to say all
+
+- have *configurable* colors, like in Eden
+
+- dynamic strategy labelling (lots of stuff has to be done elsewhere, first)
+
+- Eden TV has good visualisation for messages between processes & nodes,
+(steal it, when we do more work on Cloud Haskell)
+
+- user-generated events in eventlog: if implemented, visualize them
+
+- show time corresponding to the eventlog buffer flushing,
+after the event for this introduced
+
+- verify correctness of the input eventlog, when event state transition machines
+for events defined and implemented
+
+
+
+DONE
+  - tidy up menu option
+  - overlaps should be gone now. fix ticks
+  - key is messed up (we shouldn't be using fixed coordinates here, font
+    sizes are variable)
+  - when there are no events, we crash in last
+  - fix event colours (key doesn't match)
+  - fix the ticks: labels overlap sometimes
+  - don't draw overlapping labels
+  - spark conversion and spark pool size graphs

@@ -1,0 +1,86 @@
+Name:                threadscope
+Version:             0.1.4
+Category:            Development, Profiling, Trace
+Synopsis:            A graphical thread profiler.
+Description:         A graphical viewer for GHC eventlog traces.
+License:             BSD3
+License-file:        LICENSE
+Copyright:           2009-2010 Satnam Singh,
+                     2009-2011 Simon Marlow,
+                     2009 Donnie Jones,
+                     2011 Duncan Coutts,
+                     2011 Mikolaj Konarski
+Author:              Satnam Singh <s.singh@ieee.org>,
+                     Simon Marlow <marlowsd@gmail.com>,
+                     Donnie Jones <donnie@darthik.com>,
+                     Duncan Coutts <duncan@well-typed.com>,
+                     Mikolaj Konarski <mikolaj.konarski@gmail.com>
+Maintainer:          Satnam Singh <s.singh@ieee.org>
+Bug-reports:         Satnam Singh <s.singh@ieee.org>
+Build-Type:          Simple
+cabal-version:       >= 1.6
+Data-files:          threadscope.ui, threadscope.png
+
+source-repository head
+  type:     darcs
+  location: http://code.haskell.org/ThreadScope/
+
+Executable threadscope
+  Main-is:           Main.hs
+  Build-Depends:     base >= 4.0 && < 5,
+                     gtk >= 0.12, cairo, glib, pango,
+                     binary, array, mtl, filepath,
+                     ghc-events >= 0.3,
+                     containers >= 0.2 && < 0.5
+  extensions:        RecordWildCards, NamedFieldPuns,
+                     BangPatterns, PatternGuards,
+                     CPP
+  Other-Modules:     Events.HECs,
+                     Events.EventDuration,
+                     Events.EventTree,
+                     Events.ReadEvents,
+                     Events.SparkStats,
+                     Events.SparkTree,
+                     Events.TestEvents,
+                     GUI.Main,
+                     GUI.MainWindow,
+                     GUI.EventsView,
+                     GUI.Dialogs,
+                     GUI.SaveAs,
+                     GUI.Timeline,
+                     GUI.TraceView,
+                     GUI.BookmarkView,
+                     GUI.KeyView,
+                     GUI.Types,
+                     GUI.ConcurrencyControl,
+                     GUI.ViewerColours,
+                     GUI.Timeline.Activity,
+                     GUI.Timeline.CairoDrawing,
+                     GUI.Timeline.HEC,
+                     GUI.Timeline.Motion,
+                     GUI.Timeline.Render,
+                     GUI.Timeline.Sparks,
+                     GUI.Timeline.Ticks,
+                     GUI.Timeline.Types,
+                     GUI.Timeline.Render.Constants,
+                     GUI.GtkExtras
+
+  ghc-options:  -Wall -fwarn-tabs
+                -fno-warn-type-defaults -fno-warn-name-shadowing
+                -fno-warn-unused-do-bind
+
+  if impl(ghc >= 7.0)
+     -- GHC 7.0 and later require a flag to enable the options in ghcrts.c
+     ghc-options:  -rtsopts -fno-warn-unused-do-bind
+
+  if impl(ghc < 6.12)
+     -- GHC before 6.12 gave spurious warnings for RecordWildCards
+     ghc-options:  -fno-warn-unused-matches
+
+  if !os(windows)
+     build-depends: unix >= 2.3 && < 2.5
+
+-- Not yet: gtk2hs doesn't support -threaded at the moment.
+--  ghc-options: -threaded
+
+  c-sources: ghcrts.c
