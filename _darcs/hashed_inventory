@@ -1,4 +1,4 @@
-pristine:0000001864-f023c7c45d11861518dad0647b223212c9412abb1ca7a072b29384a360fefce8
+pristine:0000001864-1bec686157411f2afce2128466f8584b1d4269324f0592dbf17889f82ff3e1d4
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -840,3 +840,13 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20110809083257
  Ignore-this: 9eed300d914ebab7f7a8c309e4b10610
 ] 
 hash: 0000010312-569a075484bfc545e8bf1ac1f0a305b1396c14be9a193b008d64c6386ee1c567
+[let the "Timeline" pane have tabs (for spark histograms, etc.)
+Mikolaj Konarski <mikolaj@well-typed.com>**20110827102547
+ Ignore-this: 54e2e2dea32a8b8db9bf3b7384b4c0ce
+] 
+hash: 0000001951-b12fb3b10c78d50cee28ac5e4611592b7c845b4f960291bf30c4dd9b79b9713b
+[copy-paste Timeline tab to Histogram tab
+Mikolaj Konarski <mikolaj@well-typed.com>**20110827132148
+ Ignore-this: 90a909a0066ce83166accfca8d4741b8
+] 
+hash: 0000018325-89506ae24a24d08895293d4c2637845ea79f6c8bafe42430a28850aaa4388982
