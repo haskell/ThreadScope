@@ -12,6 +12,7 @@ import GUI.ProgressView (ProgressView)
 
 import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
+import GHC.RTS.Events.Sparks
 
 import Data.Array
 import Data.List
@@ -19,6 +20,7 @@ import Text.Printf
 import System.FilePath
 import Control.Monad
 import Control.Exception
+import qualified Data.Map as Map
 
 -------------------------------------------------------------------------------
 -- The GHC.RTS.Events library returns the profile information
@@ -117,6 +119,20 @@ buildEventLog progress from =
          maxSparkPool = maximum (0 : map (snd . fst) maxTrees)
          trees = map snd maxTrees
 
+         intDoub :: Integral a => a -> Double
+         intDoub = fromIntegral
+
+         ilog :: Integral a => a -> a -> a
+         ilog b x = floor $ logBase (intDoub b) (intDoub x)
+
+         histo :: Integral a => [a] -> [(a, a)]
+         histo xs = Map.toList $ Map.fromListWith (+)
+                    $ [(ilog 2 x, x) | x <- xs]
+
+         sparks = sparkInfo (events (dat evs))
+         durations = map sparkDuration sparks
+         durHistogram = histo durations
+
          -- sort the events by time and put them in an array
          sorted    = sortGroups groups
          n_events  = length sorted
@@ -129,7 +145,8 @@ buildEventLog progress from =
                   hecEventArray    = event_arr,
                   hecLastEventTime = lastTx,
                   maxSparkValue    = maxSparkValue,
-                  maxSparkPool     = maxSparkPool
+                  maxSparkPool     = maxSparkPool,
+                  durHistogram     = durHistogram
                }
 
          treeProgress :: Int -> (DurationTree, EventTree, SparkTree) -> IO ()

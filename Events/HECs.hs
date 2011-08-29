@@ -23,7 +23,8 @@ data HECs = HECs {
        hecEventArray    :: Array Int CapEvent,
        hecLastEventTime :: Timestamp,
        maxSparkValue    :: Double,
-       maxSparkPool     :: Double
+       maxSparkPool     :: Double,
+       durHistogram     :: [(Timestamp, Timestamp)]
      }
 
 -----------------------------------------------------------------------------
