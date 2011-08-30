@@ -140,7 +140,7 @@ timelineViewNew builder TimelineViewActions{..} = do
       timelineWin   = TimelineView{..}
 
   ------------------------------------------------------------------------
-  -- Porgram the callback for the capability labelDrawingArea
+  -- Program the callback for the capability labelDrawingArea
   timelineLabelDrawingArea `onExpose` \_ -> do
     traces <- readIORef tracesIORef
     showLabels <- readIORef showLabelsIORef
@@ -184,7 +184,7 @@ timelineViewNew builder TimelineViewActions{..} = do
   onAdjChanged   timelineAdj  $ queueRedrawTimelines timelineState
   onAdjChanged   timelineVAdj $ queueRedrawTimelines timelineState
 
-  -- Porgram the callback for the capability drawingArea
+  -- Program the callback for the capability drawingArea
   on timelineDrawingArea exposeEvent $ do
      exposeRegion <- New.eventRegion
      liftIO $ do

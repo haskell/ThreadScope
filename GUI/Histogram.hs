@@ -140,11 +140,11 @@ histogramViewNew builder HistogramViewActions{..} = do
       histogramWin   = HistogramView{..}
 
   ------------------------------------------------------------------------
-  -- Porgram the callback for the capability labelDrawingArea
+  -- Porgram the callback for the capability drawingArea
   timelineLabelDrawingArea `onExpose` \_ -> do
-{-    traces <- readIORef tracesIORef
+    traces <- readIORef tracesIORef
     showLabels <- readIORef showLabelsIORef
-    updateLabelDrawingArea histogramState showLabels traces -}
+    updateLabelDrawingArea histogramState showLabels traces
     return True
 
   ------------------------------------------------------------------------
@@ -184,7 +184,6 @@ histogramViewNew builder HistogramViewActions{..} = do
   onAdjChanged   timelineAdj  $ queueRedrawHistograms histogramState
   onAdjChanged   timelineVAdj $ queueRedrawHistograms histogramState
 
-  -- Porgram the callback for the capability drawingArea
   on timelineDrawingArea exposeEvent $ do
      exposeRegion <- New.eventRegion
      liftIO $ do
@@ -203,7 +202,7 @@ histogramViewNew builder HistogramViewActions{..} = do
            cursor    <- readIORef cursorIORef
            bookmarks <- readIORef bookmarkIORef
 
-           renderViewHistogram histogramState params' hecs cursor bookmarks exposeRegion
+           renderView histogramState params' hecs cursor bookmarks exposeRegion
 
      return True
 
@@ -220,13 +219,13 @@ histogramViewNew builder HistogramViewActions{..} = do
 queueRedrawHistograms :: TimelineState -> IO ()
 queueRedrawHistograms TimelineState{..} = do
   widgetQueueDraw timelineDrawingArea
---  widgetQueueDraw timelineLabelDrawingArea
+  widgetQueueDraw timelineLabelDrawingArea
 
 --FIXME: we are still unclear about which state changes involve which updates
 histogramParamsChanged :: HistogramView -> IO ()
 histogramParamsChanged histogramWin@HistogramView{histogramState} = do
   queueRedrawHistograms histogramState
---  updateHistogramVScroll histogramWin
+  updateHistogramVScroll histogramWin
 
 configureHistogramDrawingArea :: HistogramView -> IO ()
 configureHistogramDrawingArea histogramWin@HistogramView{histogramState} = do

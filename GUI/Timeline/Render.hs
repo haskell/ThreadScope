@@ -1,7 +1,6 @@
 {-# LANGUAGE NamedFieldPuns #-}
 module GUI.Timeline.Render (
     renderView,
-    renderViewHistogram,  --TODO: move elsewhere
     renderTraces,
     updateLabelDrawingArea,
     calculateTotalTimelineHeight,
@@ -23,13 +22,9 @@ import GUI.Timeline.CairoDrawing
 import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk.Gdk.GC (GC, gcNew) --FIXME: eliminate old style drawing
-import qualified Graphics.Rendering.Chart as Chart
-import qualified Graphics.Rendering.Chart.Renderable as ChartR
-import qualified Graphics.Rendering.Chart.Gtk as ChartG
 
 import Data.IORef
 import Control.Monad
-import Data.Accessor
 
 -------------------------------------------------------------------------------
 
@@ -103,104 +98,6 @@ renderView TimelineState{timelineDrawingArea, timelineVAdj, timelinePrevView}
     withViewScale params $ do
       renderBookmarks bookmarks params
       drawCursor cursor_t params
-
--------------------------------------------------------------------------------
--- | This function redraws the currently visible part of the
---   main trace canvas plus related canvases.
---
-renderViewHistogram ::
-  TimelineState
-           -> ViewParameters
-           -> HECs -> Timestamp -> [Timestamp]
-           -> Region -> IO ()
-renderViewHistogram
-  TimelineState{timelineDrawingArea, timelineVAdj, timelinePrevView}
-           params hecs cursor_t bookmarks exposeRegion = do
-
-  -- Get state information from user-interface components
-  (dAreaWidth, _) <- widgetGetSize timelineDrawingArea
-  vadj_value <- adjustmentGetValue timelineVAdj
-
-  prev_view <- readIORef timelinePrevView
-
-  rect <- regionGetClipbox exposeRegion
-
-  let plot xs =
-              let layout = Chart.layout1_plots ^= [ Left (Chart.plotBars bars) ]
-                           $ Chart.defaultLayout1 :: Chart.Layout1 Double Double
-
-                  bars = Chart.plot_bars_values ^= barvs
-                         $ Chart.defaultPlotBars
-
-                  barvs = [(intDoub t, [intDoub height]) | (t, height) <- xs]
-
-                  intDoub :: Integral a => a -> Double
-                  intDoub = fromIntegral
-              in layout
-  ChartG.updateCanvas (ChartR.toRenderable (plot (durHistogram hecs))) timelineDrawingArea >> return ()
-
-{-
-updateCanvas  :: Renderable a -> G.DrawingArea  -> IO Bool
-updateCanvas chart canvas = do
-    win <- G.widgetGetDrawWindow canvas
-    (width, height) <- G.widgetGetSize canvas
-    let sz = (fromIntegral width,fromIntegral height)
-    G.renderWithDrawable win $ runCRender (render chart sz) bitmapEnv
-    return True
-
-  win <- widgetGetDrawWindow timelineDrawingArea
-  renderWithDrawable win $ do
-
-  let renderToNewSurface = do
-        new_surface <- withTargetSurface $ \surface ->
-                         liftIO $ createSimilarSurface surface ContentColor
-                                    dAreaWidth (height params)
-        renderWith new_surface $ do
-             clearWhite
-             renderTracesHistogram params hecs rect
-        return new_surface
-
-  surface <-
-    case prev_view of
-      Nothing -> renderToNewSurface
-
-      Just (old_params, surface)
-         | old_params == params
-         -> return surface
-
-         | width  old_params == width  params &&
-           height old_params == height params
-         -> do
-               if old_params { hadjValue = hadjValue params } == params
-                  -- only the hadjValue changed
-                  && abs (hadjValue params - hadjValue old_params) <
-                     fromIntegral (width params) * scaleValue params
-                  -- and the views overlap...
-                  then do
-                       scrollView surface old_params params hecs
-
-                  else do
-                       renderWith surface $ do
-                          clearWhite; renderTracesHistogram params hecs rect
-                       return surface
-
-         | otherwise
-         -> do surfaceFinish surface
-               renderToNewSurface
-
-  liftIO $ writeIORef timelinePrevView (Just (params, surface))
-
-  region exposeRegion
-  clip
-  setSourceSurface surface 0 (-vadj_value)
-          -- ^^ this is where we adjust for the vertical scrollbar
-  setOperator OperatorSource
-  paint
-  when (scaleValue params > 0) $
-    withViewScale params $ do
-      renderBookmarks bookmarks params
-      drawCursor cursor_t params
--}
 
 -------------------------------------------------------------------------------
 
@@ -299,83 +196,6 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh)
        -- Now rennder all the HECs.
       zipWithM_ renderTrace viewTraces (traceYPositions labelsMode viewTraces)
 
--------------------------------------------------------------------------------
--- This function draws the current view of all the HECs with Cairo
-
-renderTracesHistogram :: ViewParameters -> HECs -> Rectangle
-             -> Render ()
-
-renderTracesHistogram params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh)
-  = do
-    let
-        scale_rx    = fromIntegral rx * scaleValue
-        scale_rw    = fromIntegral rw * scaleValue
-        scale_width = fromIntegral width * scaleValue
-
-        startPos :: Timestamp
-        startPos = fromIntegral (max 0 (truncate (scale_rx + hadjValue)))
-                   -- hadj_value might be negative, as we leave a
-                   -- small gap before the trace starts at the beginning
-
-        endPos :: Timestamp
-        endPos = minimum [
-                   ceiling (max 0 (hadjValue + scale_width)),
-                   ceiling (max 0 (hadjValue + scale_rx + scale_rw)),
-                   hecLastEventTime hecs
-                ]
-    return ()
-    {-
-    -- Now render the timeline drawing if we have a non-empty trace
-    when (scaleValue > 0) $ do
-      withViewScale params $ do
-        let plot xs =
-              let layout = layout1_plots ^= [ Left (plotBars bars) ]
-                           $ defaultLayout1 :: Layout1 Double Double
-
-                  bars = plot_bars_values ^= barvs
-                         $ defaultPlotBars
-
-                  barvs = [(intDoub t, [intDoub height]) | (t, height) <- xs]
-
-                  intDoub :: Integral a => a -> Double
-                  intDoub = fromIntegral
-              in layout
-        return () -- renderableToPNGFile (toRenderable (plot (durHistogram hecs))) 1024 400 out
-
-      save
-      -- First render the ticks and tick times
-      renderTicks startPos endPos scaleValue height
-      restore
-
-      -- This function helps to render a single HEC...
-      let
-        renderTrace trace y = do
-            save
-            translate 0 (fromIntegral y)
-            case trace of
-               TraceHEC c ->
-                 let (dtree, etree, _) = hecTrees hecs !! c
-                 in renderHEC c params startPos endPos (dtree, etree)
-               SparkCreationHEC c ->
-                 let (_, _, stree) = hecTrees hecs !! c
-                     maxV = maxSparkValue hecs
-                 in renderSparkCreation params startPos endPos stree maxV
-               SparkConversionHEC c ->
-                 let (_, _, stree) = hecTrees hecs !! c
-                     maxV = maxSparkValue hecs
-                 in renderSparkConversion params startPos endPos stree maxV
-               SparkPoolHEC c ->
-                 let (_, _, stree) = hecTrees hecs !! c
-                     maxP = maxSparkPool hecs
-                 in renderSparkPool params startPos endPos stree maxP
-               TraceActivity ->
-                   renderActivity params hecs startPos endPos
-               _   ->
-                   return ()
-            restore
-       -- Now rennder all the HECs.
-      zipWithM_ renderTrace viewTraces (traceYPositions labelsMode viewTraces)
--}
 -------------------------------------------------------------------------------
 
 -- parameters differ only in the hadjValue, we can scroll ...
