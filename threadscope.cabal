@@ -48,6 +48,7 @@ Executable threadscope
                      GUI.MainWindow,
                      GUI.EventsView,
                      GUI.Dialogs,
+                     GUI.Histogram,
                      GUI.SaveAs,
                      GUI.Timeline,
                      GUI.TraceView,
@@ -80,7 +81,7 @@ Executable threadscope
      ghc-options:  -fno-warn-unused-matches
 
   if !os(windows)
-     build-depends: unix >= 2.3 && < 2.5
+     build-depends: unix >= 2.3
 
 -- Not yet: gtk2hs doesn't support -threaded at the moment.
 --  ghc-options: -threaded
