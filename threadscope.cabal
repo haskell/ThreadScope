@@ -48,7 +48,6 @@ Executable threadscope
                      GUI.MainWindow,
                      GUI.EventsView,
                      GUI.Dialogs,
-                     GUI.Histogram,
                      GUI.SaveAs,
                      GUI.Timeline,
                      GUI.TraceView,

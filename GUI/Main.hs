@@ -27,7 +27,6 @@ import Events.HECs hiding (Event)
 import GUI.Dialogs
 import Events.ReadEvents
 import GUI.EventsView
-import GUI.Histogram
 import GUI.Timeline
 import GUI.TraceView
 import GUI.BookmarkView
@@ -42,7 +41,6 @@ data UIEnv = UIEnv {
 
        mainWin       :: MainWindow,
        eventsView    :: EventsView,
-       histogramWin  :: HistogramView,
        timelineWin   :: TimelineView,
        traceView     :: TraceView,
        bookmarkView  :: BookmarkView,
@@ -132,10 +130,6 @@ constructUI = failOnGError $ do
     mainWinJumpZoomFit   = post EventTimelineZoomToFit,
     mainWinDisplayLabels = post . EventTimelineShowLabels,
     mainWinViewBW        = post . EventTimelineShowBW
-  }
-
-  histogramWin <- histogramViewNew builder HistogramViewActions {
-    histogramViewCursorChanged = post . EventCursorChangedTimestamp
   }
 
   timelineWin <- timelineViewNew builder TimelineViewActions {
@@ -322,8 +316,6 @@ eventLoop uienv@UIEnv{..} eventlogState = do
           traces' <- traceViewGetTraces traceView
           timelineWindowSetHECs timelineWin (Just hecs)
           timelineWindowSetTraces timelineWin traces'
-          histogramWindowSetHECs histogramWin (Just hecs)
-          histogramWindowSetTraces histogramWin traces'
           post (EventSetState mfilename hecs)
       return ()
 

@@ -128,8 +128,6 @@ mainWindowNew builder actions = do
 --  timelineAdj         <- rangeGetAdjustment timelineHScrollbar
 --  timelineVAdj        <- rangeGetAdjustment timelineVScrollbar
 
-  histogramViewport  <- getWidget castToWidget "histogram_viewport"
-
   zoomInButton       <- getWidget castToToolButton "cpus_zoomin"
   zoomOutButton      <- getWidget castToToolButton "cpus_zoomout"
   zoomFitButton      <- getWidget castToToolButton "cpus_zoomfit"
@@ -158,7 +156,7 @@ mainWindowNew builder actions = do
 
   ------------------------------------------------------------------------
   -- Bind all the events
-
+  
   -- Menus
   on openMenuItem      menuItemActivate $ mainWinOpen actions
   on saveAsPDFMenuItem menuItemActivate $ mainWinSavePDF actions
@@ -177,7 +175,7 @@ mainWindowNew builder actions = do
 
   on aboutMenuItem  menuItemActivate     $ mainWinAbout actions
 
-  -- Toolbar
+  -- Toolbar  
   onToolButtonClicked firstButton  $ mainWinJumpStart  actions
   onToolButtonClicked lastButton   $ mainWinJumpEnd    actions
   onToolButtonClicked centreButton $ mainWinJumpCursor actions
@@ -185,20 +183,13 @@ mainWindowNew builder actions = do
   onToolButtonClicked zoomInButton  $ mainWinJumpZoomIn  actions
   onToolButtonClicked zoomOutButton $ mainWinJumpZoomOut actions
   onToolButtonClicked zoomFitButton $ mainWinJumpZoomFit actions
-
+   
   onToolButtonToggled showLabelsToggle $
     toggleToolButtonGetActive showLabelsToggle >>= mainWinDisplayLabels actions
 
   -- Key bindings
-  --TODO: move these to the Timeline and Histogram modules
+  --TODO: move these to the timeline module
   onKeyPress timelineViewport $ \Key { Old.eventKeyName = key, eventKeyChar = mch } ->
-    case (key, mch) of
-      ("Right", _)   -> mainWinScrollRight actions >> return True
-      ("Left",  _)   -> mainWinScrollLeft  actions >> return True
-      (_ , Just '+') -> mainWinJumpZoomIn  actions >> return True
-      (_ , Just '-') -> mainWinJumpZoomOut actions >> return True
-      _              -> return False
-  onKeyPress histogramViewport $ \Key { Old.eventKeyName = key, eventKeyChar = mch } ->
     case (key, mch) of
       ("Right", _)   -> mainWinScrollRight actions >> return True
       ("Left",  _)   -> mainWinScrollLeft  actions >> return True
