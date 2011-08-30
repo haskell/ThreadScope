@@ -103,6 +103,8 @@ reorder them by just dragging and dropping
 ideally generate sampled events from accurate events and compare visually
 and/or numerically
 
+- integrate basic spark duration histogram
+
 
 FIRST RELEASE ---------------------------------------------------------------
 
@@ -280,6 +282,8 @@ or via scaling the creation/conversion graphs by the spark size
 (instead of the area being the number of sparks,
 it's proportional to the amount of work (ie eval time)
 of the sparks in the interval)
+Of course the scaling doesn't work for dud, fizzled, gcd sparks,
+so perhaps add this as another set of graphs instead of replacing the old?
 
 - use adaptive interval, depending on the sample density at the viewed fragment
 
@@ -308,7 +312,19 @@ after the event for this introduced
 - verify correctness of the input eventlog, when event state transition machines
 for events defined and implemented
 
+- zoom and pan spark duration histogram by selecting ranges on the timeline view
 
+- perhaps the far left and far right bars on the histogram should be in red,
+since extreme spark sizes are usually bad
+
+- perhaps rewrite the spark duration histogram manually, to have a look
+similar to the other graphs (e;g;, scales) and to control details, e.g.,
+the number printed on the x-axis should be from before the log conversion
+
+- either show "Loading" when calculating spark duration histogram
+for a selected range on the timeline graph, or store precomputed data
+in the data structures for speedy drawing of the of the main timeline graphs,
+however they are (re)implemented in the end (mipmap or tress or anything)
 
 DONE
   - tidy up menu option
