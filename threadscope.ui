@@ -575,11 +575,11 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkNotebook" id="events_histogram">
+                  <object class="GtkNotebook" id="eventsbox">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <child>
-                  <object class="GtkVBox" id="eventsbox">
+                  <object class="GtkVBox" id="eventsbox_old">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
