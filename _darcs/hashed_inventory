@@ -1,4 +1,4 @@
-pristine:0000001864-2765017efba939c47ba075b86c598e93f7934a879d877f57ea9761bd520c95fd
+pristine:0000001864-343a3fa1c0bf51ff7fa46dc33844a6468a7eaac69eb7741a7623221b478ddd99
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -898,3 +898,8 @@ Duncan Coutts <duncan@well-typed.com>**20110831082630
  Ignore-this: d3bd5411410fdb94e36b4360804143aa
 ] 
 hash: 0000000208-50c369f27ff816b0596652b3edf8b4face1ed287045290ab96cffabcda786c28
+[continue, instead of crashing, when no evenlog loaded and actions requested 
+Mikolaj Konarski <mikolaj@well-typed.com>**20110831121553
+ Ignore-this: 1d566bfe397b4cb853be134c08b9ecee
+] 
+hash: 0000001020-cedb63d73278905368aa550bc61004b2fd83944ec8647d8f5a2ac0159771a43b
