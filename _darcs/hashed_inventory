@@ -1,4 +1,4 @@
-pristine:0000001864-12a1e53fad5a5a49ac2206eb1d76acd756b45f818c5f317a010c53b3f0bc3e9d
+pristine:0000001864-6c2dd8e28d13bba7248375714e1c28dd2103b2cf8665705b61ab7320af2604a5
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -865,3 +865,11 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20110830232147
  Ignore-this: b58884bb32c670acf7657b08d6f19f96
 ] 
 hash: 0000003113-9b930a6e51d5f6f22963d36fd724aa2a00bf31dc58b7286841c4b23f88270b15
+[add first draft of spark duration histogram drawing code
+Mikolaj Konarski <mikolaj@well-typed.com>**20110831074510
+ Ignore-this: b71e813a15363e6775152bc3a8695b71
+ 
+ Includes work by Spencer Janssen, taken from
+ http://code.haskell.org/~sjanssen/events-tools/.
+] 
+hash: 0000002635-0f7ef9b6e38fbbe4590bb587ab58f238f74b3d7c92bb239c4ab8e7ef16501365

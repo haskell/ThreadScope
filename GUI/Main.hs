@@ -142,9 +142,7 @@ constructUI = failOnGError $ do
     timelineViewCursorChanged = post . EventCursorChangedIndex
   }
 
-  histogramView <- histogramViewNew builder HistogramViewActions {
-    histogramViewCursorChanged = post . EventCursorChangedTimestamp
-  }
+  histogramView <- histogramViewNew builder
 
   traceView <- traceViewNew builder TraceViewActions {
     traceViewTracesChanged = post . EventTracesChanged
@@ -318,7 +316,7 @@ eventLoop uienv@UIEnv{..} eventlogState = do
             printf "%s (%d events, %.3fs)" name nevents timespan
 
           eventsViewSetEvents eventsView (Just (hecEventArray hecs))
-          histogramWindowSetHECs histogramView (Just hecs)
+          histogramViewSetHECs histogramView (Just hecs)
           traceViewSetHECs traceView hecs
           traces' <- traceViewGetTraces traceView
           timelineWindowSetHECs timelineWin (Just hecs)
