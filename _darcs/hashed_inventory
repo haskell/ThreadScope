@@ -1,4 +1,4 @@
-pristine:0000001864-6c2dd8e28d13bba7248375714e1c28dd2103b2cf8665705b61ab7320af2604a5
+pristine:0000001864-c07a53d076c6749924f85c042ee6d5a24002dd34ba415cbef7dfe355ef671292
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -873,3 +873,13 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20110831074510
  http://code.haskell.org/~sjanssen/events-tools/.
 ] 
 hash: 0000002635-0f7ef9b6e38fbbe4590bb587ab58f238f74b3d7c92bb239c4ab8e7ef16501365
+[fix a bug where only a part of the lower pane was toggable from View menu
+Mikolaj Konarski <mikolaj@well-typed.com>**20110831095707
+ Ignore-this: 2d211341de456412434bd9f4cbe34644
+] 
+hash: 0000000492-15737495cb37c0224d05321be593cfc89a5ff177ff5fb2babed4d19379541b3a
+[rename Histogram and its pane
+Mikolaj Konarski <mikolaj@well-typed.com>**20110831095905
+ Ignore-this: 80fda52417e78983bc108867691eef8
+] 
+hash: 0000000597-1ccdfdd3b1ecce9fd3c93f769f492b675c0a4f136f357877f840c37af4adce9f
