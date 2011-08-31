@@ -1,5 +1,5 @@
 Name:                threadscope
-Version:             0.1.4
+Version:             0.2.0
 Category:            Development, Profiling, Trace
 Synopsis:            A graphical tool for profiling parallel Haskell programs.
 Description:         ThreadScope is a graphical viewer for thread profile 
