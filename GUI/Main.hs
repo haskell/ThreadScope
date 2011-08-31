@@ -30,6 +30,7 @@ import Events.HECs hiding (Event)
 import GUI.Dialogs
 import Events.ReadEvents
 import GUI.EventsView
+import GUI.Histogram
 import GUI.Timeline
 import GUI.TraceView
 import GUI.BookmarkView
@@ -44,6 +45,7 @@ data UIEnv = UIEnv {
 
        mainWin       :: MainWindow,
        eventsView    :: EventsView,
+       histogramView :: HistogramView,
        timelineWin   :: TimelineView,
        traceView     :: TraceView,
        bookmarkView  :: BookmarkView,
@@ -144,6 +146,8 @@ constructUI = failOnGError $ do
   eventsView <- eventsViewNew builder EventsViewActions {
     eventsViewCursorChanged = post . EventCursorChangedIndex
   }
+
+  histogramView <- histogramViewNew builder
 
   traceView <- traceViewNew builder TraceViewActions {
     traceViewTracesChanged = post . EventTracesChanged
@@ -382,7 +386,16 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       ConcurrencyControl.fullSpeed concCtl $
         ProgressView.withProgress mainWin $ \progress -> do
           (hecs, name, nevents, timespan) <- registerEvents progress
-          post (EventSetState hecs mfilename name nevents timespan)
+          MainWindow.setFileLoaded mainWin (Just name)
+          MainWindow.setStatusMessage mainWin $
+            printf "%s (%d events, %.3fs)" name nevents timespan
+
+          eventsViewSetEvents eventsView (Just (hecEventArray hecs))
+          traceViewSetHECs traceView hecs
+          traces' <- traceViewGetTraces traceView
+          timelineWindowSetHECs timelineWin (Just hecs)
+          timelineWindowSetTraces timelineWin traces'
+          post (EventSetState mfilename hecs)
       return ()
 
     async doing action =
