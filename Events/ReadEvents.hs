@@ -118,9 +118,23 @@ buildEventLog progress from =
          maxSparkPool = maximum (0 : map (snd . fst) maxTrees)
          trees = map snd maxTrees
 
+         intDoub :: Integral a => a -> Double
+         intDoub = fromIntegral
+         -- takes a log and discretizes the data
+         -- TODO: produce more granular discretization for data with only
+         -- small sparks (or even such intervals; but it's costly
+         -- and the scale would change between intervals)
+         -- to do that replace either the floor function or the log base
+         ilog :: Timestamp -> Int
+         ilog 0 = 0
+         ilog x = floor $ logBase 2 (intDoub x)  -- TODO: shift instead of log?
          sparks = sparkInfo (events (dat evs))
-         durHistogram =
-           [(Sparks.timeStarted s, Sparks.sparkDuration s) | s <- sparks]
+         prepHisto s =
+           let start  = Sparks.timeStarted s
+               dur    = Sparks.sparkDuration s
+               logdur = ilog dur
+           in (start, logdur, dur)
+         durHistogram = map prepHisto sparks
 
          -- sort the events by time and put them in an array
          sorted    = sortGroups groups

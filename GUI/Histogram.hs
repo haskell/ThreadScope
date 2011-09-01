@@ -15,7 +15,7 @@ import qualified Graphics.Rendering.Chart.Gtk as ChartG
 
 import Data.Accessor
 import Data.IORef
-import qualified Data.Map as Map
+import qualified Data.IntMap as IM
 
 data HistogramView = HistogramView {
 
@@ -50,13 +50,10 @@ renderViewHistogram :: DrawingArea -> HECs -> IO Bool
 renderViewHistogram historamDrawingArea hecs = do
   let intDoub :: Integral a => a -> Double
       intDoub = fromIntegral
-      ilog :: Integral a => a -> a -> a
-      ilog b x = floor $ logBase (intDoub b) (intDoub x)
-      histo :: Integral a => [a] -> [(a, a)]
-      histo xs = Map.toList $ Map.fromListWith (+)
-                 $ [(ilog 2 x, x) | x <- xs]
-      inRange :: Integral a => [(a, a)] -> [a]
-      inRange xs = [dur | (start, dur) <- xs]  -- TODO: use start
+      histo :: [(Int, Timestamp)] -> [(Int, Timestamp)]
+      histo durs = IM.toList $ IM.fromListWith (+) durs
+      inRange :: [(Timestamp, Int, Timestamp)] -> [(Int, Timestamp)]
+      inRange xs = [(logdur, dur) | (start, logdur, dur) <- xs]  -- TODO
 
       plot xs =
         let layout = Chart.layout1_plots ^= [ Left (Chart.plotBars bars) ]
