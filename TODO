@@ -103,8 +103,7 @@ reorder them by just dragging and dropping
 ideally generate sampled events from accurate events and compare visually
 and/or numerically
 
-- integrate basic spark duration histogram
-
+- rewrite gth2hs code not to use deprecated functions (e.g. onButtonPress)
 
 FIRST RELEASE ---------------------------------------------------------------
 
@@ -325,6 +324,10 @@ the number printed on the x-axis should be from before the log conversion
 for a selected range on the timeline graph, or store precomputed data
 in the data structures for speedy drawing of the of the main timeline graphs,
 however they are (re)implemented in the end (mipmap or tress or anything)
+
+- manage historam interval selection as gimp does: drag to create a selection,
+then move the selection, etc.
+
 
 DONE
   - tidy up menu option
