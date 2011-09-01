@@ -23,6 +23,8 @@ data HistogramView = HistogramView {
 
      }
 
+type Interval = (Timestamp, Timestamp)
+
 histogramViewSetHECs :: HistogramView -> Maybe HECs -> IO ()
 histogramViewSetHECs HistogramView{..} mhecs =
   writeIORef hecsIORef mhecs
@@ -42,18 +44,24 @@ histogramViewNew builder = do
        -- Check if an event trace has been loaded
        case maybeEventArray of
          Nothing   -> return True
-         Just hecs -> renderViewHistogram histogramDrawingArea hecs
+         Just hecs -> renderViewHistogram Nothing histogramDrawingArea hecs
 
   return histogramView
 
-renderViewHistogram :: DrawingArea -> HECs -> IO Bool
-renderViewHistogram historamDrawingArea hecs = do
+renderViewHistogram :: Maybe Interval -> DrawingArea -> HECs
+                       -> IO Bool
+renderViewHistogram minterval historamDrawingArea hecs = do
   let intDoub :: Integral a => a -> Double
       intDoub = fromIntegral
       histo :: [(Int, Timestamp)] -> [(Int, Timestamp)]
       histo durs = IM.toList $ IM.fromListWith (+) durs
+      inR :: Timestamp -> Bool
+      inR = case minterval of
+              Nothing -> const True
+              Just (from, to) -> \ t -> t >= from && t <= to
+      -- TODO: if xs is sorted, we can slightly optimize the filtering
       inRange :: [(Timestamp, Int, Timestamp)] -> [(Int, Timestamp)]
-      inRange xs = [(logdur, dur) | (start, logdur, dur) <- xs]  -- TODO
+      inRange xs = [(logdur, dur) | (start, logdur, dur) <- xs, inR start]
 
       plot xs =
         let layout = Chart.layout1_plots ^= [ Left (Chart.plotBars bars) ]
