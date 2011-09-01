@@ -15,6 +15,7 @@ import qualified Graphics.Rendering.Chart.Gtk as ChartG
 
 import Data.Accessor
 import Data.IORef
+import qualified Data.Map as Map
 
 data HistogramView = HistogramView {
 
@@ -47,17 +48,23 @@ histogramViewNew builder = do
 
 renderViewHistogram :: DrawingArea -> HECs -> IO Bool
 renderViewHistogram historamDrawingArea hecs = do
-  let plot xs =
+  let intDoub :: Integral a => a -> Double
+      intDoub = fromIntegral
+      ilog :: Integral a => a -> a -> a
+      ilog b x = floor $ logBase (intDoub b) (intDoub x)
+      histo :: Integral a => [a] -> [(a, a)]
+      histo xs = Map.toList $ Map.fromListWith (+)
+                 $ [(ilog 2 x, x) | x <- xs]
+      inRange :: Integral a => [(a, a)] -> [a]
+      inRange xs = [dur | (start, dur) <- xs]  -- TODO: use start
+
+      plot xs =
         let layout = Chart.layout1_plots ^= [ Left (Chart.plotBars bars) ]
                      $ Chart.defaultLayout1 :: Chart.Layout1 Double Double
-
             bars = Chart.plot_bars_values ^= barvs
                    $ Chart.defaultPlotBars
-
-            barvs = [(intDoub t, [intDoub height]) | (t, height) <- xs]
-
-            intDoub :: Integral a => a -> Double
-            intDoub = fromIntegral
+            barvs = [(intDoub t, [intDoub height]) | (t, height) <- hs]
+            hs = histo (inRange xs)
         in layout
-      rendeerable = ChartR.toRenderable (plot (durHistogram hecs))
-  ChartG.updateCanvas rendeerable historamDrawingArea
+      renderable = ChartR.toRenderable (plot (durHistogram hecs))
+  ChartG.updateCanvas renderable historamDrawingArea
