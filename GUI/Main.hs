@@ -303,6 +303,8 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       timelineWindowSetBookmarks timelineWin =<< bookmarkViewGet bookmarkView
       continue
 
+    dispatch _ NoEventlogLoaded = continue
+
     loadEvents mfilename registerEvents = do
       ConcurrencyControl.fullSpeed concCtl $
         ProgressView.withProgress mainWin $ \progress -> do
