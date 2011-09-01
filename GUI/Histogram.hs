@@ -17,17 +17,18 @@ import Data.Accessor
 import Data.IORef
 import qualified Data.IntMap as IM
 
-data HistogramView = HistogramView {
-
-       hecsIORef :: IORef (Maybe HECs)
-
-     }
+data HistogramView =
+  HistogramView
+  { hecsIORef :: IORef (Maybe HECs)
+  , histogramDrawingArea :: DrawingArea
+  }
 
 type Interval = (Timestamp, Timestamp)
 
 histogramViewSetHECs :: HistogramView -> Maybe HECs -> IO ()
-histogramViewSetHECs HistogramView{..} mhecs =
+histogramViewSetHECs HistogramView{..} mhecs = do
   writeIORef hecsIORef mhecs
+  widgetQueueDraw histogramDrawingArea
 
 histogramViewNew :: Builder -> IO HistogramView
 histogramViewNew builder = do
