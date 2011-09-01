@@ -20,6 +20,7 @@ import qualified Data.IntMap as IM
 data HistogramView =
   HistogramView
   { hecsIORef :: IORef (Maybe HECs)
+  , intervalIORef :: IORef (Maybe Interval)
   , histogramDrawingArea :: DrawingArea
   }
 
@@ -30,28 +31,37 @@ histogramViewSetHECs HistogramView{..} mhecs = do
   writeIORef hecsIORef mhecs
   widgetQueueDraw histogramDrawingArea
 
+-- TODO: will it be needed?
+histogramViewSetInterval :: HistogramView -> Maybe Interval -> IO ()
+histogramViewSetInterval HistogramView{..} minterval = do
+  writeIORef intervalIORef minterval
+  widgetQueueDraw histogramDrawingArea
+
 histogramViewNew :: Builder -> IO HistogramView
 histogramViewNew builder = do
   let getWidget cast = builderGetObject builder cast
   histogramDrawingArea <- getWidget castToDrawingArea "histogram_drawingarea"
 
   hecsIORef <- newIORef Nothing
+  intervalIORef <- newIORef Nothing
   let histogramView = HistogramView{..}
 
   -- Program the callback for the capability drawingArea
   on histogramDrawingArea exposeEvent $ do
      liftIO $ do
        maybeEventArray <- readIORef hecsIORef
-       -- Check if an event trace has been loaded
+       minterval <- readIORef intervalIORef
+       -- Check if an event trace has been loaded.
        case maybeEventArray of
          Nothing   -> return True
-         Just hecs -> renderViewHistogram Nothing histogramDrawingArea hecs
+         Just hecs ->
+           renderViewHistogram histogramDrawingArea hecs minterval
 
   return histogramView
 
-renderViewHistogram :: Maybe Interval -> DrawingArea -> HECs
+renderViewHistogram :: DrawingArea -> HECs -> Maybe Interval
                        -> IO Bool
-renderViewHistogram minterval historamDrawingArea hecs = do
+renderViewHistogram historamDrawingArea hecs minterval = do
   let intDoub :: Integral a => a -> Double
       intDoub = fromIntegral
       histo :: [(Int, Timestamp)] -> [(Int, Timestamp)]
