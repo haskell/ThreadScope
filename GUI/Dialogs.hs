@@ -70,3 +70,23 @@ openFileDialog parent open
        widgetShowAll dialog
 
 -------------------------------------------------------------------------------
+
+errorMessageDialog :: WindowClass window => window -> String -> String -> IO ()
+errorMessageDialog parent headline explanation = do
+
+  dialog <- messageDialogNew (Just (toWindow parent))
+              [] MessageError ButtonsNone ""
+
+  set dialog
+    [ windowModal := True
+    , windowTransientFor := toWindow parent
+    , messageDialogText  := Just headline
+    , messageDialogSecondaryText := Just explanation
+    , windowResizable := True
+    ]
+
+  dialogAddButton dialog "Close" ResponseClose
+  dialogSetDefaultResponse dialog ResponseClose
+
+  onResponse dialog $ \_-> widgetDestroy dialog
+  widgetShowAll dialog

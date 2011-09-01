@@ -16,6 +16,8 @@ import System.Posix
 #endif
 import Control.Concurrent
 import qualified Control.Concurrent.Chan as Chan
+import Control.Exception
+import Prelude hiding (catch)
 import Data.Array
 
 import Paths_threadscope
@@ -102,6 +104,9 @@ data Event
    | EventBookmarkAdd
    | EventBookmarRemove Int
 
+   | EventUserError String SomeException
+                    -- can add more specific ones if necessary
+
 constructUI :: IO UIEnv
 constructUI = failOnGError $ do
 
@@ -166,6 +171,10 @@ eventLoop uienv@UIEnv{..} eventlogState = do
 
     event <- getEvent eventQueue
     next  <- dispatch event eventlogState
+#if __GLASGOW_HASKELL__ <= 612
+               -- workaround for a wierd exception handling bug in ghc-6.12
+               `catch` \e -> throwIO (e :: SomeException)
+#endif
     case next of
       Left  LoopDone       -> return ()
       Right eventlogState' -> eventLoop uienv eventlogState'
@@ -181,17 +190,20 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       continue
 
     dispatch (EventFileLoad filename) _ = do
-      forkIO $ loadEvents (Just filename) (registerEventsFromFile filename)
+      async "loading the eventlog" $
+        loadEvents (Just filename) (registerEventsFromFile filename)
       --TODO: set state to be empty during loading
       continue
 
     dispatch (EventTestLoad testname) _ = do
-      forkIO $ loadEvents Nothing (registerEventsFromTrace testname)
+      async "loading the test eventlog" $
+        loadEvents Nothing (registerEventsFromTrace testname)
       --TODO: set state to be empty during loading
       continue
 
     dispatch EventFileReload EventlogLoaded{mfilename = Just filename} = do
-      forkIO $ loadEvents (Just filename) (registerEventsFromFile filename)
+      async "reloading the eventlog" $
+        loadEvents (Just filename) (registerEventsFromFile filename)
       --TODO: set state to be empty during loading
       continue
 
@@ -303,6 +315,12 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       timelineWindowSetBookmarks timelineWin =<< bookmarkViewGet bookmarkView
       continue
 
+    dispatch (EventUserError doing exception) _ = do
+      let headline    = "There was a problem " ++ doing ++ "."
+          explanation = show exception
+      errorMessageDialog mainWin headline explanation
+      continue
+
     dispatch _ NoEventlogLoaded = continue
 
     loadEvents mfilename registerEvents = do
@@ -320,6 +338,9 @@ eventLoop uienv@UIEnv{..} eventlogState = do
           timelineWindowSetTraces timelineWin traces'
           post (EventSetState mfilename hecs)
       return ()
+
+    async doing action =
+      forkIO (action `catch` \e -> post (EventUserError doing e))
 
     post = postEvent eventQueue
     continue = continueWith eventlogState
@@ -342,9 +363,12 @@ runGUI filename traceName _debug = do
   when (traceName /= "") $
     post (EventTestLoad traceName)
 
+  doneVar <- newEmptyMVar
+
   forkIO $ do
-    eventLoop uiEnv NoEventlogLoaded
+    res <- try $ eventLoop uiEnv NoEventlogLoaded
     Gtk.mainQuit
+    putMVar doneVar (res :: Either SomeException ())
 
 #ifndef mingw32_HOST_OS
   installHandler sigINT (Catch $ post EventQuit) Nothing
@@ -352,3 +376,8 @@ runGUI filename traceName _debug = do
 
   -- Enter Gtk+ main event loop.
   Gtk.mainGUI
+
+  -- Wait for child event loop to terminate
+  -- This lets us wait for any exceptions.
+  either throwIO return =<< takeMVar doneVar
+
