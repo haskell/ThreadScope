@@ -9,15 +9,12 @@ import Events.HECs
 import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo
 
--- Imports from Haskell library
-import System.FilePath
-
 -------------------------------------------------------------------------------
 
 saveAsPDF :: FilePath -> HECs -> ViewParameters -> IO ()
-saveAsPDF fn hecs viewParams =
+saveAsPDF file hecs viewParams =
 
-    withPDFSurface (fn <.> "pdf") w' h' $ \surface ->
+    withPDFSurface file w' h' $ \surface ->
       renderWith surface $
         renderTraces viewParams hecs (Rectangle 0 0 w h)
 
@@ -28,12 +25,12 @@ saveAsPDF fn hecs viewParams =
 -------------------------------------------------------------------------------
 
 saveAsPNG :: FilePath -> HECs -> ViewParameters -> IO ()
-saveAsPNG fn hecs viewParams =
+saveAsPNG file hecs viewParams =
 
     withImageSurface FormatARGB32 w' h' $ \surface -> do
       renderWith surface $
         renderTraces viewParams hecs (Rectangle 0 0 w h)
-      surfaceWriteToPNG surface (fn <.> "png")
+      surfaceWriteToPNG surface file
 
   where
     w = width  viewParams; w' = fromIntegral w

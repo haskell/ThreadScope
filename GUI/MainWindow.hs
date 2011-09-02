@@ -48,8 +48,7 @@ data MainWindowActions = MainWindowActions {
 
        -- Menu actions
        mainWinOpen          :: IO (),
-       mainWinSavePDF       :: IO (),
-       mainWinSavePNG       :: IO (),
+       mainWinExport        :: IO (),
        mainWinQuit          :: IO (),
        mainWinViewSidebar   :: Bool -> IO (),
        mainWinViewEvents    :: Bool -> IO (),
@@ -114,8 +113,7 @@ mainWindowNew builder actions = do
   sidebarToggle      <- getWidget castToCheckMenuItem "view_sidebar"
   eventsToggle       <- getWidget castToCheckMenuItem "view_events"
   openMenuItem       <- getWidget castToMenuItem "openMenuItem"
-  saveAsPDFMenuItem  <- getWidget castToMenuItem "saveAsPDFMenuItem"
-  saveAsPNGMenuItem  <- getWidget castToMenuItem "saveAsPNGMenuItem"
+  exportMenuItem     <- getWidget castToMenuItem "exportMenuItem"
   reloadMenuItem     <- getWidget castToMenuItem "view_reload"
   quitMenuItem       <- getWidget castToMenuItem "quitMenuItem"
   aboutMenuItem      <- getWidget castToMenuItem "aboutMenuItem"
@@ -159,8 +157,7 @@ mainWindowNew builder actions = do
   
   -- Menus
   on openMenuItem      menuItemActivate $ mainWinOpen actions
-  on saveAsPDFMenuItem menuItemActivate $ mainWinSavePDF actions
-  on saveAsPNGMenuItem menuItemActivate $ mainWinSavePNG actions
+  on exportMenuItem    menuItemActivate $ mainWinExport actions
 
   on quitMenuItem menuItemActivate $ mainWinQuit actions
   on mainWindow   objectDestroy    $ mainWinQuit actions

@@ -11,12 +11,16 @@
   <object class="GtkImage" id="image2">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="stock">gtk-save-as</property>
   </object>
   <object class="GtkImage" id="image3">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="stock">gtk-save-as</property>
+  </object>
+  <object class="GtkImage" id="image4">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-open</property>
   </object>
   <object class="GtkWindow" id="main_window">
     <property name="width_request">600</property>
@@ -46,31 +50,22 @@
                     <property name="can_focus">False</property>
                     <child>
                       <object class="GtkImageMenuItem" id="openMenuItem">
-                        <property name="label">gtk-open</property>
+                        <property name="label">_Open...</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkImageMenuItem" id="saveAsPDFMenuItem">
-                        <property name="label" translatable="yes">Save as PDF</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="use_action_appearance">False</property>
-                        <property name="image">image2</property>
+                        <property name="image">image4</property>
                         <property name="use_stock">False</property>
                       </object>
                     </child>
                     <child>
-                      <object class="GtkImageMenuItem" id="saveAsPNGMenuItem">
-                        <property name="label" translatable="yes">Save as PNG</property>
+                      <object class="GtkImageMenuItem" id="exportMenuItem">
+                        <property name="label" translatable="yes">Export image...</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
-                        <property name="image">image3</property>
+                        <property name="image">image2</property>
                         <property name="use_stock">False</property>
                       </object>
                     </child>

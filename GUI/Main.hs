@@ -61,8 +61,6 @@ data EventlogState
        cursorPos :: Int
      }
 
-data FileSaveFormat = FormatPDF | FormatPNG
-
 postEvent :: Chan Event -> Event -> IO ()
 postEvent = Chan.writeChan
 
@@ -71,13 +69,14 @@ getEvent = Chan.readChan
 
 data Event
    = EventOpenDialog
+   | EventExportDialog
    | EventAboutDialog
    | EventQuit
 
    | EventFileLoad   FilePath
    | EventTestLoad   String
    | EventFileReload
-   | EventFileSave   FileSaveFormat
+   | EventFileExport FilePath FileExportFormat
 
 -- | EventStateClear
    | EventSetState (Maybe FilePath) HECs
@@ -118,8 +117,7 @@ constructUI = failOnGError $ do
 
   mainWin <- mainWindowNew builder MainWindowActions {
     mainWinOpen          = post EventOpenDialog,
-    mainWinSavePDF       = post (EventFileSave FormatPDF),
-    mainWinSavePNG       = post (EventFileSave FormatPNG),
+    mainWinExport        = post EventExportDialog,
     mainWinQuit          = post EventQuit,
     mainWinViewSidebar   = post . EventShowSidebar,
     mainWinViewEvents    = post . EventShowEvents,
@@ -217,8 +215,14 @@ eventLoop uienv@UIEnv{..} eventlogState = do
         cursorPos = 0
       }
 
-    dispatch (EventFileSave format)
-             EventlogLoaded {hecs, mfilename = Just filename} = do
+    dispatch EventExportDialog
+             EventlogLoaded {mfilename = Just filename} = do
+      exportFileDialog mainWin filename $ \filename' format ->
+        post (EventFileExport filename' format)
+      continue
+
+    dispatch (EventFileExport filename format)
+             EventlogLoaded {hecs} = do
       viewParams <- timelineGetViewParameters timelineWin
       let viewParams' = viewParams {
                           detail     = 1,
