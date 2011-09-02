@@ -54,7 +54,7 @@ data MainWindowActions = MainWindowActions {
        mainWinViewSidebar   :: Bool -> IO (),
        mainWinViewEvents    :: Bool -> IO (),
        mainWinViewBW        :: Bool -> IO (),
-       mainWinViewRefresh   :: IO (),
+       mainWinViewReload    :: IO (),
        mainWinAbout         :: IO (),
 
        -- Toolbar actions
@@ -171,7 +171,7 @@ mainWindowNew builder actions = do
                                        >>= mainWinViewEvents  actions
   on bwToggle       checkMenuItemToggled $ checkMenuItemGetActive bwToggle
                                        >>= mainWinViewBW      actions
-  on reloadMenuItem menuItemActivate     $ mainWinViewRefresh actions
+  on reloadMenuItem menuItemActivate     $ mainWinViewReload actions
 
   on aboutMenuItem  menuItemActivate     $ mainWinAbout actions
 
