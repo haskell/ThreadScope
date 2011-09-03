@@ -20,6 +20,7 @@ import Text.Printf
 import System.FilePath
 import Control.Monad
 import Control.Exception
+import Control.DeepSeq as DeepSeq
 
 -------------------------------------------------------------------------------
 -- The GHC.RTS.Events library returns the profile information
@@ -160,7 +161,7 @@ buildEventLog progress from =
             evaluate tree1
             evaluate (eventTreeMaxDepth tree2)
             evaluate (sparkTreeMaxDepth tree3)
-            return ()
+            return $! DeepSeq.rnf durHistogram
 
        zipWithM_ treeProgress [0..] trees
 
