@@ -129,8 +129,11 @@ exportFileDialog parent oldfile save = do
                [DialogModal, DialogDestroyWithParent]
                MessageError ButtonsClose
                "The file format is unknown or unsupported"
-      set msg [ messageDialogSecondaryText := Just
-        "The PNG and PDF formts are supported. Please use a file extension of '.png' or '.pdf'." ]
+      set msg [
+        messageDialogSecondaryText := Just $
+             "The PNG and PDF formats are supported. "
+          ++ "Please use a file extension of '.png' or '.pdf'."
+        ]
       dialogRun msg
       widgetDestroy msg
 
