@@ -87,7 +87,7 @@ renderViewHistogram historamDrawingArea hecs minterval = do
                    $ Chart.defaultLayoutAxis
             ytitle = "Total duration (" ++ mu ++ "s)"
             xtitle = "Individual spark duration (" ++ mu ++ "s)"
-            override d = [(x, show (2 ** x / 1000)) | (x, _) <- d]
+            override d = [(x, show (10 ** (x / 5) / 1000)) | (x, _) <- d]
             bars = Chart.plot_bars_values ^= barvs
                    $ Chart.defaultPlotBars
             barvs = [(intDoub t, [intDoub height / 1000])
