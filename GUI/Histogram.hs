@@ -5,6 +5,7 @@ module GUI.Histogram (
  ) where
 
 import Events.HECs
+import GUI.Timeline.Ticks (mu)
 
 import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo as C
@@ -76,10 +77,21 @@ renderViewHistogram historamDrawingArea hecs minterval = do
 
       plot xs =
         let layout = Chart.layout1_plots ^= [ Left (Chart.plotBars bars) ]
-                     $ Chart.defaultLayout1 :: Chart.Layout1 Double Double
+                   $ Chart.layout1_left_axis ^= yaxis
+                   $ Chart.layout1_bottom_axis ^= xaxis
+                   $ Chart.defaultLayout1 :: Chart.Layout1 Double Double
+            yaxis  = Chart.laxis_title ^= ytitle
+                   $ Chart.defaultLayoutAxis
+            xaxis  = Chart.laxis_title ^= xtitle
+                   $ Chart.laxis_override ^= Chart.axis_labels ^: map override
+                   $ Chart.defaultLayoutAxis
+            ytitle = "Total duration (" ++ mu ++ "s)"
+            xtitle = "Individual spark duration (" ++ mu ++ "s)"
+            override d = [(x, show (2 ** x / 1000)) | (x, _) <- d]
             bars = Chart.plot_bars_values ^= barvs
                    $ Chart.defaultPlotBars
-            barvs = [(intDoub t, [intDoub height]) | (t, height) <- hs]
+            barvs = [(intDoub t, [intDoub height / 1000])
+                    | (t, height) <- hs]
             hs = histo (inRange xs)
         in layout
       renderable = ChartR.toRenderable (plot (durHistogram hecs))

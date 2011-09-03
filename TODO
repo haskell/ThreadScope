@@ -105,6 +105,11 @@ and/or numerically
 
 - rewrite gth2hs code not to use deprecated functions (e.g. onButtonPress)
 
+- change the log base in histogram to 10 to have more readable scales
+and adjust discretization function to compensate
+
+- extend the histogram x axis to the right
+
 FIRST RELEASE ---------------------------------------------------------------
 
 All of above
@@ -318,14 +323,17 @@ since extreme spark sizes are usually bad
 
 - perhaps rewrite the spark duration histogram manually, to have a look
 similar to the other graphs (e;g;, scales) and to control details, e.g.,
-the number printed on the x-axis should be from before the log conversion
+if the axis description is printed vertically or horizontally
 
 - either show "Loading" when calculating spark duration histogram
 for a selected range on the timeline graph, or store precomputed data
-in the data structures for speedy drawing of the of the main timeline graphs,
+in the data structures for speedy drawing of the main timeline graphs,
 however they are (re)implemented in the end (mipmap or tress or anything)
 
-- manage historam interval selection as gimp does: drag to create a selection,
+- adjust the data preprocessing parameters automatically based on the data
+to have a constant number of bars
+
+- manage histogram interval selection as gimp does: drag to create a selection,
 then move the selection, etc.
 
 
