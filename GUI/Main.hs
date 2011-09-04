@@ -79,7 +79,7 @@ data Event
    | EventFileExport FilePath FileExportFormat
 
 -- | EventStateClear
-   | EventSetState (Maybe FilePath) HECs
+   | EventSetState HECs (Maybe FilePath) String Int Double
 
    | EventShowSidebar Bool
    | EventShowEvents  Bool
@@ -207,7 +207,18 @@ eventLoop uienv@UIEnv{..} eventlogState = do
 
 --    dispatch EventClearState _
 
-    dispatch (EventSetState mfilename hecs) _ =
+    dispatch (EventSetState hecs mfilename name nevents timespan) _ = do
+
+      MainWindow.setFileLoaded mainWin (Just name)
+      MainWindow.setStatusMessage mainWin $
+        printf "%s (%d events, %.3fs)" name nevents timespan
+
+      eventsViewSetEvents eventsView (Just (hecEventArray hecs))
+      traceViewSetHECs traceView hecs
+      traces' <- traceViewGetTraces traceView
+      timelineWindowSetHECs timelineWin (Just hecs)
+      timelineWindowSetTraces timelineWin traces'
+
       continueWith EventlogLoaded {
         mfilename = mfilename,
         hecs      = hecs,
@@ -331,16 +342,7 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       ConcurrencyControl.fullSpeed concCtl $
         ProgressView.withProgress mainWin $ \progress -> do
           (hecs, name, nevents, timespan) <- registerEvents progress
-          MainWindow.setFileLoaded mainWin (Just name)
-          MainWindow.setStatusMessage mainWin $
-            printf "%s (%d events, %.3fs)" name nevents timespan
-
-          eventsViewSetEvents eventsView (Just (hecEventArray hecs))
-          traceViewSetHECs traceView hecs
-          traces' <- traceViewGetTraces traceView
-          timelineWindowSetHECs timelineWin (Just hecs)
-          timelineWindowSetTraces timelineWin traces'
-          post (EventSetState mfilename hecs)
+          post (EventSetState hecs mfilename name nevents timespan)
       return ()
 
     async doing action =
