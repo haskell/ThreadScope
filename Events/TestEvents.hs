@@ -304,7 +304,7 @@ chequered numThreads basicDuration runLength
 -------------------------------------------------------------------------------
 
 makeChequered :: ThreadId -> ThreadId -> Timestamp -> Timestamp -> [Event]
-makeChequered currentThread numThreads basicDuration runLength
+makeChequered currentThread numThreads _basicDuration _runLength
               | currentThread > numThreads = [] -- All threads rendered
 makeChequered currentThread numThreads basicDuration runLength
   = Event 0 eventBlock :

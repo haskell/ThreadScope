@@ -19,15 +19,15 @@ import GHC.RTS.Events hiding (Event, GCWork, GCIdle)
 
 import Control.Monad
 
-renderHEC :: Int -> ViewParameters
+renderHEC :: ViewParameters
           -> Timestamp -> Timestamp -> (DurationTree,EventTree)
           -> Render ()
-renderHEC cap params@ViewParameters{..} start end (dtree,etree) = do
-  renderDurations cap params start end dtree
+renderHEC params@ViewParameters{..} start end (dtree,etree) = do
+  renderDurations params start end dtree
   when (scaleValue < detailThreshold) $
      case etree of
        EventTree ltime etime tree ->
-           renderEvents cap params ltime etime start end tree
+           renderEvents params ltime etime start end tree
 
 detailThreshold :: Double
 detailThreshold = 3000
@@ -35,60 +35,60 @@ detailThreshold = 3000
 -------------------------------------------------------------------------------
 -- hecView draws the trace for a single HEC
 
-renderDurations :: Int -> ViewParameters
+renderDurations :: ViewParameters
                 -> Timestamp -> Timestamp -> DurationTree
                 -> Render ()
 
-renderDurations _ _ _ _ DurationTreeEmpty = return ()
+renderDurations _ _ _ DurationTreeEmpty = return ()
 
-renderDurations c params@ViewParameters{..} startPos endPos (DurationTreeLeaf e)
-  | inView startPos endPos e = drawDuration c params e
+renderDurations params@ViewParameters{..} startPos endPos (DurationTreeLeaf e)
+  | inView startPos endPos e = drawDuration params e
   | otherwise                = return ()
 
-renderDurations !c params@ViewParameters{..} !startPos !endPos
+renderDurations params@ViewParameters{..} !startPos !endPos
         (DurationSplit s splitTime e lhs rhs runAv gcAv)
   | startPos < splitTime && endPos >= splitTime &&
           (fromIntegral (e - s) / scaleValue) <= fromIntegral detail
   = -- View spans both left and right sub-tree.
     -- trace (printf "hecView (average): start:%d end:%d s:%d e:%d" startPos endPos s e) $
-    drawAverageDuration c params s e runAv gcAv
+    drawAverageDuration params s e runAv gcAv
 
   | otherwise
   = -- trace (printf "hecView: start:%d end:%d s:%d e:%d" startPos endPos s e) $
     do when (startPos < splitTime) $
-         renderDurations c params startPos endPos lhs
+         renderDurations params startPos endPos lhs
        when (endPos >= splitTime) $
-         renderDurations c params startPos endPos rhs
+         renderDurations params startPos endPos rhs
 
 -------------------------------------------------------------------------------
 
-renderEvents :: Int -> ViewParameters
+renderEvents :: ViewParameters
              -> Timestamp -- start time of this tree node
              -> Timestamp -- end   time of this tree node
              -> Timestamp -> Timestamp -> EventNode
              -> Render ()
 
-renderEvents !c params@ViewParameters{..} !s !e !startPos !endPos
+renderEvents params@ViewParameters{..} !_s !_e !startPos !endPos
         (EventTreeLeaf es)
-  = sequence_ [ drawEvent c params e
+  = sequence_ [ drawEvent params e
               | e <- es, let t = time e, t >= startPos && t < endPos ]
-renderEvents !c params@ViewParameters{..} !s !e !startPos !endPos
+renderEvents params@ViewParameters{..} !_s !_e !startPos !endPos
         (EventTreeOne ev)
-  | t >= startPos && t < endPos = drawEvent c params ev
+  | t >= startPos && t < endPos = drawEvent params ev
   | otherwise = return ()
   where t = time ev
 
-renderEvents !c params@ViewParameters{..} !s !e !startPos !endPos
+renderEvents params@ViewParameters{..} !s !e !startPos !endPos
         (EventSplit splitTime lhs rhs)
   | startPos < splitTime && endPos >= splitTime &&
         (fromIntegral (e - s) / scaleValue) <= fromIntegral detail
-  = drawTooManyEvents c params s e
+  = drawTooManyEvents params s e
 
   | otherwise
   = do when (startPos < splitTime) $
-         renderEvents c params s splitTime startPos endPos lhs
+         renderEvents params s splitTime startPos endPos lhs
        when (endPos >= splitTime) $
-         renderEvents c params splitTime e startPos endPos rhs
+         renderEvents params splitTime e startPos endPos rhs
 
 -------------------------------------------------------------------------------
 -- An event is in view if it is not outside the view.
@@ -102,10 +102,10 @@ inView viewStart viewEnd event
 
 -------------------------------------------------------------------------------
 
-drawAverageDuration :: Int -> ViewParameters
+drawAverageDuration :: ViewParameters
                     -> Timestamp -> Timestamp -> Timestamp -> Timestamp
                     -> Render ()
-drawAverageDuration c ViewParameters{..} startTime endTime runAv gcAv
+drawAverageDuration ViewParameters{..} startTime endTime runAv gcAv
   = do setSourceRGBAhex (if not bwMode then runningColour else black) 1.0
        when (runAv > 0) $
          draw_rectangle startTime hecBarOff -- x, y
@@ -150,9 +150,9 @@ textWidth _scaleValue text
 
 -------------------------------------------------------------------------------
 
-drawDuration :: Int -> ViewParameters -> EventDuration -> Render ()
+drawDuration :: ViewParameters -> EventDuration -> Render ()
 
-drawDuration c ViewParameters{..}
+drawDuration ViewParameters{..}
                 (ThreadRun t s startTime endTime)
   = do setSourceRGBAhex (if not bwMode then runningColour else black) 1.0
        setLineWidth (1/scaleValue)
@@ -179,16 +179,16 @@ drawDuration c ViewParameters{..}
     rectWidth = truncate (fromIntegral (endTime - startTime) / scaleValue) -- as pixels
     tStr = show t
 
-drawDuration c ViewParameters{..} (GCStart startTime endTime)
+drawDuration ViewParameters{..} (GCStart startTime endTime)
   = gcBar (if bwMode then black else gcStartColour) startTime endTime
 
-drawDuration c ViewParameters{..} (GCWork startTime endTime)
+drawDuration ViewParameters{..} (GCWork startTime endTime)
   = gcBar (if bwMode then black else gcWorkColour) startTime endTime
 
-drawDuration c ViewParameters{..} (GCIdle startTime endTime)
+drawDuration ViewParameters{..} (GCIdle startTime endTime)
   = gcBar (if bwMode then black else gcIdleColour) startTime endTime
 
-drawDuration c ViewParameters{..} (GCEnd startTime endTime)
+drawDuration ViewParameters{..} (GCEnd startTime endTime)
   = gcBar (if bwMode then black else gcEndColour) startTime endTime
 
 gcBar :: Color -> Timestamp -> Timestamp -> Render ()
@@ -213,8 +213,8 @@ labelAt labelsMode t str
        C.fill
        restore
 
-drawEvent :: Int -> ViewParameters -> GHC.Event -> Render ()
-drawEvent c params@ViewParameters{..} event
+drawEvent :: ViewParameters -> GHC.Event -> Render ()
+drawEvent params@ViewParameters{..} event
   = case spec event of
       CreateThread{}   -> renderInstantEvent params event createThreadColour
       ThreadRunnable{} -> renderInstantEvent params event threadRunnableColour
@@ -247,9 +247,9 @@ renderInstantEvent ViewParameters{..} event color = do
      labelAt labelsMode t $ showEventInfo (spec event)
 
 
-drawTooManyEvents :: Int -> ViewParameters -> Timestamp -> Timestamp
+drawTooManyEvents :: ViewParameters -> Timestamp -> Timestamp
                   -> Render ()
-drawTooManyEvents c params@ViewParameters{..} start end = do
+drawTooManyEvents _params@ViewParameters{..} _start _end = do
      return ()
 --     setSourceRGBAhex grey 1.0
 --     setLineWidth (3 * scaleValue)

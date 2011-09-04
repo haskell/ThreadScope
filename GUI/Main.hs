@@ -19,6 +19,7 @@ import qualified Control.Concurrent.Chan as Chan
 import Control.Exception
 import Prelude hiding (catch)
 import Data.Array
+import Data.Maybe
 
 import Paths_threadscope
 
@@ -207,6 +208,9 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       --TODO: set state to be empty during loading
       continue
 
+    dispatch EventFileReload EventlogLoaded{mfilename = Nothing} =
+      continue
+
 --    dispatch EventClearState _
 
     dispatch (EventSetState hecs mfilename name nevents timespan) _ = do
@@ -237,8 +241,8 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       }
 
     dispatch EventExportDialog
-             EventlogLoaded {mfilename = Just filename} = do
-      exportFileDialog mainWin filename $ \filename' format ->
+             EventlogLoaded {mfilename} = do
+      exportFileDialog mainWin (fromMaybe "" mfilename) $ \filename' format ->
         post (EventFileExport filename' format)
       continue
 

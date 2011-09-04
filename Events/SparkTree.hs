@@ -238,10 +238,10 @@ sparkProfile slice start0 end0 t
      = let (c, p) = SparkStats.agEx sofar previous
        in c : chop p [] (start1 + slice) (t : ts)
      | e > start1 + slice
-     = let (c, p) = SparkStats.agEx (created_in_this_slice ++ sofar) previous
+     = let (c, p) = SparkStats.agEx (created_in_this_slice t ++ sofar) previous
        in c : chop p [] (start1 + slice) (t : ts)
      | otherwise
-     = chop previous (created_in_this_slice ++ sofar) start1 ts
+     = chop previous (created_in_this_slice t ++ sofar) start1 ts
      where
        (s, e) | SparkTree s e _ <- t  = (s, e)
 
@@ -255,10 +255,7 @@ sparkProfile slice start0 end0 t
 
        -- Spark transitions in the tree are in units spark/duration.
        -- Here the numbers are rescaled so that the units are spark/ms.
-       created_in_this_slice
-         | SparkTree _ _ (SparkTreeLeaf delta)    <- t  =
-           [SparkStats.rescale proportion delta]
-         | SparkTree _ _ (SparkTreeEmpty)         <- t  =
-           []
-         | SparkTree _ _ (SparkSplit _ _ _ delta) <- t  =
-           [SparkStats.rescale proportion delta]
+       created_in_this_slice (SparkTree _ _ node) = case node of
+         SparkTreeLeaf delta    -> [SparkStats.rescale proportion delta]
+         SparkTreeEmpty         -> []
+         SparkSplit _ _ _ delta -> [SparkStats.rescale proportion delta]

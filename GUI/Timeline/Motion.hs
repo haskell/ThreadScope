@@ -7,7 +7,6 @@ module GUI.Timeline.Motion (
 
 import GUI.Timeline.Types
 import GUI.Timeline.Render.Constants
-import GUI.Types
 import Events.HECs
 
 import Graphics.UI.Gtk
@@ -89,15 +88,15 @@ zoomToFit TimelineState{scaleIORef, timelineAdj, timelineDrawingArea} mb_hecs  =
 
 scrollLeft, scrollRight, scrollToBeginning, scrollToEnd :: TimelineState -> IO ()
 
-scrollLeft        = scroll (\val page l u -> l `max` (val - page/2))
-scrollRight       = scroll (\val page l u -> (u - page) `min` (val + page/2))
-scrollToBeginning = scroll (\_ _ l u -> l)
-scrollToEnd       = scroll (\_ _ l u -> u)
+scrollLeft        = scroll (\val page l _ -> l `max` (val - page/2))
+scrollRight       = scroll (\val page _ u -> (u - page) `min` (val + page/2))
+scrollToBeginning = scroll (\_   _    l _ ->  l)
+scrollToEnd       = scroll (\_   _    _ u ->  u)
 
 centreOnCursor :: TimelineState -> Timestamp -> IO ()
 
 centreOnCursor state cursor =
-  scroll (\_ page l u -> max l (fromIntegral cursor - page/2)) state
+  scroll (\_ page l _u -> max l (fromIntegral cursor - page/2)) state
 
 scroll :: (Double -> Double -> Double -> Double -> Double)
        -> TimelineState -> IO ()
@@ -112,8 +111,8 @@ scroll adjust TimelineState{timelineAdj}
        adjustmentValueChanged timelineAdj
 
 vscrollDown, vscrollUp :: TimelineState -> IO ()
-vscrollDown = vscroll (\val page l u -> (u - page) `min` (val + page/8))
-vscrollUp   = vscroll (\val page l u -> l `max` (val - page/8))
+vscrollDown = vscroll (\val page _l  u -> (u - page) `min` (val + page/8))
+vscrollUp   = vscroll (\val page  l _u -> l `max` (val - page/8))
 
 vscroll :: (Double -> Double -> Double -> Double -> Double)
         -> TimelineState -> IO ()

@@ -196,7 +196,7 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh)
             case trace of
                TraceHEC c ->
                  let (dtree, etree, _) = hecTrees hecs !! c
-                 in renderHEC c params startPos endPos (dtree, etree)
+                 in renderHEC params startPos endPos (dtree, etree)
                SparkCreationHEC c ->
                  let (_, _, stree) = hecTrees hecs !! c
                      maxV = maxSparkValue hecs

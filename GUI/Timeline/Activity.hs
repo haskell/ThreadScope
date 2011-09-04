@@ -10,8 +10,6 @@ import Events.EventDuration
 import GUI.Types
 import GUI.ViewerColours
 
-import GHC.RTS.Events hiding (Event, GCWork, GCIdle)
-
 import Graphics.Rendering.Cairo
 
 import Control.Monad
@@ -63,19 +61,19 @@ actProfile slice start0 end0 t
            | otherwise      = chopped0
 
    flatten :: Timestamp -> DurationTree -> [DurationTree] -> [DurationTree]
-   flatten start DurationTreeEmpty rest = rest
-   flatten start t@(DurationSplit s split e l r run _) rest
+   flatten _start DurationTreeEmpty rest = rest
+   flatten start t@(DurationSplit s split e l r _run _) rest
      | e   <= start   = rest
      | end <= s       = rest
      | start >= split = flatten start r rest
      | end   <= split = flatten start l rest
      | e - s > slice  = flatten start l $ flatten start r rest
      | otherwise      = t : rest
-   flatten start t@(DurationTreeLeaf d) rest
+   flatten _start t@(DurationTreeLeaf _) rest
      = t : rest
 
    chop :: Timestamp -> Timestamp -> [DurationTree] -> [Timestamp]
-   chop sofar start ts
+   chop sofar start _ts
      | start >= end = if sofar > 0 then [sofar] else []
    chop sofar start []
      = sofar : chop 0 (start+slice) []
@@ -87,22 +85,22 @@ actProfile slice start0 end0 t
      | s >= start + slice
      = sofar : chop 0 (start + slice) (t : ts)
      | e > start + slice
-     = (sofar + time_in_this_slice) : chop 0 (start + slice) (t : ts)
+     = (sofar + time_in_this_slice t) : chop 0 (start + slice) (t : ts)
      | otherwise
-     = chop (sofar + time_in_this_slice) start ts
+     = chop (sofar + time_in_this_slice t) start ts
     where
       (s, e)
         | DurationTreeLeaf ev <- t           = (startTimeOf ev, endTimeOf ev)
-        | DurationSplit s _ e _ _ run _ <- t = (s, e)
+        | DurationSplit s _ e _ _ _run _ <- t = (s, e)
 
       duration = min (start+slice) e - max start s
 
-      time_in_this_slice
-        | DurationTreeLeaf ThreadRun{} <- t  = duration
-        | DurationTreeLeaf _           <- t  = 0
-        | DurationSplit _ _ _ _ _ run _ <- t =
-               round (fromIntegral (run * duration) / fromIntegral (e-s))
-
+      time_in_this_slice t = case t of
+        DurationTreeLeaf ThreadRun{}  -> duration
+        DurationTreeLeaf _            -> 0
+        DurationSplit _ _ _ _ _ run _ ->
+          round (fromIntegral (run * duration) / fromIntegral (e-s))
+        DurationTreeEmpty             -> error "time_in_this_slice"
 
 drawActivity :: HECs -> Timestamp -> Timestamp -> Timestamp -> [Timestamp]
              -> Render ()
@@ -165,6 +163,7 @@ drawActivity hecs start end slice ts = do
             fromIntegral (t * fromIntegral activityGraphHeight) /
             fromIntegral (fromIntegral (hecCount hecs) * slice)
 
+dashedLine1 :: Render ()
 dashedLine1 = do
   save
   identityMatrix
