@@ -12,6 +12,7 @@ module GUI.BookmarkView (
 import GHC.RTS.Events (Timestamp)
 
 import Graphics.UI.Gtk
+import Numeric
 
 ---------------------------------------------------------------------------
 
@@ -70,8 +71,8 @@ bookmarkViewNew builder BookmarkViewActions{..} = do
 
     treeViewSetModel bookmarkTreeView bookmarkStore
 
-    cellLayoutSetAttributes bookmarkColumn cell bookmarkStore $ \record ->
-      [ cellText := show record ++ " ns" ]
+    cellLayoutSetAttributes bookmarkColumn cell bookmarkStore $ \time ->
+      [ cellText := showFFloat (Just 6) (fromIntegral time / 1000000000) "s" ]
 
     ---------------------------------------------------------------------------
 
