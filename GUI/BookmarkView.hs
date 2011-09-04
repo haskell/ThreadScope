@@ -100,6 +100,10 @@ bookmarkViewNew builder BookmarkViewActions{..} = do
           ts <- listStoreGetValue bookmarkStore pos
           bookmarkViewGotoBookmark ts
 
+    onRowActivated bookmarkTreeView $ \[pos] _ -> do
+      ts <- listStoreGetValue bookmarkStore pos
+      bookmarkViewGotoBookmark ts
+
     ---------------------------------------------------------------------------
 
     return BookmarkView{..}
