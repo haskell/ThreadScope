@@ -101,7 +101,8 @@ data Event
    | EventTracesChanged [Trace]
 
    | EventBookmarkAdd
-   | EventBookmarRemove Int
+   | EventBookmarkRemove Int
+   | EventBookmarkEdit   Int String
 
    | EventUserError String SomeException
                     -- can add more specific ones if necessary
@@ -149,9 +150,10 @@ constructUI = failOnGError $ do
 
   bookmarkView <- bookmarkViewNew builder BookmarkViewActions {
     bookmarkViewAddBookmark    = post EventBookmarkAdd,
-    bookmarkViewRemoveBookmark = post . EventBookmarRemove,
+    bookmarkViewRemoveBookmark = post . EventBookmarkRemove,
     bookmarkViewGotoBookmark   = \ts -> post (EventCursorChangedTimestamp ts)
-                                     >> post EventTimelineJumpCursor
+                                     >> post EventTimelineJumpCursor,
+    bookmarkViewEditLabel      = \n v -> post (EventBookmarkEdit n v)
   }
 
   keyView <- keyViewNew builder
@@ -321,13 +323,23 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       continue
 
     dispatch EventBookmarkAdd EventlogLoaded{cursorTs} = do
-      bookmarkViewAdd bookmarkView cursorTs
-      timelineWindowSetBookmarks timelineWin =<< bookmarkViewGet bookmarkView
+      bookmarkViewAdd bookmarkView cursorTs ""
+      --TODO: should have a way to add/set a single bookmark for the timeline
+      -- rather than this hack where we ask the bookmark view for the whole lot.
+      ts <- bookmarkViewGet bookmarkView
+      timelineWindowSetBookmarks timelineWin (map fst ts)
       continue
 
-    dispatch (EventBookmarRemove n) _ = do
+    dispatch (EventBookmarkRemove n) _ = do
       bookmarkViewRemove bookmarkView n
-      timelineWindowSetBookmarks timelineWin =<< bookmarkViewGet bookmarkView
+      --TODO: should have a way to add/set a single bookmark for the timeline
+      -- rather than this hack where we ask the bookmark view for the whole lot.
+      ts <- bookmarkViewGet bookmarkView
+      timelineWindowSetBookmarks timelineWin (map fst ts)
+      continue
+
+    dispatch (EventBookmarkEdit n v) _ = do
+      bookmarkViewSetLabel bookmarkView n v
       continue
 
     dispatch (EventUserError doing exception) _ = do
