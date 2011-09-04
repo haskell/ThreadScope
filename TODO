@@ -5,15 +5,11 @@ Satnam:
 Simon:
   - ThreadScope DEADLOCKs occasionally, more often with --debuug, why?
   - X Window System error sometimes?
-  - opening a non-existent file failure
   - background of some widgets on Windows are white when they are grey in Linux
-  - when nothing is loaded, show a message to that effect in the window
   - Make ^C work on Windows
 
 - resizing the panes causes a grab lockup?
-- jump to bookmark doesn't work in events window
 - sort bookmark view by time?
-- double-click a bookmark to jump to it?
 - Delete key deletes bookmarks?
 - hotkey to add a bookmark?
 
@@ -143,8 +139,6 @@ NAVIGATION
 - shift-click and drag to zoom to a region
 - draw the detailed view in the background
 - bookmarks
-
-  - add/remove
   - save
   - measure the time between two markers
 - search for events in the event window
@@ -215,8 +209,6 @@ and Navigating Large Information Spaces"
 
 
 OTHER
-- catch exceptions in event handlers and emit a helpful error message of some
-  kind.  tryEvent swallows exceptions, so it's not good enough.
 - move the text entents stuff out of drawing ThreadRuns
 - overlay ETW events
 - integrate strace events in the event view on Linux
