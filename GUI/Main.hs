@@ -378,20 +378,18 @@ eventLoop uienv@UIEnv{..} eventlogState = do
 
 -------------------------------------------------------------------------------
 
-runGUI :: FilePath -> String -> Bool -> IO ()
-runGUI filename traceName _debug = do
+runGUI :: Maybe (Either FilePath String) -> IO ()
+runGUI initialTrace = do
   Gtk.initGUI
 
   uiEnv <- constructUI
 
   let post = postEvent (eventQueue uiEnv)
 
-  when (filename /= "") $
-    post (EventFileLoad filename)
-
-  -- Likewise for test traces
-  when (traceName /= "") $
-    post (EventTestLoad traceName)
+  case initialTrace of
+   Nothing                -> return ()
+   Just (Left  filename)  -> post (EventFileLoad filename)
+   Just (Right traceName) -> post (EventTestLoad traceName)
 
   doneVar <- newEmptyMVar
 
