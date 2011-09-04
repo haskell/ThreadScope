@@ -16,8 +16,11 @@ import Data.Tree
 -- | Abstract trace view object.
 --
 data TraceView = TraceView {
-       tracesStore :: TreeStore (Trace, Bool)
+       tracesStore :: TreeStore (Trace, Visibility)
      }
+
+data Visibility = Visible | Hidden | MixedVisibility
+  deriving Eq
 
 -- | The actions to take in response to TraceView events.
 --
@@ -46,47 +49,73 @@ traceViewNew builder actions = do
     cellLayoutSetAttributes traceColumn textcell tracesStore $ \(tr, _) ->
       [ cellText := renderTrace tr ]
 
-    cellLayoutSetAttributes traceColumn togglecell tracesStore $ \(_, bool) ->
-      [ cellToggleActive := bool ]
+    cellLayoutSetAttributes traceColumn togglecell tracesStore $ \(_, vis) ->
+      [ cellToggleActive       := vis == Visible
+      , cellToggleInconsistent := vis == MixedVisibility ]
 
     on togglecell cellToggled $ \str ->  do
-      let tp = stringToTreePath str
-      (str, bool) <- treeStoreGetValue tracesStore tp
-      treeStoreSetValue tracesStore tp (str, not bool)
+      let path = stringToTreePath str
+      Node (trace, visibility) subtrees <- treeStoreGetTree tracesStore path
+      let visibility' = invertVisibility visibility
+      treeStoreSetValue tracesStore path (trace, visibility')
+      updateChildren tracesStore path subtrees visibility'
+      updateParents tracesStore (init path)
+
       traceViewTracesChanged actions =<< traceViewGetTraces traceview
 
     return traceview
 
   where
-    renderTrace (TraceHEC    n)  = show n
-    renderTrace (SparkCreationHEC n) = show n
-    renderTrace (SparkConversionHEC n) = show n
-    renderTrace (SparkPoolHEC n) = show n
-    renderTrace (TraceThread n)  = show n
-    renderTrace (TraceGroup str) = str
-    renderTrace (TraceActivity)  = "Activity Profile"
+    renderTrace (TraceHEC           hec) = "HEC " ++ show hec
+    renderTrace (SparkCreationHEC   hec) = "HEC " ++ show hec
+    renderTrace (SparkConversionHEC hec) = "HEC " ++ show hec
+    renderTrace (SparkPoolHEC       hec) = "HEC " ++ show hec
+    renderTrace (TraceThread        tid) = "Thread " ++ show tid
+    renderTrace (TraceGroup       label) = label
+    renderTrace (TraceActivity)          = "Activity Profile"
+
+    updateChildren tracesStore path subtrees visibility' =
+      sequence_
+        [ do treeStoreSetValue tracesStore path' (trace, visibility')
+             updateChildren tracesStore path' subtrees' visibility'
+        | (Node (trace, _) subtrees', n) <- zip subtrees [0..]
+        , let path' = path ++ [n] ]
+
+    updateParents :: TreeStore (Trace, Visibility) -> TreePath -> IO ()
+    updateParents _           []   = return ()
+    updateParents tracesStore path = do
+      Node (trace, _) subtrees <- treeStoreGetTree tracesStore path
+      let visibility = accumVisibility  [ vis | subtree  <- subtrees
+                                              , (_, vis) <- flatten subtree ]
+      treeStoreSetValue tracesStore path (trace, visibility)
+      updateParents tracesStore (init path)
+
+    invertVisibility Hidden = Visible
+    invertVisibility _      = Hidden
+
+    accumVisibility = foldr1 (\a b -> if a == b then a else MixedVisibility)
 
 -- Find the HEC traces in the treeStore and replace them
 traceViewSetHECs :: TraceView -> HECs -> IO ()
 traceViewSetHECs TraceView{tracesStore} hecs = do
     treeStoreClear tracesStore
     go 0
-    treeStoreInsert tracesStore [] 0 (TraceActivity, True)
+    treeStoreInsert tracesStore [] 0 (TraceActivity, Visible)
   where
-    newt = Node { rootLabel = (TraceGroup "HEC Traces", True),
-                  subForest = [ Node { rootLabel = (TraceHEC k, True),
+    newt = Node { rootLabel = (TraceGroup "HEC Traces", Visible),
+                  subForest = [ Node { rootLabel = (TraceHEC k, Visible),
                                        subForest = [] }
                               | k <- [ 0 .. hecCount hecs - 1 ] ] }
-    nCre = Node { rootLabel = (TraceGroup "Spark Creation", True),
-                  subForest = [ Node { rootLabel = (SparkCreationHEC k, True),
+    nCre = Node { rootLabel = (TraceGroup "Spark Creation", Hidden),
+                  subForest = [ Node { rootLabel = (SparkCreationHEC k, Hidden),
                                        subForest = [] }
                               | k <- [ 0 .. hecCount hecs - 1 ] ] }
-    nCon = Node { rootLabel = (TraceGroup "Spark Conversion", True),
-                  subForest = [ Node { rootLabel = (SparkConversionHEC k, True),
+    nCon = Node { rootLabel = (TraceGroup "Spark Conversion", Hidden),
+                  subForest = [ Node { rootLabel = (SparkConversionHEC k, Hidden),
                                        subForest = [] }
                               | k <- [ 0 .. hecCount hecs - 1 ] ] }
-    nPoo = Node { rootLabel = (TraceGroup "Spark Pool", True),
-                  subForest = [ Node { rootLabel = (SparkPoolHEC k, True),
+    nPoo = Node { rootLabel = (TraceGroup "Spark Pool", Hidden),
+                  subForest = [ Node { rootLabel = (SparkPoolHEC k, Hidden),
                                        subForest = [] }
                               | k <- [ 0 .. hecCount hecs - 1 ] ] }
     go n = do
@@ -124,12 +153,12 @@ traceViewSetHECs TraceView{tracesStore} hecs = do
 traceViewGetTraces :: TraceView -> IO [Trace]
 traceViewGetTraces TraceView{tracesStore} = do
   f <- getTracesStoreContents tracesStore
-  return [ t | (t, True) <- concatMap flatten f, notGroup t ]
+  return [ t | (t, Visible) <- concatMap flatten f, notGroup t ]
  where
   notGroup (TraceGroup _) = False
   notGroup _              = True
 
-getTracesStoreContents :: TreeStore (Trace,Bool) -> IO (Forest (Trace,Bool))
+getTracesStoreContents :: TreeStore a -> IO (Forest a)
 getTracesStoreContents tracesStore = go 0
   where
   go !n = do
