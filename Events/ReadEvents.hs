@@ -12,7 +12,7 @@ import GUI.ProgressView (ProgressView)
 
 import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
-import GHC.RTS.Events.Sparks
+import GHC.RTS.Events.Sparks as Sparks
 
 import Data.Array
 import Data.List
@@ -20,7 +20,7 @@ import Text.Printf
 import System.FilePath
 import Control.Monad
 import Control.Exception
-import qualified Data.Map as Map
+import Control.DeepSeq as DeepSeq
 
 -------------------------------------------------------------------------------
 -- The GHC.RTS.Events library returns the profile information
@@ -121,17 +121,22 @@ buildEventLog progress from =
 
          intDoub :: Integral a => a -> Double
          intDoub = fromIntegral
-
-         ilog :: Integral a => a -> a -> a
-         ilog b x = floor $ logBase (intDoub b) (intDoub x)
-
-         histo :: Integral a => [a] -> [(a, a)]
-         histo xs = Map.toList $ Map.fromListWith (+)
-                    $ [(ilog 2 x, x) | x <- xs]
-
+         -- takes a log and discretizes the data; the multiplication
+         -- increases the number of bars
+         -- TODO: produce more granular discretization for data with only
+         -- small sparks (or even such intervals; but it's costly
+         -- and the scale would change between intervals)
+         -- TODO: make 5 a common constant, or even define inverse functions
+         ilog5 :: Timestamp -> Int
+         ilog5 0 = 0
+         ilog5 x = floor $ 5 * logBase 10 (intDoub x)
          sparks = sparkInfo (events (dat evs))
-         durations = map sparkDuration sparks
-         durHistogram = histo durations
+         prepHisto s =
+           let start  = Sparks.timeStarted s
+               dur    = Sparks.sparkDuration s
+               logdur = ilog5 dur
+           in (start, logdur, dur)
+         durHistogram = map prepHisto sparks
 
          -- sort the events by time and put them in an array
          sorted    = sortGroups groups
@@ -157,7 +162,7 @@ buildEventLog progress from =
             evaluate tree1
             evaluate (eventTreeMaxDepth tree2)
             evaluate (sparkTreeMaxDepth tree3)
-            return ()
+            return $! DeepSeq.rnf durHistogram
 
        zipWithM_ treeProgress [0..] trees
 
