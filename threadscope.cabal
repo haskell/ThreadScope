@@ -61,6 +61,7 @@ Executable threadscope
                      GUI.KeyView,
                      GUI.Types,
                      GUI.ConcurrencyControl,
+                     GUI.ProgressView,
                      GUI.ViewerColours,
                      GUI.Timeline.Activity,
                      GUI.Timeline.CairoDrawing,
