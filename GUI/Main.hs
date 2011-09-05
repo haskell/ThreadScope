@@ -225,6 +225,7 @@ eventLoop uienv@UIEnv{..} eventlogState = do
         printf "%s (%d events, %.3fs)" name nevents timespan
 
       eventsViewSetEvents eventsView (Just (hecEventArray hecs))
+      histogramViewSetHECs histogramView (Just hecs)
       traceViewSetHECs traceView hecs
       traces' <- traceViewGetTraces traceView
       timelineWindowSetHECs timelineWin (Just hecs)
@@ -386,16 +387,7 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       ConcurrencyControl.fullSpeed concCtl $
         ProgressView.withProgress mainWin $ \progress -> do
           (hecs, name, nevents, timespan) <- registerEvents progress
-          MainWindow.setFileLoaded mainWin (Just name)
-          MainWindow.setStatusMessage mainWin $
-            printf "%s (%d events, %.3fs)" name nevents timespan
-
-          eventsViewSetEvents eventsView (Just (hecEventArray hecs))
-          traceViewSetHECs traceView hecs
-          traces' <- traceViewGetTraces traceView
-          timelineWindowSetHECs timelineWin (Just hecs)
-          timelineWindowSetTraces timelineWin traces'
-          post (EventSetState mfilename hecs)
+          post (EventSetState hecs mfilename name nevents timespan)
       return ()
 
     async doing action =
@@ -437,4 +429,3 @@ runGUI initialTrace = do
   -- Wait for child event loop to terminate
   -- This lets us wait for any exceptions.
   either throwIO return =<< takeMVar doneVar
-
