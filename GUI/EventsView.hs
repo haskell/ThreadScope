@@ -327,7 +327,7 @@ drawEvents EventsView{drawArea, adj}
     showEventDescr (CapEvent  cap (Event _time  spec)) =
         (case cap of
           Nothing -> ""
-          Just c  -> "cap " ++ show c ++ ": ")
+          Just c  -> "HEC " ++ show c ++ ": ")
      ++ case spec of
           UnknownEvent{ref} -> "unknown event; " ++ show ref
           Message     msg   -> msg
