@@ -76,6 +76,7 @@ Executable threadscope
   ghc-options:  -Wall -fwarn-tabs
                 -fno-warn-type-defaults -fno-warn-name-shadowing
                 -fno-warn-unused-do-bind
+                -- Note: we do not want to use -threaded with gtk2hs.
 
   if impl(ghc >= 7.0)
      -- GHC 7.0 and later require a flag to enable the options in ghcrts.c
@@ -87,8 +88,5 @@ Executable threadscope
 
   if !os(windows)
      build-depends: unix >= 2.3 && < 2.6
-
--- Not yet: gtk2hs doesn't support -threaded at the moment.
---  ghc-options: -threaded
 
   c-sources: ghcrts.c
