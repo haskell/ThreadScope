@@ -89,4 +89,3 @@ Executable threadscope
   if !os(windows)
      build-depends: unix >= 2.3 && < 2.6
 
-  c-sources: ghcrts.c
