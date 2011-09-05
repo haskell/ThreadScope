@@ -24,6 +24,7 @@ Author:              Satnam Singh <s.singh@ieee.org>,
                      Duncan Coutts <duncan@well-typed.com>,
                      Mikolaj Konarski <mikolaj@well-typed.com>
 Maintainer:          Satnam Singh <s.singh@ieee.org>
+Homepage:            http://www.haskell.org/haskellwiki/ThreadScope
 Bug-reports:         http://trac.haskell.org/ThreadScope/
 Build-Type:          Simple
 cabal-version:       >= 1.6
