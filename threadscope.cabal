@@ -22,7 +22,7 @@ Author:              Satnam Singh <s.singh@ieee.org>,
                      Simon Marlow <marlowsd@gmail.com>,
                      Donnie Jones <donnie@darthik.com>,
                      Duncan Coutts <duncan@well-typed.com>,
-                     Mikolaj Konarski <mikolaj.konarski@gmail.com>
+                     Mikolaj Konarski <mikolaj@well-typed.com>
 Maintainer:          Satnam Singh <s.singh@ieee.org>
 Bug-reports:         http://trac.haskell.org/ThreadScope/
 Build-Type:          Simple
