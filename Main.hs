@@ -5,7 +5,6 @@ module Main where
 
 import GUI.Main (runGUI)
 
-import Control.Monad
 import System.Environment
 import System.Exit
 import System.Console.GetOpt
