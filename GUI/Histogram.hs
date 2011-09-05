@@ -73,7 +73,8 @@ renderViewHistogram historamDrawingArea hecs minterval = do
               Just (from, to) -> \ t -> t >= from && t <= to
       -- TODO: if xs is sorted, we can slightly optimize the filtering
       inRange :: [(Timestamp, Int, Timestamp)] -> [(Int, Timestamp)]
-      inRange xs = [(logdur, dur) | (start, logdur, dur) <- xs, inR start]
+      inRange xs = [(logdur, dur)
+                   | (start, logdur, dur) <- xs, inR start, logdur > 0]
 
       plot xs =
         let layout = Chart.layout1_plots ^= [ Left (Chart.plotBars bars) ]
