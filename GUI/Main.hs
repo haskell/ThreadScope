@@ -307,20 +307,6 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       timelineWindowSetBookmarks timelineWin =<< bookmarkViewGet bookmarkView
       continue
 
-    dispatch (EventCursorChangedTimestamp _) NoEventlogLoaded = continue
-    dispatch EventBookmarkAdd NoEventlogLoaded = continue
-    dispatch EventTimelineJumpEnd NoEventlogLoaded = continue
-    dispatch EventTimelineJumpCursor NoEventlogLoaded = continue
-    dispatch (EventFileSave _) NoEventlogLoaded = continue
-    dispatch EventFileReload NoEventlogLoaded = continue
-
-    dispatch EventFileReload (EventlogLoaded Nothing _ _ _) =
-      error "Internal error: d EventFileReload (EventlogLoaded Nothing _ _ _)"
-    dispatch (EventFileSave _) (EventlogLoaded Nothing _ _ _) =
-      error "Internal error: d (EventFileSave _) (EventlogLoaded Nothing _ _ _)"
-    dispatch (EventCursorChangedIndex _) NoEventlogLoaded =
-      error "Internal error: d (EventCursorChangedIndex _) NoEventlogLoaded"
-
     loadEvents mfilename registerEvents = do
       ConcurrencyControl.fullSpeed concCtl $
         ProgressView.withProgress mainWin $ \progress -> do
