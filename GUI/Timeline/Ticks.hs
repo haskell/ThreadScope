@@ -1,5 +1,7 @@
 module GUI.Timeline.Ticks (
-    renderTicks, mu
+    renderTicks,
+    mu,
+    deZero
   ) where
 
 import GUI.Timeline.Render.Constants
@@ -118,7 +120,7 @@ showTickTime pos
     posf :: Double
     posf = fromIntegral pos
 
--- TODO: move somewhere (Constants?)
+-- TODO: move somewhere?
 mu :: String
 -- here we assume that cairo 0.12.1 will have proper Unicode support
 #if MIN_VERSION_cairo(0,12,0) && !MIN_VERSION_cairo(0,12,1)
@@ -138,6 +140,10 @@ reformatMS pos
 
 -------------------------------------------------------------------------------
 
+-- TODO: move somewhere?
+-- TODO: generalize to any number of trailing zeroes and then the dot
+-- (this is what happens, e.g., in timeline scale ticks)
+-- That will also subsume Sparks.deZero.
 deZero :: String -> String
 deZero str
   = if length str >= 3 && take 2 revstr == "0." then
