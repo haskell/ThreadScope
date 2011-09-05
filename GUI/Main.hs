@@ -16,7 +16,10 @@ import System.Posix
 #endif
 import Control.Concurrent
 import qualified Control.Concurrent.Chan as Chan
+import Control.Exception
+import Prelude hiding (catch)
 import Data.Array
+import Data.Maybe
 
 import Paths_threadscope
 
@@ -61,8 +64,6 @@ data EventlogState
        cursorPos :: Int
      }
 
-data FileSaveFormat = FormatPDF | FormatPNG
-
 postEvent :: Chan Event -> Event -> IO ()
 postEvent = Chan.writeChan
 
@@ -71,16 +72,17 @@ getEvent = Chan.readChan
 
 data Event
    = EventOpenDialog
+   | EventExportDialog
    | EventAboutDialog
    | EventQuit
 
    | EventFileLoad   FilePath
    | EventTestLoad   String
    | EventFileReload
-   | EventFileSave   FileSaveFormat
+   | EventFileExport FilePath FileExportFormat
 
 -- | EventStateClear
-   | EventSetState (Maybe FilePath) HECs
+   | EventSetState HECs (Maybe FilePath) String Int Double
 
    | EventShowSidebar Bool
    | EventShowEvents  Bool
@@ -102,7 +104,11 @@ data Event
    | EventTracesChanged [Trace]
 
    | EventBookmarkAdd
-   | EventBookmarRemove Int
+   | EventBookmarkRemove Int
+   | EventBookmarkEdit   Int String
+
+   | EventUserError String SomeException
+                    -- can add more specific ones if necessary
 
 constructUI :: IO UIEnv
 constructUI = failOnGError $ do
@@ -115,12 +121,11 @@ constructUI = failOnGError $ do
 
   mainWin <- mainWindowNew builder MainWindowActions {
     mainWinOpen          = post EventOpenDialog,
-    mainWinSavePDF       = post (EventFileSave FormatPDF),
-    mainWinSavePNG       = post (EventFileSave FormatPNG),
+    mainWinExport        = post EventExportDialog,
     mainWinQuit          = post EventQuit,
     mainWinViewSidebar   = post . EventShowSidebar,
     mainWinViewEvents    = post . EventShowEvents,
-    mainWinViewRefresh   = post EventFileReload,
+    mainWinViewReload    = post EventFileReload,
     mainWinAbout         = post EventAboutDialog,
     mainWinJumpStart     = post EventTimelineJumpStart,
     mainWinJumpEnd       = post EventTimelineJumpEnd,
@@ -150,9 +155,10 @@ constructUI = failOnGError $ do
 
   bookmarkView <- bookmarkViewNew builder BookmarkViewActions {
     bookmarkViewAddBookmark    = post EventBookmarkAdd,
-    bookmarkViewRemoveBookmark = post . EventBookmarRemove,
+    bookmarkViewRemoveBookmark = post . EventBookmarkRemove,
     bookmarkViewGotoBookmark   = \ts -> post (EventCursorChangedTimestamp ts)
-                                     >> post EventTimelineJumpCursor
+                                     >> post EventTimelineJumpCursor,
+    bookmarkViewEditLabel      = \n v -> post (EventBookmarkEdit n v)
   }
 
   keyView <- keyViewNew builder
@@ -170,6 +176,10 @@ eventLoop uienv@UIEnv{..} eventlogState = do
 
     event <- getEvent eventQueue
     next  <- dispatch event eventlogState
+#if __GLASGOW_HASKELL__ <= 612
+               -- workaround for a wierd exception handling bug in ghc-6.12
+               `catch` \e -> throwIO (e :: SomeException)
+#endif
     case next of
       Left  LoopDone       -> return ()
       Right eventlogState' -> eventLoop uienv eventlogState'
@@ -185,23 +195,49 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       continue
 
     dispatch (EventFileLoad filename) _ = do
-      forkIO $ loadEvents (Just filename) (registerEventsFromFile filename)
+      async "loading the eventlog" $
+        loadEvents (Just filename) (registerEventsFromFile filename)
       --TODO: set state to be empty during loading
       continue
 
     dispatch (EventTestLoad testname) _ = do
-      forkIO $ loadEvents Nothing (registerEventsFromTrace testname)
+      async "loading the test eventlog" $
+        loadEvents Nothing (registerEventsFromTrace testname)
       --TODO: set state to be empty during loading
       continue
 
     dispatch EventFileReload EventlogLoaded{mfilename = Just filename} = do
-      forkIO $ loadEvents (Just filename) (registerEventsFromFile filename)
+      async "reloading the eventlog" $
+        loadEvents (Just filename) (registerEventsFromFile filename)
       --TODO: set state to be empty during loading
+      continue
+
+    dispatch EventFileReload EventlogLoaded{mfilename = Nothing} =
       continue
 
 --    dispatch EventClearState _
 
-    dispatch (EventSetState mfilename hecs) _ =
+    dispatch (EventSetState hecs mfilename name nevents timespan) _ = do
+
+      MainWindow.setFileLoaded mainWin (Just name)
+      MainWindow.setStatusMessage mainWin $
+        printf "%s (%d events, %.3fs)" name nevents timespan
+
+      eventsViewSetEvents eventsView (Just (hecEventArray hecs))
+      histogramViewSetHECs histogramView (Just hecs)
+      traceViewSetHECs traceView hecs
+      traces' <- traceViewGetTraces traceView
+      timelineWindowSetHECs timelineWin (Just hecs)
+      timelineWindowSetTraces timelineWin traces'
+
+      -- We set user 'traceEvent' messages as initial bookmarks.
+      -- This is somewhat of an experiment. If users use lots of trace events
+      -- then it will not be appropriate and we'll want a separate 'traceMark'.
+      let usrMsgs = extractUserMessages hecs
+      sequence_ [ bookmarkViewAdd bookmarkView ts label
+                | (ts, label) <- usrMsgs ]
+      timelineWindowSetBookmarks timelineWin (map fst usrMsgs)
+
       continueWith EventlogLoaded {
         mfilename = mfilename,
         hecs      = hecs,
@@ -209,8 +245,14 @@ eventLoop uienv@UIEnv{..} eventlogState = do
         cursorPos = 0
       }
 
-    dispatch (EventFileSave format)
-             EventlogLoaded {hecs, mfilename = Just filename} = do
+    dispatch EventExportDialog
+             EventlogLoaded {mfilename} = do
+      exportFileDialog mainWin (fromMaybe "" mfilename) $ \filename' format ->
+        post (EventFileExport filename' format)
+      continue
+
+    dispatch (EventFileExport filename format)
+             EventlogLoaded {hecs} = do
       viewParams <- timelineGetViewParameters timelineWin
       let viewParams' = viewParams {
                           detail     = 1,
@@ -298,31 +340,42 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       continue
 
     dispatch EventBookmarkAdd EventlogLoaded{cursorTs} = do
-      bookmarkViewAdd bookmarkView cursorTs
-      timelineWindowSetBookmarks timelineWin =<< bookmarkViewGet bookmarkView
+      bookmarkViewAdd bookmarkView cursorTs ""
+      --TODO: should have a way to add/set a single bookmark for the timeline
+      -- rather than this hack where we ask the bookmark view for the whole lot.
+      ts <- bookmarkViewGet bookmarkView
+      timelineWindowSetBookmarks timelineWin (map fst ts)
       continue
 
-    dispatch (EventBookmarRemove n) _ = do
+    dispatch (EventBookmarkRemove n) _ = do
       bookmarkViewRemove bookmarkView n
-      timelineWindowSetBookmarks timelineWin =<< bookmarkViewGet bookmarkView
+      --TODO: should have a way to add/set a single bookmark for the timeline
+      -- rather than this hack where we ask the bookmark view for the whole lot.
+      ts <- bookmarkViewGet bookmarkView
+      timelineWindowSetBookmarks timelineWin (map fst ts)
       continue
+
+    dispatch (EventBookmarkEdit n v) _ = do
+      bookmarkViewSetLabel bookmarkView n v
+      continue
+
+    dispatch (EventUserError doing exception) _ = do
+      let headline    = "There was a problem " ++ doing ++ "."
+          explanation = show exception
+      errorMessageDialog mainWin headline explanation
+      continue
+
+    dispatch _ NoEventlogLoaded = continue
 
     loadEvents mfilename registerEvents = do
       ConcurrencyControl.fullSpeed concCtl $
         ProgressView.withProgress mainWin $ \progress -> do
           (hecs, name, nevents, timespan) <- registerEvents progress
-          MainWindow.setFileLoaded mainWin (Just name)
-          MainWindow.setStatusMessage mainWin $
-            printf "%s (%d events, %.3fs)" name nevents timespan
-
-          eventsViewSetEvents eventsView (Just (hecEventArray hecs))
-          histogramViewSetHECs histogramView (Just hecs)
-          traceViewSetHECs traceView hecs
-          traces' <- traceViewGetTraces traceView
-          timelineWindowSetHECs timelineWin (Just hecs)
-          timelineWindowSetTraces timelineWin traces'
-          post (EventSetState mfilename hecs)
+          post (EventSetState hecs mfilename name nevents timespan)
       return ()
+
+    async doing action =
+      forkIO (action `catch` \e -> post (EventUserError doing e))
 
     post = postEvent eventQueue
     continue = continueWith eventlogState
@@ -330,24 +383,25 @@ eventLoop uienv@UIEnv{..} eventlogState = do
 
 -------------------------------------------------------------------------------
 
-runGUI :: FilePath -> String -> Bool -> IO ()
-runGUI filename traceName _debug = do
+runGUI :: Maybe (Either FilePath String) -> IO ()
+runGUI initialTrace = do
   Gtk.initGUI
 
   uiEnv <- constructUI
 
   let post = postEvent (eventQueue uiEnv)
 
-  when (filename /= "") $
-    post (EventFileLoad filename)
+  case initialTrace of
+   Nothing                -> return ()
+   Just (Left  filename)  -> post (EventFileLoad filename)
+   Just (Right traceName) -> post (EventTestLoad traceName)
 
-  -- Likewise for test traces
-  when (traceName /= "") $
-    post (EventTestLoad traceName)
+  doneVar <- newEmptyMVar
 
   forkIO $ do
-    eventLoop uiEnv NoEventlogLoaded
+    res <- try $ eventLoop uiEnv NoEventlogLoaded
     Gtk.mainQuit
+    putMVar doneVar (res :: Either SomeException ())
 
 #ifndef mingw32_HOST_OS
   installHandler sigINT (Catch $ post EventQuit) Nothing
@@ -355,3 +409,7 @@ runGUI filename traceName _debug = do
 
   -- Enter Gtk+ main event loop.
   Gtk.mainGUI
+
+  -- Wait for child event loop to terminate
+  -- This lets us wait for any exceptions.
+  either throwIO return =<< takeMVar doneVar

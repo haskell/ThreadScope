@@ -114,7 +114,7 @@ isDiscreteEvent e =
     _            -> True
 
 gcStart :: Timestamp -> [GHC.Event] -> [EventDuration]
-gcStart t0 [] = []
+gcStart _  [] = []
 gcStart t0 (event : events) =
   case spec event of
     GHC.GCWork{} -> GCStart t0 t1 : gcWork t1 events
@@ -127,7 +127,7 @@ gcStart t0 (event : events) =
         t1 = time event
 
 gcWork :: Timestamp -> [GHC.Event] -> [EventDuration]
-gcWork t0 [] = []
+gcWork _  [] = []
 gcWork t0 (event : events) =
   case spec event of
     GHC.GCWork{} -> gcWork t0 events
@@ -140,7 +140,7 @@ gcWork t0 (event : events) =
         t1 = time event
 
 gcIdle :: Timestamp -> [GHC.Event] -> [EventDuration]
-gcIdle t0 [] = []
+gcIdle _  [] = []
 gcIdle t0 (event : events) =
   case spec event of
     GHC.GCIdle{} -> gcIdle t0 events
@@ -153,7 +153,7 @@ gcIdle t0 (event : events) =
         t1 = time event
 
 gcDone :: Timestamp -> [GHC.Event] -> [EventDuration]
-gcDone t0 [] = []
+gcDone _  [] = []
 gcDone t0 (event : events) =
   case spec event of
     GHC.GCDone{} -> gcDone t0 events

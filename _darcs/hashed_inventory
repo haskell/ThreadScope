@@ -1,4 +1,4 @@
-pristine:0000001864-2765017efba939c47ba075b86c598e93f7934a879d877f57ea9761bd520c95fd
+pristine:0000001773-982791d549e63033581eb1b4ba13ae82241ab6a681f767bc83ed828822fb2264
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -898,3 +898,146 @@ Duncan Coutts <duncan@well-typed.com>**20110831082630
  Ignore-this: d3bd5411410fdb94e36b4360804143aa
 ] 
 hash: 0000000208-50c369f27ff816b0596652b3edf8b4face1ed287045290ab96cffabcda786c28
+[Ignore most events when there's no file loaded
+Duncan Coutts <duncan@well-typed.com>**20110901183043
+ Ignore-this: 72bf432e1dbde0dba4f0720892938908
+] 
+hash: 0000000219-332c450e0576254a7cb0a5b6f0725bf2ca1b6de7a2dec23ff3b6f2533887d273
+[Handle exceptions that happen in the event loop and async actions
+Duncan Coutts <duncan@well-typed.com>**20110901230441
+ Ignore-this: abe55e9ce97999089453a26d1f45ced7
+] 
+hash: 0000002635-056d50072a0330a26e7782b063502c0cb045fd70df0217f1b118b54f4c2847ab
+[Change "refresh" item in view menu to "reload"
+Duncan Coutts <duncan@well-typed.com>**20110902000550
+ Ignore-this: 13a2318913c093841f7d1df2b7a42fbb
+] 
+hash: 0000012554-ab26208891b70c80aa979ca71bd06366a82c7fe4a25896c0e8aa6b6888c80cd0
+[Do the image file export properly
+Duncan Coutts <duncan@well-typed.com>**20110902004238
+ Ignore-this: e7b7bd816195b61eac30e03ba6dd7e60
+ Use a save-as dialog and let the user choose the file name and format.
+] 
+hash: 0000006365-0d23a618c4a0b5e7ebc651602e72aea3459f42d99357aadd3f82b8db22991df7
+[Change bug report URL to new trac
+Duncan Coutts <duncan@well-typed.com>**20110903001330
+ Ignore-this: 1e3539cb0eae73adb9a2f862f050e15e
+] 
+hash: 0000000278-d219192ccb58b2984dbb55496c06c9317af9388d8c9afd1cec9a4238dbc76e49
+[Show event view timestamps in seconds
+Duncan Coutts <duncan@well-typed.com>**20110903002613
+ Ignore-this: ca1ab51d1879913d172e5d8eb7551c3c
+ This is more useful I think and is consistent with the timeline view
+] 
+hash: 0000000478-974bdaba21db6cd024430a6b536bd3870e01c9d1ce3beed71387a305d2a7064c
+[Fix spelling in an error message
+Duncan Coutts <duncan@well-typed.com>**20110903181245
+ Ignore-this: 16f2272067ccaae51aa0f3dda5c487f1
+] 
+hash: 0000000509-d999fc80dd0890e9a51f9cc88b1dc60ce80c0680c51d921715261d646e056bc2
+[Do some of the timestamp -> pixel calculations directly
+Duncan Coutts <duncan@well-typed.com>**20110904135141
+ Ignore-this: 8278e6b8cbfb4e6580d4c6b042da9353
+ Sadly, while cairo presents an interface with Double floating point
+ as the logical units, it cannot really cope with the full range
+ because internally it uses a 32bit fixed point format. At high zoom
+ levels this causes artefacts like the cursor disappearing.
+ So it looks like we'll need to do a full conversion, but for now
+ just make the change for the cursor and bookmarks which were the
+ ones that were causing visual problems.
+] 
+hash: 0000003115-4f5fe05250e91ca2a1066412b3abb1014d9c5f482611017f3234efa0636926fd
+[Show bookmarks in seconds too
+Duncan Coutts <duncan@well-typed.com>**20110904135416
+ Ignore-this: 9877b90236bcb6f74ab07dd66642d20c
+] 
+hash: 0000000487-f476b3be60acfda529f7018f5fbd08370d62129d9e4844883f935e4d05da29c9
+[Allow activating bookmarks
+Duncan Coutts <duncan@well-typed.com>**20110904140031
+ Ignore-this: 3c3def12ea649b905f0d872a68e38221
+] 
+hash: 0000000301-2c2cd843a94ddc4a847d0a7fd48b190a7108117fbebfbdab84b2fda775c33ef8
+[Move the code for setting state on loading a file
+Duncan Coutts <duncan@well-typed.com>**20110904145422
+ Ignore-this: dff35933e7bd497e2276b52723b1b21d
+ So it's now in the SetState handler rather the code that posts
+ the SetState event.
+] 
+hash: 0000001617-39b11098531ecd35e0d50c024ddf52a9e1ec2ff68d8445ee63d12aeb87509d43
+[Add an editable bookmark label column
+Duncan Coutts <duncan@well-typed.com>**20110904150338
+ Ignore-this: 4989fc2292cca9f3c354cecd4940b356
+] 
+hash: 0000004503-cfad9e378ae6975330051ca76eeb85b583f7cf607f1235efc3316d689d287bf8
+[Use the 'traceEvent' user messages as initial bookmarks
+Duncan Coutts <duncan@well-typed.com>**20110904151128
+ Ignore-this: 86ab22171f89ed26dcea13f32bd88f6d
+] 
+hash: 0000000876-30a28a4ea32ba5ab9fcdc643c0374532fea07f424d4648929f126ee4b566ef66
+[Update TODO list to remove some done items
+Duncan Coutts <duncan@well-typed.com>**20110904152827
+ Ignore-this: 96275a05344175855e71d73bfac702d9
+] 
+hash: 0000000608-8ca55e2d84b3b61ef86a06c1fc0a797a9f821303fd94f4484675ae66b741460b
+[Make the visibility toggle on groups in the trace view work
+Duncan Coutts <duncan@well-typed.com>**20110904183307
+ Ignore-this: dd6b2b2edf8d6f49cbf7902936910a05
+ Lets you toggle all the HECs in one go.
+] 
+hash: 0000004778-93ea6ccc92653a04c5829dbd17626a6229cfb6483ad608f1534795ea3de3d9c6
+[Add keyboard shortcuts for open,quit,reload menu items
+Duncan Coutts <duncan@well-typed.com>**20110904185105
+ Ignore-this: 14805e1dd048cd9d4303bba2e5d062b2
+] 
+hash: 0000001181-c3e49f24f016fabb00ca77b33735f2ba49a913b054724f6b7d6d10a0252fe0d8
+[Fix warnings
+Duncan Coutts <duncan@well-typed.com>**20110904191907
+ Ignore-this: e7cfe095873b28e7cccceaf07f278dd2
+] 
+hash: 0000009791-41554e1fae5c25d604dc7defdb01f6d42a6d10b5dd049068a0b18b704a52fa2f
+[Rewrite the command line handling to use GetOpt
+Duncan Coutts <duncan@well-typed.com>**20110904195432
+ Ignore-this: 920aaa9cf93fbec96283e577d23bef07
+ And add a --help text and --version flag.
+] 
+hash: 0000004503-da39682e1ff32dd7196036be52744d8c247f41d743a87fffb48d9410548309d7
+[Add Mikolaj and myself to the authors list in the about box
+Duncan Coutts <duncan@well-typed.com>**20110904195722
+ Ignore-this: 1bb080e0bcab550ef7bcb5cc20bdb6df
+] 
+hash: 0000000778-59bbf608b7b2300189a2169998200c57a3c5077fdd3ca85714b4a25257037b23
+[Fix version of ghc-events interface
+Duncan Coutts <duncan@well-typed.com>**20110905000323
+ Ignore-this: fde404e6866f981d85b5b70d3cbc4ac0
+] 
+hash: 0000000251-b4c5f75e99e7d931c75ab6fa8421750e3bc481ddbd188dcee9955630a24ffee8
+[Change comment in .cabal file about -threaded
+Duncan Coutts <duncan@well-typed.com>**20110905000759
+ Ignore-this: f5fe8b909ea0208374270d977b385a80
+] 
+hash: 0000000371-b85fc4df03aa6355705ac081afc6e06db26f718af66b8e3eaef61a9ed229b28d
+[Don't think we need rtsopts -I0 anymore
+Duncan Coutts <duncan@well-typed.com>**20110905000836
+ Ignore-this: 656cea5657e9de65174f2eadd341ca3c
+] 
+hash: 0000000261-ebeeb99b80c8c145d211ab85c107ffd4dacd77be7ec60aad879671edba770247
+[Add missing module in other-modules in .cabal file
+Duncan Coutts <duncan@well-typed.com>**20110905001308
+ Ignore-this: 73acd2d549cf2bc46f236a4b1c834628
+] 
+hash: 0000000222-2d55a65cf2ff5dfef9bcf701ecae5e59d76efaae32d85d1c70c16c6d50a0ad8c
+[Remove now-unused import
+Duncan Coutts <duncan@well-typed.com>**20110905003026
+ Ignore-this: 493c4ba039c2aa5fcb28095fdbcd5938
+] 
+hash: 0000000167-f77afd340fba700677f02700de1105788f87cf3fda7e42c10970b417ed7550a7
+[TAG 0.2.0
+Duncan Coutts <duncan@well-typed.com>**20110905003042
+ Ignore-this: 64fc9b67f827939e1140f770f8497c
+] 
+hash: 0000031312-4b248f090b3e486308375dc73e60ac0b77afb62a645a5493eaa5a2a6dc347ac0
+[resolve conflicts after the merge with upstream 0.2.0
+Mikolaj Konarski <mikolaj@well-typed.com>**20110905125149
+ Ignore-this: 51272cbd670c8f27a52b427aaef50201
+] 
+hash: 0000002072-058a4f20c443dee94762b24f0dbb5ba7b68b4787cf33b61f1e8ee8b78a52f5cf

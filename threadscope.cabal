@@ -24,7 +24,7 @@ Author:              Satnam Singh <s.singh@ieee.org>,
                      Duncan Coutts <duncan@well-typed.com>,
                      Mikolaj Konarski <mikolaj.konarski@gmail.com>
 Maintainer:          Satnam Singh <s.singh@ieee.org>
-Bug-reports:         Satnam Singh <s.singh@ieee.org>
+Bug-reports:         http://trac.haskell.org/ThreadScope/
 Build-Type:          Simple
 cabal-version:       >= 1.6
 Data-files:          threadscope.ui, threadscope.png
@@ -38,7 +38,7 @@ Executable threadscope
   Build-Depends:     base >= 4.0 && < 5,
                      gtk >= 0.12, cairo, glib, pango,
                      binary, array, mtl, filepath,
-                     ghc-events >= 0.3,
+                     ghc-events == 0.3.*,
                      containers >= 0.2 && < 0.5,
                      Chart >= 0.14,
                      data-accessor >= 0.2.2
@@ -64,6 +64,7 @@ Executable threadscope
                      GUI.KeyView,
                      GUI.Types,
                      GUI.ConcurrencyControl,
+                     GUI.ProgressView,
                      GUI.ViewerColours,
                      GUI.Timeline.Activity,
                      GUI.Timeline.CairoDrawing,
@@ -79,6 +80,7 @@ Executable threadscope
   ghc-options:  -Wall -fwarn-tabs
                 -fno-warn-type-defaults -fno-warn-name-shadowing
                 -fno-warn-unused-do-bind
+                -- Note: we do not want to use -threaded with gtk2hs.
 
   if impl(ghc >= 7.0)
      -- GHC 7.0 and later require a flag to enable the options in ghcrts.c
@@ -91,7 +93,3 @@ Executable threadscope
   if !os(windows)
      build-depends: unix >= 2.3 && < 2.6
 
--- Not yet: gtk2hs doesn't support -threaded at the moment.
---  ghc-options: -threaded
-
-  c-sources: ghcrts.c

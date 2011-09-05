@@ -105,9 +105,9 @@ splitDurationList :: [EventDuration]
                -> Timestamp
                -> Timestamp
                -> ([EventDuration], Timestamp, [EventDuration])
-splitDurationList []  acc !tsplit !tmax
+splitDurationList []  acc !_tsplit !tmax
   = (reverse acc, tmax, [])
-splitDurationList [e] acc !tsplit !tmax
+splitDurationList [e] acc !_tsplit !tmax
   = (reverse acc, tmax, [e])
   -- just one event left: put it on the right.  This ensures that we
   -- have at least one event on each side of the split.
@@ -233,7 +233,7 @@ splitEventList :: [GHC.Event]
                -> Timestamp
                -> Timestamp
                -> ([GHC.Event], Timestamp, [GHC.Event])
-splitEventList []  acc !tsplit !tmax
+splitEventList []  acc !_tsplit !tmax
   = (reverse acc, tmax, [])
 splitEventList (e:es) acc !tsplit !tmax
   | t < tsplit -- pick all events that start before the split

@@ -18,6 +18,7 @@ import GUI.GtkExtras as GtkExt
 import Control.Monad.Reader
 import Data.Array
 import Data.IORef
+import Numeric
 
 -------------------------------------------------------------------------------
 
@@ -321,7 +322,8 @@ drawEvents EventsView{drawArea, adj}
     ]
 
   where
-    showEventTime  (CapEvent _cap (Event  time _spec)) = show time
+    showEventTime  (CapEvent _cap (Event  time _spec)) =
+      showFFloat (Just 6) (fromIntegral time / 1000000000) "s"
     showEventDescr (CapEvent  cap (Event _time  spec)) =
         (case cap of
           Nothing -> ""

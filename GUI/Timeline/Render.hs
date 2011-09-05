@@ -94,38 +94,53 @@ renderView TimelineState{timelineDrawingArea, timelineVAdj, timelinePrevView}
           -- ^^ this is where we adjust for the vertical scrollbar
   setOperator OperatorSource
   paint
-  when (scaleValue params > 0) $
-    withViewScale params $ do
-      renderBookmarks bookmarks params
-      drawCursor cursor_t params
+  when (scaleValue params > 0) $ do
+    renderBookmarks bookmarks params
+    drawCursor cursor_t params
 
 -------------------------------------------------------------------------------
 
+-- Render the bookmarks
 renderBookmarks :: [Timestamp] -> ViewParameters -> Render ()
-renderBookmarks bookmarks ViewParameters{height} = do
-    -- Render the bookmarks
-    -- First set the line width to one pixel and set the line colour
-    (onePixel, _) <- deviceToUserDistance 1 0
-    setLineWidth onePixel
+renderBookmarks bookmarks vp@ViewParameters{height} = do
+    setLineWidth 1
     setSourceRGBAhex bookmarkColour 1.0
     sequence_
-      [ draw_line (bookmark, 0) (bookmark, height)
-      | bookmark <- bookmarks ]
+      [ do moveTo x 0
+           lineTo x (fromIntegral height)
+           stroke
+      | bookmark <- bookmarks
+      , let x = timestampToView vp bookmark ]
 
 -------------------------------------------------------------------------------
 
 drawCursor :: Timestamp -> ViewParameters -> Render ()
-drawCursor cursor_t ViewParameters{height} = do
-    (threePixels, _) <- deviceToUserDistance 3 0
-    setLineWidth threePixels
+drawCursor cursor_t vp@ViewParameters{height} = do
+    setLineWidth 3
     setOperator OperatorOver
     setSourceRGBAhex blue 1.0
-    moveTo (fromIntegral cursor_t) 0
-    lineTo (fromIntegral cursor_t) (fromIntegral height)
+    let x = timestampToView vp cursor_t
+    moveTo x 0
+    lineTo x (fromIntegral height)
     stroke
 
 -------------------------------------------------------------------------------
 
+-- We currently have two different way of converting from logical units
+-- (ie timestamps in nanoseconds) to device units (ie pixels):
+--   * the first is to set the cairo context to the appropriate scale 
+--   * the second is to do the conversion ourself
+--
+-- While in principle the first is superior due to the simplicity: cairo
+-- lets us use Double as the logical unit and scaling factor. In practice
+-- however cairo does not support the full Double range because internally
+-- it makes use of a 32bit fixed point float format. With very large scaling
+-- factors we end up with artifacts like lines disappearing.
+--
+-- So sadly we will probably have to convert to using the second method.
+
+-- | Use cairo to convert from logical units (timestamps) to device units
+--
 withViewScale :: ViewParameters -> Render () -> Render ()
 withViewScale ViewParameters{scaleValue, hadjValue} inner = do
    save
@@ -133,6 +148,12 @@ withViewScale ViewParameters{scaleValue, hadjValue} inner = do
    translate (-hadjValue) 0
    inner
    restore
+
+-- | Manually convert from logical units (timestamps) to device units.
+--
+timestampToView :: ViewParameters -> Timestamp -> Double
+timestampToView ViewParameters{scaleValue, hadjValue} ts =
+  (fromIntegral ts - hadjValue) / scaleValue
 
 -------------------------------------------------------------------------------
 -- This function draws the current view of all the HECs with Cario
@@ -175,7 +196,7 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh)
             case trace of
                TraceHEC c ->
                  let (dtree, etree, _) = hecTrees hecs !! c
-                 in renderHEC c params startPos endPos (dtree, etree)
+                 in renderHEC params startPos endPos (dtree, etree)
                SparkCreationHEC c ->
                  let (_, _, stree) = hecTrees hecs !! c
                      maxV = maxSparkValue hecs

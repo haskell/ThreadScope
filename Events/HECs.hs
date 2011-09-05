@@ -6,6 +6,7 @@ module Events.HECs (
 
     eventIndexToTimestamp,
     timestampToEventIndex,
+    extractUserMessages,
   ) where
 
 import Events.EventTree
@@ -46,3 +47,8 @@ timestampToEventIndex HECs{hecEventArray=arr} ts =
       where
         mid  = l + (r - l) `quot` 2
         tmid = time (ce_event (arr!mid))
+
+extractUserMessages :: HECs -> [(Timestamp, String)]
+extractUserMessages hecs =
+  [ (ts, msg)
+  | CapEvent _ (Event ts (UserMessage msg)) <- elems (hecEventArray hecs) ]
