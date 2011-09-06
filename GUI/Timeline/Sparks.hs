@@ -13,7 +13,6 @@ import GUI.Timeline.CairoDrawing
 import GUI.ViewerColours
 
 import Graphics.Rendering.Cairo
-import qualified Graphics.Rendering.Cairo as C
 import Graphics.UI.Gtk
 
 import GHC.RTS.Events hiding (Event, GCWork, GCIdle)
@@ -228,9 +227,8 @@ drawTicks maxS offset scaleValue pos incr majorTick endPos
             identityMatrix
             tExtent <- textExtents tickText
             (fourPixels, _) <- deviceToUserDistance 4 0
-            when (textExtentsWidth tExtent + fourPixels < fromIntegral tickWidthInPixels || atMidTick || atMajorTick) $ do
-              textPath tickText
-              C.fill
+            when (textExtentsWidth tExtent + fourPixels < fromIntegral tickWidthInPixels || atMidTick || atMajorTick) $
+              showText tickText
             setMatrix m
       drawTicks maxS offset scaleValue (pos+incr) incr majorTick endPos
     else

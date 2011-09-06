@@ -7,7 +7,6 @@ import GUI.Timeline.CairoDrawing
 import GUI.ViewerColours
 
 import Graphics.Rendering.Cairo
-import qualified Graphics.Rendering.Cairo as C
 
 -- Imports for GHC Events
 import GHC.RTS.Events hiding (Event)
@@ -72,9 +71,8 @@ drawTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
                identityMatrix
                tExtent <- textExtents tickTimeText
                (fourPixels, _) <- deviceToUserDistance 4 0
-               when (textExtentsWidth tExtent + fourPixels < fromIntegral tickWidthInPixels || atMidTick || atMajorTick) $ do
-                 textPath tickTimeText
-                 C.fill
+               when (textExtentsWidth tExtent + fourPixels < fromIntegral tickWidthInPixels || atMidTick || atMajorTick) $
+                 showText tickTimeText
                setMatrix m
                setSourceRGBAhex blue 0.2
                draw_line (x1, y1) (x1, height)

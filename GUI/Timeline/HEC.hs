@@ -11,7 +11,6 @@ import GUI.Timeline.CairoDrawing
 import GUI.ViewerColours
 
 import Graphics.Rendering.Cairo
-import qualified Graphics.Rendering.Cairo as C
 import Graphics.UI.Gtk
 
 import qualified GHC.RTS.Events as GHC
@@ -134,8 +133,7 @@ unscaledText :: String -> Render ()
 unscaledText text
   = do m <- getMatrix
        identityMatrix
-       textPath text
-       C.fill
+       showText text
        setMatrix m
 
 -------------------------------------------------------------------------------
@@ -209,8 +207,7 @@ labelAt labelsMode t str
        save
        identityMatrix
        rotate (pi/4)
-       textPath str
-       C.fill
+       showText str
        restore
 
 drawEvent :: ViewParameters -> GHC.Event -> Render ()
