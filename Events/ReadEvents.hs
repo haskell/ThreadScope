@@ -162,7 +162,8 @@ buildEventLog progress from =
             evaluate tree1
             evaluate (eventTreeMaxDepth tree2)
             evaluate (sparkTreeMaxDepth tree3)
-            return $! DeepSeq.rnf durHistogram
+            when (length trees == 1 || hec == 1)  -- eval only with 2nd HEC
+              (return $! DeepSeq.rnf durHistogram)
 
        zipWithM_ treeProgress [0..] trees
 
