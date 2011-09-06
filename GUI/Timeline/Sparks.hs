@@ -15,8 +15,6 @@ import GUI.ViewerColours
 import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk
 
-import GHC.RTS.Events hiding (Event, GCWork, GCIdle)
-
 import Control.Monad
 
 import Text.Printf
