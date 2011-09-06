@@ -18,6 +18,8 @@ import Data.Accessor
 import Data.IORef
 import qualified Data.IntMap as IM
 
+import Text.Printf
+
 data HistogramView =
   HistogramView
   { hecsIORef :: IORef (Maybe HECs)
@@ -88,7 +90,7 @@ renderViewHistogram historamDrawingArea hecs minterval = do
                    $ Chart.defaultLayoutAxis
             ytitle = "Total duration (" ++ mu ++ "s)"
             xtitle = "Individual spark duration (" ++ mu ++ "s)"
-            override d = [(x, deZero (show (10 ** (x / 5) / 1000)))
+            override d = [(x, deZero (printf "%.4f" (10 ** (x / 5) / 1000)))
                          | (x, _) <- d]
             bars = Chart.plot_bars_values ^= barvs
                    $ Chart.defaultPlotBars

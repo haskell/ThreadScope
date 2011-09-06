@@ -141,16 +141,10 @@ reformatMS pos
 -------------------------------------------------------------------------------
 
 -- TODO: move somewhere?
--- TODO: generalize to any number of trailing zeroes and then the dot
--- (this is what happens, e.g., in timeline scale ticks)
--- That will also subsume Sparks.deZero.
 deZero :: String -> String
-deZero str
-  = if length str >= 3 && take 2 revstr == "0." then
-      reverse (drop 2 revstr)
-    else
-      str
-    where
-    revstr = reverse str
+deZero s
+  | '.' `elem` s =
+    reverse . dropWhile (=='.') . dropWhile (=='0') . reverse $ s
+  | otherwise = s
 
 -------------------------------------------------------------------------------
