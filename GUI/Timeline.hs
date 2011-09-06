@@ -152,11 +152,11 @@ timelineViewNew builder TimelineViewActions{..} = do
   on timelineDrawingArea scrollEvent $ tryEvent $ do
     dir <- eventScrollDirection
     mods <- eventModifier
-    liftIO $ do
-    cursor <- readIORef cursorIORef
-    case (dir,mods) of
-      (ScrollUp,   [Control]) -> zoomIn  timelineState cursor
-      (ScrollDown, [Control]) -> zoomOut timelineState cursor
+    (x, _y) <- eventCoordinates
+    x_ts    <- liftIO $ viewCoordToTimestamp timelineState x
+    liftIO $ case (dir,mods) of
+      (ScrollUp,   [Control]) -> zoomIn  timelineState x_ts
+      (ScrollDown, [Control]) -> zoomOut timelineState x_ts
       (ScrollUp,   [])        -> vscrollUp timelineState
       (ScrollDown, [])        -> vscrollDown timelineState
       _ -> return ()
@@ -211,6 +211,15 @@ timelineViewNew builder TimelineViewActions{..} = do
      return True
 
   return timelineWin
+
+-------------------------------------------------------------------------------
+
+viewCoordToTimestamp :: TimelineState -> Double -> IO Timestamp
+viewCoordToTimestamp TimelineState{..} x = do
+    hadjValue  <- adjustmentGetValue timelineAdj
+    scaleValue <- readIORef scaleIORef
+    let ts = round (max 0 (hadjValue + x * scaleValue))
+    return $! ts
 
 -------------------------------------------------------------------------------
 -- Update the internal state and the timemline view after changing which
