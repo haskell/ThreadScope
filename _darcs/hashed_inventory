@@ -1,4 +1,4 @@
-pristine:0000001678-c1e2b31888b0f46b05e74adea72b20fb23136442a37d2b5519dfd0759b87aa38
+pristine:0000001678-0ce720b6c00c47f2eced126d2eb60e14ddeefce65b3b633456eb44f06c6d8759
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1098,3 +1098,8 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20110907022146
  Ignore-this: 5075aa6c4b374a5c268ada533ac622b7
 ] 
 hash: 0000008071-6dd718a86859b0ab96c6c111955e70c74ff7c6007dca68a2f06c7923fa2bf0f5
+[Fix a stack overflow (too much laziness)
+Mikolaj Konarski <mikolaj@well-typed.com>**20110907162055
+ Ignore-this: bbd260e429a6fbfd4498ee30bdf2b39a
+] 
+hash: 0000000579-9472d340b19f698a34e2689d37f9af0c4c4ac7bd5e61946576ffceb3d4c39be4

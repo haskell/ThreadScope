@@ -16,6 +16,7 @@ import qualified Graphics.Rendering.Chart.Gtk as ChartG
 
 import Data.Accessor
 import Data.IORef
+import qualified Data.List as L
 import qualified Data.IntMap as IM
 
 import Text.Printf
@@ -68,7 +69,7 @@ renderViewHistogram historamDrawingArea hecs minterval = do
   let intDoub :: Integral a => a -> Double
       intDoub = fromIntegral
       histo :: [(Int, Timestamp)] -> [(Int, Timestamp)]
-      histo durs = IM.toList $ IM.fromListWith (+) durs
+      histo durs = IM.toList $ fromListWith' (+) durs
       inR :: Timestamp -> Bool
       inR = case minterval of
               Nothing -> const True
@@ -77,7 +78,11 @@ renderViewHistogram historamDrawingArea hecs minterval = do
       inRange :: [(Timestamp, Int, Timestamp)] -> [(Int, Timestamp)]
       inRange xs = [(logdur, dur)
                    | (start, logdur, dur) <- xs, inR start, logdur > 0]
-
+      fromListWith' :: (a -> a -> a) -> [(IM.Key, a)] -> IM.IntMap a
+      fromListWith' f xs =
+        L.foldl' ins IM.empty xs
+          where
+            ins t (k,x) = IM.insertWith' f k x t
       plot xs =
         let layout = Chart.layout1_plots ^= [ Left (Chart.plotBars bars) ]
                    $ Chart.layout1_left_axis ^= yaxis
