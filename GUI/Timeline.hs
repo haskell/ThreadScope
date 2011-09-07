@@ -395,16 +395,12 @@ mouseRelease view TimelineViewActions{..} state button x =
 timelineZoomIn :: TimelineView -> IO ()
 timelineZoomIn TimelineView{..} = do
   selection <- readIORef selectionRef
-  case selection of
-    PointSelection cursor  -> zoomIn timelineState cursor
-    RangeSelection _ _     -> return () -- TODO: zoom in with selection
+  zoomIn timelineState (selectionPoint selection)
 
 timelineZoomOut :: TimelineView -> IO ()
 timelineZoomOut TimelineView{..} = do
   selection <- readIORef selectionRef
-  case selection of
-    PointSelection cursor -> zoomOut timelineState cursor
-    RangeSelection _ _    -> return () -- TODO: zoom out with selection
+  zoomOut timelineState (selectionPoint selection)
 
 timelineZoomToFit :: TimelineView -> IO ()
 timelineZoomToFit TimelineView{..} = do
@@ -429,9 +425,13 @@ timelineScrollToEnd TimelineView{timelineState} =
 timelineCentreOnCursor :: TimelineView -> IO ()
 timelineCentreOnCursor TimelineView{..} = do
   selection <- readIORef selectionRef
-  case selection of
-    PointSelection cursor -> centreOnCursor timelineState cursor
-    RangeSelection _ _    -> return () -- TODO: center with selection
+  centreOnCursor timelineState (selectionPoint selection)
+
+selectionPoint :: TimeSelection -> Timestamp
+selectionPoint (PointSelection x)    = x
+selectionPoint (RangeSelection x x') = midpoint x x'
+  where
+    midpoint a b = a + (b - a) `div` 2
 
 
 -------------------------------------------------------------------------------
