@@ -5,7 +5,6 @@ module GUI.Histogram (
  ) where
 
 import Events.HECs
-import GUI.Timeline.Ticks (mu, deZero)
 
 import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo as C
@@ -16,29 +15,16 @@ import qualified Graphics.Rendering.Chart.Gtk as ChartG
 
 import Data.Accessor
 import Data.IORef
-import qualified Data.IntMap as IM
 
-import Text.Printf
+data HistogramView = HistogramView {
 
-data HistogramView =
-  HistogramView
-  { hecsIORef :: IORef (Maybe HECs)
-  , intervalIORef :: IORef (Maybe Interval)
-  , histogramDrawingArea :: DrawingArea
-  }
+       hecsIORef :: IORef (Maybe HECs)
 
-type Interval = (Timestamp, Timestamp)
+     }
 
 histogramViewSetHECs :: HistogramView -> Maybe HECs -> IO ()
-histogramViewSetHECs HistogramView{..} mhecs = do
+histogramViewSetHECs HistogramView{..} mhecs =
   writeIORef hecsIORef mhecs
-  widgetQueueDraw histogramDrawingArea
-
--- TODO: will it be needed?
-histogramViewSetInterval :: HistogramView -> Maybe Interval -> IO ()
-histogramViewSetInterval HistogramView{..} minterval = do
-  writeIORef intervalIORef minterval
-  widgetQueueDraw histogramDrawingArea
 
 histogramViewNew :: Builder -> IO HistogramView
 histogramViewNew builder = do
@@ -46,57 +32,32 @@ histogramViewNew builder = do
   histogramDrawingArea <- getWidget castToDrawingArea "histogram_drawingarea"
 
   hecsIORef <- newIORef Nothing
-  intervalIORef <- newIORef Nothing
   let histogramView = HistogramView{..}
 
   -- Program the callback for the capability drawingArea
   on histogramDrawingArea exposeEvent $ do
      liftIO $ do
        maybeEventArray <- readIORef hecsIORef
-       minterval <- readIORef intervalIORef
-       -- Check if an event trace has been loaded.
+       -- Check if an event trace has been loaded
        case maybeEventArray of
          Nothing   -> return True
-         Just hecs ->
-           renderViewHistogram histogramDrawingArea hecs minterval
+         Just hecs -> renderViewHistogram histogramDrawingArea hecs
 
   return histogramView
 
-renderViewHistogram :: DrawingArea -> HECs -> Maybe Interval
-                       -> IO Bool
-renderViewHistogram historamDrawingArea hecs minterval = do
-  let intDoub :: Integral a => a -> Double
-      intDoub = fromIntegral
-      histo :: [(Int, Timestamp)] -> [(Int, Timestamp)]
-      histo durs = IM.toList $ IM.fromListWith (+) durs
-      inR :: Timestamp -> Bool
-      inR = case minterval of
-              Nothing -> const True
-              Just (from, to) -> \ t -> t >= from && t <= to
-      -- TODO: if xs is sorted, we can slightly optimize the filtering
-      inRange :: [(Timestamp, Int, Timestamp)] -> [(Int, Timestamp)]
-      inRange xs = [(logdur, dur)
-                   | (start, logdur, dur) <- xs, inR start, logdur > 0]
-
-      plot xs =
+renderViewHistogram :: DrawingArea -> HECs -> IO Bool
+renderViewHistogram historamDrawingArea hecs = do
+  let plot xs =
         let layout = Chart.layout1_plots ^= [ Left (Chart.plotBars bars) ]
-                   $ Chart.layout1_left_axis ^= yaxis
-                   $ Chart.layout1_bottom_axis ^= xaxis
-                   $ Chart.defaultLayout1 :: Chart.Layout1 Double Double
-            yaxis  = Chart.laxis_title ^= ytitle
-                   $ Chart.defaultLayoutAxis
-            xaxis  = Chart.laxis_title ^= xtitle
-                   $ Chart.laxis_override ^= Chart.axis_labels ^: map override
-                   $ Chart.defaultLayoutAxis
-            ytitle = "Total duration (" ++ mu ++ "s)"
-            xtitle = "Individual spark duration (" ++ mu ++ "s)"
-            override d = [(x, deZero (printf "%.4f" (10 ** (x / 5) / 1000)))
-                         | (x, _) <- d]
+                     $ Chart.defaultLayout1 :: Chart.Layout1 Double Double
+
             bars = Chart.plot_bars_values ^= barvs
                    $ Chart.defaultPlotBars
-            barvs = [(intDoub t, [intDoub height / 1000])
-                    | (t, height) <- hs]
-            hs = histo (inRange xs)
+
+            barvs = [(intDoub t, [intDoub height]) | (t, height) <- xs]
+
+            intDoub :: Integral a => a -> Double
+            intDoub = fromIntegral
         in layout
-      renderable = ChartR.toRenderable (plot (durHistogram hecs))
-  ChartG.updateCanvas renderable historamDrawingArea
+      rendeerable = ChartR.toRenderable (plot (durHistogram hecs))
+  ChartG.updateCanvas rendeerable historamDrawingArea

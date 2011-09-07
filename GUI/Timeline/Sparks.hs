@@ -5,7 +5,6 @@ module GUI.Timeline.Sparks (
   ) where
 
 import GUI.Timeline.Render.Constants
-import GUI.Timeline.Ticks (deZero)
 
 import Events.SparkTree
 import qualified Events.SparkStats as SparkStats
@@ -254,3 +253,12 @@ drawTicks maxS offset scaleValue pos incr majorTick endPos
 showTickText :: Double -> String
 showTickText pos
   = deZero (printf "%.2f" pos)
+
+deZero :: String -> String
+deZero str
+  = if length str >= 4 && take 3 revstr == "00." then
+      reverse (drop 3 revstr)
+    else
+      str
+    where
+    revstr = reverse str

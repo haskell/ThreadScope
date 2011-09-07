@@ -1,7 +1,5 @@
 module GUI.Timeline.Ticks (
-    renderTicks,
-    mu,
-    deZero
+    renderTicks
   ) where
 
 import GUI.Timeline.Render.Constants
@@ -119,16 +117,14 @@ showTickTime pos
     where
     posf :: Double
     posf = fromIntegral pos
-
--- TODO: move somewhere?
-mu :: String
+    mu :: String
 -- here we assume that cairo 0.12.1 will have proper Unicode support
 #if MIN_VERSION_cairo(0,12,0) && !MIN_VERSION_cairo(0,12,1)
     -- this version of cairo doesn't handle Unicode properly.  Thus, we do the
     -- encoding by hand:
-mu = "\194\181"
+    mu = "\194\181"
 #else
-mu = "\x00b5"
+    mu = "\x00b5"
 #endif
 
 
@@ -140,11 +136,14 @@ reformatMS pos
 
 -------------------------------------------------------------------------------
 
--- TODO: move somewhere?
 deZero :: String -> String
-deZero s
-  | '.' `elem` s =
-    reverse . dropWhile (=='.') . dropWhile (=='0') . reverse $ s
-  | otherwise = s
+deZero str
+  = if length str >= 3 && take 2 revstr == "0." then
+      reverse (drop 2 revstr)
+    else
+      str
+    where
+    revstr = reverse str
 
 -------------------------------------------------------------------------------
+
