@@ -1,13 +1,2 @@
 {
-hunk ./GUI/Timeline.hs 144
--  -- Redrawing labelDrawingArea
-+  -- Porgram the callback for the capability drawingArea
-hunk ./GUI/Timeline.hs 144
--  -- Porgram the callback for the capability drawingArea
-+  -- Program the callback for the capability labelDrawingArea
-hunk ./GUI/Timeline.hs 212
--  ------------------------------------------------------------------------
--  -- Redrawing
--
-rmdir ./samples
 }
