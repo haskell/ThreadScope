@@ -1,5 +1,6 @@
 module GUI.Timeline.Types (
     TimelineState(..),
+    TimeSelection(..),
  ) where
 
 
@@ -21,5 +22,9 @@ data TimelineState = TimelineState {
 
        scaleIORef        :: IORef Double -- in ns/pixel
      }
+
+
+data TimeSelection = PointSelection Timestamp
+                   | RangeSelection Timestamp Timestamp
 
 -----------------------------------------------------------------------------

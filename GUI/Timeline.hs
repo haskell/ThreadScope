@@ -9,7 +9,8 @@ module GUI.Timeline (
     timelineWindowSetHECs,
     timelineWindowSetTraces,
     timelineWindowSetBookmarks,
-    timelineSetCursor,
+    timelineSetSelection,
+    TimeSelection(..),
 
     timelineZoomIn,
     timelineZoomOut,
@@ -21,17 +22,16 @@ module GUI.Timeline (
     timelineCentreOnCursor,
  ) where
 
-import GUI.Timeline.Types (TimelineState(..))
+import GUI.Types
+import GUI.Timeline.Types
+
 import GUI.Timeline.Motion
 import GUI.Timeline.Render
 
-import GUI.Types
 import Events.HECs
 
 import Graphics.UI.Gtk
-import Graphics.UI.Gtk.Gdk.Events as Old hiding (eventModifier)
-import Graphics.UI.Gtk.Gdk.EventM as New
-import Graphics.Rendering.Cairo  as C
+import Graphics.Rendering.Cairo
 
 import Data.IORef
 import Control.Monad
@@ -47,13 +47,13 @@ data TimelineView = TimelineView {
        tracesIORef     :: IORef [Trace],
        bookmarkIORef   :: IORef [Timestamp],
 
-       cursorIORef     :: IORef Timestamp,
+       selectionRef    :: IORef TimeSelection,
        showLabelsIORef :: IORef Bool,
        bwmodeIORef     :: IORef Bool
      }
 
 data TimelineViewActions = TimelineViewActions {
-       timelineViewCursorChanged :: Timestamp -> IO ()
+       timelineViewSelectionChanged :: TimeSelection -> IO ()
      }
 
 -- | Draw some parts of the timeline in black and white rather than colour.
@@ -117,9 +117,10 @@ timelineWindowSetBookmarks timelineWin@TimelineView{bookmarkIORef} bookmarks = d
 -----------------------------------------------------------------------------
 
 timelineViewNew :: Builder -> TimelineViewActions -> IO TimelineView
-timelineViewNew builder TimelineViewActions{..} = do
+timelineViewNew builder actions@TimelineViewActions{..} = do
 
   let getWidget cast = builderGetObject builder cast
+  timelineViewport         <- getWidget castToWidget "timeline_viewport"
   timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
   timelineLabelDrawingArea <- getWidget castToDrawingArea "timeline_labels_drawingarea"
   timelineHScrollbar       <- getWidget castToHScrollbar "timeline_hscroll"
@@ -131,7 +132,7 @@ timelineViewNew builder TimelineViewActions{..} = do
   tracesIORef <- newIORef []
   bookmarkIORef <- newIORef []
   scaleIORef  <- newIORef defaultScaleValue
-  cursorIORef <- newIORef 0
+  selectionRef <- newIORef (PointSelection 0)
   bwmodeIORef <- newIORef False
   showLabelsIORef <- newIORef False
   timelinePrevView <- newIORef Nothing
@@ -153,7 +154,7 @@ timelineViewNew builder TimelineViewActions{..} = do
     dir <- eventScrollDirection
     mods <- eventModifier
     (x, _y) <- eventCoordinates
-    x_ts    <- liftIO $ viewCoordToTimestamp timelineState x
+    x_ts    <- liftIO $ viewPointToTime timelineState x
     liftIO $ case (dir,mods) of
       (ScrollUp,   [Control]) -> zoomIn  timelineState x_ts
       (ScrollDown, [Control]) -> zoomOut timelineState x_ts
@@ -162,30 +163,57 @@ timelineViewNew builder TimelineViewActions{..} = do
       _ -> return ()
 
   ------------------------------------------------------------------------
-  -- Mouse button
+  -- Mouse button and selection
 
-  onButtonPress timelineDrawingArea $ \button -> do
-     case button of
-       Button{ Old.eventButton = LeftButton, Old.eventClick = SingleClick,
-               -- eventModifier = [],  -- contains [Alt2] for me
-               eventX = x } -> do
-           hadjValue <- adjustmentGetValue timelineAdj
-           scaleValue <- readIORef scaleIORef
-           let cursor = round (hadjValue + x * scaleValue)
-           widgetGrabFocus timelineDrawingArea
-           timelineViewCursorChanged cursor
+  mouseStateVar <- newIORef None
 
-           return True
-       _other -> do
-           return False
+  let withMouseState action = liftIO $ do
+      st  <- readIORef mouseStateVar
+      st' <- action st
+      writeIORef mouseStateVar st'
+
+  on timelineDrawingArea buttonPressEvent $ do
+    (x,_y) <- eventCoordinates
+    button <- eventButton
+    liftIO $ widgetGrabFocus timelineViewport
+    withMouseState (\st -> mousePress timelineWin actions st button x)
+    return False
+
+  on timelineDrawingArea buttonReleaseEvent $ do
+    (x,_y) <- eventCoordinates
+    button <- eventButton
+    withMouseState (\st -> mouseRelease timelineWin actions st button x)
+    return False
+
+  widgetAddEvents timelineDrawingArea [Button1MotionMask, Button2MotionMask]
+  on timelineDrawingArea motionNotifyEvent $ do
+    (x, _y) <- eventCoordinates
+    withMouseState (\st -> mouseMove timelineWin st x)
+    return False
+
+  -- Escape key to cancel selection or drag
+  on timelineViewport keyPressEvent $ do
+    key <- eventKeyVal
+    case key of
+      0xff1b -> do withMouseState (mouseMoveCancel timelineWin)
+                   return True
+      _      -> do return False
+  --TODO: the move left/right from MainWin get run first
+  -- we want to supress left/right during selection or grab/drag.
+
+  ------------------------------------------------------------------------
+  -- Scroll bars
 
   onValueChanged timelineAdj  $ queueRedrawTimelines timelineState
   onValueChanged timelineVAdj $ queueRedrawTimelines timelineState
   onAdjChanged   timelineAdj  $ queueRedrawTimelines timelineState
   onAdjChanged   timelineVAdj $ queueRedrawTimelines timelineState
 
+  ------------------------------------------------------------------------
+  -- Redrawing
+
   on timelineDrawingArea exposeEvent $ do
-     exposeRegion <- New.eventRegion
+     exposeRegion <- eventRegion
      liftIO $ do
        maybeEventArray <- readIORef hecsIORef
 
@@ -199,10 +227,10 @@ timelineViewNew builder TimelineViewActions{..} = do
            -- smaller than the window).
            (_,dAreaHeight) <- widgetGetSize timelineDrawingArea
            let params' = params { height = max (height params) dAreaHeight }
-           cursor    <- readIORef cursorIORef
+           selection  <- readIORef selectionRef
            bookmarks <- readIORef bookmarkIORef
 
-           renderView timelineState params' hecs cursor bookmarks exposeRegion
+           renderView timelineState params' hecs selection bookmarks exposeRegion
 
      return True
 
@@ -214,12 +242,21 @@ timelineViewNew builder TimelineViewActions{..} = do
 
 -------------------------------------------------------------------------------
 
-viewCoordToTimestamp :: TimelineState -> Double -> IO Timestamp
-viewCoordToTimestamp TimelineState{..} x = do
+viewPointToTime :: TimelineState -> Double -> IO Timestamp
+viewPointToTime TimelineState{..} x = do
     hadjValue  <- adjustmentGetValue timelineAdj
     scaleValue <- readIORef scaleIORef
     let ts = round (max 0 (hadjValue + x * scaleValue))
     return $! ts
+
+viewRangeToTimeRange :: TimelineView
+                     -> (Double, Double) -> IO (Timestamp, Timestamp)
+viewRangeToTimeRange TimelineView{timelineState} (x, x') = do
+    let xMin = min x x'
+        xMax = max x x'
+    xv  <- viewPointToTime timelineState xMin
+    xv' <- viewPointToTime timelineState xMax
+    return (xv, xv')
 
 -------------------------------------------------------------------------------
 -- Update the internal state and the timemline view after changing which
@@ -270,24 +307,86 @@ updateTimelineHPageSize TimelineState{..} = do
   adjustmentSetPageSize timelineAdj (fromIntegral winw * scaleValue)
 
 -------------------------------------------------------------------------------
--- Set the cursor to a new position
+-- Cursor / selection and mouse interaction
 
-timelineSetCursor :: TimelineView -> Timestamp -> IO ()
-timelineSetCursor TimelineView{..} ts = do
-  writeIORef cursorIORef ts
+timelineSetSelection :: TimelineView -> TimeSelection -> IO ()
+timelineSetSelection TimelineView{..} selection = do
+  writeIORef selectionRef selection
   queueRedrawTimelines timelineState
+
+-- little state machine
+data MouseState = None
+                | PressLeft  !Double   -- left mouse button is currently pressed
+                                       -- but not over threshold for dragging
+                | DragLeft   !Double   -- dragging with left mouse button
+                | DragMiddle !Double   -- dragging with middle mouse button
+
+mousePress :: TimelineView -> TimelineViewActions
+           -> MouseState -> MouseButton -> Double -> IO MouseState
+mousePress TimelineView{timelineState} TimelineViewActions{..} state button x =
+  case (state, button) of
+    (None, LeftButton)   -> do xv <- viewPointToTime timelineState x
+                               timelineViewSelectionChanged (PointSelection xv)
+                               return (PressLeft x)
+    (None, MiddleButton) -> return (DragMiddle x)
+    _                    -> return state
+
+
+mouseMove :: TimelineView -> MouseState
+          -> Double -> IO MouseState
+mouseMove view state x =
+  case state of
+    None              -> return None
+    PressLeft x0
+      | dragThreshold -> mouseMove view (DragLeft x0) x
+      | otherwise     -> return (PressLeft x0)
+      where
+        dragThreshold = abs (x - x0) > 5
+    DragLeft  x0      -> do (xv, xv') <- viewRangeToTimeRange view (x0, x)
+                            -- update the view without notifying the client
+                            timelineSetSelection view (RangeSelection xv xv')
+                            return (DragLeft x0)
+    DragMiddle x0     -> return (DragMiddle x0)
+
+
+mouseMoveCancel :: TimelineView
+                -> MouseState -> IO MouseState
+mouseMoveCancel view state =
+  case state of
+    DragLeft x0 -> do cursor <- viewPointToTime (timelineState view) x0
+                      -- reset view without notifying the client
+                      timelineSetSelection view (PointSelection cursor)
+                      return None
+    _           -> return None
+
+
+mouseRelease :: TimelineView -> TimelineViewActions
+             -> MouseState -> MouseButton -> Double -> IO MouseState
+mouseRelease view TimelineViewActions{..} state button x =
+  case (state, button) of
+    (PressLeft _,   LeftButton)  -> return None
+    (DragLeft x0,   LeftButton)  -> do (xv, xv') <- viewRangeToTimeRange view (x0, x)
+                                       timelineViewSelectionChanged (RangeSelection xv xv')
+                                       return None
+    (DragMiddle _, MiddleButton) -> return None
+    _                            -> return state
+
 
 -------------------------------------------------------------------------------
 
 timelineZoomIn :: TimelineView -> IO ()
 timelineZoomIn TimelineView{..} = do
-  cursor <- readIORef cursorIORef
-  zoomIn timelineState cursor
+  selection <- readIORef selectionRef
+  case selection of
+    PointSelection cursor  -> zoomIn timelineState cursor
+    RangeSelection _ _     -> return () -- TODO: zoom in with selection
 
 timelineZoomOut :: TimelineView -> IO ()
 timelineZoomOut TimelineView{..} = do
-  cursor <- readIORef cursorIORef
-  zoomOut timelineState cursor
+  selection <- readIORef selectionRef
+  case selection of
+    PointSelection cursor -> zoomOut timelineState cursor
+    RangeSelection _ _    -> return () -- TODO: zoom out with selection
 
 timelineZoomToFit :: TimelineView -> IO ()
 timelineZoomToFit TimelineView{..} = do
@@ -311,8 +410,11 @@ timelineScrollToEnd TimelineView{timelineState} =
 -- This one is especially evil since it relies on a shared cursor IORef
 timelineCentreOnCursor :: TimelineView -> IO ()
 timelineCentreOnCursor TimelineView{..} = do
-  cursor <- readIORef cursorIORef
-  centreOnCursor timelineState cursor
+  selection <- readIORef selectionRef
+  case selection of
+    PointSelection cursor -> centreOnCursor timelineState cursor
+    RangeSelection _ _    -> return () -- TODO: center with selection
+
 
 -------------------------------------------------------------------------------
 

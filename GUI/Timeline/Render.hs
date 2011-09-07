@@ -33,10 +33,10 @@ import Control.Monad
 --
 renderView :: TimelineState
            -> ViewParameters
-           -> HECs -> Timestamp -> [Timestamp]
+           -> HECs -> TimeSelection -> [Timestamp]
            -> Region -> IO ()
 renderView TimelineState{timelineDrawingArea, timelineVAdj, timelinePrevView}
-           params hecs cursor_t bookmarks exposeRegion = do
+           params hecs selection bookmarks exposeRegion = do
 
   -- Get state information from user-interface components
   (dAreaWidth, _) <- widgetGetSize timelineDrawingArea
@@ -96,7 +96,7 @@ renderView TimelineState{timelineDrawingArea, timelineVAdj, timelinePrevView}
   paint
   when (scaleValue params > 0) $ do
     renderBookmarks bookmarks params
-    drawCursor cursor_t params
+    drawSelection params selection
 
 -------------------------------------------------------------------------------
 
@@ -114,15 +114,34 @@ renderBookmarks bookmarks vp@ViewParameters{height} = do
 
 -------------------------------------------------------------------------------
 
-drawCursor :: Timestamp -> ViewParameters -> Render ()
-drawCursor cursor_t vp@ViewParameters{height} = do
+drawSelection :: ViewParameters -> TimeSelection -> Render ()
+drawSelection vp@ViewParameters{height} (PointSelection x) = do
     setLineWidth 3
     setOperator OperatorOver
     setSourceRGBAhex blue 1.0
-    let x = timestampToView vp cursor_t
-    moveTo x 0
-    lineTo x (fromIntegral height)
+    moveTo xv 0
+    lineTo xv (fromIntegral height)
     stroke
+  where
+    xv = timestampToView vp x
+
+drawSelection vp@ViewParameters{height} (RangeSelection x x') = do
+    setLineWidth 1.5
+    setOperator OperatorOver
+
+    setSourceRGBAhex blue 0.25
+    rectangle xv 0 (xv' - xv) (fromIntegral height)
+    fill
+
+    setSourceRGBAhex blue 1.0
+    moveTo xv 0
+    lineTo xv (fromIntegral height)
+    moveTo xv' 0
+    lineTo xv' (fromIntegral height)
+    stroke
+  where
+    xv  = timestampToView vp x
+    xv' = timestampToView vp x'
 
 -------------------------------------------------------------------------------
 

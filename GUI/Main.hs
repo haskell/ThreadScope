@@ -58,7 +58,7 @@ data EventlogState
    | EventlogLoaded {
        mfilename :: Maybe FilePath, --test traces have no filepath
        hecs      :: HECs,
-       cursorTs  :: Timestamp,
+       selection :: TimeSelection,
        cursorPos :: Int
      }
 
@@ -97,7 +97,7 @@ data Event
    | EventTimelineShowBW     Bool
 
    | EventCursorChangedIndex     Int
-   | EventCursorChangedTimestamp Timestamp
+   | EventCursorChangedSelection TimeSelection
 
    | EventTracesChanged [Trace]
 
@@ -138,7 +138,7 @@ constructUI = failOnGError $ do
   }
 
   timelineWin <- timelineViewNew builder TimelineViewActions {
-    timelineViewCursorChanged = post . EventCursorChangedTimestamp
+    timelineViewSelectionChanged = post . EventCursorChangedSelection
   }
 
   eventsView <- eventsViewNew builder EventsViewActions {
@@ -152,8 +152,9 @@ constructUI = failOnGError $ do
   bookmarkView <- bookmarkViewNew builder BookmarkViewActions {
     bookmarkViewAddBookmark    = post EventBookmarkAdd,
     bookmarkViewRemoveBookmark = post . EventBookmarkRemove,
-    bookmarkViewGotoBookmark   = \ts -> post (EventCursorChangedTimestamp ts)
-                                     >> post EventTimelineJumpCursor,
+    bookmarkViewGotoBookmark   = \ts -> do
+      post (EventCursorChangedSelection (PointSelection ts))
+      post EventTimelineJumpCursor,
     bookmarkViewEditLabel      = \n v -> post (EventBookmarkEdit n v)
   }
 
@@ -236,7 +237,7 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       continueWith EventlogLoaded {
         mfilename = mfilename,
         hecs      = hecs,
-        cursorTs  = 0,
+        selection = PointSelection 0,
         cursorPos = 0
       }
 
@@ -283,7 +284,7 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       continue
 
     dispatch EventTimelineJumpCursor EventlogLoaded{cursorPos} = do
-      timelineCentreOnCursor timelineWin --TODO: pass cursorTs here
+      timelineCentreOnCursor timelineWin --TODO: pass selection here
       eventsViewScrollToLine eventsView cursorPos
       continue
 
@@ -313,20 +314,32 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       continue
 
     dispatch (EventCursorChangedIndex cursorPos') EventlogLoaded{hecs} = do
-      let cursorTs' = eventIndexToTimestamp hecs cursorPos'
-      timelineSetCursor   timelineWin cursorTs'
+      let cursorTs'  = eventIndexToTimestamp hecs cursorPos'
+          selection' = PointSelection cursorTs'
+      timelineSetSelection timelineWin selection'
       eventsViewSetCursor eventsView  cursorPos'
       continueWith eventlogState {
-        cursorTs  = cursorTs',
+        selection = selection',
         cursorPos = cursorPos'
       }
 
-    dispatch (EventCursorChangedTimestamp cursorTs') EventlogLoaded{hecs} = do
+    dispatch (EventCursorChangedSelection selection'@(PointSelection cursorTs'))
+             EventlogLoaded{hecs} = do
       let cursorPos' = timestampToEventIndex hecs cursorTs'
-      timelineSetCursor   timelineWin cursorTs'
+      timelineSetSelection timelineWin selection'
       eventsViewSetCursor eventsView  cursorPos'
       continueWith eventlogState {
-        cursorTs  = cursorTs',
+        selection = selection',
+        cursorPos = cursorPos'
+      }
+
+    dispatch (EventCursorChangedSelection selection'@(RangeSelection start _))
+             EventlogLoaded{hecs} = do
+      let cursorPos' = timestampToEventIndex hecs start
+      timelineSetSelection timelineWin selection'
+      eventsViewSetCursor eventsView  cursorPos'
+      continueWith eventlogState {
+        selection = selection',
         cursorPos = cursorPos'
       }
 
@@ -334,12 +347,17 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       timelineWindowSetTraces timelineWin traces
       continue
 
-    dispatch EventBookmarkAdd EventlogLoaded{cursorTs} = do
+    dispatch EventBookmarkAdd
+             EventlogLoaded{selection = PointSelection cursorTs} = do
       bookmarkViewAdd bookmarkView cursorTs ""
       --TODO: should have a way to add/set a single bookmark for the timeline
       -- rather than this hack where we ask the bookmark view for the whole lot.
       ts <- bookmarkViewGet bookmarkView
       timelineWindowSetBookmarks timelineWin (map fst ts)
+      continue
+
+    dispatch EventBookmarkAdd
+             EventlogLoaded{selection = RangeSelection _ _} =
       continue
 
     dispatch (EventBookmarkRemove n) _ = do
