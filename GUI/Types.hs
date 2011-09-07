@@ -1,6 +1,7 @@
 module GUI.Types (
     ViewParameters(..),
     Trace(..),
+    Timestamp
   ) where
 
 import GHC.RTS.Events

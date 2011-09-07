@@ -29,7 +29,7 @@ data EventsView = EventsView {
      }
 
 data EventsViewActions = EventsViewActions {
-       timelineViewCursorChanged :: Int -> IO ()
+       eventsViewCursorChanged :: Int -> IO ()
      }
 
 data ViewState = ViewState {
@@ -105,7 +105,7 @@ eventsViewNew builder EventsViewActions{..} = do
           case eventsState of
             EventsEmpty                        -> return ()
             EventsLoaded{cursorPos, eventsArr} ->
-                timelineViewCursorChanged cursorPos'
+                eventsViewCursorChanged cursorPos'
               where
                 cursorPos'    = clampBounds range (by pagejump end cursorPos)
                 range@(_,end) = bounds eventsArr
@@ -149,7 +149,7 @@ eventsViewNew builder EventsViewActions{..} = do
       widgetGrabFocus drawArea
       case hitpointToLine viewState yOffset y of
         Nothing -> return ()
-        Just n  -> timelineViewCursorChanged n
+        Just n  -> eventsViewCursorChanged n
 
   on drawArea scrollEvent $ do
     dir <- eventScrollDirection
@@ -327,7 +327,7 @@ drawEvents EventsView{drawArea, adj}
     showEventDescr (CapEvent  cap (Event _time  spec)) =
         (case cap of
           Nothing -> ""
-          Just c  -> "cap " ++ show c ++ ": ")
+          Just c  -> "HEC " ++ show c ++ ": ")
      ++ case spec of
           UnknownEvent{ref} -> "unknown event; " ++ show ref
           Message     msg   -> msg

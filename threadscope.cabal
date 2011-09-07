@@ -1,5 +1,5 @@
 Name:                threadscope
-Version:             0.2.0
+Version:             0.2.1
 Category:            Development, Profiling, Trace
 Synopsis:            A graphical tool for profiling parallel Haskell programs.
 Description:         ThreadScope is a graphical viewer for thread profile 
@@ -22,8 +22,9 @@ Author:              Satnam Singh <s.singh@ieee.org>,
                      Simon Marlow <marlowsd@gmail.com>,
                      Donnie Jones <donnie@darthik.com>,
                      Duncan Coutts <duncan@well-typed.com>,
-                     Mikolaj Konarski <mikolaj.konarski@gmail.com>
+                     Mikolaj Konarski <mikolaj@well-typed.com>
 Maintainer:          Satnam Singh <s.singh@ieee.org>
+Homepage:            http://www.haskell.org/haskellwiki/ThreadScope
 Bug-reports:         http://trac.haskell.org/ThreadScope/
 Build-Type:          Simple
 cabal-version:       >= 1.6

@@ -1,4 +1,4 @@
-pristine:0000001773-982791d549e63033581eb1b4ba13ae82241ab6a681f767bc83ed828822fb2264
+pristine:0000001773-1b9283c7f261fedaef966ea510b70785d8d88a976ee990f12031ed0e25a504d7
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -850,11 +850,6 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20110830050523
  Ignore-this: 1fa3d11b6cf399bce83a7936a3e976dd
 ] 
 hash: 0000001117-e83cf5fb947e70b1c2fb9b51fc702c28a4f19e5faae66c8dff02809ee111544b
-[fix wrong comments
-Mikolaj Konarski <mikolaj@well-typed.com>**20110830053439
- Ignore-this: ee35d3fae0b8e13fada6abfd158ef387
-] 
-hash: 0000000363-a9fb444f7c87999dbc49d77f47005fe43f009512c2e6ecca0ebbf11fc582f9fe
 [add cabal dependencies needed for histogram
 Mikolaj Konarski <mikolaj@well-typed.com>**20110830053634
  Ignore-this: ebb0f5147badff253d05e459ccbf1b9e
@@ -1041,3 +1036,60 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20110905125149
  Ignore-this: 51272cbd670c8f27a52b427aaef50201
 ] 
 hash: 0000002072-058a4f20c443dee94762b24f0dbb5ba7b68b4787cf33b61f1e8ee8b78a52f5cf
+[Update Mikolaj's email address
+Duncan Coutts <duncan@well-typed.com>**20110905023659
+ Ignore-this: 91573c8fc624d940380ffe723e9906f8
+] 
+hash: 0000000294-fe9b97a6b76f1e99e33f6bdd9a7df428d192aaabfd7aad6550932612179fbde3
+[Set new homepage
+Duncan Coutts <duncan@well-typed.com>**20110905153433
+ Ignore-this: 9edcffdb30456af14058014669edab27
+] 
+hash: 0000002270-cf57bb33870da8fcf1a3be953cabad0e4d6863634c3cfca199789f725ef10d7b
+[Fix 'cap' to 'HEC' in events view
+Duncan Coutts <duncan@well-typed.com>**20110905204710
+ Ignore-this: d6a7f5a80562fbf0a38d043a58641404
+] 
+hash: 0000000262-2f0afa89b31ccaed70bac59863d10e804b1d05396ad6895684566d5e97e69bdf
+[Tweak default window size slightly
+Duncan Coutts <duncan@well-typed.com>**20110905205900
+ Ignore-this: 8d4e8d9bc60dfbc7851b153635cb414b
+] 
+hash: 0000000267-627c66287e4ce5cfd54261992f845f8f555ad0f6d265958be75014f8bb883171
+[Use showText rather than textPath for drawing text
+Duncan Coutts <duncan@well-typed.com>**20110906105739
+ Ignore-this: b234549864cb28de893000ad9a5e4880
+ We get clearer text and also it shows up in the pdf output as real
+ text not as vectors, which considerably reduces the pdf file size.
+] 
+hash: 0000001466-3680d471fd7985cde50bc6f0fb1cfe554e7794321882755f232ec5f5d776d991
+[Re-export Timestamp from GUI.Types, it's used so often
+Duncan Coutts <duncan@well-typed.com>**20110906232748
+ Ignore-this: 2fdd4c0604554247dd0a4d515ea3a05e
+] 
+hash: 0000000288-c035b3ba696bb0283f4ece6e56f748e29ec32acde93fdb99072c2e988e4258a3
+[When zooming with scroll wheel, center on mouse pointer
+Duncan Coutts <duncan@well-typed.com>**20110906233122
+ Ignore-this: 7e782aedcb8d2dd2ec205c9b547fffb0
+] 
+hash: 0000001033-3174edd87f38a5d3f7c8105351b703efd21cb698e07e0271de488b2650d1af96
+[Fix name of action for event view
+Duncan Coutts <duncan@well-typed.com>**20110907000719
+ Ignore-this: 8670afd6ed6921775f5d08a136198568
+] 
+hash: 0000000674-207e8a5aebfb5a986232efd7e7039371703ba1cae1870a385f3d49abaf6e97ee
+[Implement basics of selecting periods of time
+Duncan Coutts <duncan@well-typed.com>**20110907001952
+ Ignore-this: 47c7ca07cb350b5bbdbbc92d03cdfc97
+] 
+hash: 0000012479-2cfcc8c882a6662c0b12e742f05cc6fdbed287356bfe31ead5f4e51ce38eaa62
+[Bump minor version
+Duncan Coutts <duncan@well-typed.com>**20110907012419
+ Ignore-this: 3f361b78e8fe0c3fd1ece69ee851eb75
+] 
+hash: 0000000205-82692beab28597d9f6b6110c24f421375b1b4773c9559108f130c8f3dfdd0851
+[fix wrong comments
+Mikolaj Konarski <mikolaj@well-typed.com>**20110907021631
+ Ignore-this: 24d2937a15680872bedc97915fbba11d
+] 
+hash: 0000000244-5d8fda984653c5ab959099fa06ca9843370ecca1908cd6f270be3e41d0274ebb
