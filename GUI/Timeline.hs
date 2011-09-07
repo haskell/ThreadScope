@@ -147,7 +147,7 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
       timelineWin   = TimelineView{..}
 
   ------------------------------------------------------------------------
-  -- Porgram the callback for the capability drawingArea
+  -- Redrawing labelDrawingArea
   timelineLabelDrawingArea `onExpose` \_ -> do
     traces <- readIORef tracesIORef
     showLabels <- readIORef showLabelsIORef
