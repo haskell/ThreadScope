@@ -142,7 +142,7 @@ constructUI = failOnGError $ do
   }
 
   eventsView <- eventsViewNew builder EventsViewActions {
-    timelineViewCursorChanged = post . EventCursorChangedIndex
+    eventsViewCursorChanged = post . EventCursorChangedIndex
   }
 
   traceView <- traceViewNew builder TraceViewActions {
