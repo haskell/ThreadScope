@@ -77,7 +77,7 @@ renderViewHistogram historamDrawingArea hecs minterval = do
       -- TODO: if xs is sorted, we can slightly optimize the filtering
       inRange :: [(Timestamp, Int, Timestamp)] -> [(Int, Timestamp)]
       inRange xs = [(logdur, dur)
-                   | (start, logdur, dur) <- xs, inR start, logdur > 0]
+                   | (start, logdur, dur) <- xs, inR start]
       fromListWith' :: (a -> a -> a) -> [(IM.Key, a)] -> IM.IntMap a
       fromListWith' f xs =
         L.foldl' ins IM.empty xs
@@ -100,8 +100,9 @@ renderViewHistogram historamDrawingArea hecs minterval = do
             bars = Chart.plot_bars_values ^= barvs
                    $ Chart.defaultPlotBars
             barvs = [(intDoub t, [intDoub height / 1000])
-                    | (t, height) <- hs]
-            hs = histo (inRange xs)
+                    | (t, height) <- histo xsMM]
+            xsMM = [(minHistogram hecs, 0), (maxHistogram hecs, 0)] ++ xsIn
+            xsIn = inRange xs
         in layout
       renderable = ChartR.toRenderable (plot (durHistogram hecs))
   ChartG.updateCanvas renderable historamDrawingArea
