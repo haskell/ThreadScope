@@ -100,7 +100,7 @@ renderViewHistogram historamDrawingArea hecs minterval = do
             bars = Chart.plot_bars_values ^= barvs
                    $ Chart.defaultPlotBars
             barvs = [(intDoub t, [intDoub height / 1000])
-                    | (t, height) <- histo xsMMM]
+                    | (t, height) <- histo xsMM]
             xsMM = [(minHistogram hecs, 0), (maxHistogram hecs, 0)] ++ xsIn
             xsIn = inRange xs
         in layout
