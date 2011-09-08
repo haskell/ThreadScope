@@ -136,7 +136,12 @@ buildEventLog progress from =
                dur    = Sparks.sparkDuration s
                logdur = ilog5 dur
            in (start, logdur, dur)
-         durHistogram = map prepHisto sparks
+         allHisto     = map prepHisto sparks
+         -- Sparks of zero lenght are already well visualized in other graphs:
+         durHistogram = filter (\ (_, logdur, _) -> logdur > 0) allHisto
+         (_, logDurs, _) = unzip3 durHistogram
+         minHistogram = minimum logDurs
+         maxHistogram = maximum logDurs
 
          -- sort the events by time and put them in an array
          sorted    = sortGroups groups
@@ -151,6 +156,8 @@ buildEventLog progress from =
                   hecLastEventTime = lastTx,
                   maxSparkValue    = maxSparkValue,
                   maxSparkPool     = maxSparkPool,
+                  minHistogram     = minHistogram,
+                  maxHistogram     = maxHistogram,
                   durHistogram     = durHistogram
                }
 
