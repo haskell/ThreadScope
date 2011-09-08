@@ -85,8 +85,8 @@ that the _areas_ are proportional to the total number and graphs to rates
 of tickboxes for activity, one column for spark creation, spark conversion
 
 - the same aggregate style for the activity graph, to see min/max
-(the green are does not convey any extra information, unlike
-the tricolour areas in rate graphs)
+(the green area does convey the total runtime, so perhaps mark min
+just as a line, no grey shadow)
 
 - [GUI] put all the HEC0 bits together, both in the trace and in the timeline view
 ie in the timeline, top -> bottom: activity HEC0, sparks HEC0,
@@ -190,8 +190,7 @@ each HEC, each visible region at the current zoom level,
 each selected region (if they are implemented)
 
 - [GUI] a button for vertical zoom (clip graphs if they don't fit at that zoom)
-and/or select regions of time in the view
-and zoom only that region of display;
+and/or select regions of time in the view and zoom only that region of display;
 
 - either change scale together with zoom level (and keep a colored box
 showing how much pictures space corresponds to how many sparks (should be
@@ -313,6 +312,8 @@ for events defined and implemented
 - perhaps the far left and far right bars on the histogram should be in red,
 since extreme spark sizes are usually bad
 
+- or colour stacked bars of the histogram according to strategy label
+
 - perhaps rewrite the spark duration histogram manually, to have a look
 similar to the other graphs (e;g;, scales) and to control details, e.g.,
 if the axis description is printed vertically or horizontally
@@ -327,6 +328,10 @@ to have a constant number of bars
 
 - manage histogram interval selection as gimp does: drag to create a selection,
 then move the selection, etc.
+
+- extend the selection stuff, e.g. keep bookmarks sorted and let you select multiple bookmarks which would then give you a range selection
+
+- add a new info / stats tab giving numeric info about the current selection, e.g., the amount of cpu time used on each hec, mutator, gc, also sparks, basically all the things that ./prog +RTS --blah  can give you, but for any time period, not just whole run
 
 
 DONE
