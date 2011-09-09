@@ -352,17 +352,15 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       timelineWindowSetTraces timelineWin traces
       continue
 
-    dispatch EventBookmarkAdd
-             EventlogLoaded{selection = PointSelection cursorTs} = do
-      bookmarkViewAdd bookmarkView cursorTs ""
+    dispatch EventBookmarkAdd EventlogLoaded{selection} = do
+      case selection of
+        PointSelection a   -> bookmarkViewAdd bookmarkView a ""
+        RangeSelection a b -> do bookmarkViewAdd bookmarkView a ""
+                                 bookmarkViewAdd bookmarkView b ""
       --TODO: should have a way to add/set a single bookmark for the timeline
       -- rather than this hack where we ask the bookmark view for the whole lot.
       ts <- bookmarkViewGet bookmarkView
       timelineWindowSetBookmarks timelineWin (map fst ts)
-      continue
-
-    dispatch EventBookmarkAdd
-             EventlogLoaded{selection = RangeSelection _ _} =
       continue
 
     dispatch (EventBookmarkRemove n) _ = do

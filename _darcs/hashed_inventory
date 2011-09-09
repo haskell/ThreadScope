@@ -1,4 +1,4 @@
-pristine:0000001678-153e2079133aece447a17dd492ec9fde223de34a103926f3ae07d8a9ff2c474a
+pristine:0000001678-187a15bba50f3d8f0bbda8b7dbee830ef7bb9e1003666013f46bf863b794f94a
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1113,3 +1113,18 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20110908222421
  Ignore-this: 672c10c1883aa1c6b2b007e2cb47cae2
 ] 
 hash: 0000001228-4eebf5ebbfced61c69b2d5308240fb25eb98fa62435da6c1ab773bd9191a1616
+[Allow grabbing the timeline view and dragging it around
+Duncan Coutts <duncan@well-typed.com>**20110907013437
+ Ignore-this: 5b346a6bb4052a8712ff8ce7cbebfa6a
+] 
+hash: 0000003432-22e3626b56831d7f3fb700d49b6997d6d10ce5c69300ec58325836eb0f1c4bc9
+[Allow adding bookmarks for range selections
+Duncan Coutts <duncan@well-typed.com>**20110907020152
+ Ignore-this: fd5e359e9e29baa4ab79a03ebcf55e58
+] 
+hash: 0000000747-9079eccb03315693a5327defd228a77494a53b5736c1831f14aabefa7905dcf6
+[Handle zooming when there is a selection
+Duncan Coutts <duncan@well-typed.com>**20110907022453
+ Ignore-this: 586fb51086d42abca130a77994eb2799
+] 
+hash: 0000001048-de342610adb45316b3284aae54df5364c01cc44a335e62205123cad9d43059f6

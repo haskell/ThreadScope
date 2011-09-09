@@ -1,7 +1,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 module GUI.Timeline.Motion (
     zoomIn, zoomOut, zoomToFit,
-    scrollLeft, scrollRight, scrollToBeginning, scrollToEnd, centreOnCursor,
+    scrollLeft, scrollRight, scrollToBeginning, scrollToEnd, scrollTo, centreOnCursor,
     vscrollDown, vscrollUp,
   ) where
 
@@ -93,6 +93,9 @@ scrollRight       = scroll (\val page _ u -> (u - page) `min` (val + page/2))
 scrollToBeginning = scroll (\_   _    l _ ->  l)
 scrollToEnd       = scroll (\_   _    _ u ->  u)
 
+scrollTo :: TimelineState -> Double -> IO ()
+scrollTo s x      = scroll (\_   _    _ _ ->  x) s
+
 centreOnCursor :: TimelineState -> Timestamp -> IO ()
 
 centreOnCursor state cursor =
@@ -108,7 +111,6 @@ scroll adjust TimelineState{timelineAdj}
        let newValue = adjust hadj_value hadj_pagesize hadj_lower hadj_upper
            newValue' = max hadj_lower (min (hadj_upper - hadj_pagesize) newValue)
        adjustmentSetValue timelineAdj newValue'
-       adjustmentValueChanged timelineAdj
 
 vscrollDown, vscrollUp :: TimelineState -> IO ()
 vscrollDown = vscroll (\val page _l  u -> (u - page) `min` (val + page/8))
