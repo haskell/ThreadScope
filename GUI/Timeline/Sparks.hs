@@ -5,20 +5,19 @@ module GUI.Timeline.Sparks (
   ) where
 
 import GUI.Timeline.Render.Constants
-import GUI.Timeline.Ticks (deZero)
 
 import Events.SparkTree
 import qualified Events.SparkStats as SparkStats
 import GUI.Types
-import GUI.Timeline.CairoDrawing
 import GUI.ViewerColours
+import GUI.Timeline.Ticks (dashedLine1, drawVTicks)
 
 import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk
 
 import Control.Monad
 
-import Text.Printf
+-- import Text.Printf
 
 -- Rendering sparks. No approximation nor extrapolation is going on here.
 -- The sample data, recalculated for a given slice size in sparkProfile,
@@ -96,15 +95,6 @@ off :: Double -> (SparkStats.SparkStats -> Double)
        -> SparkStats.SparkStats
        -> Double
 off maxSliceSpark f t = fromIntegral hecSparksHeight * (1 - f t / maxSliceSpark)
-
-dashedLine1 :: Render ()
-dashedLine1 = do
-  save
-  identityMatrix
-  setDash [10,10] 0.0
-  setLineWidth 1
-  stroke
-  restore
 
 outlineSparks :: Double
                  -> (SparkStats.SparkStats -> Double)
@@ -210,43 +200,5 @@ addScale ViewParameters{..} maxSpark start end = do
     save
     scale scaleValue 1.0
     setLineWidth 0.5
-    drawTicks maxS start scaleValue 0 incr majorTick hecSparksHeight
+    drawVTicks maxS start scaleValue 0 incr majorTick hecSparksHeight
     restore
-
--- TODO: make it more robust when parameters change, e.g., if incr is too small
-drawTicks :: Double -> Timestamp -> Double -> Int -> Int -> Int -> Int -> Render ()
-drawTicks maxS offset scaleValue pos incr majorTick endPos
-  = if pos <= endPos then do
-      draw_line (x0, hecSparksHeight - y0) (x1, hecSparksHeight - y1)
-      when (pos > 0
-            && (atMajorTick || atMidTick || tickWidthInPixels > 30)) $ do
-            move_to (offset + 15,
-                     fromIntegral hecSparksHeight - pos + 4)
-            m <- getMatrix
-            identityMatrix
-            tExtent <- textExtents tickText
-            (fourPixels, _) <- deviceToUserDistance 4 0
-            when (textExtentsWidth tExtent + fourPixels < fromIntegral tickWidthInPixels || atMidTick || atMajorTick) $
-              showText tickText
-            setMatrix m
-      drawTicks maxS offset scaleValue (pos+incr) incr majorTick endPos
-    else
-      return ()
-    where
-    tickWidthInPixels :: Int
-    tickWidthInPixels = truncate ((fromIntegral incr) / scaleValue)
-    tickText = showTickText (maxS * fromIntegral pos
-                             / fromIntegral hecSparksHeight)
-    atMidTick = pos `mod` (majorTick `div` 2) == 0
-    atMajorTick = pos `mod` majorTick == 0
-    (x0, y0, x1, y1) = if atMajorTick then
-                         (offset, pos, offset+13, pos)
-                       else
-                         if atMidTick then
-                           (offset, pos, offset+10, pos)
-                         else
-                           (offset, pos, offset+6, pos)
-
-showTickText :: Double -> String
-showTickText pos
-  = deZero (printf "%.2f" pos)
