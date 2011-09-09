@@ -118,7 +118,6 @@ NOT QUITE DONE: - crash when zooming in too far (negative exponent)
   fragments of the flat line at the end of the Activity graph)
 - sometimes 2 labels are written on top of each other even at max zoom,
   e.g. "thread 3 yielding" and "thread 3 is runnable"
-- sometimes 2 tick labels (showing time) overlap
 - may be a feature: filling graphs with colours is from line 1 upwards,
   not line 0, so lines at level 0 seem under the filled area, not level with it
 - a few levels of zoom in and then zoom out sometimes results in only

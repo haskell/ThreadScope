@@ -60,7 +60,7 @@ renderHTicks startPos endPos scaleValue height
     --     putStrLn ("tickWidthInPixels     = " ++ show tickWidthInPixels)
     --     putStrLn ("snappedTickDuration   = " ++ show snappedTickDuration)
     drawHTicks tickWidthInPixels height scaleValue firstTick
-              snappedTickDuration  (10*snappedTickDuration) endPos
+              snappedTickDuration (10 * snappedTickDuration) endPos
 
 
 drawHTicks :: Int -> Int -> Double -> Timestamp -> Timestamp ->
@@ -75,7 +75,7 @@ drawHTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
                identityMatrix
                tExtent <- textExtents tickTimeText
                (fourPixels, _) <- deviceToUserDistance 4 0
-               when (textExtentsWidth tExtent + fourPixels < fromIntegral tickWidthInPixels || atMidTick || atMajorTick) $
+               when (isWideEnough tExtent fourPixels || atMajorTick) $
                  showText tickTimeText
                setMatrix m
                setSourceRGBAhex blue 0.2
@@ -87,15 +87,15 @@ drawHTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
       return ()
     where
     tickTimeText = showMultiTime pos
+    width = if atMidTick then 5 * tickWidthInPixels
+            else tickWidthInPixels
+    isWideEnough tExtent fourPixels =
+      textExtentsWidth tExtent + fourPixels < fromIntegral width
     atMidTick = pos `mod` (majorTick `div` 2) == 0
     atMajorTick = pos `mod` majorTick == 0
-    (x0, y0, x1, y1) = if pos `mod` majorTick == 0 then
-                         (pos, oy, pos, oy+16)
-                       else
-                         if pos `mod` (majorTick `div` 2) == 0 then
-                           (pos, oy, pos, oy+12)
-                         else
-                           (pos, oy, pos, oy+8)
+    (x0, y0, x1, y1) = if atMidTick then (pos, oy, pos, oy+16)
+                       else if atMidTick then (pos, oy, pos, oy+12)
+                            else (pos, oy, pos, oy+8)
 
 -------------------------------------------------------------------------------
 -- This display the nano-second time unit with an appropriate suffix
@@ -150,13 +150,9 @@ drawVTicks maxS offset scaleValue pos incr majorTick endPos
                              / fromIntegral hecSparksHeight)
     atMidTick = pos `mod` (majorTick `div` 2) == 0
     atMajorTick = pos `mod` majorTick == 0
-    (x0, y0, x1, y1) = if atMajorTick then
-                         (offset, pos, offset+13, pos)
-                       else
-                         if atMidTick then
-                           (offset, pos, offset+10, pos)
-                         else
-                           (offset, pos, offset+6, pos)
+    (x0, y0, x1, y1) = if atMajorTick then (offset, pos, offset+13, pos)
+                       else if atMidTick then (offset, pos, offset+10, pos)
+                            else (offset, pos, offset+6, pos)
     reformatMS :: Double -> String
     reformatMS pos = deZero (printf "%.2f" pos)
 
