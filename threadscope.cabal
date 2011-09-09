@@ -40,10 +40,10 @@ Executable threadscope
                      gtk >= 0.12, cairo, glib, pango,
                      binary, array, mtl, filepath,
                      ghc-events == 0.3.*,
-                     containers >= 0.2 && < 0.5,
+                     containers >= 0.4.1 && < 0.5,
                      Chart >= 0.14,
                      data-accessor >= 0.2.2,
-                     deepseq >= 1.1.0.0
+                     deepseq >= 1.1.0.1
   extensions:        RecordWildCards, NamedFieldPuns,
                      BangPatterns, PatternGuards,
                      CPP
@@ -94,4 +94,3 @@ Executable threadscope
 
   if !os(windows)
      build-depends: unix >= 2.3 && < 2.6
-
