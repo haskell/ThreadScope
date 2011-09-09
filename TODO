@@ -70,19 +70,11 @@ always visible, regardless of scrolling
 - review and document vertical scales and pool size graph code,
 after they are rewritten
 
-- [GUI] mark vertical scale units in the trace pane:
-a long label might be "spark creation/conversion rate, unit spark/ms"
-or "fizzled sparks/millisecond" or "Spark creation rate (sparks/millisecond)"
-NOTE: DONE? this seems to have been done in the labels_drawingarea instead.
-
 - [GUI] in the key, label the coloured areas, according to what they represent
 the title of the plot is "spark creation rate" and the key will have things
 for each colour; separate sections of the Key for
 the activity vs sparks vs next-thing; make sure the user understands
 that the _areas_ are proportional to the total number and graphs to rates
-
-- [GUI] either fix tickboxes for HEC sets or make it two dimensional: one column
-of tickboxes for activity, one column for spark creation, spark conversion
 
 - the same aggregate style for the activity graph, to see min/max
 (the green area does convey the total runtime, so perhaps mark min
@@ -110,13 +102,18 @@ BUGS ------------------------------------------------------------------------
 NOT QUITE DONE: - crash when zooming in too far (negative exponent)
 - scrolling to the right, we get some over-rendering at the boundary
   causing a thick line
+- (probably the same as above)
+  the light blue vertical lines get sometimes randomly darker when scrolling
+  by moving the scrollbar handle slowly to the right (probably caused
+  by testing an x coordinate up to integral division by slice or without
+  taking into account the hadj_value, so the line is drawn
+  many times when scrolling)
 - scrolling when event labels are on chops off some labels
 - rendering bug when scrolling: we need to clip to the rectangle being
   drawn, otherwise we overwrite other parts of the window when there
   are long bars being drawn, which makes some events disappear.
 - scrolling to the right at the end of the trace leaves an extra blue
   line at the top.
-- the vertical blue cursor line vanishes is some zoom levels
 - sideways scrolling leaves curve rendering artifacts (e.g., the thicker
   fragments of the flat line at the end of the Activity graph)
 - sometimes 2 labels are written on top of each other even at max zoom,
@@ -124,20 +121,17 @@ NOT QUITE DONE: - crash when zooming in too far (negative exponent)
 - sometimes 2 tick labels (showing time) overlap
 - may be a feature: filling graphs with colours is from line 1 upwards,
   not line 0, so lines at level 0 seem under the filled area, not level with it
-- the light blue vertical lines get sometimes randomly darker when scrolling
-  by moving the scrollbar handle slowly to the right (probably caused
-  by testing an x coordinate up to integral division by slice or without
-  taking into account the hadj_value, so the line is drawn
-  many times when scrolling)
 - a few levels of zoom in and then zoom out sometimes results in only
   a right fragment of the timeline shown, no indication in the scrollbar
   that scroll is possible, but scrolling indeed fixes the view
+- ticking the trace boxes off sometimes shows a black rectangle in place
+  of the switched off graph
 
 IDEAS ------------------------------------------------------------------------
 
 NAVIGATION
-- click and drag the view
-- shift-click and drag to zoom to a region
+- click and drag the view (or the selected interval,
+  perhaps shift-click or control-click when starting to drag))
 - draw the detailed view in the background
 - bookmarks
   - save
@@ -167,9 +161,7 @@ UI
         * cache misses
         * stalls
         * etc.
-     - clicking on a trace adds that trace to the view, clicking again
-       removes it
-     - some way to reorder the traces?
+     - some way to reorder the traces? dragging?
      - when rendering threads, we want some way to indicate the time
        between creation and death - colour grey?
 - a better progress bar
@@ -292,14 +284,10 @@ but too irregular/scarce to say more, and full thickness line,
 with percentiles means we have enough data or evenly distributed enough
 to say all
 
-- have *configurable* colors, like in Eden
-
-- dynamic strategy labelling (lots of stuff has to be done elsewhere, first)
+- have *configurable* colors, like in Eden; where to save them?
 
 - Eden TV has good visualisation for messages between processes & nodes,
 (steal it, when we do more work on Cloud Haskell)
-
-- user-generated events in eventlog: if implemented, visualize them
 
 - show time corresponding to the eventlog buffer flushing,
 after the event for this introduced
@@ -314,6 +302,8 @@ since extreme spark sizes are usually bad
 
 - or colour stacked bars of the histogram according to strategy label
 
+- dynamic strategy labelling (lots of stuff has to be done elsewhere, first)
+
 - perhaps rewrite the spark duration histogram manually, to have a look
 similar to the other graphs (e;g;, scales) and to control details, e.g.,
 if the axis description is printed vertically or horizontally
@@ -322,9 +312,6 @@ if the axis description is printed vertically or horizontally
 for a selected range on the timeline graph, or store precomputed data
 in the data structures for speedy drawing of the main timeline graphs,
 however they are (re)implemented in the end (mipmap or tress or anything)
-
-- adjust the data preprocessing parameters automatically based on the data
-to have a constant number of bars
 
 - manage histogram interval selection as gimp does: drag to create a selection,
 then move the selection, etc.
