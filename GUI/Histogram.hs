@@ -104,5 +104,8 @@ renderViewHistogram historamDrawingArea hecs minterval = do
             xsMM = [(minHistogram hecs, 0), (maxHistogram hecs, 0)] ++ xsIn
             xsIn = inRange xs
         in layout
-      renderable = ChartR.toRenderable (plot (durHistogram hecs))
-  ChartG.updateCanvas renderable historamDrawingArea
+      xs = durHistogram hecs
+      renderable = ChartR.toRenderable (plot xs)
+  if null xs
+    then return False  -- TODO: perhaps display "No data" in the tab?
+    else ChartG.updateCanvas renderable historamDrawingArea
