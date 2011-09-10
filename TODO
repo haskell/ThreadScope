@@ -1,28 +1,72 @@
-TODO ------------------------------------------------------------------------
+BUGS:
 
-Satnam:
+- ThreadScope DEADLOCKs occasionally, more often with --debug, why?
 
-Simon:
-  - ThreadScope DEADLOCKs occasionally, more often with --debuug, why?
-  - X Window System error sometimes?
-  - background of some widgets on Windows are white when they are grey in Linux
-  - Make ^C work on Windows
+- X Window System error sometimes?
+
+- background of some widgets on Windows are white when they are grey in Linux
+
+- Make ^C work on Windows
 
 - resizing the panes causes a grab lockup?
-- sort bookmark view by time?
-- Delete key deletes bookmarks?
-- hotkey to add a bookmark?
 
 - fix, rewrite or disable partial redrawing of the graphs pane
 that causes many of the graphical bugs reported in ThreadScope/TODO
+and/or rewrite drawing to sidestep the fixed point precision problem of cairo
 
-- [GUI] (temporarily fixed on the offending display by increasing
+- (temporarily fixed on the offending display by increasing
 timeline_labels_drawingarea width from 80 to 100)
 I see "Spark poo size" as the left hand size label of the pool graphs,
 with my Ubuntu gtk fonts; explanation: it's the wrapping
 or rather the lack thereof; the wrapping is currently manual when
 it should be automatic; what we should do is to calculate the width
 based on the label size and let it do automatic wrapping
+
+- crash when zooming in too far (negative exponent)
+
+- scrolling to the right, we get some over-rendering at the boundary
+  causing a thick line
+
+- (probably the same as above)
+  the light blue vertical lines get sometimes randomly darker when scrolling
+  by moving the scrollbar handle slowly to the right (probably caused
+  by testing an x coordinate up to integral division by slice or without
+  taking into account the hadj_value, so the line is drawn
+  many times when scrolling)
+
+- scrolling when event labels are on chops off some labels
+
+- rendering bug when scrolling: we need to clip to the rectangle being
+  drawn, otherwise we overwrite other parts of the window when there
+  are long bars being drawn, which makes some events disappear.
+
+- scrolling to the right at the end of the trace leaves an extra blue
+  line at the top.
+
+- sideways scrolling leaves curve rendering artifacts (e.g., the thicker
+  fragments of the flat line at the end of the Activity graph)
+
+- sometimes 2 labels are written on top of each other even at max zoom,
+  e.g. "thread 3 yielding" and "thread 3 is runnable"
+
+- may be a feature: filling graphs with colours is from line 1 upwards,
+  not line 0, so lines at level 0 seem under the filled area, not level with it
+
+- a few levels of zoom in and then zoom out sometimes results in only
+  a right fragment of the timeline shown, no indication in the scrollbar
+  that scroll is possible, but scrolling indeed fixes the view
+
+- ticking the trace boxes off sometimes shows a black rectangle in place
+  of the switched off graph
+
+
+OTHER:
+
+- sort bookmark view by time?
+
+- Delete key deletes bookmarks?
+
+- hotkey to add a bookmark?
 
 - 25%/50%/75% percentiles for pool size, see
 http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.10.6199
@@ -70,7 +114,7 @@ always visible, regardless of scrolling
 - review and document vertical scales and pool size graph code,
 after they are rewritten
 
-- [GUI] in the key, label the coloured areas, according to what they represent
+- in the key, label the coloured areas, according to what they represent
 the title of the plot is "spark creation rate" and the key will have things
 for each colour; separate sections of the Key for
 the activity vs sparks vs next-thing; make sure the user understands
@@ -80,70 +124,46 @@ that the _areas_ are proportional to the total number and graphs to rates
 (the green area does convey the total runtime, so perhaps mark min
 just as a line, no grey shadow)
 
-- [GUI] put all the HEC0 bits together, both in the trace and in the timeline view
+- put all the HEC0 bits together,
+ both in the trace and in the timeline view
 ie in the timeline, top -> bottom: activity HEC0, sparks HEC0,
  activity HEC1, sparks HEC1, ...
-
-- [GUI] in the trace window, enable/disable traces, but also
-reorder them by just dragging and dropping
 
 - test, in particular the quality of sampling, on the parfib suite;
 ideally generate sampled events from accurate events and compare visually
 and/or numerically
 
-- rewrite gth2hs code not to use deprecated functions (e.g. onButtonPress)
+- rewrite gth2hs code not to use deprecated functions (e.g. onButtonPress,
+but also the Graphics.UI.Gtk.Gdk.GC old drawing method in some places)
 
-FIRST RELEASE ---------------------------------------------------------------
+- either change scale together with zoom level (and keep a colored box
+showing how much pictures space corresponds to how many sparks (should be
+probably constant)) or start with the best scale for the complete view
+and the let the peaks be clipped, let the user manually readjust scale then
 
-All of above
 
-BUGS ------------------------------------------------------------------------
+IDEAS FOR FUTURE WORK:
 
-NOT QUITE DONE: - crash when zooming in too far (negative exponent)
-- scrolling to the right, we get some over-rendering at the boundary
-  causing a thick line
-- (probably the same as above)
-  the light blue vertical lines get sometimes randomly darker when scrolling
-  by moving the scrollbar handle slowly to the right (probably caused
-  by testing an x coordinate up to integral division by slice or without
-  taking into account the hadj_value, so the line is drawn
-  many times when scrolling)
-- scrolling when event labels are on chops off some labels
-- rendering bug when scrolling: we need to clip to the rectangle being
-  drawn, otherwise we overwrite other parts of the window when there
-  are long bars being drawn, which makes some events disappear.
-- scrolling to the right at the end of the trace leaves an extra blue
-  line at the top.
-- sideways scrolling leaves curve rendering artifacts (e.g., the thicker
-  fragments of the flat line at the end of the Activity graph)
-- sometimes 2 labels are written on top of each other even at max zoom,
-  e.g. "thread 3 yielding" and "thread 3 is runnable"
-- may be a feature: filling graphs with colours is from line 1 upwards,
-  not line 0, so lines at level 0 seem under the filled area, not level with it
-- a few levels of zoom in and then zoom out sometimes results in only
-  a right fragment of the timeline shown, no indication in the scrollbar
-  that scroll is possible, but scrolling indeed fixes the view
-- ticking the trace boxes off sometimes shows a black rectangle in place
-  of the switched off graph
-
-IDEAS ------------------------------------------------------------------------
-
-NAVIGATION
 - click and drag the view (or the selected interval,
   perhaps shift-click or control-click when starting to drag))
+
 - draw the detailed view in the background
+
 - bookmarks
   - save
   - measure the time between two markers
+
 - search for events in the event window
 
-UI
 - render averaged areas properly
+
 - indicate when one thread wakes up another thread, or a thread is migrated
   - draw lines/arrows between the events?
+
 - event list view
   - respond to page up / page down / arrows (FOCUS)
   - interact with bookmarks
+
 - left pane for
   - bookmarks
   - list of traces
@@ -160,12 +180,13 @@ UI
         * cache misses
         * stalls
         * etc.
-     - some way to reorder the traces? dragging?
+     - some way to reorder the traces? dragging and dropping?
      - when rendering threads, we want some way to indicate the time
        between creation and death - colour grey?
+
 - a better progress bar
 
-- [GUI] animate zoom level transitions:
+- animate zoom level transitions:
 ways to make the zoom in/out less confusing for users
 (e.g. the sudden appearance of spikiness once thresholds)
 animating the transitions would make it clearer
@@ -175,42 +196,41 @@ it'd be quick since it's just bitmap scaling
 so the user can see the region in the old view
 that is expanding out to become the new view
 
-- [GUI] let the user set the interval size/scale,
+- let the user set the interval size/scale,
 as an advanced option, _separately_ for each graph stack,
 each HEC, each visible region at the current zoom level,
 each selected region (if they are implemented)
 
-- [GUI] a button for vertical zoom (clip graphs if they don't fit at that zoom)
+- a button for vertical zoom (clip graphs if they don't fit at that zoom)
 and/or select regions of time in the view and zoom only that region of display;
 
-- either change scale together with zoom level (and keep a colored box
-showing how much pictures space corresponds to how many sparks (should be
-probably constant)) or start with the best scale for the complete view
-and the let the peaks be clipped, let the user manually readjust scale then
-
-- [GUI] an option to automatically change scale at zoom in to take
+- an option to automatically change scale at zoom in to take
 into account only the visible and smoothed part of the graphs
 
-- [GUI] select a region and display it in a separate tab
+- select a region and display it in a separate tab
 (e.g. next to the events tab) and/or show in the tab for that selected time
 period how many sparks of each kind in that time: summary statistics
 for points in time, or periods of time; make the height of the graph
 in the tab configurable/resizable with mouse, or just take the whole screen
 
-- [GUI] scroll around the graph image via a small zoomed out window
+- scroll around the graph image via a small zoomed out window
 "The Information Mural: A Technique for Displaying
 and Navigating Large Information Spaces"
 
-- [GUI] label coloured areas with a mouseover, according to what they represent
+- label coloured areas with a mouseover, according to what they represent
 
-
-OTHER
 - move the text entents stuff out of drawing ThreadRuns
+
 - overlay ETW events
+
 - integrate strace events in the event view on Linux
+
 - colour threads differently
+
 - thread names rather than numbers
+
 - live heap graph
+
 - summary analysis
 
 - perhaps draw the graphs even if only the fully-accurate,
@@ -294,8 +314,6 @@ after the event for this introduced
 - verify correctness of the input eventlog, when event state transition machines
 for events defined and implemented
 
-- zoom and pan spark duration histogram by selecting ranges on the timeline view
-
 - perhaps the far left and far right bars on the histogram should be in red,
 since extreme spark sizes are usually bad
 
@@ -318,15 +336,3 @@ then move the selection, etc.
 - extend the selection stuff, e.g. keep bookmarks sorted and let you select multiple bookmarks which would then give you a range selection
 
 - add a new info / stats tab giving numeric info about the current selection, e.g., the amount of cpu time used on each hec, mutator, gc, also sparks, basically all the things that ./prog +RTS --blah  can give you, but for any time period, not just whole run
-
-
-DONE
-  - tidy up menu option
-  - overlaps should be gone now. fix ticks
-  - key is messed up (we shouldn't be using fixed coordinates here, font
-    sizes are variable)
-  - when there are no events, we crash in last
-  - fix event colours (key doesn't match)
-  - fix the ticks: labels overlap sometimes
-  - don't draw overlapping labels
-  - spark conversion and spark pool size graphs
