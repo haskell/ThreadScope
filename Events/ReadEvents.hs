@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module Events.ReadEvents (
     registerEventsFromFile, registerEventsFromTrace
   ) where
@@ -169,8 +170,11 @@ buildEventLog progress from =
             evaluate tree1
             evaluate (eventTreeMaxDepth tree2)
             evaluate (sparkTreeMaxDepth tree3)
+#ifdef USE_SPARK_HISTOGRAM
             when (length trees == 1 || hec == 1)  -- eval only with 2nd HEC
               (return $! DeepSeq.rnf durHistogram)
+#endif
+            return ()
 
        zipWithM_ treeProgress [0..] trees
 
