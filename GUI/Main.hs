@@ -341,16 +341,22 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       let cursorPos' = timestampToEventIndex hecs cursorTs'
       timelineSetSelection timelineWin selection'
       eventsViewSetCursor eventsView  cursorPos'
+#ifdef USE_SPARK_HISTOGRAM
+      histogramViewSetInterval histogramView Nothing
+#endif
       continueWith eventlogState {
         selection = selection',
         cursorPos = cursorPos'
       }
 
-    dispatch (EventCursorChangedSelection selection'@(RangeSelection start _))
+    dispatch (EventCursorChangedSelection selection'@(RangeSelection start _end))
              EventlogLoaded{hecs} = do
       let cursorPos' = timestampToEventIndex hecs start
       timelineSetSelection timelineWin selection'
       eventsViewSetCursor eventsView  cursorPos'
+#ifdef USE_SPARK_HISTOGRAM
+      histogramViewSetInterval histogramView (Just (start, _end))
+#endif
       continueWith eventlogState {
         selection = selection',
         cursorPos = cursorPos'

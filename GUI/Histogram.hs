@@ -1,7 +1,8 @@
 module GUI.Histogram (
     HistogramView,
     histogramViewNew,
-    histogramViewSetHECs
+    histogramViewSetHECs,
+    histogramViewSetInterval,
  ) where
 
 import Events.HECs
@@ -35,7 +36,6 @@ histogramViewSetHECs HistogramView{..} mhecs = do
   writeIORef hecsIORef mhecs
   widgetQueueDraw histogramDrawingArea
 
--- TODO: will it be needed?
 histogramViewSetInterval :: HistogramView -> Maybe Interval -> IO ()
 histogramViewSetInterval HistogramView{..} minterval = do
   writeIORef intervalIORef minterval
