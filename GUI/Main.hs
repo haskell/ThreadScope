@@ -30,7 +30,9 @@ import Events.HECs hiding (Event)
 import GUI.Dialogs
 import Events.ReadEvents
 import GUI.EventsView
+#ifdef USE_SPARK_HISTOGRAM
 import GUI.Histogram
+#endif
 import GUI.Timeline
 import GUI.TraceView
 import GUI.BookmarkView
@@ -45,7 +47,9 @@ data UIEnv = UIEnv {
 
        mainWin       :: MainWindow,
        eventsView    :: EventsView,
+#ifdef USE_SPARK_HISTOGRAM
        histogramView :: HistogramView,
+#endif
        timelineWin   :: TimelineView,
        traceView     :: TraceView,
        bookmarkView  :: BookmarkView,
@@ -147,7 +151,9 @@ constructUI = failOnGError $ do
     eventsViewCursorChanged = post . EventCursorChangedIndex
   }
 
+#ifdef USE_SPARK_HISTOGRAM
   histogramView <- histogramViewNew builder
+#endif
 
   traceView <- traceViewNew builder TraceViewActions {
     traceViewTracesChanged = post . EventTracesChanged
@@ -225,7 +231,9 @@ eventLoop uienv@UIEnv{..} eventlogState = do
         printf "%s (%d events, %.3fs)" name nevents timespan
 
       eventsViewSetEvents eventsView (Just (hecEventArray hecs))
+#ifdef USE_SPARK_HISTOGRAM
       histogramViewSetHECs histogramView (Just hecs)
+#endif
       traceViewSetHECs traceView hecs
       traces' <- traceViewGetTraces traceView
       timelineWindowSetHECs timelineWin (Just hecs)
