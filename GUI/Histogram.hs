@@ -14,6 +14,7 @@ import Graphics.Rendering.Cairo as C
 import qualified Graphics.Rendering.Chart as Chart
 import qualified Graphics.Rendering.Chart.Renderable as ChartR
 import qualified Graphics.Rendering.Chart.Gtk as ChartG
+import qualified Graphics.Rendering.Chart.Plot.Hidden as ChartH
 
 import Data.Accessor
 import Data.IORef
@@ -78,13 +79,14 @@ renderViewHistogram historamDrawingArea hecs minterval = do
       inRange :: [(Timestamp, Int, Timestamp)] -> [(Int, Timestamp)]
       inRange xs = [(logdur, dur)
                    | (start, logdur, dur) <- xs, inR start]
+      -- TODO: factor out to module with helper stuff (mu, deZero, this)
       fromListWith' :: (a -> a -> a) -> [(IM.Key, a)] -> IM.IntMap a
       fromListWith' f xs =
         L.foldl' ins IM.empty xs
           where
             ins t (k,x) = IM.insertWith' f k x t
       plot xs =
-        let layout = Chart.layout1_plots ^= [ Left (Chart.plotBars bars) ]
+        let layout = Chart.layout1_plots ^= [Left plot]
                    $ Chart.layout1_left_axis ^= yaxis
                    $ Chart.layout1_bottom_axis ^= xaxis
                    $ Chart.defaultLayout1 :: Chart.Layout1 Double Double
@@ -96,13 +98,16 @@ renderViewHistogram historamDrawingArea hecs minterval = do
             ytitle = "Total duration (" ++ mu ++ "s)"
             xtitle = "Individual spark duration (" ++ mu ++ "s)"
             override d = [(x, deZero (printf "%.4f" (10 ** (x / 5) / 1000)))
-                         | (x, _) <- d]
-            bars = Chart.plot_bars_values ^= barvs
-                   $ Chart.defaultPlotBars
+                         | (x, _) <- d]  -- TODO: round it up before **
+            plot = Chart.joinPlot plotBars plotHidden
+            plotHidden =  -- to fix the x an y scales
+              Chart.toPlot $ ChartH.PlotHidden
+                [intDoub (minXHistogram hecs), intDoub (maxXHistogram hecs)]
+                [0, intDoub (maxYHistogram hecs) / 1000]
+            plotBars = Chart.plotBars bars
+            bars = Chart.plot_bars_values ^= barvs $ Chart.defaultPlotBars
             barvs = [(intDoub t, [intDoub height / 1000])
-                    | (t, height) <- histo xsMM]
-            xsMM = [(minHistogram hecs, 0), (maxHistogram hecs, 0)] ++ xsIn
-            xsIn = inRange xs
+                    | (t, height) <- histo $ inRange xs]
         in layout
       xs = durHistogram hecs
       renderable = ChartR.toRenderable (plot xs)

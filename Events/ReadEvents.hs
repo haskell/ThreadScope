@@ -16,7 +16,8 @@ import GHC.RTS.Events hiding (Event)
 import GHC.RTS.Events.Sparks as Sparks
 
 import Data.Array
-import Data.List
+import qualified Data.List as L
+import qualified Data.IntMap as IM
 import Text.Printf
 import System.FilePath
 import Control.Monad
@@ -57,7 +58,7 @@ rawEventsToHECs eventList endTime
          ( mkDurationTree (eventsToDurations nondiscrete) endTime,
            mkEventTree discrete endTime,
            mkSparkTree sparkD endTime ) )
-       where (discrete, nondiscrete) = partition isDiscreteEvent evs
+       where (discrete, nondiscrete) = L.partition isDiscreteEvent evs
              ((maxSparkValue, maxSparkPool), sparkD) =
                eventsToSparkDurations nondiscrete
 
@@ -140,9 +141,21 @@ buildEventLog progress from =
          allHisto     = map prepHisto sparks
          -- Sparks of zero lenght are already well visualized in other graphs:
          durHistogram = filter (\ (_, logdur, _) -> logdur > 0) allHisto
-         (_, logDurs, _) = unzip3 durHistogram
-         minHistogram = minimum (maxBound : logDurs)
-         maxHistogram = maximum (minBound : logDurs)
+         -- TODO: factor out to a module with helper stuff (mu, deZero, this)
+         fromListWith' :: (a -> a -> a) -> [(IM.Key, a)] -> IM.IntMap a
+         fromListWith' f xs =
+           L.foldl' ins IM.empty xs
+             where
+               ins t (k,x) = IM.insertWith' f k x t
+         -- TODO: perhaps pass histo and related inside HECs, instead of max*
+         -- also pass functions that use the "5", to make sure it's in sync
+         histo :: [(Int, Timestamp)] -> [(Int, Timestamp)]
+         histo durs = IM.toList $ fromListWith' (+) durs
+         durs =  [(logdur, dur) | (_start, logdur, dur) <- durHistogram]
+         (logDurs, sumDurs) = L.unzip (histo durs)
+         minXHistogram = minimum (maxBound : logDurs)
+         maxXHistogram = maximum (minBound : logDurs)
+         maxYHistogram = maximum (minBound : sumDurs)
 
          -- sort the events by time and put them in an array
          sorted    = sortGroups groups
@@ -157,8 +170,9 @@ buildEventLog progress from =
                   hecLastEventTime = lastTx,
                   maxSparkValue    = maxSparkValue,
                   maxSparkPool     = maxSparkPool,
-                  minHistogram     = minHistogram,
-                  maxHistogram     = maxHistogram,
+                  minXHistogram    = minXHistogram,
+                  maxXHistogram    = maxXHistogram,
+                  maxYHistogram    = maxYHistogram,
                   durHistogram     = durHistogram
                }
 

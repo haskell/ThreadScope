@@ -25,8 +25,9 @@ data HECs = HECs {
        hecLastEventTime :: Timestamp,
        maxSparkValue    :: Double,
        maxSparkPool     :: Double,
-       minHistogram     :: Int,
-       maxHistogram     :: Int,
+       minXHistogram    :: Int,
+       maxXHistogram    :: Int,
+       maxYHistogram    :: Timestamp,
        durHistogram     :: [(Timestamp, Int, Timestamp)]
      }
 

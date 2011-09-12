@@ -33,7 +33,7 @@ zoom :: (Double->Double) -> TimelineState -> Timestamp -> IO ()
 zoom factor TimelineState{timelineAdj, scaleIORef} cursor = do
        scaleValue <- readIORef scaleIORef
        -- TODO: we'd need HECs, as below, to fit maxScale to graphs at hand
-       let maxScale = 10000000000000  -- big enough for hours of evenlogs
+       let maxScale = 10000000000000  -- big enough for hours of eventlogs
            clampedFactor =
              if factor scaleValue < 1 || factor scaleValue > maxScale
              then id
