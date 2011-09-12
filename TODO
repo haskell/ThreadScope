@@ -336,3 +336,7 @@ then move the selection, etc.
 - extend the selection stuff, e.g. keep bookmarks sorted and let you select multiple bookmarks which would then give you a range selection
 
 - add a new info / stats tab giving numeric info about the current selection, e.g., the amount of cpu time used on each hec, mutator, gc, also sparks, basically all the things that ./prog +RTS --blah  can give you, but for any time period, not just whole run
+
+- perhaps the current "reset zoom" button could change the x and y scale of timeline and histogram to fit the curent region (which initially and most of the time later on is just the whole eventlog)?
+
+- perhaps we need a floating "resize me" button to pop up on the graph whenever your current view ought to be resized , e.g. clipping at the top, or tallest bar taking up less than half the vertical space, or put that in red letters into the popups that we'll have at some point, or mark the upper or lower edge of the grap red (depending if it's clipped or too small) and blink the y-zoom reset button (to the right of the x-zoom reset button) in red, too
