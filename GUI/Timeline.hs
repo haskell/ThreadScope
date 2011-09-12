@@ -49,7 +49,10 @@ data TimelineView = TimelineView {
 
        selectionRef    :: IORef TimeSelection,
        showLabelsIORef :: IORef Bool,
-       bwmodeIORef     :: IORef Bool
+       bwmodeIORef     :: IORef Bool,
+
+       cursorIBeam     :: Cursor,
+       cursorMove      :: Cursor
      }
 
 data TimelineViewActions = TimelineViewActions {
@@ -128,6 +131,9 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
   timelineAdj              <- rangeGetAdjustment timelineHScrollbar
   timelineVAdj             <- rangeGetAdjustment timelineVScrollbar
 
+  cursorIBeam <- cursorNew Xterm
+  cursorMove  <- cursorNew Fleur
+
   hecsIORef   <- newIORef Nothing
   tracesIORef <- newIORef []
   bookmarkIORef <- newIORef []
@@ -164,6 +170,8 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
 
   ------------------------------------------------------------------------
   -- Mouse button and selection
+
+  widgetSetCursor timelineDrawingArea (Just cursorIBeam)
 
   mouseStateVar <- newIORef None
 
@@ -339,10 +347,12 @@ mousePress view@TimelineView{..} TimelineViewActions{..} state button x =
     (None, LeftButton)   -> do xv <- viewPointToTime view x
                                timelineViewSelectionChanged (PointSelection xv)
                                return (PressLeft x)
-    (None, MiddleButton) -> do v <- adjustmentGetValue (timelineAdj timelineState)
-                               --TODO: set cursor to indicate drag/scroll
+    (None, MiddleButton) -> do widgetSetCursor timelineDrawingArea (Just cursorMove)
+                               v <- adjustmentGetValue timelineAdj
                                return (DragMiddle x v)
     _                    -> return state
+  where
+    TimelineState{timelineAdj, timelineDrawingArea} = timelineState
 
 
 mouseMove :: TimelineView -> MouseState
@@ -367,28 +377,40 @@ mouseMove view@TimelineView{..} state x =
 
 mouseMoveCancel :: TimelineView
                 -> MouseState -> IO MouseState
-mouseMoveCancel view state =
+mouseMoveCancel view@TimelineView{..} state =
   case state of
     DragLeft x0 -> do cursor <- viewPointToTime view x0
                       -- reset view without notifying the client
                       timelineSetSelection view (PointSelection cursor)
                       return None
-    --TODO: reset cursor for drag/scroll
+    DragMiddle{}-> do widgetSetCursor timelineDrawingArea (Just cursorIBeam)
+                      return None
     _           -> return None
-
+  where
+    TimelineState{timelineDrawingArea} = timelineState
 
 mouseRelease :: TimelineView -> TimelineViewActions
              -> MouseState -> MouseButton -> Double -> IO MouseState
-mouseRelease view TimelineViewActions{..} state button x =
+mouseRelease view@TimelineView{..} TimelineViewActions{..} state button x =
   case (state, button) of
     (PressLeft _,   LeftButton)  -> return None
     (DragLeft x0,   LeftButton)  -> do (xv, xv') <- viewRangeToTimeRange view (x0, x)
                                        timelineViewSelectionChanged (RangeSelection xv xv')
                                        return None
-    (DragMiddle{}, MiddleButton) -> --TODO: reset cursor for drag/scroll
-                                    return None
+    (DragMiddle{}, MiddleButton) -> do widgetSetCursor timelineDrawingArea (Just cursorIBeam)
+                                       return None
     _                            -> return state
+  where
+    TimelineState{timelineDrawingArea} = timelineState
 
+
+widgetSetCursor :: WidgetClass widget => widget -> Maybe Cursor -> IO ()
+widgetSetCursor widget cursor = do
+#if MIN_VERSION_gtk(0,12,1)
+    dw <- widgetGetDrawWindow widget
+    drawWindowSetCursor dw cursor
+#endif
+    return ()
 
 -------------------------------------------------------------------------------
 
