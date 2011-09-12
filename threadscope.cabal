@@ -30,7 +30,7 @@ Build-Type:          Simple
 cabal-version:       >= 1.6
 Data-files:          threadscope.ui, threadscope.png
 
-source-repository head
+Source-repository head
   type:     darcs
   location: http://code.haskell.org/ThreadScope/
 
@@ -40,10 +40,10 @@ Executable threadscope
                      gtk >= 0.12, cairo, glib, pango,
                      binary, array, mtl, filepath,
                      ghc-events == 0.3.*,
-                     containers >= 0.2 && < 0.5,
+                     containers >= 0.4.1 && < 0.5,
                      Chart >= 0.14,
                      data-accessor >= 0.2.2,
-                     deepseq >= 1.1.0.0
+                     deepseq >= 1.1.0.1
   extensions:        RecordWildCards, NamedFieldPuns,
                      BangPatterns, PatternGuards,
                      CPP
@@ -84,14 +84,9 @@ Executable threadscope
                 -fno-warn-unused-do-bind
                 -- Note: we do not want to use -threaded with gtk2hs.
 
-  if impl(ghc >= 7.0)
-     -- GHC 7.0 and later require a flag to enable the options in ghcrts.c
-     ghc-options:  -rtsopts -fno-warn-unused-do-bind
-
   if impl(ghc < 6.12)
      -- GHC before 6.12 gave spurious warnings for RecordWildCards
      ghc-options:  -fno-warn-unused-matches
 
   if !os(windows)
      build-depends: unix >= 2.3 && < 2.6
-

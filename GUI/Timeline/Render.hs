@@ -9,7 +9,7 @@ module GUI.Timeline.Render (
 
 import GUI.Timeline.Types
 import GUI.Timeline.Render.Constants
-import GUI.Timeline.Ticks
+import GUI.Timeline.Ticks (renderHTicks)
 import GUI.Timeline.HEC
 import GUI.Timeline.Sparks
 import GUI.Timeline.Activity
@@ -147,7 +147,7 @@ drawSelection vp@ViewParameters{height} (RangeSelection x x') = do
 
 -- We currently have two different way of converting from logical units
 -- (ie timestamps in nanoseconds) to device units (ie pixels):
---   * the first is to set the cairo context to the appropriate scale 
+--   * the first is to set the cairo context to the appropriate scale
 --   * the second is to do the conversion ourself
 --
 -- While in principle the first is superior due to the simplicity: cairo
@@ -204,7 +204,7 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh)
       withViewScale params $ do
       save
       -- First render the ticks and tick times
-      renderTicks startPos endPos scaleValue height
+      renderHTicks startPos endPos scaleValue height
       restore
 
       -- This function helps to render a single HEC...
@@ -338,6 +338,14 @@ showTrace (SparkConversionHEC n) = "Spark\nconversion\nrate\n(spark/ms)\nHEC " +
 showTrace (SparkPoolHEC n) = "Spark pool\nsize\nHEC " ++ show n
 showTrace TraceActivity = "Activity"
 showTrace _             = "?"
+
+--------------------------------------------------------------------------------
+
+yaxisTrace :: Trace -> Maybe
+yaxisTrace SparkCreationHEC {} =
+yaxisTrace (SparkConversionHEC n) =
+yaxisTrace (SparkPoolHEC n) =
+yaxisTrace _             = Nothing
 
 --------------------------------------------------------------------------------
 

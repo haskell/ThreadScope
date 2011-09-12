@@ -1,7 +1,9 @@
 module GUI.Timeline.Ticks (
-    renderTicks,
+    renderHTicks,
+    drawVTicks,
     mu,
-    deZero
+    deZero,
+    dashedLine1
   ) where
 
 import GUI.Timeline.Render.Constants
@@ -14,9 +16,9 @@ import Graphics.Rendering.Cairo
 import GHC.RTS.Events hiding (Event)
 
 import Control.Monad
+import Text.Printf
 
 --import Debug.Trace
---import Text.Printf
 
 -------------------------------------------------------------------------------
 -- Minor, semi-major and major ticks are drawn and the absolute periods of
@@ -36,8 +38,8 @@ import Control.Monad
 
 -------------------------------------------------------------------------------
 
-renderTicks :: Timestamp -> Timestamp -> Double -> Int -> Render()
-renderTicks startPos endPos scaleValue height
+renderHTicks :: Timestamp -> Timestamp -> Double -> Int -> Render()
+renderHTicks startPos endPos scaleValue height
   = do
     selectFontFace "sans serif" FontSlantNormal FontWeightNormal
     setFontSize 12
@@ -57,13 +59,13 @@ renderTicks startPos endPos scaleValue height
     --   do putStrLn ("timestampFor100Pixels = " ++ show timestampFor100Pixels)
     --     putStrLn ("tickWidthInPixels     = " ++ show tickWidthInPixels)
     --     putStrLn ("snappedTickDuration   = " ++ show snappedTickDuration)
-    drawTicks tickWidthInPixels height scaleValue firstTick
-              snappedTickDuration  (10*snappedTickDuration) endPos
+    drawHTicks tickWidthInPixels height scaleValue firstTick
+              snappedTickDuration (10 * snappedTickDuration) endPos
 
 
-drawTicks :: Int -> Int -> Double -> Timestamp -> Timestamp ->
+drawHTicks :: Int -> Int -> Double -> Timestamp -> Timestamp ->
              Timestamp -> Timestamp -> Render ()
-drawTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
+drawHTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
   = if pos <= endPos then
       do setLineWidth scaleValue
          draw_line (x0, y0) (x1, y1)
@@ -73,27 +75,27 @@ drawTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
                identityMatrix
                tExtent <- textExtents tickTimeText
                (fourPixels, _) <- deviceToUserDistance 4 0
-               when (textExtentsWidth tExtent + fourPixels < fromIntegral tickWidthInPixels || atMidTick || atMajorTick) $
+               when (isWideEnough tExtent fourPixels || atMajorTick) $
                  showText tickTimeText
                setMatrix m
                setSourceRGBAhex blue 0.2
                draw_line (x1, y1) (x1, height)
                setSourceRGBAhex blue 1.0
 
-         drawTicks tickWidthInPixels height scaleValue (pos+incr) incr majorTick endPos
+         drawHTicks tickWidthInPixels height scaleValue (pos+incr) incr majorTick endPos
     else
       return ()
     where
-    tickTimeText = showTickTime pos
+    tickTimeText = showMultiTime pos
+    width = if atMidTick then 5 * tickWidthInPixels
+            else tickWidthInPixels
+    isWideEnough tExtent fourPixels =
+      textExtentsWidth tExtent + fourPixels < fromIntegral width
     atMidTick = pos `mod` (majorTick `div` 2) == 0
     atMajorTick = pos `mod` majorTick == 0
-    (x0, y0, x1, y1) = if pos `mod` majorTick == 0 then
-                         (pos, oy, pos, oy+16)
-                       else
-                         if pos `mod` (majorTick `div` 2) == 0 then
-                           (pos, oy, pos, oy+12)
-                         else
-                           (pos, oy, pos, oy+8)
+    (x0, y0, x1, y1) = if atMidTick then (pos, oy, pos, oy+16)
+                       else if atMidTick then (pos, oy, pos, oy+12)
+                            else (pos, oy, pos, oy+8)
 
 -------------------------------------------------------------------------------
 -- This display the nano-second time unit with an appropriate suffix
@@ -102,8 +104,8 @@ drawTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
 -- For times >= 1e-6 and < 0.1 seconds the time is shown in ms
 -- For times >= 0.5 seconds the time is shown in seconds
 
-showTickTime :: Timestamp -> String
-showTickTime pos
+showMultiTime :: Timestamp -> String
+showMultiTime pos
   = if pos == 0 then
       "0s"
     else
@@ -117,28 +119,57 @@ showTickTime pos
     where
     posf :: Double
     posf = fromIntegral pos
+    reformatMS :: Num a => a -> String
+    reformatMS pos = deZero (show pos)
 
--- TODO: move somewhere?
+-------------------------------------------------------------------------------
+
+-- TODO: make it more robust when parameters change, e.g., if incr is too small
+drawVTicks :: Double -> Timestamp -> Double -> Int -> Int -> Int -> Int -> Render ()
+drawVTicks maxS offset scaleValue pos incr majorTick endPos
+  = if pos <= endPos then do
+      draw_line (x0, hecSparksHeight - y0) (x1, hecSparksHeight - y1)
+      when (pos > 0
+            && (atMajorTick || atMidTick || tickWidthInPixels > 30)) $ do
+            move_to (offset + 15,
+                     fromIntegral hecSparksHeight - pos + 4)
+            m <- getMatrix
+            identityMatrix
+            tExtent <- textExtents tickText
+            (fourPixels, _) <- deviceToUserDistance 4 0
+            when (textExtentsWidth tExtent + fourPixels < fromIntegral tickWidthInPixels || atMidTick || atMajorTick) $
+              showText tickText
+            setMatrix m
+      drawVTicks maxS offset scaleValue (pos+incr) incr majorTick endPos
+    else
+      return ()
+    where
+    tickWidthInPixels :: Int
+    tickWidthInPixels = truncate ((fromIntegral incr) / scaleValue)
+    tickText = reformatMS (maxS * fromIntegral pos
+                             / fromIntegral hecSparksHeight)
+    atMidTick = pos `mod` (majorTick `div` 2) == 0
+    atMajorTick = pos `mod` majorTick == 0
+    (x0, y0, x1, y1) = if atMajorTick then (offset, pos, offset+13, pos)
+                       else if atMidTick then (offset, pos, offset+10, pos)
+                            else (offset, pos, offset+6, pos)
+    reformatMS :: Double -> String
+    reformatMS pos = deZero (printf "%.2f" pos)
+
+-------------------------------------------------------------------------------
+
 mu :: String
--- here we assume that cairo 0.12.1 will have proper Unicode support
 #if MIN_VERSION_cairo(0,12,0) && !MIN_VERSION_cairo(0,12,1)
-    -- this version of cairo doesn't handle Unicode properly.  Thus, we do the
-    -- encoding by hand:
+-- this version of cairo doesn't handle Unicode properly.
+-- Thus, we do the encoding by hand:
 mu = "\194\181"
 #else
+-- Haskell cairo bindings 0.12.1 have proper Unicode support
 mu = "\x00b5"
 #endif
 
-
 -------------------------------------------------------------------------------
 
-reformatMS :: Num a => a -> String
-reformatMS pos
-  = deZero (show pos)
-
--------------------------------------------------------------------------------
-
--- TODO: move somewhere?
 deZero :: String -> String
 deZero s
   | '.' `elem` s =
@@ -146,3 +177,12 @@ deZero s
   | otherwise = s
 
 -------------------------------------------------------------------------------
+
+dashedLine1 :: Render ()
+dashedLine1 = do
+  save
+  identityMatrix
+  setDash [10,10] 0.0
+  setLineWidth 1
+  stroke
+  restore

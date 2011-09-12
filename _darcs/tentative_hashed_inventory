@@ -1,4 +1,4 @@
-pristine:0000001678-187a15bba50f3d8f0bbda8b7dbee830ef7bb9e1003666013f46bf863b794f94a
+pristine:0000001678-58f5682ecedcdcbb90630089be0336ff1608aff506972c0a3b4f31e56f7b9fa2
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1128,3 +1128,43 @@ Duncan Coutts <duncan@well-typed.com>**20110907022453
  Ignore-this: 586fb51086d42abca130a77994eb2799
 ] 
 hash: 0000001048-de342610adb45316b3284aae54df5364c01cc44a335e62205123cad9d43059f6
+[Rename and move around scale drawing functions
+Mikolaj Konarski <mikolaj@well-typed.com>**20110909091529
+ Ignore-this: a987c6798dca1379a7d6edf19bd45834
+] 
+hash: 0000007548-6deac6373cb0ed941211d8a332bfe12e472518cc0aefc4aa2510487d74da0a3c
+[Fix dependencies (to get IntMap.fromListWith')
+Mikolaj Konarski <mikolaj@well-typed.com>**20110909092603
+ Ignore-this: 199f0fa61f95dff1ecd673750888836
+] 
+hash: 0000000427-87994a43431a19de878077445de79572f6926a1e4db5e1496f6e653ebc03154a
+[Update TODO items done in 0.2.0 and related
+Mikolaj Konarski <mikolaj@well-typed.com>**20110909152818
+ Ignore-this: c34b55c9814f1bc41cfa7197872b26dd
+] 
+hash: 0000002434-50daa778f862bc0c82adf633f80ecef441f27e42c33d3d6851786e112274f85d
+[Fix "sometimes 2 tick labels (showing time) overlap"
+Mikolaj Konarski <mikolaj@well-typed.com>**20110909224703
+ Ignore-this: bfd5173f2f895a8b2a2705b5f92ab46d
+] 
+hash: 0000001972-33700e7fbfbac5be987153a8d9d4f4f5ca47cb744c432d3765d729b6bd71f2c4
+[Don't draw histogram if no spark duration data
+Mikolaj Konarski <mikolaj@well-typed.com>**20110909230124
+ Ignore-this: 6c85360e882594a1918704f334ca2960
+] 
+hash: 0000000741-3e2016302429095218b346df3f5b3db989d7da8fc058c656111d763219ff7dc7
+[Fix wrong default for minimum histogram x point
+Mikolaj Konarski <mikolaj@well-typed.com>**20110909233655
+ Ignore-this: e281b92167531cb29eb69de78bb59b8a
+] 
+hash: 0000000389-a995b429395be8d30098a40dfcdbc24f574e09ed73d21b7820243a05d60761cd
+[Update TODO (mostly reorder and deduplicate)
+Mikolaj Konarski <mikolaj@well-typed.com>**20110910101354
+ Ignore-this: 77d7f66d5e7e767d4e20f27cf2242ed5
+] 
+hash: 0000007963-ff28d69d3af433a7fee0847f006f08ff02e1efe8c319034dec57b9602b6c2b27
+[Fix divide by zero from excessive zoom in
+Mikolaj Konarski <mikolaj@well-typed.com>**20110910182724
+ Ignore-this: 1a0f1d07dfe2a9e2aa30d144eb78a3ba
+] 
+hash: 0000000748-3b3182fee420515d543c502aa4fe17bca97665422ceaf15b66c27b7ea9e9786c

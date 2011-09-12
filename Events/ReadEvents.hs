@@ -140,8 +140,8 @@ buildEventLog progress from =
          -- Sparks of zero lenght are already well visualized in other graphs:
          durHistogram = filter (\ (_, logdur, _) -> logdur > 0) allHisto
          (_, logDurs, _) = unzip3 durHistogram
-         minHistogram = minimum logDurs
-         maxHistogram = maximum logDurs
+         minHistogram = minimum (maxBound : logDurs)
+         maxHistogram = maximum (minBound : logDurs)
 
          -- sort the events by time and put them in an array
          sorted    = sortGroups groups

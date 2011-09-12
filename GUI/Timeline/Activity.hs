@@ -9,6 +9,7 @@ import Events.EventTree
 import Events.EventDuration
 import GUI.Types
 import GUI.ViewerColours
+import GUI.Timeline.Ticks (dashedLine1)
 
 import Graphics.Rendering.Cairo
 
@@ -162,12 +163,3 @@ drawActivity hecs start end slice ts = do
   off t = fromIntegral activityGraphHeight -
             fromIntegral (t * fromIntegral activityGraphHeight) /
             fromIntegral (fromIntegral (hecCount hecs) * slice)
-
-dashedLine1 :: Render ()
-dashedLine1 = do
-  save
-  identityMatrix
-  setDash [10,10] 0.0
-  setLineWidth 1
-  stroke
-  restore
