@@ -27,7 +27,7 @@ Maintainer:          Satnam Singh <s.singh@ieee.org>
 Homepage:            http://www.haskell.org/haskellwiki/ThreadScope
 Bug-reports:         http://trac.haskell.org/ThreadScope/
 Build-Type:          Simple
-cabal-version:       >= 1.6
+Cabal-version:       >= 1.6
 Data-files:          threadscope.ui, threadscope.png
 
 source-repository head
@@ -47,7 +47,7 @@ Executable threadscope
                      ghc-events == 0.3.* && >= 0.3.1,
                      containers >= 0.3 && < 0.5,
                      deepseq >= 1.1
-  extensions:        RecordWildCards, NamedFieldPuns,
+  Extensions:        RecordWildCards, NamedFieldPuns,
                      BangPatterns, PatternGuards,
                      CPP
   Other-Modules:     Events.HECs,
@@ -92,10 +92,6 @@ Executable threadscope
                 -fno-warn-type-defaults -fno-warn-name-shadowing
                 -fno-warn-unused-do-bind
                 -- Note: we do not want to use -threaded with gtk2hs.
-
-  if impl(ghc >= 7.0)
-     -- GHC 7.0 and later require a flag to enable the options in ghcrts.c
-     ghc-options:  -rtsopts -fno-warn-unused-do-bind
 
   if impl(ghc < 6.12)
      -- GHC before 6.12 gave spurious warnings for RecordWildCards
