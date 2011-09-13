@@ -207,13 +207,9 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
         -- to a slice boundary
         start = (startPos `div` slice) * slice
         end   = ((endPos + slice) `div` slice) * slice
-        -- TODO; Function sparkProfile, for a given slice size and viewport,
-        -- is called separately by each trace, The unused parts of the result
-        -- won't get computed, but the drilling down the tree and allocating
-        -- thunks is repeated for each graph, while it could be done just once,
-        -- for a given HEC, zoom level and scroll position.
-        prof c = let (_, _, stree) = hecTrees hecs !! c
-                 in sparkProfile slice start end stree
+        pr trees = let (_, _, stree) = trees
+                   in sparkProfile slice start end stree
+        prof = map pr (hecTrees hecs)
         maxV = maxSparkValue hecs
 
     -- Now render the timeline drawing if we have a non-empty trace
@@ -233,9 +229,9 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                  let (dtree, etree, _) = hecTrees hecs !! c
                  in renderHEC params startPos endPos (dtree, etree)
                SparkCreationHEC c ->
-                 renderSparkCreation params slice start end (prof c) maxV
+                 renderSparkCreation params slice start end (prof !! c) maxV
                SparkConversionHEC c ->
-                 renderSparkConversion params slice start end (prof c) maxV
+                 renderSparkConversion params slice start end (prof !! c) maxV
                SparkPoolHEC c ->
                  let (_, _, stree) = hecTrees hecs !! c
                      maxP = maxSparkPool hecs
