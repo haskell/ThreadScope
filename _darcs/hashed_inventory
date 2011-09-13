@@ -1,4 +1,4 @@
-pristine:4912efe9862bd743ed1513d6b08a18383078aaeb16ef21e9209dd247c4f5c7f1
+pristine:f92277641c114b1b53904d703840ce59058fa91011e7d9478cd1a3c29533e449
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1251,3 +1251,13 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20110913150105
  Ignore-this: 9c62cb6e30f61b84bc98e2e6e69b186e
 ] 
 hash: 0000000806-8dd35a38bb1878d0a4b8644a6b89f9d008f39b6bc845ac187be3932ca8b1b735
+[Decouple y scales of spark creation and conversion graphs
+Mikolaj Konarski <mikolaj@well-typed.com>**20110913154624
+ Ignore-this: 100e9c414bf39abc7a764d1a08decce9
+] 
+hash: 0000001705-50630bef1af5f35bb9825fbc068da08c3eaf779b618ed4939a128f5a525b754d
+[Disable decoupling spark scales until we can lock them back
+Mikolaj Konarski <mikolaj@well-typed.com>**20110913213250
+ Ignore-this: f4d2ae6a829190a97d68105e390652c0
+] 
+hash: 0000000627-fcce40dad7d0e64780b4ce41b022df702a10a429001bfbb3041ad95886be3d4d

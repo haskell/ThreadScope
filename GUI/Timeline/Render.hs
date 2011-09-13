@@ -16,6 +16,7 @@ import GUI.Timeline.Activity
 
 import Events.HECs
 import Events.SparkTree
+import qualified Events.SparkStats as SparkStats
 import GUI.Types
 import GUI.ViewerColours
 import GUI.Timeline.CairoDrawing
@@ -199,6 +200,7 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                    hecLastEventTime hecs
                 ]
 
+        -- TODO: move some or all of the code below somewhere
         spark_detail :: Int
         spark_detail = 4 -- in pixels
 
@@ -211,6 +213,19 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                                    in sparkProfile slice start end stree
         prof = map (pr slice start end) (hecTrees hecs)
 
+        totalSparkCrt :: Timestamp -> SparkStats.SparkStats -> Double
+        totalSparkCrt duration c =
+          (SparkStats.rateDud c +
+           SparkStats.rateCreated c +
+           SparkStats.rateOverflowed c)
+          / fromIntegral duration
+        totalSparkCnv :: Timestamp -> SparkStats.SparkStats -> Double
+        totalSparkCnv duration c =
+          (SparkStats.rateFizzled c +
+           SparkStats.rateConverted c +
+           SparkStats.rateGCd c)
+          / fromIntegral duration
+
         -- TODO: costly! maxV can be calculated once per window resize
         lastTx = hecLastEventTime hecs
         -- Copied from Timeline.Motion.zoomToFit.
@@ -218,8 +233,11 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
         sliceAll = round (fromIntegral spark_detail * scaleValueAll)
         profAll = map (pr sliceAll 0 lastTx) (hecTrees hecs)
         -- TODO: verify that no empty lists possible below
-        maxAll = map (maximum . map (maxSparkRenderedValue sliceAll)) profAll
-        maxV = maximum maxAll
+        maxAllCrt = map (maximum . map (totalSparkCrt sliceAll)) profAll
+        maxCrt = maximum maxAllCrt
+        maxAllCnv = map (maximum . map (totalSparkCnv sliceAll)) profAll
+        maxCnv = maximum maxAllCnv
+        maxS = max maxCrt maxCnv
 
     -- Now render the timeline drawing if we have a non-empty trace
     when (scaleValue > 0) $ do
@@ -238,9 +256,9 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                  let (dtree, etree, _) = hecTrees hecs !! c
                  in renderHEC params startPos endPos (dtree, etree)
                SparkCreationHEC c ->
-                 renderSparkCreation params slice start end (prof !! c) maxV
+                 renderSparkCreation params slice start end (prof !! c) maxS
                SparkConversionHEC c ->
-                 renderSparkConversion params slice start end (prof !! c) maxV
+                 renderSparkConversion params slice start end (prof !! c) maxS
                SparkPoolHEC c ->
                  let maxP = maxSparkPool hecs
                  in renderSparkPool params slice start end (prof !! c) maxP

@@ -5,7 +5,6 @@ module Events.SparkTree (
   eventsToSparkDurations,
   mkSparkTree,
   sparkProfile,
-  maxSparkRenderedValue,
   ) where
 
 import qualified Events.SparkStats as SparkStats
