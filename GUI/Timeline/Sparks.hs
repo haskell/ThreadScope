@@ -6,7 +6,6 @@ module GUI.Timeline.Sparks (
 
 import GUI.Timeline.Render.Constants
 
-import Events.SparkTree
 import qualified Events.SparkStats as SparkStats
 import GUI.Types
 import GUI.ViewerColours
@@ -21,7 +20,7 @@ import Control.Monad
 
 -- Rendering sparks. No approximation nor extrapolation is going on here.
 -- The sample data, recalculated for a given slice size in sparkProfile,
--- is straightforwardly rendered.
+-- before these functions are called, is straightforwardly rendered.
 
 renderSparkCreation :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
                        -> [SparkStats.SparkStats]
@@ -46,11 +45,10 @@ renderSparkConversion ViewParameters{..} !slice !start !end prof !maxSparkValue 
     maxSparkValue
 
 renderSparkPool :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
-                   -> SparkTree
+                   -> [SparkStats.SparkStats]
                    -> Double -> Render ()
-renderSparkPool ViewParameters{..} !slice !start !end t !maxSparkPool = do
-  let prof  = sparkProfile slice start end t
-      f1 c = SparkStats.minPool c
+renderSparkPool ViewParameters{..} !slice !start !end prof !maxSparkPool = do
+  let f1 c = SparkStats.minPool c
       f2 c = SparkStats.meanPool c
       f3 c = SparkStats.maxPool c
   addSparks outerPercentilesColour maxSparkPool f1 f2 start slice prof
