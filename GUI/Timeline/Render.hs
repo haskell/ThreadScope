@@ -207,10 +207,19 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
         -- to a slice boundary
         start = (startPos `div` slice) * slice
         end   = ((endPos + slice) `div` slice) * slice
-        pr trees = let (_, _, stree) = trees
-                   in sparkProfile slice start end stree
-        prof = map pr (hecTrees hecs)
-        maxV = maxSparkValue hecs
+        pr slice start end trees = let (_, _, stree) = trees
+                                   in sparkProfile slice start end stree
+        prof = map (pr slice start end) (hecTrees hecs)
+
+        -- TODO: costly! maxV can be calculated once per window resize
+        lastTx = hecLastEventTime hecs
+        -- Copied from Timeline.Motion.zoomToFit.
+        scaleValueAll = fromIntegral lastTx / fromIntegral (width - 2*ox)
+        sliceAll = round (fromIntegral spark_detail * scaleValueAll)
+        profAll = map (pr sliceAll 0 lastTx) (hecTrees hecs)
+        -- TODO: verify that no empty lists possible below
+        maxAll = map (maximum . map (maxSparkRenderedValue sliceAll)) profAll
+        maxV = maximum maxAll
 
     -- Now render the timeline drawing if we have a non-empty trace
     when (scaleValue > 0) $ do

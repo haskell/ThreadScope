@@ -5,6 +5,7 @@ module Events.SparkTree (
   eventsToSparkDurations,
   mkSparkTree,
   sparkProfile,
+  maxSparkRenderedValue,
   ) where
 
 import qualified Events.SparkStats as SparkStats
@@ -37,7 +38,7 @@ eventsToSparkDurations es =
                 endCounters = (crt, dud, ovf, cnv, fiz, gcd, rem)
                 delta = SparkStats.create startCounters endCounters
                 duration = endTime - startTime
-                newMaxSparkValue = maxSparkRenderedValue delta duration
+                newMaxSparkValue = maxSparkRenderedValue duration delta
                 newMaxSparkPool = SparkStats.maxPool delta
                 sd = SparkDuration { startT = startTime,
                                      deltaC = delta }
@@ -51,8 +52,8 @@ eventsToSparkDurations es =
 
 -- | This is the maximal raw value, to be displayed at total zoom in.
 -- It's smoothed out (so lower values) at lower zoom levels.
-maxSparkRenderedValue :: SparkStats.SparkStats -> Timestamp -> Double
-maxSparkRenderedValue c duration =
+maxSparkRenderedValue :: Timestamp -> SparkStats.SparkStats -> Double
+maxSparkRenderedValue duration c =
   max (SparkStats.rateDud c +
        SparkStats.rateCreated c +
        SparkStats.rateOverflowed c)

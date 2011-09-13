@@ -23,7 +23,7 @@ data HECs = HECs {
        hecTrees         :: [(DurationTree, EventTree, SparkTree)],
        hecEventArray    :: Array Int CapEvent,
        hecLastEventTime :: Timestamp,
-       maxSparkValue    :: Double,
+       maxSparkValue    :: Double,  -- TODO: unused
        maxSparkPool     :: Double,
        minXHistogram    :: Int,
        maxXHistogram    :: Int,
