@@ -138,7 +138,8 @@ but also the Graphics.UI.Gtk.Gdk.GC old drawing method in some places)
 
 - either change scale together with zoom level (and keep a colored box
 showing how much pictures space corresponds to how many sparks (should be
-probably constant)) or start with the best scale for the complete view
+probably constant)) or (this one implemented currently:)
+start with the best scale for the complete view
 and the let the peaks be clipped, let the user manually readjust scale then
 
 

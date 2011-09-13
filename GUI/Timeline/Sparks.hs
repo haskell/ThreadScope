@@ -80,7 +80,9 @@ renderSpark hecSparksHeight scaleValue slice start end prof
 off :: Double -> (SparkStats.SparkStats -> Double)
        -> SparkStats.SparkStats
        -> Double
-off maxSliceSpark f t = fromIntegral hecSparksHeight * (1 - f t / maxSliceSpark)
+off maxSliceSpark f t =
+  let clipped = min 1 (f t / maxSliceSpark)
+  in fromIntegral hecSparksHeight * (1 - clipped)
 
 outlineSparks :: Double
                  -> (SparkStats.SparkStats -> Double)
