@@ -15,6 +15,7 @@ import GUI.Timeline.Sparks
 import GUI.Timeline.Activity
 
 import Events.HECs
+import Events.SparkTree
 import GUI.Types
 import GUI.ViewerColours
 import GUI.Timeline.CairoDrawing
@@ -180,10 +181,9 @@ timestampToView ViewParameters{scaleValue, hadjValue} ts =
 renderTraces :: ViewParameters -> HECs -> Rectangle
              -> Render ()
 
-renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh)
-  = do
-    let
-        scale_rx    = fromIntegral rx * scaleValue
+renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
+  do
+    let scale_rx    = fromIntegral rx * scaleValue
         scale_rw    = fromIntegral rw * scaleValue
         scale_width = fromIntegral width * scaleValue
 
@@ -199,6 +199,23 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh)
                    hecLastEventTime hecs
                 ]
 
+        spark_detail :: Int
+        spark_detail = 4 -- in pixels
+
+        slice = round (fromIntegral spark_detail * scaleValue)
+        -- round the start time down, and the end time up,
+        -- to a slice boundary
+        start = (startPos `div` slice) * slice
+        end   = ((endPos + slice) `div` slice) * slice
+        -- TODO; Function sparkProfile, for a given slice size and viewport,
+        -- is called separately by each trace, The unused parts of the result
+        -- won't get computed, but the drilling down the tree and allocating
+        -- thunks is repeated for each graph, while it could be done just once,
+        -- for a given HEC, zoom level and scroll position.
+        prof c = let (_, _, stree) = hecTrees hecs !! c
+                 in sparkProfile slice start end stree
+        maxV = maxSparkValue hecs
+
     -- Now render the timeline drawing if we have a non-empty trace
     when (scaleValue > 0) $ do
       withViewScale params $ do
@@ -208,8 +225,7 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh)
       restore
 
       -- This function helps to render a single HEC...
-      let
-        renderTrace trace y = do
+      let renderTrace trace y = do
             save
             translate 0 (fromIntegral y)
             case trace of
@@ -217,23 +233,19 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh)
                  let (dtree, etree, _) = hecTrees hecs !! c
                  in renderHEC params startPos endPos (dtree, etree)
                SparkCreationHEC c ->
-                 let (_, _, stree) = hecTrees hecs !! c
-                     maxV = maxSparkValue hecs
-                 in renderSparkCreation params startPos endPos stree maxV
+                 renderSparkCreation params slice start end (prof c) maxV
                SparkConversionHEC c ->
-                 let (_, _, stree) = hecTrees hecs !! c
-                     maxV = maxSparkValue hecs
-                 in renderSparkConversion params startPos endPos stree maxV
+                 renderSparkConversion params slice start end (prof c) maxV
                SparkPoolHEC c ->
                  let (_, _, stree) = hecTrees hecs !! c
                      maxP = maxSparkPool hecs
-                 in renderSparkPool params startPos endPos stree maxP
+                 in renderSparkPool params slice start end stree maxP
                TraceActivity ->
                    renderActivity params hecs startPos endPos
                _   ->
                    return ()
             restore
-       -- Now rennder all the HECs.
+      -- Now rennder all the HECs.
       zipWithM_ renderTrace viewTraces (traceYPositions labelsMode viewTraces)
 
 -------------------------------------------------------------------------------
