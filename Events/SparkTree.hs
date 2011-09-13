@@ -22,8 +22,8 @@ import Text.Printf
 -- spark stats that record the spark transition rate
 -- and the absolute number of sparks in the spark pool within the duration.
 data SparkDuration =
-  SparkDuration { startT :: Timestamp,
-                  deltaC :: SparkStats.SparkStats }
+  SparkDuration { startT :: {-#UNPACK#-}!Timestamp,
+                  deltaC :: {-#UNPACK#-}!SparkStats.SparkStats }
   deriving Show
 
 -- | Calculates durations and maximal rendered values from the event log.
@@ -85,9 +85,11 @@ data SparkNode
         -- ^ the LHS split; all data lies completely between start and split
       SparkNode
         -- ^ the RHS split; all data lies completely between split and end
-      SparkStats.SparkStats  -- ^ aggregate of the spark stats within the span
+      {-#UNPACK#-}!SparkStats.SparkStats
+        -- ^ aggregate of the spark stats within the span
   | SparkTreeLeaf
-      SparkStats.SparkStats  -- ^ the spark stats for the base duration
+      {-#UNPACK#-}!SparkStats.SparkStats
+        -- ^ the spark stats for the base duration
   | SparkTreeEmpty
       -- ^ represents a span that no data referts to, e.g., after the last GC
   deriving Show
