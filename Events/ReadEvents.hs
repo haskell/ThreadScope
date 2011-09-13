@@ -43,24 +43,22 @@ import Control.DeepSeq as DeepSeq
 -------------------------------------------------------------------------------
 
 rawEventsToHECs :: [(Maybe Int, [GHCEvents.Event])] -> Timestamp
-                -> [((Double, Double), (DurationTree, EventTree, SparkTree))]
+                -> [(Double, (DurationTree, EventTree, SparkTree))]
 rawEventsToHECs eventList endTime
   = map (toTree . flip lookup heclists)  [0 .. maximum0 (map fst heclists)]
   where
-    heclists = [ (h,events) | (Just h,events) <- eventList ]
+    heclists = [ (h, events) | (Just h, events) <- eventList ]
 
-    toTree Nothing    = ( (0, 0),
-                          ( DurationTreeEmpty,
-                            EventTree 0 0 (EventTreeLeaf []),
-                            emptySparkTree ) )
+    toTree Nothing    = (0, (DurationTreeEmpty,
+                             EventTree 0 0 (EventTreeLeaf []),
+                             emptySparkTree))
     toTree (Just evs) =
-       ( (maxSparkValue, maxSparkPool),
-         ( mkDurationTree (eventsToDurations nondiscrete) endTime,
-           mkEventTree discrete endTime,
-           mkSparkTree sparkD endTime ) )
+      (maxSparkPool,
+       (mkDurationTree (eventsToDurations nondiscrete) endTime,
+        mkEventTree discrete endTime,
+        mkSparkTree sparkD endTime))
        where (discrete, nondiscrete) = L.partition isDiscreteEvent evs
-             ((maxSparkValue, maxSparkPool), sparkD) =
-               eventsToSparkDurations nondiscrete
+             (maxSparkPool, sparkD)  = eventsToSparkDurations nondiscrete
 
 -------------------------------------------------------------------------------
 
@@ -117,8 +115,7 @@ buildEventLog progress from =
 
          groups = groupEvents (events (dat evs))
          maxTrees = rawEventsToHECs groups lastTx
-         maxSparkValue = maximum (0 : map (fst . fst) maxTrees)
-         maxSparkPool = maximum (0 : map (snd . fst) maxTrees)
+         maxSparkPool = maximum (0 : map fst maxTrees)
          trees = map snd maxTrees
 
          intDoub :: Integral a => a -> Double
@@ -168,7 +165,6 @@ buildEventLog progress from =
                   hecTrees         = trees,
                   hecEventArray    = event_arr,
                   hecLastEventTime = lastTx,
-                  maxSparkValue    = maxSparkValue,
                   maxSparkPool     = maxSparkPool,
                   minXHistogram    = minXHistogram,
                   maxXHistogram    = maxXHistogram,
