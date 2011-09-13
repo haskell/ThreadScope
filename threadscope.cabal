@@ -27,24 +27,27 @@ Maintainer:          Satnam Singh <s.singh@ieee.org>
 Homepage:            http://www.haskell.org/haskellwiki/ThreadScope
 Bug-reports:         http://trac.haskell.org/ThreadScope/
 Build-Type:          Simple
-cabal-version:       >= 1.6
+Cabal-version:       >= 1.6
 Data-files:          threadscope.ui, threadscope.png
 
-Source-repository head
+source-repository head
   type:     darcs
   location: http://code.haskell.org/ThreadScope/
+
+flag sparks-histogram
+  description: Include a new feature to visualise the granularity of
+               parallelism when using par sparks.
+  default: False
 
 Executable threadscope
   Main-is:           Main.hs
   Build-Depends:     base >= 4.0 && < 5,
                      gtk >= 0.12, cairo, glib, pango,
                      binary, array, mtl, filepath,
-                     ghc-events == 0.3.*,
-                     containers >= 0.4.1 && < 0.5,
-                     Chart >= 0.14,
-                     data-accessor >= 0.2.2,
-                     deepseq >= 1.1.0.1
-  extensions:        RecordWildCards, NamedFieldPuns,
+                     ghc-events == 0.3.* && >= 0.3.1,
+                     containers >= 0.3 && < 0.5,
+                     deepseq >= 1.1
+  Extensions:        RecordWildCards, NamedFieldPuns,
                      BangPatterns, PatternGuards,
                      CPP
   Other-Modules:     Events.HECs,
@@ -58,7 +61,6 @@ Executable threadscope
                      GUI.MainWindow,
                      GUI.EventsView,
                      GUI.Dialogs,
-                     GUI.Histogram,
                      GUI.SaveAs,
                      GUI.Timeline,
                      GUI.TraceView,
@@ -78,6 +80,13 @@ Executable threadscope
                      GUI.Timeline.Types,
                      GUI.Timeline.Render.Constants,
                      GUI.GtkExtras
+
+  if flag(sparks-histogram)
+    build-depends:   Chart >= 0.14,
+                     data-accessor >= 0.2.2,
+                     containers >= 0.4.1
+    other-modules:   GUI.Histogram
+    cpp-options:     -DUSE_SPARK_HISTOGRAM
 
   ghc-options:  -Wall -fwarn-tabs
                 -fno-warn-type-defaults -fno-warn-name-shadowing

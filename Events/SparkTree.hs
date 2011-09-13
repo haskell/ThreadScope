@@ -5,6 +5,7 @@ module Events.SparkTree (
   eventsToSparkDurations,
   mkSparkTree,
   sparkProfile,
+  maxSparkRenderedValue,
   ) where
 
 import qualified Events.SparkStats as SparkStats
@@ -21,8 +22,8 @@ import Text.Printf
 -- spark stats that record the spark transition rate
 -- and the absolute number of sparks in the spark pool within the duration.
 data SparkDuration =
-  SparkDuration { startT :: Timestamp,
-                  deltaC :: SparkStats.SparkStats }
+  SparkDuration { startT :: {-#UNPACK#-}!Timestamp,
+                  deltaC :: {-#UNPACK#-}!SparkStats.SparkStats }
   deriving Show
 
 -- | Calculates durations and maximal rendered values from the event log.
@@ -37,7 +38,7 @@ eventsToSparkDurations es =
                 endCounters = (crt, dud, ovf, cnv, fiz, gcd, rem)
                 delta = SparkStats.create startCounters endCounters
                 duration = endTime - startTime
-                newMaxSparkValue = maxSparkRenderedValue delta duration
+                newMaxSparkValue = maxSparkRenderedValue duration delta
                 newMaxSparkPool = SparkStats.maxPool delta
                 sd = SparkDuration { startT = startTime,
                                      deltaC = delta }
@@ -51,8 +52,8 @@ eventsToSparkDurations es =
 
 -- | This is the maximal raw value, to be displayed at total zoom in.
 -- It's smoothed out (so lower values) at lower zoom levels.
-maxSparkRenderedValue :: SparkStats.SparkStats -> Timestamp -> Double
-maxSparkRenderedValue c duration =
+maxSparkRenderedValue :: Timestamp -> SparkStats.SparkStats -> Double
+maxSparkRenderedValue duration c =
   max (SparkStats.rateDud c +
        SparkStats.rateCreated c +
        SparkStats.rateOverflowed c)
@@ -84,9 +85,11 @@ data SparkNode
         -- ^ the LHS split; all data lies completely between start and split
       SparkNode
         -- ^ the RHS split; all data lies completely between split and end
-      SparkStats.SparkStats  -- ^ aggregate of the spark stats within the span
+      {-#UNPACK#-}!SparkStats.SparkStats
+        -- ^ aggregate of the spark stats within the span
   | SparkTreeLeaf
-      SparkStats.SparkStats  -- ^ the spark stats for the base duration
+      {-#UNPACK#-}!SparkStats.SparkStats
+        -- ^ the spark stats for the base duration
   | SparkTreeEmpty
       -- ^ represents a span that no data referts to, e.g., after the last GC
   deriving Show

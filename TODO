@@ -108,6 +108,9 @@ and uniformity, except trivial cases)
 - remove the grey halo in trivial cases of pool size,
 like the line:  ___/----, but keep min/max for ___/\___
 
+- draw the scales (horizontal and vertical) in such a way that they're
+always visible, regardless of scrolling
+
 - review and document vertical scales and pool size graph code,
 after they are rewritten
 
@@ -135,7 +138,8 @@ but also the Graphics.UI.Gtk.Gdk.GC old drawing method in some places)
 
 - either change scale together with zoom level (and keep a colored box
 showing how much pictures space corresponds to how many sparks (should be
-probably constant)) or start with the best scale for the complete view
+probably constant)) or (this one implemented currently:)
+start with the best scale for the complete view
 and the let the peaks be clipped, let the user manually readjust scale then
 
 
@@ -333,3 +337,7 @@ then move the selection, etc.
 - extend the selection stuff, e.g. keep bookmarks sorted and let you select multiple bookmarks which would then give you a range selection
 
 - add a new info / stats tab giving numeric info about the current selection, e.g., the amount of cpu time used on each hec, mutator, gc, also sparks, basically all the things that ./prog +RTS --blah  can give you, but for any time period, not just whole run
+
+- perhaps the current "reset zoom" button could change the x and y scale of timeline and histogram to fit the curent region (which initially and most of the time later on is just the whole eventlog)?
+
+- perhaps we need a floating "resize me" button to pop up on the graph whenever your current view ought to be resized , e.g. clipping at the top, or tallest bar taking up less than half the vertical space, or put that in red letters into the popups that we'll have at some point, or mark the upper or lower edge of the grap red (depending if it's clipped or too small) and blink the y-zoom reset button (to the right of the x-zoom reset button) in red, too

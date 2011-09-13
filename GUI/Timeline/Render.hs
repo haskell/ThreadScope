@@ -15,6 +15,7 @@ import GUI.Timeline.Sparks
 import GUI.Timeline.Activity
 
 import Events.HECs
+import Events.SparkTree
 import GUI.Types
 import GUI.ViewerColours
 import GUI.Timeline.CairoDrawing
@@ -180,10 +181,9 @@ timestampToView ViewParameters{scaleValue, hadjValue} ts =
 renderTraces :: ViewParameters -> HECs -> Rectangle
              -> Render ()
 
-renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh)
-  = do
-    let
-        scale_rx    = fromIntegral rx * scaleValue
+renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
+  do
+    let scale_rx    = fromIntegral rx * scaleValue
         scale_rw    = fromIntegral rw * scaleValue
         scale_width = fromIntegral width * scaleValue
 
@@ -199,6 +199,28 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh)
                    hecLastEventTime hecs
                 ]
 
+        spark_detail :: Int
+        spark_detail = 4 -- in pixels
+
+        slice = round (fromIntegral spark_detail * scaleValue)
+        -- round the start time down, and the end time up,
+        -- to a slice boundary
+        start = (startPos `div` slice) * slice
+        end   = ((endPos + slice) `div` slice) * slice
+        pr slice start end trees = let (_, _, stree) = trees
+                                   in sparkProfile slice start end stree
+        prof = map (pr slice start end) (hecTrees hecs)
+
+        -- TODO: costly! maxV can be calculated once per window resize
+        lastTx = hecLastEventTime hecs
+        -- Copied from Timeline.Motion.zoomToFit.
+        scaleValueAll = fromIntegral lastTx / fromIntegral (width - 2*ox)
+        sliceAll = round (fromIntegral spark_detail * scaleValueAll)
+        profAll = map (pr sliceAll 0 lastTx) (hecTrees hecs)
+        -- TODO: verify that no empty lists possible below
+        maxAll = map (maximum . map (maxSparkRenderedValue sliceAll)) profAll
+        maxV = maximum maxAll
+
     -- Now render the timeline drawing if we have a non-empty trace
     when (scaleValue > 0) $ do
       withViewScale params $ do
@@ -208,8 +230,7 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh)
       restore
 
       -- This function helps to render a single HEC...
-      let
-        renderTrace trace y = do
+      let renderTrace trace y = do
             save
             translate 0 (fromIntegral y)
             case trace of
@@ -217,23 +238,18 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh)
                  let (dtree, etree, _) = hecTrees hecs !! c
                  in renderHEC params startPos endPos (dtree, etree)
                SparkCreationHEC c ->
-                 let (_, _, stree) = hecTrees hecs !! c
-                     maxV = maxSparkValue hecs
-                 in renderSparkCreation params startPos endPos stree maxV
+                 renderSparkCreation params slice start end (prof !! c) maxV
                SparkConversionHEC c ->
-                 let (_, _, stree) = hecTrees hecs !! c
-                     maxV = maxSparkValue hecs
-                 in renderSparkConversion params startPos endPos stree maxV
+                 renderSparkConversion params slice start end (prof !! c) maxV
                SparkPoolHEC c ->
-                 let (_, _, stree) = hecTrees hecs !! c
-                     maxP = maxSparkPool hecs
-                 in renderSparkPool params startPos endPos stree maxP
+                 let maxP = maxSparkPool hecs
+                 in renderSparkPool params slice start end (prof !! c) maxP
                TraceActivity ->
                    renderActivity params hecs startPos endPos
                _   ->
                    return ()
             restore
-       -- Now rennder all the HECs.
+      -- Now rennder all the HECs.
       zipWithM_ renderTrace viewTraces (traceYPositions labelsMode viewTraces)
 
 -------------------------------------------------------------------------------
@@ -338,14 +354,6 @@ showTrace (SparkConversionHEC n) = "Spark\nconversion\nrate\n(spark/ms)\nHEC " +
 showTrace (SparkPoolHEC n) = "Spark pool\nsize\nHEC " ++ show n
 showTrace TraceActivity = "Activity"
 showTrace _             = "?"
-
---------------------------------------------------------------------------------
-
-yaxisTrace :: Trace -> Maybe
-yaxisTrace SparkCreationHEC {} =
-yaxisTrace (SparkConversionHEC n) =
-yaxisTrace (SparkPoolHEC n) =
-yaxisTrace _             = Nothing
 
 --------------------------------------------------------------------------------
 

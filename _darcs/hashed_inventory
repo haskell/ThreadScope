@@ -1,4 +1,4 @@
-pristine:0000001678-58f5682ecedcdcbb90630089be0336ff1608aff506972c0a3b4f31e56f7b9fa2
+pristine:4912efe9862bd743ed1513d6b08a18383078aaeb16ef21e9209dd247c4f5c7f1
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1168,3 +1168,86 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20110910182724
  Ignore-this: 1a0f1d07dfe2a9e2aa30d144eb78a3ba
 ] 
 hash: 0000000748-3b3182fee420515d543c502aa4fe17bca97665422ceaf15b66c27b7ea9e9786c
+[Use more helpful mouse cursors in the timeline view
+Duncan Coutts <duncan@well-typed.com>**20110912015941
+ Ignore-this: 2a89e70cca30a3fe3e6d49f2fd1c5585
+ Selection cursor normally to indicate that you can select
+ and drag-select. Move cursor when middle-mouse dragging.
+] 
+hash: 0000002276-d902244a1b17c9403690a756d6fa74c5667659730f72d211eb4409e474111199
+[Conditionally build the spark histogram feature using a cabal flag
+Duncan Coutts <duncan@well-typed.com>**20110912020953
+ Ignore-this: afd63fd921b8df4c462fd2cd0bbcf156
+] 
+hash: 0000001408-ed2f4805bb2f90be4d2ba0856bfda5912c55680332983486c29941b12cab25bb
+[Hide bits of the UI that do not work
+Duncan Coutts <duncan@well-typed.com>**20110912021118
+ Ignore-this: f2f24c888d133ebeb92b29ceb12e7636
+ Including histogram feature, when that's not enabled.
+] 
+hash: 0000001868-77ae93c3c486fd2960234d0aeb3228b76fcfeb9a3bb83abe662351464cbf70b7
+[Connect up the histogram to the timeline range selection feature
+Duncan Coutts <duncan@well-typed.com>**20110912021232
+ Ignore-this: d97cd59ccbbdd0a96658d3e855d175e3
+] 
+hash: 0000000763-03bcbc2225d89b627cc0d84312aa1f74225e0bf53c37a7ac54df785ed8c46469
+[Don't force histogram data calculations, if not drawn
+Mikolaj Konarski <mikolaj@well-typed.com>**20110912123553
+ Ignore-this: 26619c9cde067999d6940b202b44de9
+] 
+hash: 0000000339-425d888eb03d5d7bbee904871c98212b965a2621f1966e82a62145f6f0bcfbf0
+[Tidy up the cabal file
+Mikolaj Konarski <mikolaj@well-typed.com>**20110912132421
+ Ignore-this: 7473025071f37fa5e54b8cf91375ca7b
+] 
+hash: 0000000541-22ce0c2676f9c7d43a2ca6c74cef9a37c94f96570233c2dc3782e22303016ed3
+[Fix the y scale in the histogram (x already fixed)
+Mikolaj Konarski <mikolaj@well-typed.com>**20110912181608
+ Ignore-this: a7c6b23cdecec28cab97bd2dbd8d7abc
+] 
+hash: 0000003423-74f4ba6fae8107bee444df0fc384741009fbdf5bfaa08a3954ea17f8d3665b77
+[Change when selection point really changes to mouse release
+Duncan Coutts <duncan@well-typed.com>**20110912183806
+ Ignore-this: 1afba78a83efaefa9f773b0603e59538
+] 
+hash: 0000002176-2799ce5fddd19946d952916a88bf489eef6f65825b7e77d18f71f5d4fd8e8165
+[Add x-axis autozoom ideas to TODO
+Mikolaj Konarski <mikolaj@well-typed.com>**20110912231416
+ Ignore-this: f8f1f2bc8dc1941a365a43c6655130fd
+] 
+hash: 0000000820-7e473662b56e1b3bd08e5851148d2c5633b1f69e9f3274205d9244db2442be96
+[Factor out the call to sparkProfile, step 1
+Mikolaj Konarski <mikolaj@well-typed.com>**20110912233310
+ Ignore-this: 25cbc6fdae6137f035a128d08db6b3ce
+] 
+hash: 0000002885-a5e0cdb1e259f32d78a05a33b226cb0b1d956bc26c5b376c83c94aad14d54e84
+[Factor out the call to sparkProfile, step (2/2)
+Mikolaj Konarski <mikolaj@well-typed.com>**20110913001229
+ Ignore-this: 7d912dbac76d79c8e6701afe8902f345
+] 
+hash: 0000005113-cef90b83421aca37736cee9f1e0bc966a2496148e20169ebaf754bc676ede014
+[Call sparkProfile 2 instead of 3 times per HEC per redraw
+Mikolaj Konarski <mikolaj@well-typed.com>**20110913002322
+ Ignore-this: b19865268eaa5f629a912e125173cc2d
+] 
+hash: 0000001214-a9a8196a2e7740051c44640280a4470f331cbebf5e7729cc8c9b161525aa55f2
+[Spark graph scale now depends on window size, not only on data
+Mikolaj Konarski <mikolaj@well-typed.com>**20110913013609
+ Ignore-this: 3b0fced46d4dba081ca6fdf1a2412d48
+] 
+hash: 0000001710-124cc8a16bea5c704d1d1a9bccfdffdfcc974e58a2aebd6e7bbfd5cccb2d3f3b
+[Clip too high spark graph peaks
+Mikolaj Konarski <mikolaj@well-typed.com>**20110913013818
+ Ignore-this: 79a67809a52482fba0ca3d59d3097fdd
+] 
+hash: 0000000574-edd17170fe5f142f55eac52e51607d4f9d63d88038253a31c7b3e98c36a8a7d6
+[Call sparkProfile 1 instead of 2 times per HEC per redraw
+Mikolaj Konarski <mikolaj@well-typed.com>**20110913094711
+ Ignore-this: 69c946e638452f95e53e3261a2fb02bc
+] 
+hash: 0000001114-d352db31ccb047601c812ddf3f81c350b2d1339c5c5ddcc5ab975c6c4e5a8a1b
+[Add a few bangs to speed up log file loading
+Mikolaj Konarski <mikolaj@well-typed.com>**20110913150105
+ Ignore-this: 9c62cb6e30f61b84bc98e2e6e69b186e
+] 
+hash: 0000000806-8dd35a38bb1878d0a4b8644a6b89f9d008f39b6bc845ac187be3932ca8b1b735

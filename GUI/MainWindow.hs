@@ -119,12 +119,6 @@ mainWindowNew builder actions = do
   aboutMenuItem      <- getWidget castToMenuItem "aboutMenuItem"
 
   timelineViewport   <- getWidget castToWidget "timeline_viewport"
---  timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
---  timelineLabelDrawingArea <- getWidget castToDrawingArea "timeline_labels_drawingarea"
---  timelineHScrollbar  <- getWidget castToHScrollbar "timeline_hscroll"
---  timelineVScrollbar  <- getWidget castToVScrollbar "timeline_vscroll"
---  timelineAdj         <- rangeGetAdjustment timelineHScrollbar
---  timelineVAdj        <- rangeGetAdjustment timelineVScrollbar
 
   zoomInButton       <- getWidget castToToolButton "cpus_zoomin"
   zoomOutButton      <- getWidget castToToolButton "cpus_zoomout"
@@ -135,13 +129,24 @@ mainWindowNew builder actions = do
   lastButton         <- getWidget castToToolButton "cpus_last"
   centreButton       <- getWidget castToToolButton "cpus_centre"
 
-  --TODO: these two are currently unbound, but they should be!
-  --  eventsTextEntry    <- getWidget castToEntry      "events_entry"
-  --  eventsFindButton   <- getWidget castToToolButton "events_find"
+  --TODO: this is currently not used, but it'be nice if it were!
+  eventsTextEntry    <- getWidget castToEntry      "events_entry"
 
   ------------------------------------------------------------------------
+  -- Show everything
+  widgetShowAll mainWindow
 
-  widgetSetAppPaintable mainWindow True --TODO: Really?
+  widgetHide eventsTextEntry  -- for now we hide it, see above.
+
+#ifndef USE_SPARK_HISTOGRAM
+  -- If we're not enabling the histogram feature then hide the tab.
+  histogram_drawingarea <- getWidget castToWidget "histogram_drawingarea"
+  eventsbox             <- getWidget castToNotebook "eventsbox"
+  Just pgnum <- notebookPageNum eventsbox histogram_drawingarea
+  notebookRemovePage eventsbox  pgnum
+#endif
+
+  ------------------------------------------------------------------------
 
   logoPath <- getDataFileName "threadscope.png"
   windowSetIconFromFile mainWindow logoPath
@@ -193,9 +198,5 @@ mainWindowNew builder actions = do
       (_ , Just '+') -> mainWinJumpZoomIn  actions >> return True
       (_ , Just '-') -> mainWinJumpZoomOut actions >> return True
       _              -> return False
-
-  ------------------------------------------------------------------------
-  -- Show all windows
-  widgetShowAll mainWindow
 
   return MainWindow {..}
