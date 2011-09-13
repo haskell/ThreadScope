@@ -26,6 +26,7 @@ data ViewParameters = ViewParameters {
     viewTraces    :: [Trace],
     hadjValue     :: Double,
     scaleValue    :: Double,
+    maxSpkValue   :: Double,
     detail        :: Int,
     bwMode, labelsMode :: Bool
   }

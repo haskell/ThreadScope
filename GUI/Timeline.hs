@@ -75,7 +75,8 @@ timelineGetViewParameters :: TimelineView -> IO ViewParameters
 timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, showLabelsIORef, timelineState=TimelineState{..}} = do
 
   (dAreaWidth,_) <- widgetGetSize timelineDrawingArea
-  scaleValue <- readIORef scaleIORef
+  scaleValue  <- readIORef scaleIORef
+  maxSpkValue <- readIORef maxSpkIORef
 
   -- snap the view to whole pixels, to avoid blurring
   hadj_value0 <- adjustmentGetValue timelineAdj
@@ -93,6 +94,7 @@ timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, showLabelsIORef
            viewTraces = traces,
            hadjValue  = hadj_value,
            scaleValue = scaleValue,
+           maxSpkValue = maxSpkValue,
            detail     = 3, --for now
            bwMode     = bwmode,
            labelsMode = showLabels
@@ -136,6 +138,7 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
   tracesIORef <- newIORef []
   bookmarkIORef <- newIORef []
   scaleIORef  <- newIORef 0
+  maxSpkIORef <- newIORef 0
   selectionRef <- newIORef (PointSelection 0)
   bwmodeIORef <- newIORef False
   showLabelsIORef <- newIORef False

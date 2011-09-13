@@ -8,6 +8,8 @@ module GUI.Timeline.Motion (
 import GUI.Timeline.Types
 import GUI.Timeline.Render.Constants
 import Events.HECs
+import qualified Events.SparkStats as SparkStats
+import Events.SparkTree
 
 import Graphics.UI.Gtk
 
@@ -61,7 +63,8 @@ zoom factor TimelineState{timelineAdj, scaleIORef} cursor = do
 -------------------------------------------------------------------------------
 
 zoomToFit :: TimelineState -> Maybe HECs -> IO ()
-zoomToFit TimelineState{scaleIORef, timelineAdj, timelineDrawingArea} mb_hecs  = do
+zoomToFit TimelineState{scaleIORef, maxSpkIORef,timelineAdj,
+                        timelineDrawingArea} mb_hecs  = do
   case mb_hecs of
     Nothing   -> return ()
     Just hecs -> do
@@ -69,7 +72,29 @@ zoomToFit TimelineState{scaleIORef, timelineAdj, timelineDrawingArea} mb_hecs  =
        (w, _) <- widgetGetSize timelineDrawingArea
        let newScaleValue = fromIntegral lastTx / fromIntegral (w - 2*ox)
                            -- leave a gap of ox pixels at each end
+
+           -- TODO: move this and others elsewhere
+           maxSparkRenderedValue :: Timestamp -> SparkStats.SparkStats -> Double
+           maxSparkRenderedValue duration c =
+             max (SparkStats.rateDud c +
+                  SparkStats.rateCreated c +
+                  SparkStats.rateOverflowed c)
+                 (SparkStats.rateFizzled c +
+                  SparkStats.rateConverted c +
+                  SparkStats.rateGCd c)
+             / fromIntegral duration
+           spark_detail :: Int
+           spark_detail = 4 -- in pixels
+           pr slice start end trees = let (_, _, stree) = trees
+                                      in sparkProfile slice start end stree
+           sliceAll = round (fromIntegral spark_detail * newScaleValue)
+           profAll = map (pr sliceAll 0 lastTx) (hecTrees hecs)
+           -- TODO: verify that no empty lists possible below
+           maxAll = map (maximum . map (maxSparkRenderedValue sliceAll)) profAll
+           newMaxSpkValue = maximum maxAll
+
        writeIORef scaleIORef newScaleValue
+       writeIORef maxSpkIORef newMaxSpkValue
 
        -- Configure the horizontal scrollbar units to correspond to ns.
        -- leave a gap of ox pixels on the left and right of the full trace
