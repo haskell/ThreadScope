@@ -102,8 +102,6 @@ timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, showLabelsIORef
 timelineWindowSetHECs :: TimelineView -> Maybe HECs -> IO ()
 timelineWindowSetHECs timelineWin@TimelineView{..} mhecs = do
   writeIORef hecsIORef mhecs
-  writeIORef (scaleIORef timelineState) defaultScaleValue
-  -- FIXME: this defaultScaleValue = -1 stuff is a terrible hack
   zoomToFit timelineState mhecs
   timelineParamsChanged timelineWin
 
@@ -137,7 +135,7 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
   hecsIORef   <- newIORef Nothing
   tracesIORef <- newIORef []
   bookmarkIORef <- newIORef []
-  scaleIORef  <- newIORef defaultScaleValue
+  scaleIORef  <- newIORef 0
   selectionRef <- newIORef (PointSelection 0)
   bwmodeIORef <- newIORef False
   showLabelsIORef <- newIORef False
@@ -459,15 +457,3 @@ selectionPoint (PointSelection x)    = x
 selectionPoint (RangeSelection x x') = midpoint x x'
   where
     midpoint a b = a + (b - a) `div` 2
-
-
--------------------------------------------------------------------------------
-
--- This scale value is used to map a micro-second value to a pixel unit.
--- To convert a timestamp value to a pixel value, multiply it by scale.
--- To convert a pixel value to a micro-second value, divide it by scale.
--- A negative value means the scale value to be computed to fit the
--- trace to the display.
-
-defaultScaleValue :: Double
-defaultScaleValue = -1.0

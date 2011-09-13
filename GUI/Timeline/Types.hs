@@ -20,7 +20,10 @@ data TimelineState = TimelineState {
 
        timelinePrevView  :: IORef (Maybe (ViewParameters, Surface)),
 
-       scaleIORef        :: IORef Double -- in ns/pixel
+       -- This scale value is used to map a micro-second value to a pixel unit.
+       -- To convert a timestamp value to a pixel value, multiply it by scale.
+       -- To convert a pixel value to a micro-second value, divide it by scale.
+       scaleIORef        :: IORef Double
      }
 
 

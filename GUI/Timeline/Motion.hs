@@ -63,7 +63,7 @@ zoom factor TimelineState{timelineAdj, scaleIORef} cursor = do
 zoomToFit :: TimelineState -> Maybe HECs -> IO ()
 zoomToFit TimelineState{scaleIORef, timelineAdj, timelineDrawingArea} mb_hecs  = do
   case mb_hecs of
-    Nothing   -> writeIORef scaleIORef (-1.0) --FIXME: ug!
+    Nothing   -> return ()
     Just hecs -> do
        let lastTx = hecLastEventTime hecs
        (w, _) <- widgetGetSize timelineDrawingArea
