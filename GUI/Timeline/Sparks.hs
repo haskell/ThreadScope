@@ -1,4 +1,6 @@
 module GUI.Timeline.Sparks (
+    treesProfile,
+    maxSparkRenderedValue,
     renderSparkCreation,
     renderSparkConversion,
     renderSparkPool,
@@ -6,7 +8,10 @@ module GUI.Timeline.Sparks (
 
 import GUI.Timeline.Render.Constants
 
+import Events.HECs
+import Events.SparkTree
 import qualified Events.SparkStats as SparkStats
+
 import GUI.Types
 import GUI.ViewerColours
 import GUI.Timeline.Ticks (dashedLine1, drawVTicks)
@@ -21,6 +26,28 @@ import Control.Monad
 -- Rendering sparks. No approximation nor extrapolation is going on here.
 -- The sample data, recalculated for a given slice size in sparkProfile,
 -- before these functions are called, is straightforwardly rendered.
+
+maxSparkRenderedValue :: Timestamp -> SparkStats.SparkStats -> Double
+maxSparkRenderedValue duration c =
+  max (SparkStats.rateDud c +
+       SparkStats.rateCreated c +
+       SparkStats.rateOverflowed c)
+      (SparkStats.rateFizzled c +
+       SparkStats.rateConverted c +
+       SparkStats.rateGCd c)
+  / fromIntegral duration
+
+spark_detail :: Int
+spark_detail = 4 -- in pixels
+
+treesProfile :: Double -> Timestamp -> Timestamp -> HECs
+                -> (Timestamp, [[SparkStats.SparkStats]])
+treesProfile scale start end hecs =
+  let slice = round (fromIntegral spark_detail * scale)
+      pr trees = let (_, _, stree) = trees
+                 in sparkProfile slice start end stree
+  in (slice, map pr (hecTrees hecs))
+
 
 renderSparkCreation :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
                        -> [SparkStats.SparkStats]

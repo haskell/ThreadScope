@@ -6,10 +6,9 @@ module GUI.Timeline.Motion (
   ) where
 
 import GUI.Timeline.Types
+import GUI.Timeline.Sparks
 import GUI.Timeline.Render.Constants
 import Events.HECs
-import qualified Events.SparkStats as SparkStats
-import Events.SparkTree
 
 import Graphics.UI.Gtk
 
@@ -72,23 +71,7 @@ zoomToFit TimelineState{scaleIORef, maxSpkIORef,timelineAdj,
        (w, _) <- widgetGetSize timelineDrawingArea
        let newScaleValue = fromIntegral lastTx / fromIntegral (w - 2*ox)
                            -- leave a gap of ox pixels at each end
-
-           -- TODO: move this and others elsewhere
-           maxSparkRenderedValue :: Timestamp -> SparkStats.SparkStats -> Double
-           maxSparkRenderedValue duration c =
-             max (SparkStats.rateDud c +
-                  SparkStats.rateCreated c +
-                  SparkStats.rateOverflowed c)
-                 (SparkStats.rateFizzled c +
-                  SparkStats.rateConverted c +
-                  SparkStats.rateGCd c)
-             / fromIntegral duration
-           spark_detail :: Int
-           spark_detail = 4 -- in pixels
-           pr slice start end trees = let (_, _, stree) = trees
-                                      in sparkProfile slice start end stree
-           sliceAll = round (fromIntegral spark_detail * newScaleValue)
-           profAll = map (pr sliceAll 0 lastTx) (hecTrees hecs)
+           (sliceAll, profAll) = treesProfile newScaleValue 0 lastTx hecs
            -- TODO: verify that no empty lists possible below
            maxAll = map (maximum . map (maxSparkRenderedValue sliceAll)) profAll
            newMaxSpkValue = maximum maxAll
