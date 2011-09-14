@@ -24,25 +24,23 @@ import Control.Monad
 
 renderSparkCreation :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
                        -> [SparkStats.SparkStats]
-                       -> Double -> Render ()
-renderSparkCreation ViewParameters{..} !slice !start !end prof !maxSparkValue = do
+                       -> Render ()
+renderSparkCreation params !slice !start !end prof = do
   let f1 c =        SparkStats.rateDud c
       f2 c = f1 c + SparkStats.rateCreated c
       f3 c = f2 c + SparkStats.rateOverflowed c
-  renderSpark hecSparksHeight scaleValue slice start end prof
+  renderSpark params slice start end prof
     f1 fizzledDudsColour f2 createdConvertedColour f3 overflowedColour
-    maxSparkValue
 
 renderSparkConversion :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
                          -> [SparkStats.SparkStats]
-                         -> Double -> Render ()
-renderSparkConversion ViewParameters{..} !slice !start !end prof !maxSparkValue = do
+                         -> Render ()
+renderSparkConversion params !slice !start !end prof = do
   let f1 c =        SparkStats.rateFizzled c
       f2 c = f1 c + SparkStats.rateGCd c
       f3 c = f2 c + SparkStats.rateConverted c
-  renderSpark hecSparksHeight scaleValue slice start end prof
+  renderSpark params slice start end prof
     f1 fizzledDudsColour f2 gcColour f3 createdConvertedColour
-    maxSparkValue
 
 renderSparkPool :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
                    -> [SparkStats.SparkStats]
@@ -57,18 +55,17 @@ renderSparkPool ViewParameters{..} !slice !start !end prof !maxSparkPool = do
   outlineSparks maxSparkPool (const 0) start slice prof
   addScale hecSparksHeight scaleValue maxSparkPool start end
 
-renderSpark :: Int -> Double -> Timestamp -> Timestamp -> Timestamp
+renderSpark :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
                -> [SparkStats.SparkStats]
                -> (SparkStats.SparkStats -> Double) -> Color
                -> (SparkStats.SparkStats -> Double) -> Color
                -> (SparkStats.SparkStats -> Double) -> Color
-               -> Double -> Render ()
-renderSpark hecSparksHeight scaleValue slice start end prof
-            f1 c1 f2 c2 f3 c3 maxSparkValue = do
+               -> Render ()
+renderSpark ViewParameters{..} slice start end prof f1 c1 f2 c2 f3 c3 = do
   let -- Maximum number of sparks per slice for current data.
-      maxSliceSpark = fromIntegral slice * maxSparkValue
+      maxSliceSpark = fromIntegral slice * maxSpkValue
       -- Maximum spark transition rate in spark/ms.
-      maxSlice = maxSparkValue * 1000000
+      maxSlice = maxSpkValue * 1000000
   outlineSparks maxSliceSpark f3 start slice prof
   addSparks c1 maxSliceSpark (const 0) f1 start slice prof
   addSparks c2 maxSliceSpark f1 f2 start slice prof
