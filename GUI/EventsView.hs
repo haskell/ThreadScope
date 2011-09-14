@@ -13,7 +13,7 @@ module GUI.EventsView (
 import GHC.RTS.Events
 
 import Graphics.UI.Gtk
-import GUI.GtkExtras as GtkExt
+import qualified GUI.GtkExtras as GtkExt
 
 import Control.Monad.Reader
 import Data.Array

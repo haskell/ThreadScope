@@ -7,7 +7,7 @@ import GUI.ViewerColours
 import GUI.Timeline.Render.Constants
 
 import Graphics.UI.Gtk
-import Graphics.Rendering.Cairo as C
+import qualified Graphics.Rendering.Cairo as C
 
 
 ---------------------------------------------------------------------------
@@ -72,26 +72,27 @@ createKeyEntries :: DrawableClass dw => dw
 createKeyEntries similar entries =
   sequence
     [ do pixbuf <- renderToPixbuf similar (50, hecBarHeight) $ do
-                     setSourceRGB 1 1 1
-                     paint
+                     C.setSourceRGB 1 1 1
+                     C.paint
                      renderKeyIcon style colour
          return (label, pixbuf)
 
     | (label, style, colour) <- entries ]
 
-renderKeyIcon :: KeyStyle -> Color -> Render ()
+renderKeyIcon :: KeyStyle -> Color -> C.Render ()
 renderKeyIcon Box keyColour = do
   setSourceRGBAhex keyColour 1.0
-  rectangle 0 0 50 (fromIntegral (hecBarHeight `div` 2))
+  C.rectangle 0 0 50 (fromIntegral (hecBarHeight `div` 2))
   C.fill
 renderKeyIcon Vertical keyColour = do
   setSourceRGBAhex keyColour 1.0
-  setLineWidth 3.0
-  moveTo 10 0
-  relLineTo 0 25
+  C.setLineWidth 3.0
+  C.moveTo 10 0
+  C.relLineTo 0 25
   C.stroke
 
-renderToPixbuf :: DrawableClass dw => dw -> (Int, Int) -> Render () -> IO Pixbuf
+renderToPixbuf :: DrawableClass dw => dw -> (Int, Int) -> C.Render ()
+                  -> IO Pixbuf
 renderToPixbuf similar (w, h) draw = do
   pixmap <- pixmapNew (Just similar) w h Nothing
   renderWithDrawable pixmap draw

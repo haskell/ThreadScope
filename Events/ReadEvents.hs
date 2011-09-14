@@ -13,7 +13,7 @@ import GUI.ProgressView (ProgressView)
 
 import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
-import GHC.RTS.Events.Sparks as Sparks
+import qualified GHC.RTS.Events.Sparks as Sparks
 
 import Data.Array
 import qualified Data.List as L
@@ -22,7 +22,7 @@ import Text.Printf
 import System.FilePath
 import Control.Monad
 import Control.Exception
-import Control.DeepSeq as DeepSeq
+import qualified Control.DeepSeq as DeepSeq
 
 -------------------------------------------------------------------------------
 -- The GHC.RTS.Events library returns the profile information
@@ -129,7 +129,7 @@ buildEventLog progress from =
          ilog5 :: Timestamp -> Int
          ilog5 0 = 0
          ilog5 x = floor $ 5 * logBase 10 (intDoub x)
-         sparks = sparkInfo (events (dat evs))
+         sparks = Sparks.sparkInfo (events (dat evs))
          prepHisto s =
            let start  = Sparks.timeStarted s
                dur    = Sparks.sparkDuration s
