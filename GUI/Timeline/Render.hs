@@ -21,7 +21,6 @@ import GUI.Timeline.CairoDrawing
 
 import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo
-import Graphics.UI.Gtk.Gdk.GC (GC, gcNew) --FIXME: eliminate old style drawing
 
 import Data.IORef
 import Control.Monad
@@ -298,20 +297,26 @@ toWholePixels scale x = fromIntegral (truncate (x / scale)) * scale
 -------------------------------------------------------------------------------
 
 updateLabelDrawingArea :: TimelineState -> Bool -> [Trace] -> IO ()
-updateLabelDrawingArea TimelineState{timelineVAdj, timelineLabelDrawingArea} showLabels traces
-   = do win <- widgetGetDrawWindow timelineLabelDrawingArea
-        vadj_value <- adjustmentGetValue timelineVAdj
-        gc <- gcNew win
-        let ys = map (subtract (round vadj_value)) $
-                      traceYPositions showLabels traces
-        zipWithM_ (drawLabel timelineLabelDrawingArea gc) traces ys
+updateLabelDrawingArea
+  TimelineState{timelineVAdj, timelineLabelDrawingArea} showLabels traces = do
+  win <- widgetGetDrawWindow timelineLabelDrawingArea
+  vadj_value <- adjustmentGetValue timelineVAdj
+  renderWithDrawable win $ do
+    let ys = map (subtract (round vadj_value)) $
+               traceYPositions showLabels traces
+    zipWithM_ drawLabel traces ys
 
-drawLabel :: DrawingArea -> GC -> Trace -> Int -> IO ()
-drawLabel canvas gc trace y
-  = do win <- widgetGetDrawWindow canvas
-       txt <- canvas `widgetCreateLayout` (showTrace trace)
-       --FIXME: eliminate use of GC drawing and use cairo instead.
-       drawLayoutWithColors win gc 10 y txt (Just black) Nothing
+drawLabel :: Trace -> Int -> Render ()
+drawLabel trace y = do
+  move_to (10, y)
+  m <- getMatrix
+  identityMatrix
+  layout <- createLayout $ showTrace trace
+  liftIO $ do
+    layoutSetAttributes layout [AttrSize minBound maxBound 8,
+                                AttrFamily minBound maxBound "sans serif"]
+  showLayout layout
+  setMatrix m
 
 --------------------------------------------------------------------------------
 

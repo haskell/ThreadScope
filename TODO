@@ -62,6 +62,8 @@ based on the label size and let it do automatic wrapping
 
 OTHER:
 
+- scrolling should work on timelineLabelDrawingArea too
+
 - sort bookmark view by time?
 
 - Delete key deletes bookmarks?
@@ -133,8 +135,7 @@ ie in the timeline, top -> bottom: activity HEC0, sparks HEC0,
 ideally generate sampled events from accurate events and compare visually
 and/or numerically
 
-- rewrite gth2hs code not to use deprecated functions (e.g. onButtonPress,
-but also the Graphics.UI.Gtk.Gdk.GC old drawing method in some places)
+- rewrite gth2hs code not to use deprecated functions (e.g. onButtonPress)
 
 - either change scale together with zoom level (and keep a colored box
 showing how much pictures space corresponds to how many sparks (should be

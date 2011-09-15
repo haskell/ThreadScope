@@ -16,6 +16,7 @@ saveAsPDF file hecs viewParams =
 
     withPDFSurface file w' h' $ \surface ->
       renderWith surface $
+        -- TODO: render labels and scales, too
         renderTraces viewParams hecs (Rectangle 0 0 w h)
 
   where
@@ -29,6 +30,7 @@ saveAsPNG file hecs viewParams =
 
     withImageSurface FormatARGB32 w' h' $ \surface -> do
       renderWith surface $
+        -- TODO: render labels and scales, too
         renderTraces viewParams hecs (Rectangle 0 0 w h)
       surfaceWriteToPNG surface file
 
