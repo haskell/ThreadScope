@@ -296,21 +296,25 @@ toWholePixels scale x = fromIntegral (truncate (x / scale)) * scale
 
 -------------------------------------------------------------------------------
 
-updateLabelDrawingArea :: TimelineState -> Bool -> [Trace] -> IO ()
-updateLabelDrawingArea TimelineState{timelineVAdj, timelineLabelDrawingArea}
-                       showLabels traces = do
+updateLabelDrawingArea :: TimelineState -> Double -> Bool -> [Trace] -> IO ()
+updateLabelDrawingArea TimelineState{..} maxSparkPool showLabels traces = do
   win <- widgetGetDrawWindow timelineLabelDrawingArea
-  vadj_value <- adjustmentGetValue timelineVAdj
-  renderWithDrawable win $ renderYLabelsAndAxis vadj_value showLabels traces
+  maxSpkValue <- readIORef maxSpkIORef
+  vadj_value  <- adjustmentGetValue timelineVAdj
+  renderWithDrawable win $
+    renderYLabelsAndAxis maxSpkValue maxSparkPool vadj_value showLabels traces
 
-renderYLabelsAndAxis :: Double -> Bool -> [Trace] -> Render ()
-renderYLabelsAndAxis vadj_value showLabels traces =
+renderYLabelsAndAxis :: Double -> Double -> Double -> Bool -> [Trace]
+                        -> Render ()
+renderYLabelsAndAxis maxSpkValue maxSparkPool
+                     vadj_value showLabels traces =
   let ys = map (subtract (round vadj_value)) $
              traceYPositions showLabels traces
-  in zipWithM_ drawYLabelAndAxis traces ys
+  in zipWithM_ (drawYLabelAndAxis maxSpkValue maxSparkPool) traces ys
 
-drawYLabelAndAxis :: Trace -> Int -> Render ()
-drawYLabelAndAxis trace y = do
+drawYLabelAndAxis :: Double -> Double -> Trace -> Int -> Render ()
+drawYLabelAndAxis maxSpkValue maxSparkPool trace y = do
+  setSourceRGBAhex black 1
   move_to (10, y)
   m <- getMatrix
   identityMatrix
@@ -320,7 +324,9 @@ drawYLabelAndAxis trace y = do
     layoutSetAttributes layout [AttrSize minBound maxBound 8,
                                 AttrFamily minBound maxBound "sans serif"]
   showLayout layout
-  -- TODO: draw the axis too
+  case traceMaxSpark maxSpkValue maxSparkPool trace of
+    Just v  -> addScale hecSparksHeight 1 v 75 75 (fromIntegral y)
+    Nothing -> return ()
   setMatrix m
 
 --------------------------------------------------------------------------------
@@ -347,6 +353,14 @@ showTrace (SparkConversionHEC n) = "Spark conversion rate (spark/ms)\nHEC " ++ s
 showTrace (SparkPoolHEC n) = "Spark pool size\nHEC " ++ show n
 showTrace TraceActivity = "Activity"
 showTrace _             = "?"
+
+--------------------------------------------------------------------------------
+
+traceMaxSpark :: Double -> Double -> Trace -> Maybe Double
+traceMaxSpark maxS _ SparkCreationHEC{} = Just $ maxS * 1000000
+traceMaxSpark maxS _ SparkConversionHEC{} = Just $ maxS * 1000000
+traceMaxSpark _ maxP SparkPoolHEC{} = Just $ maxP
+traceMaxSpark _ _ _ = Nothing
 
 --------------------------------------------------------------------------------
 

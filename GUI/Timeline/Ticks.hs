@@ -125,14 +125,15 @@ showMultiTime pos
 -------------------------------------------------------------------------------
 
 -- TODO: make it more robust when parameters change, e.g., if incr is too small
-drawVTicks :: Double -> Timestamp -> Double -> Int -> Int -> Int -> Int -> Render ()
-drawVTicks maxS offset scaleValue pos incr majorTick endPos
+drawVTicks :: Double -> Timestamp -> Double -> Int -> Int -> Int -> Int -> Int
+              -> Render ()
+drawVTicks maxS offset scaleValue pos incr majorTick endPos off
   = if pos <= endPos then do
-      draw_line (x0, hecSparksHeight - y0) (x1, hecSparksHeight - y1)
+      draw_line (x0, hecSparksHeight - y0 + off) (x1, hecSparksHeight - y1 + off)
       when (pos > 0
             && (atMajorTick || atMidTick || tickWidthInPixels > 30)) $ do
             move_to (offset + 15,
-                     fromIntegral hecSparksHeight - pos + 4)
+                     fromIntegral hecSparksHeight - pos + 4 + off)
             m <- getMatrix
             identityMatrix
             tExtent <- textExtents tickText
@@ -140,7 +141,7 @@ drawVTicks maxS offset scaleValue pos incr majorTick endPos
             when (textExtentsWidth tExtent + fourPixels < fromIntegral tickWidthInPixels || atMidTick || atMajorTick) $
               showText tickText
             setMatrix m
-      drawVTicks maxS offset scaleValue (pos+incr) incr majorTick endPos
+      drawVTicks maxS offset scaleValue (pos+incr) incr majorTick endPos off
     else
       return ()
     where

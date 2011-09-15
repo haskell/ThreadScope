@@ -150,10 +150,17 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
   ------------------------------------------------------------------------
   -- Redrawing labelDrawingArea
   timelineLabelDrawingArea `onExpose` \_ -> do
-    traces <- readIORef tracesIORef
-    showLabels <- readIORef showLabelsIORef
-    updateLabelDrawingArea timelineState showLabels traces
-    return True
+    maybeEventArray <- readIORef hecsIORef
+
+    -- Check to see if an event trace has been loaded
+    case maybeEventArray of
+      Nothing   -> return False
+      Just hecs -> do
+        traces <- readIORef tracesIORef
+        showLabels <- readIORef showLabelsIORef
+        let maxP = maxSparkPool hecs
+        updateLabelDrawingArea timelineState maxP showLabels traces
+        return True
 
   ------------------------------------------------------------------------
   -- Allow mouse wheel to be used for zoom in/out

@@ -4,6 +4,7 @@ module GUI.Timeline.Sparks (
     renderSparkCreation,
     renderSparkConversion,
     renderSparkPool,
+    addScale,
   ) where
 
 import GUI.Timeline.Render.Constants
@@ -80,7 +81,7 @@ renderSparkPool ViewParameters{..} !slice !start !end prof !maxSparkPool = do
   addSparks outerPercentilesColour maxSparkPool f2 f3 start slice prof
   outlineSparks maxSparkPool f2 start slice prof
   outlineSparks maxSparkPool (const 0) start slice prof
-  addScale hecSparksHeight scaleValue maxSparkPool start end
+  addScale hecSparksHeight scaleValue maxSparkPool start end 0
 
 renderSpark :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
                -> [SparkStats.SparkStats]
@@ -97,7 +98,7 @@ renderSpark ViewParameters{..} slice start end prof f1 c1 f2 c2 f3 c3 = do
   addSparks c1 maxSliceSpark (const 0) f1 start slice prof
   addSparks c2 maxSliceSpark f1 f2 start slice prof
   addSparks c3 maxSliceSpark f2 f3 start slice prof
-  addScale hecSparksHeight scaleValue maxSlice start end
+  addScale hecSparksHeight scaleValue maxSlice start end 0
 
 off :: Double -> (SparkStats.SparkStats -> Double)
        -> SparkStats.SparkStats
@@ -165,8 +166,9 @@ addSparks colour maxSliceSpark f0 f1 start slice ts = do
 -- a timestamp value of 1000000000 represents 1s.
 -- The x-position on the drawing canvas is in milliseconds (ms) (1e-3).
 -- scaleValue is used to divide a timestamp value to yield a pixel value.
-addScale :: Int -> Double -> Double -> Timestamp -> Timestamp -> Render ()
-addScale hecSparksHeight scaleValue maxSpark start end = do
+addScale :: Int -> Double -> Double -> Timestamp -> Timestamp -> Double
+            -> Render ()
+addScale hecSparksHeight scaleValue maxSpark start end yoffset = do
   let dstart = fromIntegral start
       dend = fromIntegral end
       dheight = fromIntegral hecSparksHeight
@@ -183,8 +185,8 @@ addScale hecSparksHeight scaleValue maxSpark start end = do
   save
   forM_ [0 .. 1] $ \h -> do
     let y = fromIntegral (floor (fromIntegral h * fromIntegral majorTick / 2)) - 0.5
-    moveTo dstart y
-    lineTo dend y
+    moveTo dstart (yoffset + y)
+    lineTo dend (yoffset + y)
     dashedLine1
   restore
 
@@ -192,11 +194,11 @@ addScale hecSparksHeight scaleValue maxSpark start end = do
   -- TODO: this draws the scale too often, because the drawn area begins
   -- to the left of the 0 mark; will be fixed when scales are moved outside
   -- the scrollable area.
-  when (start == 0) $ do
+  when (start >= {- TMP HACK: was == -}0) $ do
 
     newPath
-    moveTo dstart 0
-    lineTo dstart dheight
+    moveTo dstart yoffset
+    lineTo dstart (yoffset + dheight)
     setSourceRGBAhex blue 1.0
     save
     identityMatrix
@@ -210,5 +212,6 @@ addScale hecSparksHeight scaleValue maxSpark start end = do
     save
     scale scaleValue 1.0
     setLineWidth 0.5
-    drawVTicks maxS start scaleValue 0 incr majorTick hecSparksHeight
+    let yoff = truncate yoffset
+    drawVTicks maxS start scaleValue 0 incr majorTick hecSparksHeight yoff
     restore

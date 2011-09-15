@@ -110,9 +110,6 @@ and uniformity, except trivial cases)
 - remove the grey halo in trivial cases of pool size,
 like the line:  ___/----, but keep min/max for ___/\___
 
-- draw the scales (horizontal and vertical) in such a way that they're
-always visible, regardless of scrolling
-
 - review and document vertical scales and pool size graph code,
 after they are rewritten
 
