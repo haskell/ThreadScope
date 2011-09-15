@@ -81,8 +81,7 @@ renderSparkPool ViewParameters{..} !slice !start !end prof !maxSparkPool = do
   addSparks outerPercentilesColour maxSparkPool f2 f3 start slice prof
   outlineSparks maxSparkPool f2 start slice prof
   outlineSparks maxSparkPool (const 0) start slice prof
-  when (start == 0) $ addScale hecSparksHeight scaleValue maxSparkPool start end 0
-  addRulers hecSparksHeight scaleValue maxSparkPool start end 0
+  addRulers hecSparksHeight start end
 
 renderSpark :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
                -> [SparkStats.SparkStats]
@@ -91,16 +90,14 @@ renderSpark :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
                -> (SparkStats.SparkStats -> Double) -> Color
                -> Render ()
 renderSpark ViewParameters{..} slice start end prof f1 c1 f2 c2 f3 c3 = do
-  let -- Maximum number of sparks per slice for current data.
-      maxSliceSpark = fromIntegral slice * maxSpkValue
-      -- Maximum spark transition rate in spark/ms.
-      maxSlice = maxSpkValue * 1000000
+  -- maxSpkValue is maximal spark transition rate, so
+  -- maxSliceSpark is maximal number of sparks per slice for current data.
+  let maxSliceSpark = maxSpkValue * fromIntegral slice
   outlineSparks maxSliceSpark f3 start slice prof
   addSparks c1 maxSliceSpark (const 0) f1 start slice prof
   addSparks c2 maxSliceSpark f1 f2 start slice prof
   addSparks c3 maxSliceSpark f2 f3 start slice prof
-  when (start == 0) $ addScale hecSparksHeight scaleValue maxSlice start end 0
-  addRulers hecSparksHeight scaleValue maxSlice start end 0
+  addRulers hecSparksHeight start end
 
 off :: Double -> (SparkStats.SparkStats -> Double)
        -> SparkStats.SparkStats
@@ -202,26 +199,19 @@ addScale hecSparksHeight scaleValue maxSpark start end yoffset = do
   drawVTicks maxS start scaleValue 0 incr majorTick hecSparksHeight yoff
   restore
 
-addRulers :: Int -> Double -> Double -> Timestamp -> Timestamp -> Double
-            -> Render ()
-addRulers hecSparksHeight scaleValue maxSpark start end yoffset = do
+addRulers :: Int -> Timestamp -> Timestamp -> Render ()
+addRulers hecSparksHeight start end = do
   let dstart = fromIntegral start
       dend = fromIntegral end
-      dheight = fromIntegral hecSparksHeight
-      -- TODO: this is slightly incorrect, but probably at most 1 pixel off
-      maxS = if maxSpark < 100
-             then maxSpark  -- too small, accuracy would suffer
-             else fromIntegral (2 * (ceiling maxSpark ` div` 2))
-      -- TODO: divide maxSpark instead, for nicer round numbers display
-      incr = hecSparksHeight `div` 10
-      majorTick = 10 * incr
+      -- TODO: verify what rounding happens here, exactly; perhaps improve
+      majorTick = 10 * (hecSparksHeight `div` 10)
 
   -- dashed lines across the graphs
   setSourceRGBAhex black 0.3
   save
   forM_ [0 .. 1] $ \h -> do
     let y = fromIntegral (floor (fromIntegral h * fromIntegral majorTick / 2)) - 0.5
-    moveTo dstart (yoffset + y)
-    lineTo dend (yoffset + y)
+    moveTo dstart y
+    lineTo dend y
     dashedLine1
   restore
