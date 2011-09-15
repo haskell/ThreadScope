@@ -62,7 +62,7 @@ based on the label size and let it do automatic wrapping
 
 OTHER:
 
-- scrolling should work on timelineLabelDrawingArea too
+- up and down scroll keys should work on timelineLabelDrawingArea too
 
 - sort bookmark view by time?
 

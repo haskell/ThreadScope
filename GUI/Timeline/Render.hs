@@ -297,17 +297,20 @@ toWholePixels scale x = fromIntegral (truncate (x / scale)) * scale
 -------------------------------------------------------------------------------
 
 updateLabelDrawingArea :: TimelineState -> Bool -> [Trace] -> IO ()
-updateLabelDrawingArea
-  TimelineState{timelineVAdj, timelineLabelDrawingArea} showLabels traces = do
+updateLabelDrawingArea TimelineState{timelineVAdj, timelineLabelDrawingArea}
+                       showLabels traces = do
   win <- widgetGetDrawWindow timelineLabelDrawingArea
   vadj_value <- adjustmentGetValue timelineVAdj
-  renderWithDrawable win $ do
-    let ys = map (subtract (round vadj_value)) $
-               traceYPositions showLabels traces
-    zipWithM_ drawLabel traces ys
+  renderWithDrawable win $ renderYLabelsAndAxis vadj_value showLabels traces
 
-drawLabel :: Trace -> Int -> Render ()
-drawLabel trace y = do
+renderYLabelsAndAxis :: Double -> Bool -> [Trace] -> Render ()
+renderYLabelsAndAxis vadj_value showLabels traces =
+  let ys = map (subtract (round vadj_value)) $
+             traceYPositions showLabels traces
+  in zipWithM_ drawYLabelAndAxis traces ys
+
+drawYLabelAndAxis :: Trace -> Int -> Render ()
+drawYLabelAndAxis trace y = do
   move_to (10, y)
   m <- getMatrix
   identityMatrix
@@ -317,6 +320,7 @@ drawLabel trace y = do
     layoutSetAttributes layout [AttrSize minBound maxBound 8,
                                 AttrFamily minBound maxBound "sans serif"]
   showLayout layout
+  -- TODO: draw the axis too
   setMatrix m
 
 --------------------------------------------------------------------------------
