@@ -81,7 +81,8 @@ renderSparkPool ViewParameters{..} !slice !start !end prof !maxSparkPool = do
   addSparks outerPercentilesColour maxSparkPool f2 f3 start slice prof
   outlineSparks maxSparkPool f2 start slice prof
   outlineSparks maxSparkPool (const 0) start slice prof
-  addScale hecSparksHeight scaleValue maxSparkPool start end 0
+  when (start == 0) $ addScale hecSparksHeight scaleValue maxSparkPool start end 0
+  addRulers hecSparksHeight scaleValue maxSparkPool start end 0
 
 renderSpark :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
                -> [SparkStats.SparkStats]
@@ -98,7 +99,8 @@ renderSpark ViewParameters{..} slice start end prof f1 c1 f2 c2 f3 c3 = do
   addSparks c1 maxSliceSpark (const 0) f1 start slice prof
   addSparks c2 maxSliceSpark f1 f2 start slice prof
   addSparks c3 maxSliceSpark f2 f3 start slice prof
-  addScale hecSparksHeight scaleValue maxSlice start end 0
+  when (start == 0) $ addScale hecSparksHeight scaleValue maxSlice start end 0
+  addRulers hecSparksHeight scaleValue maxSlice start end 0
 
 off :: Double -> (SparkStats.SparkStats -> Double)
        -> SparkStats.SparkStats
@@ -180,6 +182,40 @@ addScale hecSparksHeight scaleValue maxSpark start end yoffset = do
       incr = hecSparksHeight `div` 10
       majorTick = 10 * incr
 
+  newPath
+  moveTo dstart yoffset
+  lineTo dstart (yoffset + dheight)
+  setSourceRGBAhex blue 1.0
+  save
+  identityMatrix
+  setLineWidth 1
+  stroke
+  restore
+
+  selectFontFace "sans serif" FontSlantNormal FontWeightNormal
+  setFontSize 12
+  setSourceRGBAhex blue 1.0
+  save
+  scale scaleValue 1.0
+  setLineWidth 0.5
+  let yoff = truncate yoffset
+  drawVTicks maxS start scaleValue 0 incr majorTick hecSparksHeight yoff
+  restore
+
+addRulers :: Int -> Double -> Double -> Timestamp -> Timestamp -> Double
+            -> Render ()
+addRulers hecSparksHeight scaleValue maxSpark start end yoffset = do
+  let dstart = fromIntegral start
+      dend = fromIntegral end
+      dheight = fromIntegral hecSparksHeight
+      -- TODO: this is slightly incorrect, but probably at most 1 pixel off
+      maxS = if maxSpark < 100
+             then maxSpark  -- too small, accuracy would suffer
+             else fromIntegral (2 * (ceiling maxSpark ` div` 2))
+      -- TODO: divide maxSpark instead, for nicer round numbers display
+      incr = hecSparksHeight `div` 10
+      majorTick = 10 * incr
+
   -- dashed lines across the graphs
   setSourceRGBAhex black 0.3
   save
@@ -189,29 +225,3 @@ addScale hecSparksHeight scaleValue maxSpark start end yoffset = do
     lineTo dend (yoffset + y)
     dashedLine1
   restore
-
-  -- draw scales only if the drawn area includes the very start
-  -- TODO: this draws the scale too often, because the drawn area begins
-  -- to the left of the 0 mark; will be fixed when scales are moved outside
-  -- the scrollable area.
-  when (start >= {- TMP HACK: was == -}0) $ do
-
-    newPath
-    moveTo dstart yoffset
-    lineTo dstart (yoffset + dheight)
-    setSourceRGBAhex blue 1.0
-    save
-    identityMatrix
-    setLineWidth 1
-    stroke
-    restore
-
-    selectFontFace "sans serif" FontSlantNormal FontWeightNormal
-    setFontSize 12
-    setSourceRGBAhex blue 1.0
-    save
-    scale scaleValue 1.0
-    setLineWidth 0.5
-    let yoff = truncate yoffset
-    drawVTicks maxS start scaleValue 0 incr majorTick hecSparksHeight yoff
-    restore
