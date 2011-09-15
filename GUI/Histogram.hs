@@ -9,7 +9,7 @@ import Events.HECs
 import GUI.Timeline.Ticks (mu, deZero)
 
 import Graphics.UI.Gtk
-import Graphics.Rendering.Cairo as C
+import qualified Graphics.Rendering.Cairo as C
 
 import qualified Graphics.Rendering.Chart as Chart
 import qualified Graphics.Rendering.Chart.Renderable as ChartR
@@ -53,7 +53,7 @@ histogramViewNew builder = do
 
   -- Program the callback for the capability drawingArea
   on histogramDrawingArea exposeEvent $ do
-     liftIO $ do
+     C.liftIO $ do
        maybeEventArray <- readIORef hecsIORef
        minterval <- readIORef intervalIORef
        -- Check if an event trace has been loaded.

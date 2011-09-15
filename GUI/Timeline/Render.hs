@@ -15,15 +15,12 @@ import GUI.Timeline.Sparks
 import GUI.Timeline.Activity
 
 import Events.HECs
-import Events.SparkTree
-import qualified Events.SparkStats as SparkStats
 import GUI.Types
 import GUI.ViewerColours
 import GUI.Timeline.CairoDrawing
 
 import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo
-import Graphics.UI.Gtk.Gdk.GC (GC, gcNew) --FIXME: eliminate old style drawing
 
 import Data.IORef
 import Control.Monad
@@ -200,44 +197,11 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                    hecLastEventTime hecs
                 ]
 
-        -- TODO: move some or all of the code below somewhere
-        spark_detail :: Int
-        spark_detail = 4 -- in pixels
-
-        slice = round (fromIntegral spark_detail * scaleValue)
-        -- round the start time down, and the end time up,
-        -- to a slice boundary
+        -- Round the start time down, and the end time up,
+        -- to a slice boundary:
         start = (startPos `div` slice) * slice
-        end   = ((endPos + slice) `div` slice) * slice
-        pr slice start end trees = let (_, _, stree) = trees
-                                   in sparkProfile slice start end stree
-        prof = map (pr slice start end) (hecTrees hecs)
-
-        totalSparkCrt :: Timestamp -> SparkStats.SparkStats -> Double
-        totalSparkCrt duration c =
-          (SparkStats.rateDud c +
-           SparkStats.rateCreated c +
-           SparkStats.rateOverflowed c)
-          / fromIntegral duration
-        totalSparkCnv :: Timestamp -> SparkStats.SparkStats -> Double
-        totalSparkCnv duration c =
-          (SparkStats.rateFizzled c +
-           SparkStats.rateConverted c +
-           SparkStats.rateGCd c)
-          / fromIntegral duration
-
-        -- TODO: costly! maxV can be calculated once per window resize
-        lastTx = hecLastEventTime hecs
-        -- Copied from Timeline.Motion.zoomToFit.
-        scaleValueAll = fromIntegral lastTx / fromIntegral (width - 2*ox)
-        sliceAll = round (fromIntegral spark_detail * scaleValueAll)
-        profAll = map (pr sliceAll 0 lastTx) (hecTrees hecs)
-        -- TODO: verify that no empty lists possible below
-        maxAllCrt = map (maximum . map (totalSparkCrt sliceAll)) profAll
-        maxCrt = maximum maxAllCrt
-        maxAllCnv = map (maximum . map (totalSparkCnv sliceAll)) profAll
-        maxCnv = maximum maxAllCnv
-        maxS = max maxCrt maxCnv
+        end = ((endPos + slice) `div` slice) * slice
+        (slice, prof) = treesProfile scaleValue start end hecs
 
     -- Now render the timeline drawing if we have a non-empty trace
     when (scaleValue > 0) $ do
@@ -256,9 +220,9 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                  let (dtree, etree, _) = hecTrees hecs !! c
                  in renderHEC params startPos endPos (dtree, etree)
                SparkCreationHEC c ->
-                 renderSparkCreation params slice start end (prof !! c) maxS
+                 renderSparkCreation params slice start end (prof !! c)
                SparkConversionHEC c ->
-                 renderSparkConversion params slice start end (prof !! c) maxS
+                 renderSparkConversion params slice start end (prof !! c)
                SparkPoolHEC c ->
                  let maxP = maxSparkPool hecs
                  in renderSparkPool params slice start end (prof !! c) maxP
@@ -332,21 +296,38 @@ toWholePixels scale x = fromIntegral (truncate (x / scale)) * scale
 
 -------------------------------------------------------------------------------
 
-updateLabelDrawingArea :: TimelineState -> Bool -> [Trace] -> IO ()
-updateLabelDrawingArea TimelineState{timelineVAdj, timelineLabelDrawingArea} showLabels traces
-   = do win <- widgetGetDrawWindow timelineLabelDrawingArea
-        vadj_value <- adjustmentGetValue timelineVAdj
-        gc <- gcNew win
-        let ys = map (subtract (round vadj_value)) $
-                      traceYPositions showLabels traces
-        zipWithM_ (drawLabel timelineLabelDrawingArea gc) traces ys
+updateLabelDrawingArea :: TimelineState -> Double -> Bool -> [Trace] -> IO ()
+updateLabelDrawingArea TimelineState{..} maxSparkPool showLabels traces = do
+  win <- widgetGetDrawWindow timelineLabelDrawingArea
+  maxSpkValue <- readIORef maxSpkIORef
+  vadj_value  <- adjustmentGetValue timelineVAdj
+  renderWithDrawable win $
+    renderYLabelsAndAxis maxSpkValue maxSparkPool vadj_value showLabels traces
 
-drawLabel :: DrawingArea -> GC -> Trace -> Int -> IO ()
-drawLabel canvas gc trace y
-  = do win <- widgetGetDrawWindow canvas
-       txt <- canvas `widgetCreateLayout` (showTrace trace)
-       --FIXME: eliminate use of GC drawing and use cairo instead.
-       drawLayoutWithColors win gc 10 y txt (Just black) Nothing
+renderYLabelsAndAxis :: Double -> Double -> Double -> Bool -> [Trace]
+                        -> Render ()
+renderYLabelsAndAxis maxSpkValue maxSparkPool
+                     vadj_value showLabels traces =
+  let ys = map (subtract (round vadj_value)) $
+             traceYPositions showLabels traces
+  in zipWithM_ (drawYLabelAndAxis maxSpkValue maxSparkPool) traces ys
+
+drawYLabelAndAxis :: Double -> Double -> Trace -> Int -> Render ()
+drawYLabelAndAxis maxSpkValue maxSparkPool trace y = do
+  setSourceRGBAhex black 1
+  move_to (10, y)
+  m <- getMatrix
+  identityMatrix
+  layout <- createLayout $ showTrace trace
+  liftIO $ do
+    layoutSetWidth layout (Just 60)
+    layoutSetAttributes layout [AttrSize minBound maxBound 8,
+                                AttrFamily minBound maxBound "sans serif"]
+  showLayout layout
+  case traceMaxSpark maxSpkValue maxSparkPool trace of
+    Just v  -> addScale hecSparksHeight 1 v 110 (fromIntegral y)
+    Nothing -> return ()
+  setMatrix m
 
 --------------------------------------------------------------------------------
 
@@ -367,11 +348,19 @@ traceYPositions showLabels traces
 
 showTrace :: Trace -> String
 showTrace (TraceHEC n)  = "HEC " ++ show n
-showTrace (SparkCreationHEC n) = "Spark\ncreation\nrate\n(spark/ms)\nHEC " ++ show n
-showTrace (SparkConversionHEC n) = "Spark\nconversion\nrate\n(spark/ms)\nHEC " ++ show n
-showTrace (SparkPoolHEC n) = "Spark pool\nsize\nHEC " ++ show n
+showTrace (SparkCreationHEC n) = "Spark creation rate (spark/ms)\nHEC " ++ show n
+showTrace (SparkConversionHEC n) = "Spark conversion rate (spark/ms)\nHEC " ++ show n
+showTrace (SparkPoolHEC n) = "Spark pool size\nHEC " ++ show n
 showTrace TraceActivity = "Activity"
 showTrace _             = "?"
+
+--------------------------------------------------------------------------------
+
+traceMaxSpark :: Double -> Double -> Trace -> Maybe Double
+traceMaxSpark maxS _ SparkCreationHEC{} = Just $ maxS * 1000000
+traceMaxSpark maxS _ SparkConversionHEC{} = Just $ maxS * 1000000
+traceMaxSpark _ maxP SparkPoolHEC{} = Just $ maxP
+traceMaxSpark _ _ _ = Nothing
 
 --------------------------------------------------------------------------------
 

@@ -16,6 +16,8 @@ saveAsPDF file hecs viewParams =
 
     withPDFSurface file w' h' $ \surface ->
       renderWith surface $
+        -- TODO: renderYLabelsAndAxis vadj_value showLabels traces
+        -- move_to (100, 0)
         renderTraces viewParams hecs (Rectangle 0 0 w h)
 
   where
@@ -29,6 +31,7 @@ saveAsPNG file hecs viewParams =
 
     withImageSurface FormatARGB32 w' h' $ \surface -> do
       renderWith surface $
+        -- TODO
         renderTraces viewParams hecs (Rectangle 0 0 w h)
       surfaceWriteToPNG surface file
 

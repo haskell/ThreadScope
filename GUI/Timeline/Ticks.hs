@@ -125,34 +125,32 @@ showMultiTime pos
 -------------------------------------------------------------------------------
 
 -- TODO: make it more robust when parameters change, e.g., if incr is too small
-drawVTicks :: Double -> Timestamp -> Double -> Int -> Int -> Int -> Int -> Render ()
-drawVTicks maxS offset scaleValue pos incr majorTick endPos
-  = if pos <= endPos then do
-      draw_line (x0, hecSparksHeight - y0) (x1, hecSparksHeight - y1)
-      when (pos > 0
-            && (atMajorTick || atMidTick || tickWidthInPixels > 30)) $ do
-            move_to (offset + 15,
-                     fromIntegral hecSparksHeight - pos + 4)
-            m <- getMatrix
-            identityMatrix
-            tExtent <- textExtents tickText
-            (fourPixels, _) <- deviceToUserDistance 4 0
-            when (textExtentsWidth tExtent + fourPixels < fromIntegral tickWidthInPixels || atMidTick || atMajorTick) $
-              showText tickText
-            setMatrix m
-      drawVTicks maxS offset scaleValue (pos+incr) incr majorTick endPos
-    else
-      return ()
-    where
-    tickWidthInPixels :: Int
-    tickWidthInPixels = truncate ((fromIntegral incr) / scaleValue)
+drawVTicks :: Double -> Int -> Int -> Int -> Int -> Int -> Int
+              -> Render ()
+drawVTicks maxS pos incr majorTick endPos xoffset yoffset =
+  if pos <= endPos then do
+    draw_line (x0, hecSparksHeight - y0 + yoffset) (x1, hecSparksHeight - y1 + yoffset)
+    when (atMajorTick || atMidTick) $ do
+      m <- getMatrix
+      identityMatrix
+      tExtent <- textExtents tickText
+      (fewPixels, _) <- deviceToUserDistance 8 0
+      move_to (xoffset - truncate (textExtentsWidth tExtent + fewPixels),
+               fromIntegral hecSparksHeight - pos + 4 + yoffset)
+      when (atMidTick || atMajorTick) $
+        showText tickText
+      setMatrix m
+    drawVTicks maxS (pos+incr) incr majorTick endPos xoffset  yoffset
+  else
+    return ()
+  where
     tickText = reformatMS (maxS * fromIntegral pos
                              / fromIntegral hecSparksHeight)
     atMidTick = pos `mod` (majorTick `div` 2) == 0
     atMajorTick = pos `mod` majorTick == 0
-    (x0, y0, x1, y1) = if atMajorTick then (offset, pos, offset+13, pos)
-                       else if atMidTick then (offset, pos, offset+10, pos)
-                            else (offset, pos, offset+6, pos)
+    (x0, y0, x1, y1) = if atMajorTick then (xoffset, pos, xoffset+13, pos)
+                       else if atMidTick then (xoffset, pos, xoffset+10, pos)
+                            else (xoffset, pos, xoffset+6, pos)
     reformatMS :: Double -> String
     reformatMS pos = deZero (printf "%.2f" pos)
 

@@ -75,7 +75,8 @@ timelineGetViewParameters :: TimelineView -> IO ViewParameters
 timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, showLabelsIORef, timelineState=TimelineState{..}} = do
 
   (dAreaWidth,_) <- widgetGetSize timelineDrawingArea
-  scaleValue <- readIORef scaleIORef
+  scaleValue  <- readIORef scaleIORef
+  maxSpkValue <- readIORef maxSpkIORef
 
   -- snap the view to whole pixels, to avoid blurring
   hadj_value0 <- adjustmentGetValue timelineAdj
@@ -93,6 +94,7 @@ timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, showLabelsIORef
            viewTraces = traces,
            hadjValue  = hadj_value,
            scaleValue = scaleValue,
+           maxSpkValue = maxSpkValue,
            detail     = 3, --for now
            bwMode     = bwmode,
            labelsMode = showLabels
@@ -102,8 +104,6 @@ timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, showLabelsIORef
 timelineWindowSetHECs :: TimelineView -> Maybe HECs -> IO ()
 timelineWindowSetHECs timelineWin@TimelineView{..} mhecs = do
   writeIORef hecsIORef mhecs
-  writeIORef (scaleIORef timelineState) defaultScaleValue
-  -- FIXME: this defaultScaleValue = -1 stuff is a terrible hack
   zoomToFit timelineState mhecs
   timelineParamsChanged timelineWin
 
@@ -137,7 +137,8 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
   hecsIORef   <- newIORef Nothing
   tracesIORef <- newIORef []
   bookmarkIORef <- newIORef []
-  scaleIORef  <- newIORef defaultScaleValue
+  scaleIORef  <- newIORef 0
+  maxSpkIORef <- newIORef 0
   selectionRef <- newIORef (PointSelection 0)
   bwmodeIORef <- newIORef False
   showLabelsIORef <- newIORef False
@@ -149,10 +150,17 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
   ------------------------------------------------------------------------
   -- Redrawing labelDrawingArea
   timelineLabelDrawingArea `onExpose` \_ -> do
-    traces <- readIORef tracesIORef
-    showLabels <- readIORef showLabelsIORef
-    updateLabelDrawingArea timelineState showLabels traces
-    return True
+    maybeEventArray <- readIORef hecsIORef
+
+    -- Check to see if an event trace has been loaded
+    case maybeEventArray of
+      Nothing   -> return False
+      Just hecs -> do
+        traces <- readIORef tracesIORef
+        showLabels <- readIORef showLabelsIORef
+        let maxP = maxSparkPool hecs
+        updateLabelDrawingArea timelineState maxP showLabels traces
+        return True
 
   ------------------------------------------------------------------------
   -- Allow mouse wheel to be used for zoom in/out
@@ -459,15 +467,3 @@ selectionPoint (PointSelection x)    = x
 selectionPoint (RangeSelection x x') = midpoint x x'
   where
     midpoint a b = a + (b - a) `div` 2
-
-
--------------------------------------------------------------------------------
-
--- This scale value is used to map a micro-second value to a pixel unit.
--- To convert a timestamp value to a pixel value, multiply it by scale.
--- To convert a pixel value to a micro-second value, divide it by scale.
--- A negative value means the scale value to be computed to fit the
--- trace to the display.
-
-defaultScaleValue :: Double
-defaultScaleValue = -1.0

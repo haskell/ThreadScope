@@ -6,6 +6,7 @@ module GUI.Timeline.Motion (
   ) where
 
 import GUI.Timeline.Types
+import GUI.Timeline.Sparks
 import GUI.Timeline.Render.Constants
 import Events.HECs
 
@@ -61,15 +62,22 @@ zoom factor TimelineState{timelineAdj, scaleIORef} cursor = do
 -------------------------------------------------------------------------------
 
 zoomToFit :: TimelineState -> Maybe HECs -> IO ()
-zoomToFit TimelineState{scaleIORef, timelineAdj, timelineDrawingArea} mb_hecs  = do
+zoomToFit TimelineState{scaleIORef, maxSpkIORef,timelineAdj,
+                        timelineDrawingArea} mb_hecs  = do
   case mb_hecs of
-    Nothing   -> writeIORef scaleIORef (-1.0) --FIXME: ug!
+    Nothing   -> return ()
     Just hecs -> do
        let lastTx = hecLastEventTime hecs
        (w, _) <- widgetGetSize timelineDrawingArea
        let newScaleValue = fromIntegral lastTx / fromIntegral (w - 2*ox)
                            -- leave a gap of ox pixels at each end
+           (sliceAll, profAll) = treesProfile newScaleValue 0 lastTx hecs
+           -- TODO: verify that no empty lists possible below
+           maxAll = map (maximum . map (maxSparkRenderedValue sliceAll)) profAll
+           newMaxSpkValue = maximum maxAll
+
        writeIORef scaleIORef newScaleValue
+       writeIORef maxSpkIORef newMaxSpkValue
 
        -- Configure the horizontal scrollbar units to correspond to ns.
        -- leave a gap of ox pixels on the left and right of the full trace

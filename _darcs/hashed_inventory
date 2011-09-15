@@ -1,4 +1,4 @@
-pristine:f92277641c114b1b53904d703840ce59058fa91011e7d9478cd1a3c29533e449
+pristine:06df56bfcde98410ee0e9a5855c946e83e143336d9c551ee4380c8540337d6c8
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1251,13 +1251,75 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20110913150105
  Ignore-this: 9c62cb6e30f61b84bc98e2e6e69b186e
 ] 
 hash: 0000000806-8dd35a38bb1878d0a4b8644a6b89f9d008f39b6bc845ac187be3932ca8b1b735
-[Decouple y scales of spark creation and conversion graphs
-Mikolaj Konarski <mikolaj@well-typed.com>**20110913154624
- Ignore-this: 100e9c414bf39abc7a764d1a08decce9
+[Remove old spark scale calculation code
+Mikolaj Konarski <mikolaj@well-typed.com>**20110913224430
+ Ignore-this: ad15970109d4ba5ed6ab7e956ecc285f
 ] 
-hash: 0000001705-50630bef1af5f35bb9825fbc068da08c3eaf779b618ed4939a128f5a525b754d
-[Disable decoupling spark scales until we can lock them back
-Mikolaj Konarski <mikolaj@well-typed.com>**20110913213250
- Ignore-this: f4d2ae6a829190a97d68105e390652c0
+hash: 0000004268-32a20de57613585dade711421021317823465803f8490f9e3e654ab3a20e6844
+[Remove the defaultScaleValue hack
+Mikolaj Konarski <mikolaj@well-typed.com>**20110913230643
+ Ignore-this: 2a3b87eb4a0c4c61384d84358138c2c0
 ] 
-hash: 0000000627-fcce40dad7d0e64780b4ce41b022df702a10a429001bfbb3041ad95886be3d4d
+hash: 0000001379-d4d9ca2f9bc98def1eac0a678f4ff8a3125d87d267a3fa88fe2d09d66cc33e0e
+[Move calculation of spark scale, step 1: duplicate
+Mikolaj Konarski <mikolaj@well-typed.com>**20110913233826
+ Ignore-this: aff9d7e5dc2a3941c3d8325733041590
+] 
+hash: 0000002213-eb10c51b2d3e1a101a154adf6f0c9979a8ff26eddbbca2a2e99ca26d3f0c175f
+[Move calculation of spark scale, step 2: replace
+Mikolaj Konarski <mikolaj@well-typed.com>**20110914015440
+ Ignore-this: df5085488808e928d1a4dc86a51eface
+] 
+hash: 0000003289-693764dff2b4c24a07041ab549984fe59aa92b9620bd19036e35d9b6fffdbc67
+[Move calculation of spark scale, step (3/3): refactor
+Mikolaj Konarski <mikolaj@well-typed.com>**20110914023226
+ Ignore-this: ae258440484b1c0d657f23406e707592
+] 
+hash: 0000003072-a36a3a8eb39eadceb4ea87b966a735c524bc3cff349db44cfc36b92c70939c79
+[Make almost all "as" imports qualified
+Mikolaj Konarski <mikolaj@well-typed.com>**20110914084157
+ Ignore-this: b18849e3f8ad1ac98fbdbb0b0fba37c8
+] 
+hash: 0000002966-dbe9efaab4f1e0e66c989c42efd71a8b32289a3c639bc4988d7c7d171ef7b50a
+[Fix "eliminate use of GC drawing and use cairo instead"
+Mikolaj Konarski <mikolaj@well-typed.com>**20110915182006
+ Ignore-this: 8e1b2ba3f9c5b4ce1b66900865cfcd0d
+ 
+ Please review --- this is my first Pango hack ever.
+] 
+hash: 0000002328-c080bcc204839efc1ef72d7e1ff0a6c3cfc8128d62f6362a918307c106ed51b9
+[Auto-wrap graph labels with Pango
+Mikolaj Konarski <mikolaj@well-typed.com>**20110915182130
+ Ignore-this: ba55fd799d31ee61f9354ef506c30438
+] 
+hash: 0000000725-286544c864e095393d2e4339780ab60830bf3b43482cd0a0b13ac982f5416ec4
+[Factor out drawing all labels, for use in PDF/PNG export
+Mikolaj Konarski <mikolaj@well-typed.com>**20110915185805
+ Ignore-this: e9c2ee818e21ff24e8a74d807372a8ee
+] 
+hash: 0000001611-1d59b81579fa61d6705dad86ed017997a777ec861aa297ab71a56b755e73fa0f
+[Move Y spark scale outside; step 1: draw in both places
+Mikolaj Konarski <mikolaj@well-typed.com>**20110915211036
+ Ignore-this: 3955b7db2e2f1bc093902fc75bcf273f
+] 
+hash: 0000005401-528a6975faf733b0df90dce99e2cfdf5489af09c49c869ec80b85d2fc607917f
+[Split addScale in two: Y-scale and X-rulers
+Mikolaj Konarski <mikolaj@well-typed.com>**20110915213746
+ Ignore-this: 5d67c238c8dd580ddb6c8512fae4612a
+] 
+hash: 0000002598-b31a6cd724812580229cf67941d44148d315313527dd5a66296d22aff14b1d2e
+[Move Y spark scale outside; step 2: leave only X-rulers inside
+Mikolaj Konarski <mikolaj@well-typed.com>**20110915215221
+ Ignore-this: ba90235aecd7cd5658f5016f1a445cf7
+] 
+hash: 0000002070-1ba6be984e615b06857f622bb1775670cd3aa9663269d10ef11cfdb3abeb022a
+[Move Y spark scale outside; step 3: leave only Y-scale outside
+Mikolaj Konarski <mikolaj@well-typed.com>**20110915221433
+ Ignore-this: 2669e3f7ccedc949417ac0b1e37edf46
+] 
+hash: 0000002678-f36978bd374e4968515d41b2ad6b54912359355fef8c3eba6ba927b844fe9403
+[Move Y spark scale outside; step 4: move numbers from right to left
+Mikolaj Konarski <mikolaj@well-typed.com>**20110915223843
+ Ignore-this: ec0e5903ea5ddf6158a35b86c72d694d
+] 
+hash: 0000002354-1a0f284576a420a5a3443b94a4be2852df9489df9359ebdb451c7d3f7b7ff4eb

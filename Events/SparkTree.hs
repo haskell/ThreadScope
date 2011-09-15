@@ -27,39 +27,24 @@ data SparkDuration =
 
 -- | Calculates durations and maximal rendered values from the event log.
 -- Warning: cannot be applied to a suffix of the log (assumes start at time 0).
-eventsToSparkDurations :: [GHC.Event] -> ((Double, Double), [SparkDuration])
+eventsToSparkDurations :: [GHC.Event] -> (Double, [SparkDuration])
 eventsToSparkDurations es =
-  let aux _startTime _startCounters [] = ((0, 0), [])
+  let aux _startTime _startCounters [] = (0, [])
       aux startTime startCounters (event : events) =
         case GHC.spec event of
           GHC.SparkCounters crt dud ovf cnv fiz gcd rem ->
             let endTime = GHC.time event
                 endCounters = (crt, dud, ovf, cnv, fiz, gcd, rem)
                 delta = SparkStats.create startCounters endCounters
-                duration = endTime - startTime
-                newMaxSparkValue = maxSparkRenderedValue duration delta
                 newMaxSparkPool = SparkStats.maxPool delta
                 sd = SparkDuration { startT = startTime,
                                      deltaC = delta }
-                ((oldMaxSparkValue, oldMaxSparkPool), l) =
+                (oldMaxSparkPool, l) =
                   aux endTime endCounters events
-            in ((max oldMaxSparkValue newMaxSparkValue,
-                 max oldMaxSparkPool newMaxSparkPool),
+            in ( max oldMaxSparkPool newMaxSparkPool,
                 sd : l)
           _otherEvent -> aux startTime startCounters events
   in aux 0 (0,0,0,0,0,0,0) es
-
--- | This is the maximal raw value, to be displayed at total zoom in.
--- It's smoothed out (so lower values) at lower zoom levels.
-maxSparkRenderedValue :: Timestamp -> SparkStats.SparkStats -> Double
-maxSparkRenderedValue duration c =
-  max (SparkStats.rateDud c +
-       SparkStats.rateCreated c +
-       SparkStats.rateOverflowed c)
-      (SparkStats.rateFizzled c +
-       SparkStats.rateConverted c +
-       SparkStats.rateGCd c)
-  / fromIntegral duration
 
 
 -- | We map the spark transition durations (intervals) onto a binary

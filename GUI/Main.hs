@@ -5,7 +5,7 @@
 module GUI.Main (runGUI) where
 
 -- Imports for GTK
-import Graphics.UI.Gtk as Gtk
+import qualified Graphics.UI.Gtk as Gtk
 import System.Glib.GError (failOnGError)
 
 -- Imports from Haskell library
@@ -24,7 +24,7 @@ import Data.Maybe
 import Paths_threadscope
 
 -- Imports for ThreadScope
-import GUI.MainWindow as MainWindow
+import qualified GUI.MainWindow as MainWindow
 import GUI.Types
 import Events.HECs hiding (Event)
 import GUI.Dialogs
@@ -45,7 +45,7 @@ import qualified GUI.ProgressView as ProgressView
 
 data UIEnv = UIEnv {
 
-       mainWin       :: MainWindow,
+       mainWin       :: MainWindow.MainWindow,
        eventsView    :: EventsView,
 #ifdef USE_SPARK_HISTOGRAM
        histogramView :: HistogramView,
@@ -117,13 +117,13 @@ data Event
 constructUI :: IO UIEnv
 constructUI = failOnGError $ do
 
-  builder <- builderNew
-  builderAddFromFile builder =<< getDataFileName "threadscope.ui"
+  builder <- Gtk.builderNew
+  Gtk.builderAddFromFile builder =<< getDataFileName "threadscope.ui"
 
   eventQueue <- Chan.newChan
   let post = postEvent eventQueue
 
-  mainWin <- mainWindowNew builder MainWindowActions {
+  mainWin <- MainWindow.mainWindowNew builder MainWindow.MainWindowActions {
     mainWinOpen          = post EventOpenDialog,
     mainWinExport        = post EventExportDialog,
     mainWinQuit          = post EventQuit,

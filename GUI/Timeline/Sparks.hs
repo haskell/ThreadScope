@@ -1,12 +1,18 @@
 module GUI.Timeline.Sparks (
+    treesProfile,
+    maxSparkRenderedValue,
     renderSparkCreation,
     renderSparkConversion,
     renderSparkPool,
+    addScale,
   ) where
 
 import GUI.Timeline.Render.Constants
 
+import Events.HECs
+import Events.SparkTree
 import qualified Events.SparkStats as SparkStats
+
 import GUI.Types
 import GUI.ViewerColours
 import GUI.Timeline.Ticks (dashedLine1, drawVTicks)
@@ -22,27 +28,47 @@ import Control.Monad
 -- The sample data, recalculated for a given slice size in sparkProfile,
 -- before these functions are called, is straightforwardly rendered.
 
+maxSparkRenderedValue :: Timestamp -> SparkStats.SparkStats -> Double
+maxSparkRenderedValue duration c =
+  max (SparkStats.rateDud c +
+       SparkStats.rateCreated c +
+       SparkStats.rateOverflowed c)
+      (SparkStats.rateFizzled c +
+       SparkStats.rateConverted c +
+       SparkStats.rateGCd c)
+  / fromIntegral duration
+
+spark_detail :: Int
+spark_detail = 4 -- in pixels
+
+treesProfile :: Double -> Timestamp -> Timestamp -> HECs
+                -> (Timestamp, [[SparkStats.SparkStats]])
+treesProfile scale start end hecs =
+  let slice = round (fromIntegral spark_detail * scale)
+      pr trees = let (_, _, stree) = trees
+                 in sparkProfile slice start end stree
+  in (slice, map pr (hecTrees hecs))
+
+
 renderSparkCreation :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
                        -> [SparkStats.SparkStats]
-                       -> Double -> Render ()
-renderSparkCreation ViewParameters{..} !slice !start !end prof !maxSparkValue = do
+                       -> Render ()
+renderSparkCreation params !slice !start !end prof = do
   let f1 c =        SparkStats.rateDud c
       f2 c = f1 c + SparkStats.rateCreated c
       f3 c = f2 c + SparkStats.rateOverflowed c
-  renderSpark hecSparksHeight scaleValue slice start end prof
+  renderSpark params slice start end prof
     f1 fizzledDudsColour f2 createdConvertedColour f3 overflowedColour
-    maxSparkValue
 
 renderSparkConversion :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
                          -> [SparkStats.SparkStats]
-                         -> Double -> Render ()
-renderSparkConversion ViewParameters{..} !slice !start !end prof !maxSparkValue = do
+                         -> Render ()
+renderSparkConversion params !slice !start !end prof = do
   let f1 c =        SparkStats.rateFizzled c
       f2 c = f1 c + SparkStats.rateGCd c
       f3 c = f2 c + SparkStats.rateConverted c
-  renderSpark hecSparksHeight scaleValue slice start end prof
+  renderSpark params slice start end prof
     f1 fizzledDudsColour f2 gcColour f3 createdConvertedColour
-    maxSparkValue
 
 renderSparkPool :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
                    -> [SparkStats.SparkStats]
@@ -55,25 +81,23 @@ renderSparkPool ViewParameters{..} !slice !start !end prof !maxSparkPool = do
   addSparks outerPercentilesColour maxSparkPool f2 f3 start slice prof
   outlineSparks maxSparkPool f2 start slice prof
   outlineSparks maxSparkPool (const 0) start slice prof
-  addScale hecSparksHeight scaleValue maxSparkPool start end
+  addRulers hecSparksHeight start end
 
-renderSpark :: Int -> Double -> Timestamp -> Timestamp -> Timestamp
+renderSpark :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
                -> [SparkStats.SparkStats]
                -> (SparkStats.SparkStats -> Double) -> Color
                -> (SparkStats.SparkStats -> Double) -> Color
                -> (SparkStats.SparkStats -> Double) -> Color
-               -> Double -> Render ()
-renderSpark hecSparksHeight scaleValue slice start end prof
-            f1 c1 f2 c2 f3 c3 maxSparkValue = do
-  let -- Maximum number of sparks per slice for current data.
-      maxSliceSpark = fromIntegral slice * maxSparkValue
-      -- Maximum spark transition rate in spark/ms.
-      maxSlice = maxSparkValue * 1000000
+               -> Render ()
+renderSpark ViewParameters{..} slice start end prof f1 c1 f2 c2 f3 c3 = do
+  -- maxSpkValue is maximal spark transition rate, so
+  -- maxSliceSpark is maximal number of sparks per slice for current data.
+  let maxSliceSpark = maxSpkValue * fromIntegral slice
   outlineSparks maxSliceSpark f3 start slice prof
   addSparks c1 maxSliceSpark (const 0) f1 start slice prof
   addSparks c2 maxSliceSpark f1 f2 start slice prof
   addSparks c3 maxSliceSpark f2 f3 start slice prof
-  addScale hecSparksHeight scaleValue maxSlice start end
+  addRulers hecSparksHeight start end
 
 off :: Double -> (SparkStats.SparkStats -> Double)
        -> SparkStats.SparkStats
@@ -141,11 +165,9 @@ addSparks colour maxSliceSpark f0 f1 start slice ts = do
 -- a timestamp value of 1000000000 represents 1s.
 -- The x-position on the drawing canvas is in milliseconds (ms) (1e-3).
 -- scaleValue is used to divide a timestamp value to yield a pixel value.
-addScale :: Int -> Double -> Double -> Timestamp -> Timestamp -> Render ()
-addScale hecSparksHeight scaleValue maxSpark start end = do
-  let dstart = fromIntegral start
-      dend = fromIntegral end
-      dheight = fromIntegral hecSparksHeight
+addScale :: Int -> Double -> Double -> Double -> Double -> Render ()
+addScale hecSparksHeight scaleValue maxSpark xoffset yoffset = do
+  let dheight = fromIntegral hecSparksHeight
       -- TODO: this is slightly incorrect, but probably at most 1 pixel off
       maxS = if maxSpark < 100
              then maxSpark  -- too small, accuracy would suffer
@@ -153,6 +175,34 @@ addScale hecSparksHeight scaleValue maxSpark start end = do
       -- TODO: divide maxSpark instead, for nicer round numbers display
       incr = hecSparksHeight `div` 10
       majorTick = 10 * incr
+
+  newPath
+  moveTo xoffset yoffset
+  lineTo xoffset (yoffset + dheight)
+  setSourceRGBAhex blue 1.0
+  save
+  identityMatrix
+  setLineWidth 1
+  stroke
+  restore
+
+  selectFontFace "sans serif" FontSlantNormal FontWeightNormal
+  setFontSize 12
+  setSourceRGBAhex blue 1.0
+  save
+  scale scaleValue 1.0
+  setLineWidth 0.5
+  let yoff = truncate yoffset
+      xoff = truncate xoffset
+  drawVTicks maxS 0 incr majorTick hecSparksHeight xoff yoff
+  restore
+
+addRulers :: Int -> Timestamp -> Timestamp -> Render ()
+addRulers hecSparksHeight start end = do
+  let dstart = fromIntegral start
+      dend = fromIntegral end
+      -- TODO: verify what rounding happens here, exactly; perhaps improve
+      majorTick = 10 * (hecSparksHeight `div` 10)
 
   -- dashed lines across the graphs
   setSourceRGBAhex black 0.3
@@ -163,28 +213,3 @@ addScale hecSparksHeight scaleValue maxSpark start end = do
     lineTo dend y
     dashedLine1
   restore
-
-  -- draw scales only if the drawn area includes the very start
-  -- TODO: this draws the scale too often, because the drawn area begins
-  -- to the left of the 0 mark; will be fixed when scales are moved outside
-  -- the scrollable area.
-  when (start == 0) $ do
-
-    newPath
-    moveTo dstart 0
-    lineTo dstart dheight
-    setSourceRGBAhex blue 1.0
-    save
-    identityMatrix
-    setLineWidth 1
-    stroke
-    restore
-
-    selectFontFace "sans serif" FontSlantNormal FontWeightNormal
-    setFontSize 12
-    setSourceRGBAhex blue 1.0
-    save
-    scale scaleValue 1.0
-    setLineWidth 0.5
-    drawVTicks maxS start scaleValue 0 incr majorTick hecSparksHeight
-    restore
