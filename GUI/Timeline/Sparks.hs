@@ -194,7 +194,7 @@ addScale hecSparksHeight scaleValue maxSpark xoffset yoffset = do
   setLineWidth 0.5
   let yoff = truncate yoffset
       xoff = truncate xoffset
-  drawVTicks maxS scaleValue 0 incr majorTick hecSparksHeight xoff yoff
+  drawVTicks maxS 0 incr majorTick hecSparksHeight xoff yoff
   restore
 
 addRulers :: Int -> Timestamp -> Timestamp -> Render ()

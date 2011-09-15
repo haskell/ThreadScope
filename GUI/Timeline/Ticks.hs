@@ -125,28 +125,25 @@ showMultiTime pos
 -------------------------------------------------------------------------------
 
 -- TODO: make it more robust when parameters change, e.g., if incr is too small
-drawVTicks :: Double -> Double -> Int -> Int -> Int -> Int -> Int -> Int
+drawVTicks :: Double -> Int -> Int -> Int -> Int -> Int -> Int
               -> Render ()
-drawVTicks maxS scaleValue pos incr majorTick endPos xoffset yoffset
-  = if pos <= endPos then do
-      draw_line (x0, hecSparksHeight - y0 + yoffset) (x1, hecSparksHeight - y1 + yoffset)
-      when (pos > 0
-            && (atMajorTick || atMidTick || tickWidthInPixels > 30)) $ do
-            move_to (xoffset + 15,
-                     fromIntegral hecSparksHeight - pos + 4 + yoffset)
-            m <- getMatrix
-            identityMatrix
-            tExtent <- textExtents tickText
-            (fourPixels, _) <- deviceToUserDistance 4 0
-            when (textExtentsWidth tExtent + fourPixels < fromIntegral tickWidthInPixels || atMidTick || atMajorTick) $
-              showText tickText
-            setMatrix m
-      drawVTicks maxS scaleValue (pos+incr) incr majorTick endPos xoffset  yoffset
-    else
-      return ()
-    where
-    tickWidthInPixels :: Int
-    tickWidthInPixels = truncate ((fromIntegral incr) / scaleValue)
+drawVTicks maxS pos incr majorTick endPos xoffset yoffset =
+  if pos <= endPos then do
+    draw_line (x0, hecSparksHeight - y0 + yoffset) (x1, hecSparksHeight - y1 + yoffset)
+    when (atMajorTick || atMidTick) $ do
+      m <- getMatrix
+      identityMatrix
+      tExtent <- textExtents tickText
+      (fewPixels, _) <- deviceToUserDistance 8 0
+      move_to (xoffset - truncate (textExtentsWidth tExtent + fewPixels),
+               fromIntegral hecSparksHeight - pos + 4 + yoffset)
+      when (atMidTick || atMajorTick) $
+        showText tickText
+      setMatrix m
+    drawVTicks maxS (pos+incr) incr majorTick endPos xoffset  yoffset
+  else
+    return ()
+  where
     tickText = reformatMS (maxS * fromIntegral pos
                              / fromIntegral hecSparksHeight)
     atMidTick = pos `mod` (majorTick `div` 2) == 0
