@@ -313,6 +313,7 @@ drawLabel trace y = do
   identityMatrix
   layout <- createLayout $ showTrace trace
   liftIO $ do
+    layoutSetWidth layout (Just 60)
     layoutSetAttributes layout [AttrSize minBound maxBound 8,
                                 AttrFamily minBound maxBound "sans serif"]
   showLayout layout
@@ -337,9 +338,9 @@ traceYPositions showLabels traces
 
 showTrace :: Trace -> String
 showTrace (TraceHEC n)  = "HEC " ++ show n
-showTrace (SparkCreationHEC n) = "Spark\ncreation\nrate\n(spark/ms)\nHEC " ++ show n
-showTrace (SparkConversionHEC n) = "Spark\nconversion\nrate\n(spark/ms)\nHEC " ++ show n
-showTrace (SparkPoolHEC n) = "Spark pool\nsize\nHEC " ++ show n
+showTrace (SparkCreationHEC n) = "Spark creation rate (spark/ms)\nHEC " ++ show n
+showTrace (SparkConversionHEC n) = "Spark conversion rate (spark/ms)\nHEC " ++ show n
+showTrace (SparkPoolHEC n) = "Spark pool size\nHEC " ++ show n
 showTrace TraceActivity = "Activity"
 showTrace _             = "?"
 
