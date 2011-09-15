@@ -325,7 +325,7 @@ drawYLabelAndAxis maxSpkValue maxSparkPool trace y = do
                                 AttrFamily minBound maxBound "sans serif"]
   showLayout layout
   case traceMaxSpark maxSpkValue maxSparkPool trace of
-    Just v  -> addScale hecSparksHeight 1 v 75 75 (fromIntegral y)
+    Just v  -> addScale hecSparksHeight 1 v 75 (fromIntegral y)
     Nothing -> return ()
   setMatrix m
 

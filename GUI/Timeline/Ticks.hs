@@ -125,15 +125,15 @@ showMultiTime pos
 -------------------------------------------------------------------------------
 
 -- TODO: make it more robust when parameters change, e.g., if incr is too small
-drawVTicks :: Double -> Timestamp -> Double -> Int -> Int -> Int -> Int -> Int
+drawVTicks :: Double -> Double -> Int -> Int -> Int -> Int -> Int -> Int
               -> Render ()
-drawVTicks maxS offset scaleValue pos incr majorTick endPos off
+drawVTicks maxS scaleValue pos incr majorTick endPos xoffset yoffset
   = if pos <= endPos then do
-      draw_line (x0, hecSparksHeight - y0 + off) (x1, hecSparksHeight - y1 + off)
+      draw_line (x0, hecSparksHeight - y0 + yoffset) (x1, hecSparksHeight - y1 + yoffset)
       when (pos > 0
             && (atMajorTick || atMidTick || tickWidthInPixels > 30)) $ do
-            move_to (offset + 15,
-                     fromIntegral hecSparksHeight - pos + 4 + off)
+            move_to (xoffset + 15,
+                     fromIntegral hecSparksHeight - pos + 4 + yoffset)
             m <- getMatrix
             identityMatrix
             tExtent <- textExtents tickText
@@ -141,7 +141,7 @@ drawVTicks maxS offset scaleValue pos incr majorTick endPos off
             when (textExtentsWidth tExtent + fourPixels < fromIntegral tickWidthInPixels || atMidTick || atMajorTick) $
               showText tickText
             setMatrix m
-      drawVTicks maxS offset scaleValue (pos+incr) incr majorTick endPos off
+      drawVTicks maxS scaleValue (pos+incr) incr majorTick endPos xoffset  yoffset
     else
       return ()
     where
@@ -151,9 +151,9 @@ drawVTicks maxS offset scaleValue pos incr majorTick endPos off
                              / fromIntegral hecSparksHeight)
     atMidTick = pos `mod` (majorTick `div` 2) == 0
     atMajorTick = pos `mod` majorTick == 0
-    (x0, y0, x1, y1) = if atMajorTick then (offset, pos, offset+13, pos)
-                       else if atMidTick then (offset, pos, offset+10, pos)
-                            else (offset, pos, offset+6, pos)
+    (x0, y0, x1, y1) = if atMajorTick then (xoffset, pos, xoffset+13, pos)
+                       else if atMidTick then (xoffset, pos, xoffset+10, pos)
+                            else (xoffset, pos, xoffset+6, pos)
     reformatMS :: Double -> String
     reformatMS pos = deZero (printf "%.2f" pos)
 

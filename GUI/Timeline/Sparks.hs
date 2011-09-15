@@ -165,12 +165,9 @@ addSparks colour maxSliceSpark f0 f1 start slice ts = do
 -- a timestamp value of 1000000000 represents 1s.
 -- The x-position on the drawing canvas is in milliseconds (ms) (1e-3).
 -- scaleValue is used to divide a timestamp value to yield a pixel value.
-addScale :: Int -> Double -> Double -> Timestamp -> Timestamp -> Double
-            -> Render ()
-addScale hecSparksHeight scaleValue maxSpark start end yoffset = do
-  let dstart = fromIntegral start
-      dend = fromIntegral end
-      dheight = fromIntegral hecSparksHeight
+addScale :: Int -> Double -> Double -> Double -> Double -> Render ()
+addScale hecSparksHeight scaleValue maxSpark xoffset yoffset = do
+  let dheight = fromIntegral hecSparksHeight
       -- TODO: this is slightly incorrect, but probably at most 1 pixel off
       maxS = if maxSpark < 100
              then maxSpark  -- too small, accuracy would suffer
@@ -180,8 +177,8 @@ addScale hecSparksHeight scaleValue maxSpark start end yoffset = do
       majorTick = 10 * incr
 
   newPath
-  moveTo dstart yoffset
-  lineTo dstart (yoffset + dheight)
+  moveTo xoffset yoffset
+  lineTo xoffset (yoffset + dheight)
   setSourceRGBAhex blue 1.0
   save
   identityMatrix
@@ -196,7 +193,8 @@ addScale hecSparksHeight scaleValue maxSpark start end yoffset = do
   scale scaleValue 1.0
   setLineWidth 0.5
   let yoff = truncate yoffset
-  drawVTicks maxS start scaleValue 0 incr majorTick hecSparksHeight yoff
+      xoff = truncate xoffset
+  drawVTicks maxS scaleValue 0 incr majorTick hecSparksHeight xoff yoff
   restore
 
 addRulers :: Int -> Timestamp -> Timestamp -> Render ()
