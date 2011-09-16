@@ -1,4 +1,4 @@
-pristine:06df56bfcde98410ee0e9a5855c946e83e143336d9c551ee4380c8540337d6c8
+pristine:dfe343bb6d93e7400d6f5d9bba5b895a7b57cc8f2eb0a26fd6ef1cc921f19adc
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1323,3 +1323,8 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20110915223843
  Ignore-this: ec0e5903ea5ddf6158a35b86c72d694d
 ] 
 hash: 0000002354-1a0f284576a420a5a3443b94a4be2852df9489df9359ebdb451c7d3f7b7ff4eb
+[Move Y spark scale outside; step (5/5): visual tweaks
+Mikolaj Konarski <mikolaj@well-typed.com>**20110916003524
+ Ignore-this: 70276a1533c50c504f93487b67ca1658
+] 
+hash: 0000001130-96e18e0f1e344c1c0b70293ff8ffc4330b083651624a04bc640a2f0c92e37769
