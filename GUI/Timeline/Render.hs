@@ -315,7 +315,7 @@ renderYLabelsAndAxis maxSpkValue maxSparkPool
 drawYLabelAndAxis :: Double -> Double -> Trace -> Int -> Render ()
 drawYLabelAndAxis maxSpkValue maxSparkPool trace y = do
   setSourceRGBAhex black 1
-  move_to (10, y)
+  move_to (10, y + 8)
   m <- getMatrix
   identityMatrix
   layout <- createLayout $ showTrace trace
@@ -325,7 +325,7 @@ drawYLabelAndAxis maxSpkValue maxSparkPool trace y = do
                                 AttrFamily minBound maxBound "sans serif"]
   showLayout layout
   case traceMaxSpark maxSpkValue maxSparkPool trace of
-    Just v  -> addScale hecSparksHeight 1 v 110 (fromIntegral y)
+    Just v  -> addScale hecSparksHeight 1 v 97 (fromIntegral y)
     Nothing -> return ()
   setMatrix m
 
@@ -348,9 +348,9 @@ traceYPositions showLabels traces
 
 showTrace :: Trace -> String
 showTrace (TraceHEC n)  = "HEC " ++ show n
-showTrace (SparkCreationHEC n) = "Spark creation rate (spark/ms)\nHEC " ++ show n
-showTrace (SparkConversionHEC n) = "Spark conversion rate (spark/ms)\nHEC " ++ show n
-showTrace (SparkPoolHEC n) = "Spark pool size\nHEC " ++ show n
+showTrace (SparkCreationHEC n) = "\nHEC " ++ show n ++ "\n\nSpark creation rate (spark/ms)"
+showTrace (SparkConversionHEC n) = "\nHEC " ++ show n ++ "\n\nSpark conversion rate (spark/ms)"
+showTrace (SparkPoolHEC n) = "\nHEC " ++ show n ++ "\n\nSpark pool size"
 showTrace TraceActivity = "Activity"
 showTrace _             = "?"
 

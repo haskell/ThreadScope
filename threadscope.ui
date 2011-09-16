@@ -535,7 +535,7 @@
                                 <property name="can_focus">False</property>
                                 <child>
                                   <object class="GtkDrawingArea" id="timeline_labels_drawingarea">
-                                    <property name="width_request">130</property>
+                                    <property name="width_request">110</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                   </object>
