@@ -124,35 +124,35 @@ showMultiTime pos
 
 -------------------------------------------------------------------------------
 
--- TODO: make it more robust when parameters change, e.g., if incr is too small
-drawVTicks :: Double -> Int -> Int -> Int -> Int -> Int -> Int
-              -> Render ()
-drawVTicks maxS pos incr majorTick endPos xoffset yoffset =
-  if pos <= endPos then do
-    draw_line (x0, hecSparksHeight - y0 + yoffset) (x1, hecSparksHeight - y1 + yoffset)
+drawVTicks :: Double -> Int -> Int -> Int -> Int -> Render ()
+drawVTicks maxS pos incr xoffset yoffset =
+  if pos <= majorTick then do
+    draw_line (xoffset + x0, yoffset + majorTick - pos)
+              (xoffset + x1, yoffset + majorTick - pos)
     when (atMajorTick || atMidTick) $ do
       m <- getMatrix
       identityMatrix
       tExtent <- textExtents tickText
       (fewPixels, _) <- deviceToUserDistance 8 0
-      move_to (xoffset - truncate (textExtentsWidth tExtent + fewPixels),
-               fromIntegral hecSparksHeight - pos + 4 + yoffset)
+      move_to (xoffset - ceiling (textExtentsWidth tExtent + fewPixels),
+               yoffset + majorTick - pos + ceiling (fewPixels / 2))
       when (atMidTick || atMajorTick) $
         showText tickText
       setMatrix m
-    drawVTicks maxS (pos+incr) incr majorTick endPos xoffset  yoffset
+    drawVTicks maxS (pos + incr) incr xoffset yoffset
   else
     return ()
   where
-    tickText = reformatMS (maxS * fromIntegral pos
-                             / fromIntegral hecSparksHeight)
-    atMidTick = pos `mod` (majorTick `div` 2) == 0
+    tickText = reformatV (maxS * fromIntegral pos / fromIntegral majorTick)
+    midTick = 5 * incr
+    atMidTick = pos `mod`midTick == 0
+    majorTick = 10 * incr
     atMajorTick = pos `mod` majorTick == 0
-    (x0, y0, x1, y1) = if atMajorTick then (xoffset, pos, xoffset+13, pos)
-                       else if atMidTick then (xoffset, pos, xoffset+10, pos)
-                            else (xoffset, pos, xoffset+6, pos)
-    reformatMS :: Double -> String
-    reformatMS pos = deZero (printf "%.2f" pos)
+    (x0, x1) | atMajorTick = (0, 13)
+             | atMidTick   = (0, 10)
+             | otherwise   = (0, 6)
+    reformatV :: Double -> String
+    reformatV v = deZero (printf "%.2f" v)
 
 -------------------------------------------------------------------------------
 

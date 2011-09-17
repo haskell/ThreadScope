@@ -167,18 +167,15 @@ addSparks colour maxSliceSpark f0 f1 start slice ts = do
 -- scaleValue is used to divide a timestamp value to yield a pixel value.
 addScale :: Int -> Double -> Double -> Double -> Double -> Render ()
 addScale hecSparksHeight scaleValue maxSpark xoffset yoffset = do
-  let dheight = fromIntegral hecSparksHeight
-      -- TODO: this is slightly incorrect, but probably at most 1 pixel off
+  let -- This is slightly off (by 1% at most), but often avoids decimal dot:
       maxS = if maxSpark < 100
-             then maxSpark  -- too small, accuracy would suffer
+             then maxSpark  -- too small, would be visible on screen
              else fromIntegral (2 * (ceiling maxSpark ` div` 2))
-      -- TODO: divide maxSpark instead, for nicer round numbers display
       incr = hecSparksHeight `div` 10
-      majorTick = 10 * incr
 
   newPath
   moveTo xoffset yoffset
-  lineTo xoffset (yoffset + dheight)
+  lineTo xoffset (yoffset + fromIntegral hecSparksHeight)
   setSourceRGBAhex blue 1.0
   save
   identityMatrix
@@ -194,21 +191,20 @@ addScale hecSparksHeight scaleValue maxSpark xoffset yoffset = do
   setLineWidth 0.5
   let yoff = truncate yoffset
       xoff = truncate xoffset
-  drawVTicks maxS 0 incr majorTick hecSparksHeight xoff yoff
+  drawVTicks maxS 0 incr xoff yoff
   restore
 
 addRulers :: Int -> Timestamp -> Timestamp -> Render ()
 addRulers hecSparksHeight start end = do
   let dstart = fromIntegral start
       dend = fromIntegral end
-      -- TODO: verify what rounding happens here, exactly; perhaps improve
-      majorTick = 10 * (hecSparksHeight `div` 10)
+      incr = hecSparksHeight `div` 10
 
   -- dashed lines across the graphs
   setSourceRGBAhex black 0.3
   save
-  forM_ [0 .. 1] $ \h -> do
-    let y = fromIntegral (floor (fromIntegral h * fromIntegral majorTick / 2)) - 0.5
+  forM_ [0, 5] $ \h -> do
+    let y = fromIntegral $ h * incr
     moveTo dstart y
     lineTo dend y
     dashedLine1
