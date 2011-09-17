@@ -4,7 +4,8 @@ module GUI.Timeline.Render (
     renderTraces,
     updateLabelDrawingArea,
     calculateTotalTimelineHeight,
-    toWholePixels
+    toWholePixels,
+    renderLabelArea,
   ) where
 
 import GUI.Timeline.Types
@@ -295,6 +296,10 @@ toWholePixels 0    _x = 0
 toWholePixels scale x = fromIntegral (truncate (x / scale)) * scale
 
 -------------------------------------------------------------------------------
+
+renderLabelArea :: ViewParameters -> HECs -> Render ()
+renderLabelArea ViewParameters{..} hecs =
+  renderYLabelsAndAxis maxSpkValue (maxSparkPool hecs) 0 labelsMode viewTraces
 
 updateLabelDrawingArea :: TimelineState -> Double -> Bool -> [Trace] -> IO ()
 updateLabelDrawingArea TimelineState{..} maxSparkPool showLabels traces = do
