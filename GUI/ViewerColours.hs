@@ -70,6 +70,9 @@ grey = Color 0x8000 0x8000 0x8000
 lightGrey :: Color
 lightGrey = Color 0xD000 0xD000 0xD000
 
+gtkBorderGrey :: Color
+gtkBorderGrey = Color 0xF200 0xF100 0xF000
+
 red :: Color
 red = Color 0xFFFF 0 0
 

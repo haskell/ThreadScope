@@ -30,7 +30,6 @@ tracePad = 20
 hecTraceHeight, hecSparksHeight, hecBarHeight, hecBarOff, hecLabelExtra :: Int
 
 hecTraceHeight  = 40
-hecSparksHeight = activityGraphHeight
 hecBarHeight    = 20
 hecBarOff       = 10
 
@@ -42,6 +41,9 @@ hecLabelExtra  = 80
 
 activityGraphHeight :: Int
 activityGraphHeight = 100
+
+-- Should be divisible by 10, for regular 1/10th size vertical scale ticks:
+hecSparksHeight = 10 * (activityGraphHeight `div` 10)
 
 -- Ticks
 
