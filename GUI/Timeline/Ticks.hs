@@ -67,7 +67,7 @@ drawHTicks :: Int -> Int -> Double -> Timestamp -> Timestamp ->
              Timestamp -> Timestamp -> Render ()
 drawHTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
   = if pos <= endPos then
-      do setLineWidth scaleValue
+      do setLineWidth lineWidth
          draw_line (x0, y0) (x1, y1)
          when (atMajorTick || atMidTick || tickWidthInPixels > 30) $ do
                move_to (pos - truncate (scaleValue * 4.0), oy - 10)
@@ -93,9 +93,13 @@ drawHTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
       textExtentsWidth tExtent + fourPixels < fromIntegral width
     atMidTick = pos `mod` (majorTick `div` 2) == 0
     atMajorTick = pos `mod` majorTick == 0
-    (x0, y0, x1, y1) = if atMidTick then (pos, oy, pos, oy+16)
-                       else if atMidTick then (pos, oy, pos, oy+12)
-                            else (pos, oy, pos, oy+8)
+    -- We cheat at pos 0, to avoid half covering the tick by the grey label area.
+    (x0, y0, x1, y1) | pos == 0  = (shifted, oy, shifted, oy+16)
+                     | atMidTick = (pos, oy, pos, oy+16)
+                     | atMidTick = (pos, oy, pos, oy+12)
+                     | otherwise = (pos, oy, pos, oy+8)
+    shifted = pos + ceiling (lineWidth / 2)
+    lineWidth = scaleValue
 
 -------------------------------------------------------------------------------
 -- This display the nano-second time unit with an appropriate suffix
