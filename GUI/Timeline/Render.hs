@@ -187,14 +187,12 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
         scale_width = fromIntegral width * scaleValue
 
         startPos :: Timestamp
-        startPos = fromIntegral (max 0 (truncate (scale_rx + hadjValue)))
-                   -- hadj_value might be negative, as we leave a
-                   -- small gap before the trace starts at the beginning
+        startPos = fromIntegral $ truncate (scale_rx + hadjValue)
 
         endPos :: Timestamp
         endPos = minimum [
-                   ceiling (max 0 (hadjValue + scale_width)),
-                   ceiling (max 0 (hadjValue + scale_rx + scale_rw)),
+                   ceiling (hadjValue + scale_width),
+                   ceiling (hadjValue + scale_rx + scale_rw),
                    hecLastEventTime hecs
                 ]
 
