@@ -14,16 +14,6 @@ BUGS:
 that causes many of the graphical bugs reported in ThreadScope/TODO
 and/or rewrite drawing to sidestep the fixed point precision problem of cairo
 
-- (temporarily fixed on the offending display by increasing
-timeline_labels_drawingarea width from 80 to 100)
-I see "Spark poo size" as the left hand size label of the pool graphs,
-with my Ubuntu gtk fonts; explanation: it's the wrapping
-or rather the lack thereof; the wrapping is currently manual when
-it should be automatic; what we should do is to calculate the width
-based on the label size and let it do automatic wrapping
-
-- crash when zooming in too far (negative exponent)
-
 - scrolling to the right, we get some over-rendering at the boundary
   causing a thick line
 
@@ -124,9 +114,9 @@ that the _areas_ are proportional to the total number and graphs to rates
 just as a line, no grey shadow)
 
 - put all the HEC0 bits together,
- both in the trace and in the timeline view
+both in the trace and in the timeline view
 ie in the timeline, top -> bottom: activity HEC0, sparks HEC0,
- activity HEC1, sparks HEC1, ...
+activity HEC1, sparks HEC1, ...
 
 - test, in particular the quality of sampling, on the parfib suite;
 ideally generate sampled events from accurate events and compare visually
@@ -280,16 +270,6 @@ with large visible absolute spark transition, the invisible transitions
 can't be huge in proportion to the visible ones, so then linear extrapolation
 is correct))
 
-- integrate info about the time taken by sparks, via shades of green
-(a shade per pixel of vertical line, indicating the average size
-of sparks represented by the pixel/line (started/converted there))
-or via scaling the creation/conversion graphs by the spark size
-(instead of the area being the number of sparks,
-it's proportional to the amount of work (ie eval time)
-of the sparks in the interval)
-Of course the scaling doesn't work for dud, fizzled, gcd sparks,
-so perhaps add this as another set of graphs instead of replacing the old?
-
 - use adaptive interval, depending on the sample density at the viewed fragment
 
 - perhaps, depending on sample density, alternate between raw data,
@@ -320,7 +300,7 @@ since extreme spark sizes are usually bad
 
 - dynamic strategy labelling (lots of stuff has to be done elsewhere, first)
 
-- perhaps rewrite the spark duration histogram manually, to have a look
+- rewrite the spark duration histogram manually, to have a look
 similar to the other graphs (e;g;, scales) and to control details, e.g.,
 if the axis description is printed vertically or horizontally
 
