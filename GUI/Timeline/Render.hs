@@ -295,17 +295,20 @@ toWholePixels scale x = fromIntegral (truncate (x / scale)) * scale
 
 -------------------------------------------------------------------------------
 
-renderLabelArea :: ViewParameters -> HECs -> Render ()
-renderLabelArea ViewParameters{..} hecs =
-  renderYLabelsAndAxis maxSpkValue (maxSparkPool hecs) 0 labelsMode viewTraces
+renderLabelArea :: ViewParameters -> HECs -> Double -> Render ()
+renderLabelArea ViewParameters{..} hecs xoffset =
+  renderYLabelsAndAxis maxSpkValue (maxSparkPool hecs) xoffset
+    0 labelsMode viewTraces
 
 updateLabelDrawingArea :: TimelineState -> Double -> Bool -> [Trace] -> IO ()
 updateLabelDrawingArea TimelineState{..} maxSparkPool showLabels traces = do
   win <- widgetGetDrawWindow timelineLabelDrawingArea
   maxSpkValue <- readIORef maxSpkIORef
   vadj_value  <- adjustmentGetValue timelineVAdj
+  (xoffset, _) <- widgetGetSize timelineLabelDrawingArea
   renderWithDrawable win $
-    renderYLabelsAndAxis maxSpkValue maxSparkPool vadj_value showLabels traces
+    renderYLabelsAndAxis maxSpkValue maxSparkPool (fromIntegral xoffset)
+      vadj_value showLabels traces
 
 -- TODO: unduplicate the code
 updateHScaleArea :: TimelineState -> Timestamp -> IO ()
@@ -337,28 +340,28 @@ updateHScaleArea TimelineState{..} lastTx = do
     restore
   return ()
 
-renderYLabelsAndAxis :: Double -> Double -> Double -> Bool -> [Trace]
+renderYLabelsAndAxis :: Double -> Double -> Double ->  Double -> Bool -> [Trace]
                         -> Render ()
-renderYLabelsAndAxis maxSpkValue maxSparkPool
+renderYLabelsAndAxis maxSpkValue maxSparkPool xoffset
                      vadj_value showLabels traces =
   let ys = map (subtract (round vadj_value)) $
              traceYPositions showLabels traces
-  in zipWithM_ (drawYLabelAndAxis maxSpkValue maxSparkPool) traces ys
+  in zipWithM_ (drawYLabelAndAxis maxSpkValue maxSparkPool xoffset) traces ys
 
-drawYLabelAndAxis :: Double -> Double -> Trace -> Int -> Render ()
-drawYLabelAndAxis maxSpkValue maxSparkPool trace y = do
+drawYLabelAndAxis :: Double -> Double -> Double -> Trace -> Int -> Render ()
+drawYLabelAndAxis maxSpkValue maxSparkPool xoffset trace y = do
   setSourceRGBAhex black 1
-  move_to (10, y + 8)
+  move_to (ox, y + 8)
   m <- getMatrix
   identityMatrix
   layout <- createLayout $ showTrace trace
   liftIO $ do
-    layoutSetWidth layout (Just 60)
+    layoutSetWidth layout (Just $ xoffset - 50)
     layoutSetAttributes layout [AttrSize minBound maxBound 8,
                                 AttrFamily minBound maxBound "sans serif"]
   showLayout layout
   case traceMaxSpark maxSpkValue maxSparkPool trace of
-    Just v  -> addScale hecSparksHeight 1 v 97 (fromIntegral y)
+    Just v  -> addScale hecSparksHeight 1 v (xoffset - 13) (fromIntegral y)
     Nothing -> return ()
   setMatrix m
 

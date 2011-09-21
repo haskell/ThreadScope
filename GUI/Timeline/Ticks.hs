@@ -219,7 +219,8 @@ dashedLine1 :: Render ()
 dashedLine1 = do
   save
   identityMatrix
-  setDash [10,10] 0.0
+  let dash = fromIntegral ox
+  setDash [dash, dash] 0.0
   setLineWidth 1
   stroke
   restore
