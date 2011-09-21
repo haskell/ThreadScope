@@ -49,6 +49,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
+                        <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <accelerator key="o" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </object>
@@ -530,9 +531,13 @@
                             <property name="events">GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK | GDK_STRUCTURE_MASK</property>
                             <property name="resize_mode">queue</property>
                             <child>
-                              <object class="GtkHBox" id="hbox1">
+                              <object class="GtkTable" id="table2">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
+                                <property name="n_rows">2</property>
+                                <property name="n_columns">2</property>
+                                <property name="column_spacing">3</property>
+                                <property name="row_spacing">3</property>
                                 <child>
                                   <object class="GtkDrawingArea" id="timeline_labels_drawingarea">
                                     <property name="width_request">110</property>
@@ -540,9 +545,21 @@
                                     <property name="can_focus">False</property>
                                   </object>
                                   <packing>
-                                    <property name="expand">False</property>
-                                    <property name="fill">False</property>
-                                    <property name="position">0</property>
+                                    <property name="top_attach">1</property>
+                                    <property name="bottom_attach">2</property>
+                                    <property name="x_options">GTK_SHRINK</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkDrawingArea" id="timeline_labels_drawingarea2">
+                                    <property name="height_request">50</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                  </object>
+                                  <packing>
+                                    <property name="left_attach">1</property>
+                                    <property name="right_attach">2</property>
+                                    <property name="y_options">GTK_SHRINK</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -551,10 +568,14 @@
                                     <property name="can_focus">True</property>
                                   </object>
                                   <packing>
-                                    <property name="expand">True</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">1</property>
+                                    <property name="left_attach">1</property>
+                                    <property name="right_attach">2</property>
+                                    <property name="top_attach">1</property>
+                                    <property name="bottom_attach">2</property>
                                   </packing>
+                                </child>
+                                <child>
+                                  <placeholder/>
                                 </child>
                               </object>
                             </child>
@@ -581,57 +602,21 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <child>
-                  <object class="GtkVBox" id="eventsbox_old">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <child>
-                      <object class="GtkEntry" id="events_entry">
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="invisible_char">●</property>
-                        <property name="width_chars">20</property>
-                        <property name="secondary_icon_stock">gtk-find</property>
-                        <property name="primary_icon_activatable">False</property>
-                        <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
-                        <property name="secondary_icon_tooltip_text">Search for event</property>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">1</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkHBox" id="eventsHBox">
-                        <property name="height_request">120</property>
+                      <object class="GtkVBox" id="eventsbox_old">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="spacing">3</property>
                         <child>
-                          <object class="GtkViewport" id="viewport2">
+                          <object class="GtkEntry" id="events_entry">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="resize_mode">queue</property>
-                            <child>
-                              <object class="GtkDrawingArea" id="eventsDrawingArea">
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                              </object>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="expand">True</property>
-                            <property name="fill">True</property>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkVScrollbar" id="eventsVScroll">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="adjustment">adjustment1</property>
+                            <property name="can_focus">True</property>
+                            <property name="invisible_char">●</property>
+                            <property name="width_chars">20</property>
+                            <property name="secondary_icon_stock">gtk-find</property>
+                            <property name="primary_icon_activatable">False</property>
+                            <property name="secondary_icon_activatable">False</property>
+                            <property name="primary_icon_sensitive">True</property>
+                            <property name="secondary_icon_sensitive">True</property>
+                            <property name="secondary_icon_tooltip_text">Search for event</property>
                           </object>
                           <packing>
                             <property name="expand">False</property>
@@ -639,19 +624,56 @@
                             <property name="position">1</property>
                           </packing>
                         </child>
+                        <child>
+                          <object class="GtkHBox" id="eventsHBox">
+                            <property name="height_request">120</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="spacing">3</property>
+                            <child>
+                              <object class="GtkViewport" id="viewport2">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="resize_mode">queue</property>
+                                <child>
+                                  <object class="GtkDrawingArea" id="eventsDrawingArea">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                  </object>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkVScrollbar" id="eventsVScroll">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="adjustment">adjustment1</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="padding">3</property>
+                            <property name="position">2</property>
+                          </packing>
+                        </child>
                       </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="padding">3</property>
-                        <property name="position">2</property>
-                      </packing>
-                    </child>
-                  </object>
                     </child>
                     <child type="tab">
                       <object class="GtkLabel" id="label4">
                         <property name="visible">True</property>
+                        <property name="can_focus">False</property>
                         <property name="label" translatable="yes">&lt;b&gt;Events&lt;/b&gt;</property>
                         <property name="use_markup">True</property>
                       </object>
@@ -661,14 +683,18 @@
                       </packing>
                     </child>
                     <child>
-                                  <object class="GtkDrawingArea" id="histogram_drawingarea">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                  </object>
+                      <object class="GtkDrawingArea" id="histogram_drawingarea">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                      </object>
+                      <packing>
+                        <property name="position">1</property>
+                      </packing>
                     </child>
                     <child type="tab">
                       <object class="GtkLabel" id="label6">
                         <property name="visible">True</property>
+                        <property name="can_focus">False</property>
                         <property name="label" translatable="yes">&lt;b&gt;Spark sizes&lt;/b&gt;</property>
                         <property name="use_markup">True</property>
                       </object>
