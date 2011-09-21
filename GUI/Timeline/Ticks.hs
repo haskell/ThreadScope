@@ -1,5 +1,6 @@
 module GUI.Timeline.Ticks (
-    renderHTicks,
+    renderHScale,
+    renderVRulers,
     drawVTicks,
     mu,
     deZero,
@@ -38,8 +39,48 @@ import Text.Printf
 
 -------------------------------------------------------------------------------
 
-renderHTicks :: Timestamp -> Timestamp -> Double -> Int -> Render()
-renderHTicks startPos endPos scaleValue height
+renderVRulers :: Timestamp -> Timestamp -> Double -> Int -> Render()
+renderVRulers startPos endPos scaleValue height
+  = do
+    setSourceRGBAhex blue 0.2
+    let
+        timestampFor100Pixels = truncate (100 * scaleValue) -- ns time for 100 pixels
+        snappedTickDuration :: Timestamp
+        snappedTickDuration = 10 ^ truncate (logBase 10 (fromIntegral timestampFor100Pixels) :: Double)
+        tickWidthInPixels :: Int
+        tickWidthInPixels = truncate ((fromIntegral snappedTickDuration) / scaleValue)
+        firstTick :: Timestamp
+        firstTick = snappedTickDuration * (startPos `div` snappedTickDuration)
+    setLineWidth scaleValue
+    drawVRulers tickWidthInPixels height scaleValue firstTick
+      snappedTickDuration (10 * snappedTickDuration) endPos
+
+
+drawVRulers :: Int -> Int -> Double -> Timestamp -> Timestamp
+               -> Timestamp -> Timestamp -> Render ()
+drawVRulers tickWidthInPixels height scaleValue pos incr majorTick endPos
+  = if pos <= endPos then
+      do when (atMajorTick || atMidTick || tickWidthInPixels > 30) $ do
+           draw_line (x1, y1) (x1, height)
+         drawVRulers tickWidthInPixels height scaleValue (pos+incr) incr majorTick endPos
+    else
+      return ()
+    where
+    atMidTick = pos `mod` (majorTick `div` 2) == 0
+    atMajorTick = pos `mod` majorTick == 0
+    -- We cheat at pos 0, to avoid half covering the tick by the grey label area.
+    (x1, y1) | pos == 0  = (shifted, oy+16)
+             | atMidTick = (pos, oy+16)
+             | atMidTick = (pos, oy+12)
+             | otherwise = (pos, oy+8)
+    shifted = pos + ceiling (lineWidth / 2)
+    lineWidth = scaleValue
+
+-------------------------------------------------------------------------------
+
+-- TODO: refactor common parts with renderVRulers
+renderHScale :: Timestamp -> Timestamp -> Double -> Render()
+renderHScale startPos endPos scaleValue
   = do
     selectFontFace "sans serif" FontSlantNormal FontWeightNormal
     setFontSize 12
@@ -59,16 +100,16 @@ renderHTicks startPos endPos scaleValue height
     --   do putStrLn ("timestampFor100Pixels = " ++ show timestampFor100Pixels)
     --     putStrLn ("tickWidthInPixels     = " ++ show tickWidthInPixels)
     --     putStrLn ("snappedTickDuration   = " ++ show snappedTickDuration)
-    drawHTicks tickWidthInPixels height scaleValue firstTick
-              snappedTickDuration (10 * snappedTickDuration) endPos
+    setLineWidth scaleValue
+    drawHTicks tickWidthInPixels scaleValue firstTick
+      snappedTickDuration (10 * snappedTickDuration) endPos
 
 
-drawHTicks :: Int -> Int -> Double -> Timestamp -> Timestamp ->
-             Timestamp -> Timestamp -> Render ()
-drawHTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
+drawHTicks :: Int -> Double -> Timestamp -> Timestamp
+              -> Timestamp -> Timestamp -> Render ()
+drawHTicks tickWidthInPixels scaleValue pos incr majorTick endPos
   = if pos <= endPos then
-      do setLineWidth lineWidth
-         draw_line (x0, y0) (x1, y1)
+      do draw_line (x0, y0) (x1, y1)
          when (atMajorTick || atMidTick || tickWidthInPixels > 30) $ do
                move_to (pos - truncate (scaleValue * 4.0), oy - 10)
                m <- getMatrix
@@ -78,11 +119,8 @@ drawHTicks tickWidthInPixels height scaleValue pos incr majorTick endPos
                when (isWideEnough tExtent fourPixels || atMajorTick) $
                  showText tickTimeText
                setMatrix m
-               setSourceRGBAhex blue 0.2
-               draw_line (x1, y1) (x1, height)
-               setSourceRGBAhex blue 1.0
 
-         drawHTicks tickWidthInPixels height scaleValue (pos+incr) incr majorTick endPos
+         drawHTicks tickWidthInPixels scaleValue (pos+incr) incr majorTick endPos
     else
       return ()
     where

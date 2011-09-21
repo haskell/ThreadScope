@@ -10,7 +10,7 @@ module GUI.Timeline.Render (
 
 import GUI.Timeline.Types
 import GUI.Timeline.Render.Constants
-import GUI.Timeline.Ticks (renderHTicks)
+import GUI.Timeline.Ticks (renderHScale, renderVRulers)
 import GUI.Timeline.HEC
 import GUI.Timeline.Sparks
 import GUI.Timeline.Activity
@@ -206,8 +206,9 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
     when (scaleValue > 0) $ do
       withViewScale params $ do
       save
-      -- First render the ticks and tick times
-      renderHTicks startPos endPos scaleValue height
+      -- First render the rulers, ticks and tick times
+      renderHScale startPos endPos scaleValue
+      renderVRulers startPos endPos scaleValue height
       restore
 
       -- This function helps to render a single HEC...
