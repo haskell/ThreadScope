@@ -87,7 +87,8 @@ renderKeyIcon Box keyColour = do
 renderKeyIcon Vertical keyColour = do
   setSourceRGBAhex keyColour 1.0
   C.setLineWidth 3.0
-  C.moveTo 10 0
+  let x = fromIntegral ox
+  C.moveTo x 0
   C.relLineTo 0 25
   C.stroke
 

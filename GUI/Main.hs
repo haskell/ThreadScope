@@ -268,9 +268,10 @@ eventLoop uienv@UIEnv{..} eventlogState = do
                           bwMode     = False,
                           labelsMode = False
                         }
+      label_area_width <- timelineGetLabelAreaWidth timelineWin
       case format of
-        FormatPDF -> saveAsPDF filename hecs viewParams'
-        FormatPNG -> saveAsPNG filename hecs viewParams'
+        FormatPDF -> saveAsPDF filename hecs viewParams' label_area_width
+        FormatPNG -> saveAsPNG filename hecs viewParams' label_area_width
       continue
 
     dispatch EventAboutDialog _ = do

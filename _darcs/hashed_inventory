@@ -1,4 +1,4 @@
-pristine:8bb9ec47bdad8f37057948872e39f242311ccbf9439318b715b502d7451862a8
+pristine:d16a4ead91236337b9bec4580ae01a92e9a4b9c8917d2169a6a0eff20ecbd3e8
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1343,3 +1343,63 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20110917023534
  Ignore-this: a85286684a4c8e43e7cd7b7f13de1f43
 ] 
 hash: 0000003683-2af69b4fc0188e4adb83bc8325c724365c3d66ad2d5c838ac128e49db40f0962
+[Revert the gray background of PDF/PNG; all is transparent now
+Mikolaj Konarski <mikolaj@well-typed.com>**20110917033421
+ Ignore-this: 1889943ccf8f9b1be39a619ed05e1747
+] 
+hash: 0000001329-13aeaf4139103e70dbfc1ed32fba4da00a770ba1e3a944d3b3cd3b9fbb583dfe
+[Remove the gap of ox pixels at the ends of the trace
+Mikolaj Konarski <mikolaj@well-typed.com>**20110920010829
+ Ignore-this: adc6c428c46b6c80239c9090ac58ba49
+] 
+hash: 0000001705-75cf616c997cc7bf279d523a8f700434e3c09b906cbcb867cf59ece7a7b6c805
+[Shift the first tick to avoid half-covering it with the grey label area
+Mikolaj Konarski <mikolaj@well-typed.com>**20110920014549
+ Ignore-this: e372642061730a167eb85918474c5335
+] 
+hash: 0000000897-293e8d5f982e163a5ca50cd5cd3da87a982913b585104e0c565f95aaf3090f7a
+[Split renderHTicks in two: renderHScale and renderVRulers
+Mikolaj Konarski <mikolaj@well-typed.com>**20110921024420
+ Ignore-this: 1e61a297a14acfb4665596dcad76c7ab
+] 
+hash: 0000003969-59355e875e3dbe23b89e3927109fc2aa342b6209da3236725fe4247a3210c804
+[Move X scale outside, step 1: add extra drawing area
+Mikolaj Konarski <mikolaj@well-typed.com>**20110921041216
+ Ignore-this: 122635a4bb0dba0a452aa1ffc8be477e
+] 
+hash: 0000010251-e42455ee09afb198e31d7a6d94cd0adfb6da3ac001d8d4efda10ff57a01c6f1d
+[Move X scale outside, step 2: draw all inside and outside
+Mikolaj Konarski <mikolaj@well-typed.com>**20110921120039
+ Ignore-this: e23e3341f633a1e722f11238d03dbab
+] 
+hash: 0000002379-9c7d615d6948a974a271f2ae72074aa59e4cfa61aee63572dab47f6146761ae6
+[Move X scale outside, step 3: draw only what's needed
+Mikolaj Konarski <mikolaj@well-typed.com>**20110921120043
+ Ignore-this: f4b0c5b8e708e927abd980d60d2d02f
+] 
+hash: 0000001575-3e165172ab2cc48441a336d22ef8f1b967220dade7ba2a62a0abeea202054384
+[Get rid of some hard-coded screen positions
+Mikolaj Konarski <mikolaj@well-typed.com>**20110921171300
+ Ignore-this: 35f164a7f9935c1373c54e532f90762e
+] 
+hash: 0000005275-3ed6ca397e28c881dc6ca561a148b3666e5dbd4d4ecf8b85232e3ac46faa9148
+[Move, rename and reindent scale drawing code
+Mikolaj Konarski <mikolaj@well-typed.com>**20110921181427
+ Ignore-this: 5c102e968b291112c6d928dedddcf266
+] 
+hash: 0000014299-971dc344a05a950be7c8992c1875f14af987ffac6b8c744b9a6d411ca83d2e7b
+[Delete completed tasks from the TODO file
+Mikolaj Konarski <mikolaj@well-typed.com>**20110921183724
+ Ignore-this: 31ff995c7e9b57e05f4c1d85ab10f249
+] 
+hash: 0000001570-cfea56bdedcb7cfa6ff2dc726c580eb15b70514a1894606e4c3fa9bb5ffcdaaf
+[Move X scale outside, step 4: simplify X scale drawing
+Mikolaj Konarski <mikolaj@well-typed.com>**20110921212314
+ Ignore-this: 6c004934cf7d870845ca08dc2009ff6b
+] 
+hash: 0000002278-c2c4e86af8c8d16a884389e8d00878527df701ab1ad1efb7450aa546ef47bb4a
+[Remove a couple of void condition about scaleValue
+Mikolaj Konarski <mikolaj@well-typed.com>**20110921213306
+ Ignore-this: ac2cd1080ed342bc35fa71948acf9b80
+] 
+hash: 0000000685-14b28096c34eb2e10196678a52c8fd276f4956952b16204ea29b0e0546de8b4e

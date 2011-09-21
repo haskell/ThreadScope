@@ -3,6 +3,7 @@ module GUI.Timeline.Render (
     renderView,
     renderTraces,
     updateLabelDrawingArea,
+    updateXScaleArea,
     calculateTotalTimelineHeight,
     toWholePixels,
     renderLabelArea,
@@ -10,7 +11,7 @@ module GUI.Timeline.Render (
 
 import GUI.Timeline.Types
 import GUI.Timeline.Render.Constants
-import GUI.Timeline.Ticks (renderHTicks)
+import GUI.Timeline.Ticks (renderXScale, renderYScale, renderVRulers)
 import GUI.Timeline.HEC
 import GUI.Timeline.Sparks
 import GUI.Timeline.Activity
@@ -94,9 +95,8 @@ renderView TimelineState{timelineDrawingArea, timelineVAdj, timelinePrevView}
           -- ^^ this is where we adjust for the vertical scrollbar
   setOperator OperatorSource
   paint
-  when (scaleValue params > 0) $ do
-    renderBookmarks bookmarks params
-    drawSelection params selection
+  renderBookmarks bookmarks params
+  drawSelection params selection
 
 -------------------------------------------------------------------------------
 
@@ -175,7 +175,7 @@ timestampToView ViewParameters{scaleValue, hadjValue} ts =
   (fromIntegral ts - hadjValue) / scaleValue
 
 -------------------------------------------------------------------------------
--- This function draws the current view of all the HECs with Cario
+-- This function draws the current view of all the HECs with Cairo.
 
 renderTraces :: ViewParameters -> HECs -> Rectangle
              -> Render ()
@@ -187,14 +187,12 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
         scale_width = fromIntegral width * scaleValue
 
         startPos :: Timestamp
-        startPos = fromIntegral (max 0 (truncate (scale_rx + hadjValue)))
-                   -- hadj_value might be negative, as we leave a
-                   -- small gap before the trace starts at the beginning
+        startPos = fromIntegral $ truncate (scale_rx + hadjValue)
 
         endPos :: Timestamp
         endPos = minimum [
-                   ceiling (max 0 (hadjValue + scale_width)),
-                   ceiling (max 0 (hadjValue + scale_rx + scale_rw)),
+                   ceiling (hadjValue + scale_width),
+                   ceiling (hadjValue + scale_rx + scale_rw),
                    hecLastEventTime hecs
                 ]
 
@@ -204,15 +202,14 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
         end = ((endPos + slice) `div` slice) * slice
         (slice, prof) = treesProfile scaleValue start end hecs
 
-    -- Now render the timeline drawing if we have a non-empty trace
-    when (scaleValue > 0) $ do
-      withViewScale params $ do
-      save
-      -- First render the ticks and tick times
-      renderHTicks startPos endPos scaleValue height
-      restore
+    withViewScale params $ do
+      -- Render the vertical rulers across all the traces.
+      renderVRulers startPos endPos scaleValue height
 
-      -- This function helps to render a single HEC...
+      -- This function helps to render a single HEC.
+      -- Traces are rendered even if the y-region falls outside visible area.
+      -- OTOH, trace rendering function tend to drawn only the visible
+      -- x-region of the graph.
       let renderTrace trace y = do
             save
             translate 0 (fromIntegral y)
@@ -228,9 +225,9 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                  let maxP = maxSparkPool hecs
                  in renderSparkPool params slice start end (prof !! c) maxP
                TraceActivity ->
-                   renderActivity params hecs startPos endPos
+                 renderActivity params hecs startPos endPos
                _   ->
-                   return ()
+                 return ()
             restore
       -- Now rennder all the HECs.
       zipWithM_ renderTrace viewTraces (traceYPositions labelsMode viewTraces)
@@ -297,40 +294,66 @@ toWholePixels scale x = fromIntegral (truncate (x / scale)) * scale
 
 -------------------------------------------------------------------------------
 
-renderLabelArea :: ViewParameters -> HECs -> Render ()
-renderLabelArea ViewParameters{..} hecs =
-  renderYLabelsAndAxis maxSpkValue (maxSparkPool hecs) 0 labelsMode viewTraces
+renderLabelArea :: ViewParameters -> HECs -> Double -> Render ()
+renderLabelArea ViewParameters{..} hecs xoffset =
+  renderYLabelsAndAxis maxSpkValue (maxSparkPool hecs) xoffset
+    0 labelsMode viewTraces
 
 updateLabelDrawingArea :: TimelineState -> Double -> Bool -> [Trace] -> IO ()
 updateLabelDrawingArea TimelineState{..} maxSparkPool showLabels traces = do
   win <- widgetGetDrawWindow timelineLabelDrawingArea
   maxSpkValue <- readIORef maxSpkIORef
   vadj_value  <- adjustmentGetValue timelineVAdj
+  (xoffset, _) <- widgetGetSize timelineLabelDrawingArea
   renderWithDrawable win $
-    renderYLabelsAndAxis maxSpkValue maxSparkPool vadj_value showLabels traces
+    renderYLabelsAndAxis maxSpkValue maxSparkPool (fromIntegral xoffset)
+      vadj_value showLabels traces
 
-renderYLabelsAndAxis :: Double -> Double -> Double -> Bool -> [Trace]
+-- For simplicity, unlike for the traces, we redraw the whole area,
+-- not only the newly exposed one.
+updateXScaleArea :: TimelineState -> Timestamp -> IO ()
+updateXScaleArea TimelineState{..} lastTx = do
+  win <- widgetGetDrawWindow timelineXScaleArea
+  scaleValue <- readIORef scaleIORef
+  (rw, _) <- widgetGetSize timelineDrawingArea
+  -- snap the view to whole pixels, to avoid blurring
+  hadjValue0 <- adjustmentGetValue timelineAdj
+  let hadjValue = toWholePixels scaleValue hadjValue0
+      scale_rw = fromIntegral rw * scaleValue
+      startPos :: Timestamp
+      startPos = truncate hadjValue
+      endPos :: Timestamp
+      endPos = minimum [ceiling (hadjValue + scale_rw), lastTx]
+  renderWithDrawable win $ do
+    save
+    scale (1/scaleValue) 1.0
+    translate (-hadjValue) 0
+    renderXScale startPos endPos scaleValue
+    restore
+  return ()
+
+renderYLabelsAndAxis :: Double -> Double -> Double ->  Double -> Bool -> [Trace]
                         -> Render ()
-renderYLabelsAndAxis maxSpkValue maxSparkPool
+renderYLabelsAndAxis maxSpkValue maxSparkPool xoffset
                      vadj_value showLabels traces =
   let ys = map (subtract (round vadj_value)) $
              traceYPositions showLabels traces
-  in zipWithM_ (drawYLabelAndAxis maxSpkValue maxSparkPool) traces ys
+  in zipWithM_ (drawYLabelAndAxis maxSpkValue maxSparkPool xoffset) traces ys
 
-drawYLabelAndAxis :: Double -> Double -> Trace -> Int -> Render ()
-drawYLabelAndAxis maxSpkValue maxSparkPool trace y = do
+drawYLabelAndAxis :: Double -> Double -> Double -> Trace -> Int -> Render ()
+drawYLabelAndAxis maxSpkValue maxSparkPool xoffset trace y = do
   setSourceRGBAhex black 1
-  move_to (10, y + 8)
+  move_to (ox, y + 8)
   m <- getMatrix
   identityMatrix
   layout <- createLayout $ showTrace trace
   liftIO $ do
-    layoutSetWidth layout (Just 60)
+    layoutSetWidth layout (Just $ xoffset - 50)
     layoutSetAttributes layout [AttrSize minBound maxBound 8,
                                 AttrFamily minBound maxBound "sans serif"]
   showLayout layout
   case traceMaxSpark maxSpkValue maxSparkPool trace of
-    Just v  -> addScale hecSparksHeight 1 v 97 (fromIntegral y)
+    Just v  -> renderYScale hecSparksHeight 1 v (xoffset - 13) (fromIntegral y)
     Nothing -> return ()
   setMatrix m
 

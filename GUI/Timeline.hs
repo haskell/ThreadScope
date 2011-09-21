@@ -6,6 +6,7 @@ module GUI.Timeline (
     timelineSetBWMode,
     timelineSetShowLabels,
     timelineGetViewParameters,
+    timelineGetLabelAreaWidth,
     timelineWindowSetHECs,
     timelineWindowSetTraces,
     timelineWindowSetBookmarks,
@@ -100,6 +101,10 @@ timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, showLabelsIORef
            labelsMode = showLabels
          }
 
+timelineGetLabelAreaWidth :: TimelineView -> IO Double
+timelineGetLabelAreaWidth timelineWin = do
+  (w, _) <- widgetGetSize $ timelineLabelDrawingArea $ timelineState timelineWin
+  return $ fromIntegral w
 
 timelineWindowSetHECs :: TimelineView -> Maybe HECs -> IO ()
 timelineWindowSetHECs timelineWin@TimelineView{..} mhecs = do
@@ -126,6 +131,7 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
   timelineViewport         <- getWidget castToWidget "timeline_viewport"
   timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
   timelineLabelDrawingArea <- getWidget castToDrawingArea "timeline_labels_drawingarea"
+  timelineXScaleArea       <- getWidget castToDrawingArea "timeline_labels_drawingarea2"
   timelineHScrollbar       <- getWidget castToHScrollbar "timeline_hscroll"
   timelineVScrollbar       <- getWidget castToVScrollbar "timeline_vscroll"
   timelineAdj              <- rangeGetAdjustment timelineHScrollbar
@@ -160,6 +166,19 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
         showLabels <- readIORef showLabelsIORef
         let maxP = maxSparkPool hecs
         updateLabelDrawingArea timelineState maxP showLabels traces
+        return True
+
+  ------------------------------------------------------------------------
+  -- Redrawing XScaleArea
+  timelineXScaleArea `onExpose` \_ -> do
+    maybeEventArray <- readIORef hecsIORef
+
+    -- Check to see if an event trace has been loaded
+    case maybeEventArray of
+      Nothing   -> return False
+      Just hecs -> do
+        let lastTx = hecLastEventTime hecs
+        updateXScaleArea timelineState lastTx
         return True
 
   ------------------------------------------------------------------------
@@ -293,6 +312,7 @@ queueRedrawTimelines :: TimelineState -> IO ()
 queueRedrawTimelines TimelineState{..} = do
   widgetQueueDraw timelineDrawingArea
   widgetQueueDraw timelineLabelDrawingArea
+  widgetQueueDraw timelineXScaleArea
 
 --FIXME: we are still unclear about which state changes involve which updates
 timelineParamsChanged :: TimelineView -> IO ()

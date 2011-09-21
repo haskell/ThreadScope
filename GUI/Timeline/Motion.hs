@@ -7,7 +7,6 @@ module GUI.Timeline.Motion (
 
 import GUI.Timeline.Types
 import GUI.Timeline.Sparks
-import GUI.Timeline.Render.Constants
 import Events.HECs
 
 import Graphics.UI.Gtk
@@ -63,14 +62,15 @@ zoom factor TimelineState{timelineAdj, scaleIORef} cursor = do
 
 zoomToFit :: TimelineState -> Maybe HECs -> IO ()
 zoomToFit TimelineState{scaleIORef, maxSpkIORef,timelineAdj,
-                        timelineDrawingArea} mb_hecs  = do
+                        timelineDrawingArea} mb_hecs = do
   case mb_hecs of
     Nothing   -> return ()
     Just hecs -> do
        let lastTx = hecLastEventTime hecs
+           upper = fromIntegral lastTx
+           lower = 0
        (w, _) <- widgetGetSize timelineDrawingArea
-       let newScaleValue = fromIntegral lastTx / fromIntegral (w - 2*ox)
-                           -- leave a gap of ox pixels at each end
+       let newScaleValue = upper / fromIntegral w
            (sliceAll, profAll) = treesProfile newScaleValue 0 lastTx hecs
            -- TODO: verify that no empty lists possible below
            maxAll = map (maximum . map (maxSparkRenderedValue sliceAll)) profAll
@@ -80,16 +80,10 @@ zoomToFit TimelineState{scaleIORef, maxSpkIORef,timelineAdj,
        writeIORef maxSpkIORef newMaxSpkValue
 
        -- Configure the horizontal scrollbar units to correspond to ns.
-       -- leave a gap of ox pixels on the left and right of the full trace
-       let gap   = fromIntegral ox * newScaleValue
-           lower = -gap
-           upper = fromIntegral lastTx + gap
-           page  = upper + gap
-
        adjustmentSetLower    timelineAdj lower
        adjustmentSetValue    timelineAdj lower
        adjustmentSetUpper    timelineAdj upper
-       adjustmentSetPageSize timelineAdj page
+       adjustmentSetPageSize timelineAdj upper
        -- TODO: this seems suspicious:
        adjustmentSetStepIncrement timelineAdj 0
        adjustmentSetPageIncrement timelineAdj 0
