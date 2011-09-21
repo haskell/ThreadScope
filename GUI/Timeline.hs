@@ -131,7 +131,7 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
   timelineViewport         <- getWidget castToWidget "timeline_viewport"
   timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
   timelineLabelDrawingArea <- getWidget castToDrawingArea "timeline_labels_drawingarea"
-  timelineHScaleArea       <- getWidget castToDrawingArea "timeline_labels_drawingarea2"
+  timelineXScaleArea       <- getWidget castToDrawingArea "timeline_labels_drawingarea2"
   timelineHScrollbar       <- getWidget castToHScrollbar "timeline_hscroll"
   timelineVScrollbar       <- getWidget castToVScrollbar "timeline_vscroll"
   timelineAdj              <- rangeGetAdjustment timelineHScrollbar
@@ -169,8 +169,8 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
         return True
 
   ------------------------------------------------------------------------
-  -- Redrawing HScaleArea
-  timelineHScaleArea `onExpose` \_ -> do
+  -- Redrawing XScaleArea
+  timelineXScaleArea `onExpose` \_ -> do
     maybeEventArray <- readIORef hecsIORef
 
     -- Check to see if an event trace has been loaded
@@ -178,7 +178,7 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
       Nothing   -> return False
       Just hecs -> do
         let lastTx = hecLastEventTime hecs
-        updateHScaleArea timelineState lastTx
+        updateXScaleArea timelineState lastTx
         return True
 
   ------------------------------------------------------------------------
@@ -312,7 +312,7 @@ queueRedrawTimelines :: TimelineState -> IO ()
 queueRedrawTimelines TimelineState{..} = do
   widgetQueueDraw timelineDrawingArea
   widgetQueueDraw timelineLabelDrawingArea
-  widgetQueueDraw timelineHScaleArea
+  widgetQueueDraw timelineXScaleArea
 
 --FIXME: we are still unclear about which state changes involve which updates
 timelineParamsChanged :: TimelineView -> IO ()

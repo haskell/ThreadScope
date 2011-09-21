@@ -3,7 +3,7 @@ module GUI.Timeline.Render (
     renderView,
     renderTraces,
     updateLabelDrawingArea,
-    updateHScaleArea,
+    updateXScaleArea,
     calculateTotalTimelineHeight,
     toWholePixels,
     renderLabelArea,
@@ -11,7 +11,7 @@ module GUI.Timeline.Render (
 
 import GUI.Timeline.Types
 import GUI.Timeline.Render.Constants
-import GUI.Timeline.Ticks (renderHScale, renderVRulers)
+import GUI.Timeline.Ticks (renderXScale, renderYScale, renderVRulers)
 import GUI.Timeline.HEC
 import GUI.Timeline.Sparks
 import GUI.Timeline.Activity
@@ -311,9 +311,9 @@ updateLabelDrawingArea TimelineState{..} maxSparkPool showLabels traces = do
       vadj_value showLabels traces
 
 -- TODO: unduplicate the code
-updateHScaleArea :: TimelineState -> Timestamp -> IO ()
-updateHScaleArea TimelineState{..} lastTx = do
-  win <- widgetGetDrawWindow timelineHScaleArea
+updateXScaleArea :: TimelineState -> Timestamp -> IO ()
+updateXScaleArea TimelineState{..} lastTx = do
+  win <- widgetGetDrawWindow timelineXScaleArea
   scaleValue <- readIORef scaleIORef
   (rw, _) <- widgetGetSize timelineDrawingArea
   -- snap the view to whole pixels, to avoid blurring
@@ -336,7 +336,7 @@ updateHScaleArea TimelineState{..} lastTx = do
     save
     scale (1/scaleValue) 1.0
     translate (-hadjValue) 0
-    renderHScale startPos endPos scaleValue
+    renderXScale startPos endPos scaleValue
     restore
   return ()
 
@@ -361,7 +361,7 @@ drawYLabelAndAxis maxSpkValue maxSparkPool xoffset trace y = do
                                 AttrFamily minBound maxBound "sans serif"]
   showLayout layout
   case traceMaxSpark maxSpkValue maxSparkPool trace of
-    Just v  -> addScale hecSparksHeight 1 v (xoffset - 13) (fromIntegral y)
+    Just v  -> renderYScale hecSparksHeight 1 v (xoffset - 13) (fromIntegral y)
     Nothing -> return ()
   setMatrix m
 

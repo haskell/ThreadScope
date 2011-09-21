@@ -4,7 +4,6 @@ module GUI.Timeline.Sparks (
     renderSparkCreation,
     renderSparkConversion,
     renderSparkPool,
-    addScale,
   ) where
 
 import GUI.Timeline.Render.Constants
@@ -15,12 +14,10 @@ import qualified Events.SparkStats as SparkStats
 
 import GUI.Types
 import GUI.ViewerColours
-import GUI.Timeline.Ticks (dashedLine1, drawVTicks)
+import GUI.Timeline.Ticks (renderHRulers)
 
 import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk
-
-import Control.Monad
 
 -- import Text.Printf
 
@@ -81,7 +78,7 @@ renderSparkPool ViewParameters{..} !slice !start !end prof !maxSparkPool = do
   addSparks outerPercentilesColour maxSparkPool f2 f3 start slice prof
   outlineSparks maxSparkPool f2 start slice prof
   outlineSparks maxSparkPool (const 0) start slice prof
-  addRulers hecSparksHeight start end
+  renderHRulers hecSparksHeight start end
 
 renderSpark :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
                -> [SparkStats.SparkStats]
@@ -97,7 +94,7 @@ renderSpark ViewParameters{..} slice start end prof f1 c1 f2 c2 f3 c3 = do
   addSparks c1 maxSliceSpark (const 0) f1 start slice prof
   addSparks c2 maxSliceSpark f1 f2 start slice prof
   addSparks c3 maxSliceSpark f2 f3 start slice prof
-  addRulers hecSparksHeight start end
+  renderHRulers hecSparksHeight start end
 
 off :: Double -> (SparkStats.SparkStats -> Double)
        -> SparkStats.SparkStats
@@ -154,58 +151,3 @@ addSparks colour maxSliceSpark f0 f1 start slice ts = do
       mapM_ (uncurry lineTo) (reverse t0)
       setSourceRGBAhex colour 1.0
       fill
-
-
--- TODO: redesign and refactor the scales code after some feedback and testing.
-
--- There are ten minor ticks to a major tick and a semi-major tick
--- occurs half way through a major tick (overlapping the corresponding
--- minor tick).
--- The timestamp values are in nanoseconds (1e-9), i.e.,
--- a timestamp value of 1000000000 represents 1s.
--- The x-position on the drawing canvas is in milliseconds (ms) (1e-3).
--- scaleValue is used to divide a timestamp value to yield a pixel value.
-addScale :: Int -> Double -> Double -> Double -> Double -> Render ()
-addScale hecSparksHeight scaleValue maxSpark xoffset yoffset = do
-  let -- This is slightly off (by 1% at most), but often avoids decimal dot:
-      maxS = if maxSpark < 100
-             then maxSpark  -- too small, would be visible on screen
-             else fromIntegral (2 * (ceiling maxSpark ` div` 2))
-      incr = hecSparksHeight `div` 10
-
-  newPath
-  moveTo xoffset yoffset
-  lineTo xoffset (yoffset + fromIntegral hecSparksHeight)
-  setSourceRGBAhex blue 1.0
-  save
-  identityMatrix
-  setLineWidth 1
-  stroke
-  restore
-
-  selectFontFace "sans serif" FontSlantNormal FontWeightNormal
-  setFontSize 12
-  setSourceRGBAhex blue 1.0
-  save
-  scale scaleValue 1.0
-  setLineWidth 0.5
-  let yoff = truncate yoffset
-      xoff = truncate xoffset
-  drawVTicks maxS 0 incr xoff yoff
-  restore
-
-addRulers :: Int -> Timestamp -> Timestamp -> Render ()
-addRulers hecSparksHeight start end = do
-  let dstart = fromIntegral start
-      dend = fromIntegral end
-      incr = hecSparksHeight `div` 10
-
-  -- dashed lines across the graphs
-  setSourceRGBAhex black 0.3
-  save
-  forM_ [0, 5] $ \h -> do
-    let y = fromIntegral $ h * incr
-    moveTo dstart y
-    lineTo dend y
-    dashedLine1
-  restore

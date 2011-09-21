@@ -15,7 +15,7 @@ import Data.IORef
 data TimelineState = TimelineState {
        timelineDrawingArea      :: DrawingArea,
        timelineLabelDrawingArea :: DrawingArea,
-       timelineHScaleArea       :: DrawingArea,
+       timelineXScaleArea       :: DrawingArea,
        timelineAdj              :: Adjustment,
        timelineVAdj             :: Adjustment,
 
