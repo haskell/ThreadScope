@@ -172,10 +172,8 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
     case maybeEventArray of
       Nothing   -> return False
       Just hecs -> do
-        traces <- readIORef tracesIORef
-        showLabels <- readIORef showLabelsIORef
         let lastTx = hecLastEventTime hecs
-        updateHScaleArea timelineState lastTx showLabels traces
+        updateHScaleArea timelineState lastTx
         return True
 
   ------------------------------------------------------------------------

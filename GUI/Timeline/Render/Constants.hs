@@ -15,10 +15,10 @@ ox = 10
 oy :: Int
 oy = 30
 
--- Origin for capability bars
+-- Origin for traces
 
 firstTraceY :: Int
-firstTraceY = 60
+firstTraceY = 13
 
 -- Gap betweem traces in the timeline view
 

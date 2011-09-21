@@ -61,7 +61,7 @@ drawVRulers :: Int -> Int -> Double -> Timestamp -> Timestamp
 drawVRulers tickWidthInPixels height scaleValue pos incr majorTick endPos
   = if pos <= endPos then
       do when (atMajorTick || atMidTick || tickWidthInPixels > 30) $ do
-           draw_line (x1, y1) (x1, height)
+           draw_line (x1, 0) (x1, height)
          drawVRulers tickWidthInPixels height scaleValue (pos+incr) incr majorTick endPos
     else
       return ()
@@ -69,10 +69,7 @@ drawVRulers tickWidthInPixels height scaleValue pos incr majorTick endPos
     atMidTick = pos `mod` (majorTick `div` 2) == 0
     atMajorTick = pos `mod` majorTick == 0
     -- We cheat at pos 0, to avoid half covering the tick by the grey label area.
-    (x1, y1) | pos == 0  = (shifted, oy+16)
-             | atMidTick = (pos, oy+16)
-             | atMidTick = (pos, oy+12)
-             | otherwise = (pos, oy+8)
+    x1 = if pos == 0 then shifted else pos
     shifted = pos + ceiling (lineWidth / 2)
     lineWidth = scaleValue
 

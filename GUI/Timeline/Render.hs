@@ -207,8 +207,6 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
     when (scaleValue > 0) $ do
       withViewScale params $ do
       save
-      -- First render the rulers, ticks and tick times
-      renderHScale startPos endPos scaleValue
       renderVRulers startPos endPos scaleValue height
       restore
 
@@ -310,11 +308,10 @@ updateLabelDrawingArea TimelineState{..} maxSparkPool showLabels traces = do
     renderYLabelsAndAxis maxSpkValue maxSparkPool vadj_value showLabels traces
 
 -- TODO: unduplicate the code
-updateHScaleArea :: TimelineState -> Timestamp -> Bool -> [Trace] -> IO ()
-updateHScaleArea TimelineState{..} lastTx showLabels traces = do
+updateHScaleArea :: TimelineState -> Timestamp -> IO ()
+updateHScaleArea TimelineState{..} lastTx = do
   win <- widgetGetDrawWindow timelineHScaleArea
   scaleValue <- readIORef scaleIORef
-  let timelineHeight = calculateTotalTimelineHeight showLabels traces
   (rw, _) <- widgetGetSize timelineDrawingArea
   -- snap the view to whole pixels, to avoid blurring
   hadjValue0 <- adjustmentGetValue timelineAdj
@@ -337,7 +334,6 @@ updateHScaleArea TimelineState{..} lastTx showLabels traces = do
     scale (1/scaleValue) 1.0
     translate (-hadjValue) 0
     renderHScale startPos endPos scaleValue
-    renderVRulers startPos endPos scaleValue timelineHeight
     restore
   return ()
 
