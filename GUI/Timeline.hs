@@ -126,6 +126,7 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
   timelineViewport         <- getWidget castToWidget "timeline_viewport"
   timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
   timelineLabelDrawingArea <- getWidget castToDrawingArea "timeline_labels_drawingarea"
+  timelineHScaleArea       <- getWidget castToDrawingArea "timeline_labels_drawingarea2"
   timelineHScrollbar       <- getWidget castToHScrollbar "timeline_hscroll"
   timelineVScrollbar       <- getWidget castToVScrollbar "timeline_vscroll"
   timelineAdj              <- rangeGetAdjustment timelineHScrollbar
@@ -160,6 +161,21 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
         showLabels <- readIORef showLabelsIORef
         let maxP = maxSparkPool hecs
         updateLabelDrawingArea timelineState maxP showLabels traces
+        return True
+
+  ------------------------------------------------------------------------
+  -- Redrawing HScaleArea
+  timelineHScaleArea `onExpose` \_ -> do
+    maybeEventArray <- readIORef hecsIORef
+
+    -- Check to see if an event trace has been loaded
+    case maybeEventArray of
+      Nothing   -> return False
+      Just hecs -> do
+        traces <- readIORef tracesIORef
+        showLabels <- readIORef showLabelsIORef
+        let lastTx = hecLastEventTime hecs
+        updateHScaleArea timelineState lastTx showLabels traces
         return True
 
   ------------------------------------------------------------------------
@@ -293,6 +309,7 @@ queueRedrawTimelines :: TimelineState -> IO ()
 queueRedrawTimelines TimelineState{..} = do
   widgetQueueDraw timelineDrawingArea
   widgetQueueDraw timelineLabelDrawingArea
+  widgetQueueDraw timelineHScaleArea
 
 --FIXME: we are still unclear about which state changes involve which updates
 timelineParamsChanged :: TimelineView -> IO ()

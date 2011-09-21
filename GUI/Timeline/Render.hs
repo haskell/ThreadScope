@@ -3,6 +3,7 @@ module GUI.Timeline.Render (
     renderView,
     renderTraces,
     updateLabelDrawingArea,
+    updateHScaleArea,
     calculateTotalTimelineHeight,
     toWholePixels,
     renderLabelArea,
@@ -307,6 +308,38 @@ updateLabelDrawingArea TimelineState{..} maxSparkPool showLabels traces = do
   vadj_value  <- adjustmentGetValue timelineVAdj
   renderWithDrawable win $
     renderYLabelsAndAxis maxSpkValue maxSparkPool vadj_value showLabels traces
+
+-- TODO: unduplicate the code
+updateHScaleArea :: TimelineState -> Timestamp -> Bool -> [Trace] -> IO ()
+updateHScaleArea TimelineState{..} lastTx showLabels traces = do
+  win <- widgetGetDrawWindow timelineHScaleArea
+  scaleValue <- readIORef scaleIORef
+  let timelineHeight = calculateTotalTimelineHeight showLabels traces
+  (rw, _) <- widgetGetSize timelineDrawingArea
+  -- snap the view to whole pixels, to avoid blurring
+  hadjValue0 <- adjustmentGetValue timelineAdj
+  let rx = 0  -- TODO
+      width = rw  -- TODO
+      hadjValue = toWholePixels scaleValue hadjValue0
+      scale_rx    = fromIntegral rx * scaleValue
+      scale_rw    = fromIntegral rw * scaleValue
+      scale_width = fromIntegral width * scaleValue
+      startPos :: Timestamp
+      startPos = fromIntegral $ truncate (scale_rx + hadjValue)
+      endPos :: Timestamp
+      endPos = minimum [
+                 ceiling (hadjValue + scale_width),
+                 ceiling (hadjValue + scale_rx + scale_rw),
+                 lastTx
+               ]
+  renderWithDrawable win $ do
+    save
+    scale (1/scaleValue) 1.0
+    translate (-hadjValue) 0
+    renderHScale startPos endPos scaleValue
+    renderVRulers startPos endPos scaleValue timelineHeight
+    restore
+  return ()
 
 renderYLabelsAndAxis :: Double -> Double -> Double -> Bool -> [Trace]
                         -> Render ()
