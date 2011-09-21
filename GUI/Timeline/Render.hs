@@ -176,7 +176,7 @@ timestampToView ViewParameters{scaleValue, hadjValue} ts =
   (fromIntegral ts - hadjValue) / scaleValue
 
 -------------------------------------------------------------------------------
--- This function draws the current view of all the HECs with Cario
+-- This function draws the current view of all the HECs with Cairo.
 
 renderTraces :: ViewParameters -> HECs -> Rectangle
              -> Render ()
@@ -203,14 +203,15 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
         end = ((endPos + slice) `div` slice) * slice
         (slice, prof) = treesProfile scaleValue start end hecs
 
-    -- Now render the timeline drawing if we have a non-empty trace
-    when (scaleValue > 0) $ do
+    -- Now render the timeline drawing if we have a non-empty trace.
+    when (scaleValue > 0) $ do  -- TODO: this does not do anything; investigate
       withViewScale params $ do
-      save
       renderVRulers startPos endPos scaleValue height
-      restore
 
-      -- This function helps to render a single HEC...
+      -- This function helps to render a single HEC.
+      -- Traces are rendered even if the y-region falls outside visible area.
+      -- OTOH, trace rendering function tend to drawn only the visible
+      -- x-region of the graph.
       let renderTrace trace y = do
             save
             translate 0 (fromIntegral y)
@@ -226,9 +227,9 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                  let maxP = maxSparkPool hecs
                  in renderSparkPool params slice start end (prof !! c) maxP
                TraceActivity ->
-                   renderActivity params hecs startPos endPos
+                 renderActivity params hecs startPos endPos
                _   ->
-                   return ()
+                 return ()
             restore
       -- Now rennder all the HECs.
       zipWithM_ renderTrace viewTraces (traceYPositions labelsMode viewTraces)
@@ -310,7 +311,8 @@ updateLabelDrawingArea TimelineState{..} maxSparkPool showLabels traces = do
     renderYLabelsAndAxis maxSpkValue maxSparkPool (fromIntegral xoffset)
       vadj_value showLabels traces
 
--- TODO: unduplicate the code
+-- For simplicity, unlike for the traces, we redraw the whole area,
+-- not only the newly exposed one.
 updateXScaleArea :: TimelineState -> Timestamp -> IO ()
 updateXScaleArea TimelineState{..} lastTx = do
   win <- widgetGetDrawWindow timelineXScaleArea
@@ -318,20 +320,12 @@ updateXScaleArea TimelineState{..} lastTx = do
   (rw, _) <- widgetGetSize timelineDrawingArea
   -- snap the view to whole pixels, to avoid blurring
   hadjValue0 <- adjustmentGetValue timelineAdj
-  let rx = 0  -- TODO
-      width = rw  -- TODO
-      hadjValue = toWholePixels scaleValue hadjValue0
-      scale_rx    = fromIntegral rx * scaleValue
-      scale_rw    = fromIntegral rw * scaleValue
-      scale_width = fromIntegral width * scaleValue
+  let hadjValue = toWholePixels scaleValue hadjValue0
+      scale_rw = fromIntegral rw * scaleValue
       startPos :: Timestamp
-      startPos = fromIntegral $ truncate (scale_rx + hadjValue)
+      startPos = truncate hadjValue
       endPos :: Timestamp
-      endPos = minimum [
-                 ceiling (hadjValue + scale_width),
-                 ceiling (hadjValue + scale_rx + scale_rw),
-                 lastTx
-               ]
+      endPos = minimum [ceiling (hadjValue + scale_rw), lastTx]
   renderWithDrawable win $ do
     save
     scale (1/scaleValue) 1.0
