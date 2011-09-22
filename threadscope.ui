@@ -536,8 +536,8 @@
                                 <property name="can_focus">False</property>
                                 <property name="n_rows">2</property>
                                 <property name="n_columns">2</property>
-                                <property name="column_spacing">3</property>
-                                <property name="row_spacing">3</property>
+                                <property name="column_spacing">0</property>
+                                <property name="row_spacing">0</property>
                                 <child>
                                   <object class="GtkDrawingArea" id="timeline_labels_drawingarea">
                                     <property name="width_request">110</property>
@@ -552,7 +552,7 @@
                                 </child>
                                 <child>
                                   <object class="GtkDrawingArea" id="timeline_labels_drawingarea2">
-                                    <property name="height_request">50</property>
+                                    <property name="height_request">45</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                   </object>
