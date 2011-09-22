@@ -95,9 +95,8 @@ renderView TimelineState{timelineDrawingArea, timelineVAdj, timelinePrevView}
           -- ^^ this is where we adjust for the vertical scrollbar
   setOperator OperatorSource
   paint
-  when (scaleValue params > 0) $ do
-    renderBookmarks bookmarks params
-    drawSelection params selection
+  renderBookmarks bookmarks params
+  drawSelection params selection
 
 -------------------------------------------------------------------------------
 
@@ -203,9 +202,8 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
         end = ((endPos + slice) `div` slice) * slice
         (slice, prof) = treesProfile scaleValue start end hecs
 
-    -- Now render the timeline drawing if we have a non-empty trace.
-    when (scaleValue > 0) $ do  -- TODO: this does not do anything; investigate
-      withViewScale params $ do
+    withViewScale params $ do
+      -- Render the vertical rulers across all the traces.
       renderVRulers startPos endPos scaleValue height
 
       -- This function helps to render a single HEC.
