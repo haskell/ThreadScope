@@ -61,7 +61,7 @@ drawVRulers tickWidthInPixels height scaleValue pos incr endPos =
     when (atMajorTick || atMidTick || tickWidthInPixels > 30) $ do
       draw_line (x1, 0) (x1, height)
       drawVRulers
-        tickWidthInPixels height scaleValue (pos+incr) incr endPos
+        tickWidthInPixels height scaleValue (pos + incr) incr endPos
   else
     return ()
   where
@@ -70,20 +70,19 @@ drawVRulers tickWidthInPixels height scaleValue pos incr endPos =
     majorTick = 10 * incr
     atMajorTick = pos `mod` majorTick == 0
     -- We cheat at pos 0, to avoid half covering the tick by the grey label area.
-    x1 = if pos == 0 then shifted else pos
-    shifted = ceiling (lineWidth / 2)
     lineWidth = scaleValue
+    x1 = if pos == 0 then ceiling (lineWidth / 2) else pos
 
 
 -- TODO: refactor common parts with renderVRulers
-renderXScale :: Timestamp -> Timestamp -> Double -> Render()
-renderXScale startPos endPos scaleValue = do
+renderXScale :: Timestamp -> Timestamp -> Double -> Int -> Render()
+renderXScale startPos endPos scaleValue yoffset = do
   selectFontFace "sans serif" FontSlantNormal FontWeightNormal
   setFontSize 12
   setSourceRGBAhex blue 1.0
   setLineWidth 1.0
   -- trace (printf "startPos: %d, endPos: %d" startPos endPos) $ do
-  draw_line (startPos, oy) (endPos, oy)
+  draw_line (startPos, yoffset - 16) (endPos, yoffset - 16)
   let timestampFor100Pixels = truncate (100 * scaleValue)  -- ns time for 100 ps
       snappedTickDuration :: Timestamp
       snappedTickDuration =
@@ -98,15 +97,17 @@ renderXScale startPos endPos scaleValue = do
   --     putStrLn ("tickWidthInPixels     = " ++ show tickWidthInPixels)
   --     putStrLn ("snappedTickDuration   = " ++ show snappedTickDuration)
   setLineWidth scaleValue
-  drawXTicks tickWidthInPixels scaleValue firstTick snappedTickDuration endPos
+  drawXTicks
+    tickWidthInPixels scaleValue firstTick snappedTickDuration endPos yoffset
 
 
-drawXTicks :: Int -> Double -> Timestamp -> Timestamp -> Timestamp -> Render ()
-drawXTicks tickWidthInPixels scaleValue pos incr endPos =
+drawXTicks :: Int -> Double -> Timestamp -> Timestamp -> Timestamp -> Int
+              -> Render ()
+drawXTicks tickWidthInPixels scaleValue pos incr endPos yoffset =
   if pos <= endPos then do
-    draw_line (pos + xShift, oy) (pos + xShift, oy + tickLength)
+    draw_line (x1, yoffset - 16) (x1, yoffset - 16 + tickLength)
     when (atMajorTick || atMidTick || tickWidthInPixels > 30) $ do
-      move_to (pos - truncate (scaleValue * 4.0), oy - 10)
+      move_to (pos - truncate (scaleValue * 4.0), yoffset - 26)
       m <- getMatrix
       identityMatrix
       tExtent <- textExtents tickTimeText
@@ -114,7 +115,7 @@ drawXTicks tickWidthInPixels scaleValue pos incr endPos =
       when (isWideEnough tExtent fourPixels || atMajorTick) $
         showText tickTimeText
       setMatrix m
-    drawXTicks tickWidthInPixels scaleValue (pos+incr) incr endPos
+    drawXTicks tickWidthInPixels scaleValue (pos + incr) incr endPos yoffset
   else
     return ()
   where
@@ -128,12 +129,11 @@ drawXTicks tickWidthInPixels scaleValue pos incr endPos =
     majorTick = 10 * incr
     atMajorTick = pos `mod` majorTick == 0
     -- We cheat at pos 0, to avoid half covering the tick by the grey label area.
-    (tickLength, xShift) | pos == 0  = (16, shift)
-                         | atMidTick = (16, 0)
-                         | atMidTick = (12, 0)
-                         | otherwise = (8,  0)
-    shift = ceiling (lineWidth / 2)
     lineWidth = scaleValue
+    x1 = if pos == 0 then ceiling (lineWidth / 2) else pos
+    tickLength | atMajorTick = 16
+               | atMidTick = 12
+               | otherwise = 8
 
 
 -- This display the nano-second time unit with an appropriate suffix

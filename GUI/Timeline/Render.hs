@@ -314,8 +314,9 @@ updateLabelDrawingArea TimelineState{..} maxSparkPool showLabels traces = do
 updateXScaleArea :: TimelineState -> Timestamp -> IO ()
 updateXScaleArea TimelineState{..} lastTx = do
   win <- widgetGetDrawWindow timelineXScaleArea
-  scaleValue <- readIORef scaleIORef
   (rw, _) <- widgetGetSize timelineDrawingArea
+  (_, yoffset) <- widgetGetSize timelineXScaleArea
+  scaleValue <- readIORef scaleIORef
   -- snap the view to whole pixels, to avoid blurring
   hadjValue0 <- adjustmentGetValue timelineAdj
   let hadjValue = toWholePixels scaleValue hadjValue0
@@ -328,7 +329,7 @@ updateXScaleArea TimelineState{..} lastTx = do
     save
     scale (1/scaleValue) 1.0
     translate (-hadjValue) 0
-    renderXScale startPos endPos scaleValue
+    renderXScale startPos endPos scaleValue yoffset
     restore
   return ()
 
