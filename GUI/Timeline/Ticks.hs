@@ -51,25 +51,27 @@ renderVRulers startPos endPos scaleValue height = do
       firstTick = snappedTickDuration * (startPos `div` snappedTickDuration)
   setLineWidth scaleValue
   drawVRulers tickWidthInPixels height scaleValue firstTick
-    snappedTickDuration (10 * snappedTickDuration) endPos
+    snappedTickDuration endPos
 
 
 drawVRulers :: Int -> Int -> Double -> Timestamp -> Timestamp
-               -> Timestamp -> Timestamp -> Render ()
-drawVRulers tickWidthInPixels height scaleValue pos incr majorTick endPos =
+               -> Timestamp -> Render ()
+drawVRulers tickWidthInPixels height scaleValue pos incr endPos =
   if pos <= endPos then do
     when (atMajorTick || atMidTick || tickWidthInPixels > 30) $ do
       draw_line (x1, 0) (x1, height)
       drawVRulers
-        tickWidthInPixels height scaleValue (pos+incr) incr majorTick endPos
+        tickWidthInPixels height scaleValue (pos+incr) incr endPos
   else
     return ()
   where
-    atMidTick = pos `mod` (majorTick `div` 2) == 0
+    midTick = 5 * incr
+    atMidTick = pos `mod`midTick == 0
+    majorTick = 10 * incr
     atMajorTick = pos `mod` majorTick == 0
     -- We cheat at pos 0, to avoid half covering the tick by the grey label area.
     x1 = if pos == 0 then shifted else pos
-    shifted = pos + ceiling (lineWidth / 2)
+    shifted = ceiling (lineWidth / 2)
     lineWidth = scaleValue
 
 
@@ -96,15 +98,13 @@ renderXScale startPos endPos scaleValue = do
   --     putStrLn ("tickWidthInPixels     = " ++ show tickWidthInPixels)
   --     putStrLn ("snappedTickDuration   = " ++ show snappedTickDuration)
   setLineWidth scaleValue
-  drawXTicks tickWidthInPixels scaleValue firstTick
-    snappedTickDuration (10 * snappedTickDuration) endPos
+  drawXTicks tickWidthInPixels scaleValue firstTick snappedTickDuration endPos
 
 
-drawXTicks :: Int -> Double -> Timestamp -> Timestamp
-              -> Timestamp -> Timestamp -> Render ()
-drawXTicks tickWidthInPixels scaleValue pos incr majorTick endPos =
+drawXTicks :: Int -> Double -> Timestamp -> Timestamp -> Timestamp -> Render ()
+drawXTicks tickWidthInPixels scaleValue pos incr endPos =
   if pos <= endPos then do
-    draw_line (x0, y0) (x1, y1)
+    draw_line (pos + xShift, oy) (pos + xShift, oy + tickLength)
     when (atMajorTick || atMidTick || tickWidthInPixels > 30) $ do
       move_to (pos - truncate (scaleValue * 4.0), oy - 10)
       m <- getMatrix
@@ -114,7 +114,7 @@ drawXTicks tickWidthInPixels scaleValue pos incr majorTick endPos =
       when (isWideEnough tExtent fourPixels || atMajorTick) $
         showText tickTimeText
       setMatrix m
-    drawXTicks tickWidthInPixels scaleValue (pos+incr) incr majorTick endPos
+    drawXTicks tickWidthInPixels scaleValue (pos+incr) incr endPos
   else
     return ()
   where
@@ -123,14 +123,16 @@ drawXTicks tickWidthInPixels scaleValue pos incr majorTick endPos =
             else tickWidthInPixels
     isWideEnough tExtent fourPixels =
       textExtentsWidth tExtent + fourPixels < fromIntegral width
-    atMidTick = pos `mod` (majorTick `div` 2) == 0
+    midTick = 5 * incr
+    atMidTick = pos `mod`midTick == 0
+    majorTick = 10 * incr
     atMajorTick = pos `mod` majorTick == 0
     -- We cheat at pos 0, to avoid half covering the tick by the grey label area.
-    (x0, y0, x1, y1) | pos == 0  = (shifted, oy, shifted, oy+16)
-                     | atMidTick = (pos, oy, pos, oy+16)
-                     | atMidTick = (pos, oy, pos, oy+12)
-                     | otherwise = (pos, oy, pos, oy+8)
-    shifted = pos + ceiling (lineWidth / 2)
+    (tickLength, xShift) | pos == 0  = (16, shift)
+                         | atMidTick = (16, 0)
+                         | atMidTick = (12, 0)
+                         | otherwise = (8,  0)
+    shift = ceiling (lineWidth / 2)
     lineWidth = scaleValue
 
 
@@ -212,8 +214,8 @@ renderYScale hecSparksHeight scaleValue maxSpark xoffset yoffset = do
 drawYTicks :: Double -> Int -> Int -> Int -> Int -> Render ()
 drawYTicks maxS pos incr xoffset yoffset =
   if pos <= majorTick then do
-    draw_line (xoffset + x0, yoffset + majorTick - pos)
-              (xoffset + x1, yoffset + majorTick - pos)
+    draw_line (xoffset             , yoffset + majorTick - pos)
+              (xoffset + tickLength, yoffset + majorTick - pos)
     when (atMajorTick || atMidTick) $ do
       m <- getMatrix
       identityMatrix
@@ -233,9 +235,9 @@ drawYTicks maxS pos incr xoffset yoffset =
     atMidTick = pos `mod`midTick == 0
     majorTick = 10 * incr
     atMajorTick = pos `mod` majorTick == 0
-    (x0, x1) | atMajorTick = (0, 13)
-             | atMidTick   = (0, 10)
-             | otherwise   = (0, 6)
+    tickLength | atMajorTick = 13
+               | atMidTick   = 10
+               | otherwise   = 6
     reformatV :: Double -> String
     reformatV v = deZero (printf "%.2f" v)
 
