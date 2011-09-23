@@ -268,10 +268,13 @@ eventLoop uienv@UIEnv{..} eventlogState = do
                           bwMode     = False,
                           labelsMode = False
                         }
-      label_area_width <- timelineGetLabelAreaWidth timelineWin
+      label_area_width  <- timelineGetLabelAreaWidth timelineWin
+      xscale_area_height <- timelineGetXScaleAreaHeight timelineWin
       case format of
-        FormatPDF -> saveAsPDF filename hecs viewParams' label_area_width
-        FormatPNG -> saveAsPNG filename hecs viewParams' label_area_width
+        FormatPDF ->
+          saveAsPDF filename hecs viewParams' label_area_width xscale_area_height
+        FormatPNG ->
+          saveAsPNG filename hecs viewParams' label_area_width xscale_area_height
       continue
 
     dispatch EventAboutDialog _ = do

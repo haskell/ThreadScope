@@ -1,5 +1,5 @@
 module GUI.Timeline.Render.Constants (
-    ox, oy, firstTraceY, tracePad,
+    ox, firstTraceY, tracePad,
     hecTraceHeight, hecSparksHeight, hecBarOff, hecBarHeight, hecLabelExtra,
     activityGraphHeight,
     ticksHeight, ticksPad
@@ -7,13 +7,10 @@ module GUI.Timeline.Render.Constants (
 
 -------------------------------------------------------------------------------
 
--- Origin for graph
+-- The standard gap in various graphs
 
 ox :: Int
 ox = 10
-
-oy :: Int
-oy = 30
 
 -- Origin for traces
 

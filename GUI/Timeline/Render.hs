@@ -7,6 +7,7 @@ module GUI.Timeline.Render (
     calculateTotalTimelineHeight,
     toWholePixels,
     renderLabelArea,
+    renderXScaleArea,
   ) where
 
 import GUI.Timeline.Types
@@ -294,10 +295,25 @@ toWholePixels scale x = fromIntegral (truncate (x / scale)) * scale
 
 -------------------------------------------------------------------------------
 
+-- TODO: refactor all below (deduplicate, rename, move)
 renderLabelArea :: ViewParameters -> HECs -> Double -> Render ()
 renderLabelArea ViewParameters{..} hecs xoffset =
   renderYLabelsAndAxis maxSpkValue (maxSparkPool hecs) xoffset
     0 labelsMode viewTraces
+
+renderXScaleArea :: ViewParameters -> HECs -> Int -> Render ()
+renderXScaleArea  ViewParameters{..} hecs yoffset = do
+  let scale_rw = fromIntegral width * scaleValue
+      startPos :: Timestamp
+      startPos = truncate hadjValue
+      lastTx = hecLastEventTime hecs
+      endPos :: Timestamp
+      endPos = minimum [ceiling (hadjValue + scale_rw), lastTx]
+  save
+  scale (1/scaleValue) 1.0
+  translate (-hadjValue) 0
+  renderXScale startPos endPos scaleValue yoffset
+  restore
 
 updateLabelDrawingArea :: TimelineState -> Double -> Bool -> [Trace] -> IO ()
 updateLabelDrawingArea TimelineState{..} maxSparkPool showLabels traces = do
@@ -314,8 +330,9 @@ updateLabelDrawingArea TimelineState{..} maxSparkPool showLabels traces = do
 updateXScaleArea :: TimelineState -> Timestamp -> IO ()
 updateXScaleArea TimelineState{..} lastTx = do
   win <- widgetGetDrawWindow timelineXScaleArea
-  scaleValue <- readIORef scaleIORef
   (rw, _) <- widgetGetSize timelineDrawingArea
+  (_, yoffset) <- widgetGetSize timelineXScaleArea
+  scaleValue <- readIORef scaleIORef
   -- snap the view to whole pixels, to avoid blurring
   hadjValue0 <- adjustmentGetValue timelineAdj
   let hadjValue = toWholePixels scaleValue hadjValue0
@@ -328,7 +345,7 @@ updateXScaleArea TimelineState{..} lastTx = do
     save
     scale (1/scaleValue) 1.0
     translate (-hadjValue) 0
-    renderXScale startPos endPos scaleValue
+    renderXScale startPos endPos scaleValue yoffset
     restore
   return ()
 
@@ -344,8 +361,6 @@ drawYLabelAndAxis :: Double -> Double -> Double -> Trace -> Int -> Render ()
 drawYLabelAndAxis maxSpkValue maxSparkPool xoffset trace y = do
   setSourceRGBAhex black 1
   move_to (ox, y + 8)
-  m <- getMatrix
-  identityMatrix
   layout <- createLayout $ showTrace trace
   liftIO $ do
     layoutSetWidth layout (Just $ xoffset - 50)
@@ -355,7 +370,6 @@ drawYLabelAndAxis maxSpkValue maxSparkPool xoffset trace y = do
   case traceMaxSpark maxSpkValue maxSparkPool trace of
     Just v  -> renderYScale hecSparksHeight 1 v (xoffset - 13) (fromIntegral y)
     Nothing -> return ()
-  setMatrix m
 
 --------------------------------------------------------------------------------
 

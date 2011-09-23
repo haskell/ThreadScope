@@ -128,11 +128,8 @@ drawActivity hecs start end slice ts = do
      moveTo (dstart-dslice/2) (off t)
      zipWithM_ lineTo (tail [dstart-dslice/2, dstart+dslice/2 ..]) (map off ts)
      setSourceRGBAhex black 1.0
-     save
-     identityMatrix
      setLineWidth 1
      strokePreserve
-     restore
 
      lineTo dend   dheight
      lineTo dstart dheight

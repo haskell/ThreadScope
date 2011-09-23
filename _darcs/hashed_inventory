@@ -1,4 +1,4 @@
-pristine:d16a4ead91236337b9bec4580ae01a92e9a4b9c8917d2169a6a0eff20ecbd3e8
+pristine:61330666c1e242484678f09cd6ad82fc6e5e1c92e0e56f6193e9648a39f26540
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1398,8 +1398,33 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20110921212314
  Ignore-this: 6c004934cf7d870845ca08dc2009ff6b
 ] 
 hash: 0000002278-c2c4e86af8c8d16a884389e8d00878527df701ab1ad1efb7450aa546ef47bb4a
-[Remove a couple of void condition about scaleValue
-Mikolaj Konarski <mikolaj@well-typed.com>**20110921213306
- Ignore-this: ac2cd1080ed342bc35fa71948acf9b80
+[Remove a couple of void conditions about scaleValue
+Mikolaj Konarski <mikolaj@well-typed.com>**20110922062609
+ Ignore-this: 75f4117779a5109c18368ef14cf63063
 ] 
-hash: 0000000685-14b28096c34eb2e10196678a52c8fd276f4956952b16204ea29b0e0546de8b4e
+hash: 0000000686-1a2600945ab6329bf1f94e7bd9eca9e7c5b63ae9fb025979345c40d6e6a08a87
+[Move X scale outside, step 5: simplify and unify X and Y scale drawing
+Mikolaj Konarski <mikolaj@well-typed.com>**20110922070912
+ Ignore-this: 51919110ff4bc90cfa485ee70ddc1ca0
+] 
+hash: 0000003185-1a42ce947d08ecb82da90ef9dab9ce87645760fa4bed53194c4594667775e022
+[Move X scale outside, step 6: parameterize on widget height
+Mikolaj Konarski <mikolaj@well-typed.com>**20110922172307
+ Ignore-this: 283f0940f04e0edd02d8816af0fef4cf
+] 
+hash: 0000003061-0d083802a615dadf928cdca20cb402ec594a9baea9df592c1a82a5bc84720d54
+[Move X scale outside, step 7: tweak widget size and position
+Mikolaj Konarski <mikolaj@well-typed.com>**20110922172355
+ Ignore-this: 53517ee2596523375dc90b454ae3fd84
+] 
+hash: 0000000696-eec8870347acaede3085f14f70b1e17674cc61944ec1763d27b4d7f934c77185
+[Remove spurious occurences of identityMatrix
+Mikolaj Konarski <mikolaj@well-typed.com>**20110923231028
+ Ignore-this: e34ba8054b4ca1cf384f0a17df2fa7d6
+] 
+hash: 0000000760-c805b892374692b66383a7af85a7ecc8638d9f7a2dfde89d43332132b82522ea
+[Move X scale outside, step (8/8): re-add X scale to PDF/PNG
+Mikolaj Konarski <mikolaj@well-typed.com>**20110923231746
+ Ignore-this: 3427dcf19af7418518c0053519ad0bb6
+] 
+hash: 0000005132-4071b40668e0c122ab87ab16d5f99a0b6ae6fdcadf5a80ba1a69ad242d293109
