@@ -345,8 +345,6 @@ drawYLabelAndAxis :: Double -> Double -> Double -> Trace -> Int -> Render ()
 drawYLabelAndAxis maxSpkValue maxSparkPool xoffset trace y = do
   setSourceRGBAhex black 1
   move_to (ox, y + 8)
-  m <- getMatrix
-  identityMatrix
   layout <- createLayout $ showTrace trace
   liftIO $ do
     layoutSetWidth layout (Just $ xoffset - 50)
@@ -356,7 +354,6 @@ drawYLabelAndAxis maxSpkValue maxSparkPool xoffset trace y = do
   case traceMaxSpark maxSpkValue maxSparkPool trace of
     Just v  -> renderYScale hecSparksHeight 1 v (xoffset - 13) (fromIntegral y)
     Nothing -> return ()
-  setMatrix m
 
 --------------------------------------------------------------------------------
 

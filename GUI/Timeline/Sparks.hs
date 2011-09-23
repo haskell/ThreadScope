@@ -120,11 +120,8 @@ outlineSparks maxSliceSpark f start slice ts = do
       moveTo (dstart-dslice/2) (snd $ head t)
       mapM_ (uncurry lineTo) t
       setSourceRGBAhex black 1.0
-      save
-      identityMatrix
       setLineWidth 1
       stroke
-      restore
 
 addSparks :: Color
              -> Double

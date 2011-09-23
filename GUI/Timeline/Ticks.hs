@@ -193,11 +193,7 @@ renderYScale hecSparksHeight scaleValue maxSpark xoffset yoffset = do
   moveTo xoffset yoffset
   lineTo xoffset (yoffset + fromIntegral hecSparksHeight)
   setSourceRGBAhex blue 1.0
-  save
-  identityMatrix
-  setLineWidth 1
   stroke
-  restore
 
   selectFontFace "sans serif" FontSlantNormal FontWeightNormal
   setFontSize 12
@@ -217,15 +213,12 @@ drawYTicks maxS pos incr xoffset yoffset =
     draw_line (xoffset             , yoffset + majorTick - pos)
               (xoffset + tickLength, yoffset + majorTick - pos)
     when (atMajorTick || atMidTick) $ do
-      m <- getMatrix
-      identityMatrix
       tExtent <- textExtents tickText
       (fewPixels, _) <- deviceToUserDistance 8 0
       move_to (xoffset - ceiling (textExtentsWidth tExtent + fewPixels),
                yoffset + majorTick - pos + ceiling (fewPixels / 2))
       when (atMidTick || atMajorTick) $
         showText tickText
-      setMatrix m
     drawYTicks maxS (pos + incr) incr xoffset yoffset
   else
     return ()
