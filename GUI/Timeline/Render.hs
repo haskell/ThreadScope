@@ -7,6 +7,7 @@ module GUI.Timeline.Render (
     calculateTotalTimelineHeight,
     toWholePixels,
     renderLabelArea,
+    renderXScaleArea,
   ) where
 
 import GUI.Timeline.Types
@@ -294,10 +295,25 @@ toWholePixels scale x = fromIntegral (truncate (x / scale)) * scale
 
 -------------------------------------------------------------------------------
 
+-- TODO: refactor all below (deduplicate, rename, move)
 renderLabelArea :: ViewParameters -> HECs -> Double -> Render ()
 renderLabelArea ViewParameters{..} hecs xoffset =
   renderYLabelsAndAxis maxSpkValue (maxSparkPool hecs) xoffset
     0 labelsMode viewTraces
+
+renderXScaleArea :: ViewParameters -> HECs -> Int -> Render ()
+renderXScaleArea  ViewParameters{..} hecs yoffset = do
+  let scale_rw = fromIntegral width * scaleValue
+      startPos :: Timestamp
+      startPos = truncate hadjValue
+      lastTx = hecLastEventTime hecs
+      endPos :: Timestamp
+      endPos = minimum [ceiling (hadjValue + scale_rw), lastTx]
+  save
+  scale (1/scaleValue) 1.0
+  translate (-hadjValue) 0
+  renderXScale startPos endPos scaleValue yoffset
+  restore
 
 updateLabelDrawingArea :: TimelineState -> Double -> Bool -> [Trace] -> IO ()
 updateLabelDrawingArea TimelineState{..} maxSparkPool showLabels traces = do
