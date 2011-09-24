@@ -99,7 +99,7 @@ data Event
    | EventTimelineZoomIn
    | EventTimelineZoomOut
    | EventTimelineZoomToFit
-   | EventTimelineShowLabels Bool
+   | EventTimelineLabelsMode Bool
    | EventTimelineShowBW     Bool
 
    | EventCursorChangedIndex     Int
@@ -139,7 +139,7 @@ constructUI = failOnGError $ do
     mainWinJumpZoomIn    = post EventTimelineZoomIn,
     mainWinJumpZoomOut   = post EventTimelineZoomOut,
     mainWinJumpZoomFit   = post EventTimelineZoomToFit,
-    mainWinDisplayLabels = post . EventTimelineShowLabels,
+    mainWinDisplayLabels = post . EventTimelineLabelsMode,
     mainWinViewBW        = post . EventTimelineShowBW
   }
 
@@ -322,8 +322,8 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       timelineZoomToFit timelineWin
       continue
 
-    dispatch (EventTimelineShowLabels showLabels) _ = do
-      timelineSetShowLabels timelineWin showLabels
+    dispatch (EventTimelineLabelsMode labelsMode) _ = do
+      timelineSetLabelsMode timelineWin labelsMode
       continue
 
     dispatch (EventTimelineShowBW showBW) _ = do

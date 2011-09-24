@@ -284,7 +284,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToggleToolButton" id="cpus_showlabels">
+              <object class="GtkToggleToolButton" id="cpus_labels_mode">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">Display labels</property>

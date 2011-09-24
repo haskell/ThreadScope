@@ -316,20 +316,20 @@ renderYScaleArea ViewParameters{..} hecs xoffset =
     0 labelsMode viewTraces
 
 updateYScaleArea :: TimelineState -> Double -> Bool -> [Trace] -> IO ()
-updateYScaleArea TimelineState{..} maxSparkPool showLabels traces = do
+updateYScaleArea TimelineState{..} maxSparkPool labelsMode traces = do
   win <- widgetGetDrawWindow timelineYScaleArea
   maxSpkValue  <- readIORef maxSpkIORef
   vadj_value   <- adjustmentGetValue timelineVAdj
   (xoffset, _) <- widgetGetSize timelineYScaleArea
   renderWithDrawable win $
     drawYScaleArea maxSpkValue maxSparkPool (fromIntegral xoffset)
-      vadj_value showLabels traces
+      vadj_value labelsMode traces
 
 drawYScaleArea :: Double -> Double -> Double ->  Double -> Bool -> [Trace]
                         -> Render ()
-drawYScaleArea maxSpkValue maxSparkPool xoffset vadj_value showLabels traces =
+drawYScaleArea maxSpkValue maxSparkPool xoffset vadj_value labelsMode traces =
   let ys = map (subtract (round vadj_value)) $
-             traceYPositions showLabels traces
+             traceYPositions labelsMode traces
   in zipWithM_ (drawSingleYScale maxSpkValue maxSparkPool xoffset) traces ys
 
 drawSingleYScale :: Double -> Double -> Double -> Trace -> Int -> Render ()
@@ -349,10 +349,10 @@ drawSingleYScale maxSpkValue maxSparkPool xoffset trace y = do
 --------------------------------------------------------------------------------
 
 traceYPositions :: Bool -> [Trace] -> [Int]
-traceYPositions showLabels traces =
+traceYPositions labelsMode traces =
   scanl (\a b -> a + (traceHeight b) + extra + tracePad) firstTraceY traces
     where
-      extra = if showLabels then hecLabelExtra else 0
+      extra = if labelsMode then hecLabelExtra else 0
       traceHeight TraceHEC{}           = hecTraceHeight
       traceHeight SparkCreationHEC{}   = hecSparksHeight
       traceHeight SparkConversionHEC{} = hecSparksHeight
@@ -361,8 +361,8 @@ traceYPositions showLabels traces =
       traceHeight _ = 0
 
 calculateTotalTimelineHeight :: Bool -> [Trace] -> Int
-calculateTotalTimelineHeight showLabels traces =
- last (traceYPositions showLabels traces)
+calculateTotalTimelineHeight labelsMode traces =
+ last (traceYPositions labelsMode traces)
 
 showTrace :: Trace -> String
 showTrace (TraceHEC n) =

@@ -4,7 +4,7 @@ module GUI.Timeline (
     TimelineViewActions(..),
 
     timelineSetBWMode,
-    timelineSetShowLabels,
+    timelineSetLabelsMode,
     timelineGetViewParameters,
     timelineGetYScaleAreaWidth,
     timelineGetXScaleAreaHeight,
@@ -50,7 +50,7 @@ data TimelineView = TimelineView {
        bookmarkIORef   :: IORef [Timestamp],
 
        selectionRef    :: IORef TimeSelection,
-       showLabelsIORef :: IORef Bool,
+       labelsModeIORef :: IORef Bool,
        bwmodeIORef     :: IORef Bool,
 
        cursorIBeam     :: Cursor,
@@ -67,13 +67,13 @@ timelineSetBWMode timelineWin bwmode = do
   writeIORef (bwmodeIORef timelineWin) bwmode
   widgetQueueDraw (timelineDrawingArea (timelineState timelineWin))
 
-timelineSetShowLabels :: TimelineView -> Bool -> IO ()
-timelineSetShowLabels timelineWin showLabels = do
-  writeIORef (showLabelsIORef timelineWin) showLabels
+timelineSetLabelsMode :: TimelineView -> Bool -> IO ()
+timelineSetLabelsMode timelineWin labelsMode = do
+  writeIORef (labelsModeIORef timelineWin) labelsMode
   widgetQueueDraw (timelineDrawingArea (timelineState timelineWin))
 
 timelineGetViewParameters :: TimelineView -> IO ViewParameters
-timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, showLabelsIORef,
+timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, labelsModeIORef,
                                        timelineState=TimelineState{..}} = do
 
   (w, _) <- widgetGetSize timelineDrawingArea
@@ -86,9 +86,9 @@ timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, showLabelsIORef
 
   traces <- readIORef tracesIORef
   bwmode <- readIORef bwmodeIORef
-  showLabels <- readIORef showLabelsIORef
+  labelsMode <- readIORef labelsModeIORef
 
-  let timelineHeight = calculateTotalTimelineHeight showLabels traces
+  let timelineHeight = calculateTotalTimelineHeight labelsMode traces
 
   return ViewParameters {
            width      = w,
@@ -99,7 +99,7 @@ timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, showLabelsIORef
            maxSpkValue = maxSpkValue,
            detail     = 3, --for now
            bwMode     = bwmode,
-           labelsMode = showLabels
+           labelsMode = labelsMode
          }
 
 timelineGetYScaleAreaWidth :: TimelineView -> IO Double
@@ -153,7 +153,7 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
   maxSpkIORef <- newIORef 0
   selectionRef <- newIORef (PointSelection 0)
   bwmodeIORef <- newIORef False
-  showLabelsIORef <- newIORef False
+  labelsModeIORef <- newIORef False
   timelinePrevView <- newIORef Nothing
 
   let timelineState = TimelineState{..}
@@ -169,9 +169,9 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
       Nothing   -> return False
       Just hecs -> do
         traces <- readIORef tracesIORef
-        showLabels <- readIORef showLabelsIORef
+        labelsMode <- readIORef labelsModeIORef
         let maxP = maxSparkPool hecs
-        updateYScaleArea timelineState maxP showLabels traces
+        updateYScaleArea timelineState maxP labelsMode traces
         return True
 
   ------------------------------------------------------------------------
@@ -332,10 +332,10 @@ configureTimelineDrawingArea timelineWin@TimelineView{timelineState} = do
   updateTimelineHPageSize timelineState
 
 updateTimelineVScroll :: TimelineView -> IO ()
-updateTimelineVScroll TimelineView{tracesIORef, showLabelsIORef, timelineState=TimelineState{..}} = do
+updateTimelineVScroll TimelineView{tracesIORef, labelsModeIORef, timelineState=TimelineState{..}} = do
   traces <- readIORef tracesIORef
-  showLabels <- readIORef showLabelsIORef
-  let h = calculateTotalTimelineHeight showLabels traces
+  labelsMode <- readIORef labelsModeIORef
+  let h = calculateTotalTimelineHeight labelsMode traces
   (_,winh) <- widgetGetSize timelineDrawingArea
   let winh' = fromIntegral winh; h' = fromIntegral h
   adjustmentSetLower    timelineVAdj 0
