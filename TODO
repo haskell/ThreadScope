@@ -11,8 +11,8 @@ BUGS:
 - resizing the panes causes a grab lockup?
 
 - fix, rewrite or disable partial redrawing of the graphs pane
-that causes many of the graphical bugs reported in ThreadScope/TODO
-and/or rewrite drawing to sidestep the fixed point precision problem of cairo
+  that causes many of the graphical bugs reported in ThreadScope/TODO
+  and/or rewrite drawing to sidestep the fixed point precision problem of cairo
 
 - scrolling to the right, we get some over-rendering at the boundary
   causing a thick line
@@ -49,10 +49,14 @@ and/or rewrite drawing to sidestep the fixed point precision problem of cairo
 - ticking the trace boxes off sometimes shows a black rectangle in place
   of the switched off graph
 
+- the Activity graph continues past the end of event samples to the right
+(visible in high zoom out); the horizontal and vertical rulers do too
+(but they don't look so bad)
+
 
 OTHER:
 
-- up and down scroll keys should work on timelineLabelDrawingArea too
+- up and down scroll keys should work on XScale and YScale areas too
 
 - sort bookmark view by time?
 
@@ -100,9 +104,6 @@ and uniformity, except trivial cases)
 - remove the grey halo in trivial cases of pool size,
 like the line:  ___/----, but keep min/max for ___/\___
 
-- review and document vertical scales and pool size graph code,
-after they are rewritten
-
 - in the key, label the coloured areas, according to what they represent
 the title of the plot is "spark creation rate" and the key will have things
 for each colour; separate sections of the Key for
@@ -129,6 +130,17 @@ showing how much pictures space corresponds to how many sparks (should be
 probably constant)) or (this one implemented currently:)
 start with the best scale for the complete view
 and the let the peaks be clipped, let the user manually readjust scale then
+
+- limit the use of save/restore and similar crude hacks
+
+- in zoom out, activity and spark graphs seem cut off at the ends,
+which is mathematically correct, but one more slice or even pixel
+on each end would make it look better, without compromising correctness
+too much (just make sure the extra space does not grow with zoom level!);
+the sparks and Activity are already rendered with (up to?) one extra slice
+at the ends, but somehow this does not show (perhaps one is not enough)
+
+- perhaps enlarge the main timeline canvas to the right to the nearest tick
 
 
 IDEAS FOR FUTURE WORK:

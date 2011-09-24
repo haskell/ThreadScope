@@ -11,32 +11,25 @@ module GUI.Timeline.Ticks (
 import GUI.Timeline.Render.Constants
 import GUI.Timeline.CairoDrawing
 import GUI.ViewerColours
-
-import Graphics.Rendering.Cairo
-
--- Imports for GHC Events
 import GHC.RTS.Events hiding (Event)
 
+import Graphics.Rendering.Cairo
 import Control.Monad
 import Text.Printf
 
--- import Debug.Trace
-
--- Minor, semi-major and major ticks are drawn and the absolute periods of
+-- Minor, semi-major and major ticks are drawn and the absolute period of
 -- the ticks is determined by the zoom level.
 -- There are ten minor ticks to a major tick and a semi-major tick
 -- occurs half way through a major tick (overlapping the corresponding
 -- minor tick).
-
 -- The timestamp values are in nanos-seconds (1e-9) i.e.
--- a timestamp value of 1000000000 represents 1s.
--- The position on the drawing canvas is in milliseconds (ms) (1e-3).
-
+-- a timestamp value of 1000000000 represents 1s.The position on the drawing
+-- canvas is in milliseconds (ms) (1e-3).
 -- scaleValue is used to divide a timestamp value to yield a pixel value.
-
 -- NOTE: the code below will crash if the timestampFor100Pixels is 0.
 -- The zoom factor should be controlled to ensure that this never happens.
 
+-- | Render vertical rulers (solid translucent lines), matching scale ticks.
 renderVRulers :: Timestamp -> Timestamp -> Double -> Int -> Render()
 renderVRulers startPos endPos scaleValue height = do
   setSourceRGBAhex blue 0.2
@@ -53,7 +46,7 @@ renderVRulers startPos endPos scaleValue height = do
   drawVRulers tickWidthInPixels height scaleValue firstTick
     snappedTickDuration endPos
 
-
+-- | Render a single vertical ruler and then recurse.
 drawVRulers :: Int -> Int -> Double -> Timestamp -> Timestamp
                -> Timestamp -> Render ()
 drawVRulers tickWidthInPixels height scaleValue pos incr endPos =
@@ -73,8 +66,9 @@ drawVRulers tickWidthInPixels height scaleValue pos incr endPos =
     lineWidth = scaleValue
     x1 = if pos == 0 then ceiling (lineWidth / 2) else pos
 
-
--- TODO: refactor common parts with renderVRulers
+-- | Render the X (vertical) scale: render X axis and call ticks rendering.
+-- TODO: refactor common parts with renderVRulers, in particlar to expose
+-- that ruler positions match tick positions.
 renderXScale :: Double -> Double -> Int -> Timestamp -> Int -> Render()
 renderXScale scaleValue hadjValue width lastTx yoffset = do
   let scale_width = fromIntegral width * scaleValue
@@ -89,7 +83,6 @@ renderXScale scaleValue hadjValue width lastTx yoffset = do
   setFontSize 12
   setSourceRGBAhex blue 1.0
   setLineWidth 1.0
-  -- trace (printf "startPos: %d, endPos: %d" startPos endPos) $ do
   draw_line (startPos, yoffset - 16) (endPos, yoffset - 16)
   let timestampFor100Pixels = truncate (100 * scaleValue)  -- ns time for 100 ps
       snappedTickDuration :: Timestamp
@@ -100,16 +93,12 @@ renderXScale scaleValue hadjValue width lastTx yoffset = do
         truncate ((fromIntegral snappedTickDuration) / scaleValue)
       firstTick :: Timestamp
       firstTick = snappedTickDuration * (startPos `div` snappedTickDuration)
-  -- liftIO $
-  --   do putStrLn ("timestampFor100Pixels = " ++ show timestampFor100Pixels)
-  --     putStrLn ("tickWidthInPixels     = " ++ show tickWidthInPixels)
-  --     putStrLn ("snappedTickDuration   = " ++ show snappedTickDuration)
   setLineWidth scaleValue
   drawXTicks
     tickWidthInPixels scaleValue firstTick snappedTickDuration endPos yoffset
   restore
 
-
+-- | Render a single X scale tick and then recurse.
 drawXTicks :: Int -> Double -> Timestamp -> Timestamp -> Timestamp -> Int
               -> Render ()
 drawXTicks tickWidthInPixels scaleValue pos incr endPos yoffset =
@@ -144,8 +133,7 @@ drawXTicks tickWidthInPixels scaleValue pos incr endPos yoffset =
                | atMidTick = 12
                | otherwise = 8
 
-
--- This display the nano-second time unit with an appropriate suffix
+-- | Display the nano-second time unit with an appropriate suffix
 -- depending on the actual time value.
 -- For times < 1e-6 the time is shown in micro-seconds.
 -- For times >= 1e-6 and < 0.1 seconds the time is shown in ms
@@ -167,13 +155,8 @@ showMultiTime pos =
 
 -------------------------------------------------------------------------------
 
--- There are ten minor ticks to a major tick and a semi-major tick
--- occurs half way through a major tick (overlapping the corresponding
--- minor tick).
--- The timestamp values are in nanoseconds (1e-9), i.e.,
--- a timestamp value of 1000000000 represents 1s.
--- The x-position on the drawing canvas is in milliseconds (ms) (1e-3).
--- scaleValue is used to divide a timestamp value to yield a pixel value.
+-- | Render horizontal rulers (dashed translucent lines),
+-- matching scale ticks (visible in the common @incr@ value and starting at 0).
 renderHRulers :: Int -> Timestamp -> Timestamp -> Render ()
 renderHRulers hecSparksHeight start end = do
   let dstart = fromIntegral start
@@ -189,7 +172,8 @@ renderHRulers hecSparksHeight start end = do
     dashedLine1
   restore
 
-
+-- | Render one of the Y (horizontal) scales: render the Y axis
+-- and call ticks rendering.
 renderYScale :: Int -> Double -> Double -> Double -> Double -> Render ()
 renderYScale hecSparksHeight scaleValue maxSpark xoffset yoffset = do
   let -- This is slightly off (by 1% at most), but often avoids decimal dot:
@@ -215,7 +199,7 @@ renderYScale hecSparksHeight scaleValue maxSpark xoffset yoffset = do
   drawYTicks maxS 0 incr xoff yoff
   restore
 
-
+-- | Render a single Y scale tick and then recurse.
 drawYTicks :: Double -> Int -> Int -> Int -> Int -> Render ()
 drawYTicks maxS pos incr xoffset yoffset =
   if pos <= majorTick then do
@@ -245,6 +229,7 @@ drawYTicks maxS pos incr xoffset yoffset =
 
 -------------------------------------------------------------------------------
 
+-- | The 'micro' symbol.
 mu :: String
 #if MIN_VERSION_cairo(0,12,0) && !MIN_VERSION_cairo(0,12,1)
 -- this version of cairo doesn't handle Unicode properly.
@@ -255,14 +240,14 @@ mu = "\194\181"
 mu = "\x00b5"
 #endif
 
-
+-- | Remove all meaningless trailing zeroes.
 deZero :: String -> String
 deZero s
   | '.' `elem` s =
     reverse . dropWhile (=='.') . dropWhile (=='0') . reverse $ s
   | otherwise = s
 
-
+-- | Draw a dashed line along the current path.
 dashedLine1 :: Render ()
 dashedLine1 = do
   save

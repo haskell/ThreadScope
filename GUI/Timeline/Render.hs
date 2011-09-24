@@ -196,7 +196,7 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                    hecLastEventTime hecs
                 ]
 
-        -- Round the start time down, and the end time up,
+        -- For spark traces, round the start time down, and the end time up,
         -- to a slice boundary:
         start = (startPos `div` slice) * slice
         end = ((endPos + slice) `div` slice) * slice
@@ -229,7 +229,7 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                _   ->
                  return ()
             restore
-      -- Now rennder all the HECs.
+      -- Now render all the HECs.
       zipWithM_ renderTrace viewTraces (traceYPositions labelsMode viewTraces)
 
 -------------------------------------------------------------------------------
@@ -288,20 +288,22 @@ scrollView surface old new hecs = do
 
 --------------------------------------------------------------------------------
 
+-- | Render the X scale, based on view parameters and hecs.
 renderXScaleArea :: ViewParameters -> HECs -> Int -> Render ()
-renderXScaleArea  ViewParameters{..} hecs yoffset = do
+renderXScaleArea  ViewParameters{..} hecs yoffset =
   let lastTx = hecLastEventTime hecs
-  renderXScale scaleValue hadjValue width lastTx yoffset
+  in renderXScale scaleValue hadjValue width lastTx yoffset
 
--- For simplicity, unlike for the traces, we redraw the whole area,
--- not only the newly exposed one.
+-- | Update the X scale widget, based on the state of all timeline areas.
+-- For simplicity, unlike for the traces, we redraw the whole area
+-- and not only the newly exposed area. This is comparatively very cheap.
 updateXScaleArea :: TimelineState -> Timestamp -> IO ()
 updateXScaleArea TimelineState{..} lastTx = do
   win <- widgetGetDrawWindow timelineXScaleArea
   (width, _) <- widgetGetSize timelineDrawingArea
   (_, yoffset) <- widgetGetSize timelineXScaleArea
   scaleValue <- readIORef scaleIORef
-  -- snap the view to whole pixels, to avoid blurring
+  -- Snap the view to whole pixels, to avoid blurring.
   hadjValue0 <- adjustmentGetValue timelineAdj
   let hadjValue = toWholePixels scaleValue hadjValue0
   renderWithDrawable win $
@@ -310,11 +312,15 @@ updateXScaleArea TimelineState{..} lastTx = do
 
 --------------------------------------------------------------------------------
 
+-- | Render the Y scale area (an axis, ticks and a label for each graph),
+-- based on view parameters and hecs.
 renderYScaleArea :: ViewParameters -> HECs -> Double -> Render ()
 renderYScaleArea ViewParameters{..} hecs xoffset =
   drawYScaleArea maxSpkValue (maxSparkPool hecs) xoffset
     0 labelsMode viewTraces
 
+-- | Update the Y scale widget, based on the state of all timeline areas
+-- and on traces (only for graph labels and relative positions).
 updateYScaleArea :: TimelineState -> Double -> Bool -> [Trace] -> IO ()
 updateYScaleArea TimelineState{..} maxSparkPool labelsMode traces = do
   win <- widgetGetDrawWindow timelineYScaleArea
@@ -325,13 +331,17 @@ updateYScaleArea TimelineState{..} maxSparkPool labelsMode traces = do
     drawYScaleArea maxSpkValue maxSparkPool (fromIntegral xoffset)
       vadj_value labelsMode traces
 
-drawYScaleArea :: Double -> Double -> Double ->  Double -> Bool -> [Trace]
-                        -> Render ()
+-- | Render the Y scale area, by rendering an axis, ticks and a label
+-- for each graph-like trace in turn (and only labels for other traces).
+drawYScaleArea :: Double -> Double -> Double -> Double -> Bool -> [Trace]
+                  -> Render ()
 drawYScaleArea maxSpkValue maxSparkPool xoffset vadj_value labelsMode traces =
   let ys = map (subtract (round vadj_value)) $
              traceYPositions labelsMode traces
   in zipWithM_ (drawSingleYScale maxSpkValue maxSparkPool xoffset) traces ys
 
+-- | Render a single Y scale axis, set of ticks and label, or only a label,
+-- if the trace is not a graph.
 drawSingleYScale :: Double -> Double -> Double -> Trace -> Int -> Render ()
 drawSingleYScale maxSpkValue maxSparkPool xoffset trace y = do
   setSourceRGBAhex black 1
@@ -344,10 +354,11 @@ drawSingleYScale maxSpkValue maxSparkPool xoffset trace y = do
   showLayout layout
   case traceMaxSpark maxSpkValue maxSparkPool trace of
     Just v  -> renderYScale hecSparksHeight 1 v (xoffset - 13) (fromIntegral y)
-    Nothing -> return ()
+    Nothing -> return ()  -- not a graph-like trace
 
 --------------------------------------------------------------------------------
 
+-- | Calculate Y positions of all traces.
 traceYPositions :: Bool -> [Trace] -> [Int]
 traceYPositions labelsMode traces =
   scanl (\a b -> a + (traceHeight b) + extra + tracePad) firstTraceY traces
@@ -360,10 +371,12 @@ traceYPositions labelsMode traces =
       traceHeight TraceActivity        = activityGraphHeight
       traceHeight _ = 0
 
+-- | Calculate the total Y span of all traces.
 calculateTotalTimelineHeight :: Bool -> [Trace] -> Int
 calculateTotalTimelineHeight labelsMode traces =
  last (traceYPositions labelsMode traces)
 
+-- | Produce a descriptive label for a trace.
 showTrace :: Trace -> String
 showTrace (TraceHEC n) =
   "HEC " ++ show n
@@ -377,12 +390,14 @@ showTrace TraceActivity =
   "Activity"
 showTrace _ = error "Render.showTrace"
 
+-- | Calcaulate the maximal Y value for a graph-like trace, or Nothing.
 traceMaxSpark :: Double -> Double -> Trace -> Maybe Double
 traceMaxSpark maxS _ SparkCreationHEC{}   = Just $ maxS * 1000000
 traceMaxSpark maxS _ SparkConversionHEC{} = Just $ maxS * 1000000
 traceMaxSpark _ maxP SparkPoolHEC{}       = Just $ maxP
 traceMaxSpark _ _ _ = Nothing
 
+-- | Snap a value to a whole pixel, based on drawing scale.
 toWholePixels :: Double -> Double -> Double
 toWholePixels 0     _ = 0
 toWholePixels scale x = fromIntegral (truncate (x / scale)) * scale
