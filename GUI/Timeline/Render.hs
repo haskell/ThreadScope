@@ -2,11 +2,11 @@
 module GUI.Timeline.Render (
     renderView,
     renderTraces,
-    updateLabelDrawingArea,
+    updateYScaleArea,
     updateXScaleArea,
     calculateTotalTimelineHeight,
     toWholePixels,
-    renderLabelArea,
+    renderYScaleArea,
     renderXScaleArea,
   ) where
 
@@ -288,10 +288,10 @@ scrollView surface old new hecs = do
 
 -------------------------------------------------------------------------------
 
--- TODO: refactor all below (deduplicate, rename, move)
-renderLabelArea :: ViewParameters -> HECs -> Double -> Render ()
-renderLabelArea ViewParameters{..} hecs xoffset =
-  renderYLabelsAndAxis maxSpkValue (maxSparkPool hecs) xoffset
+-- TODO: refactor all below (deduplicate, move)
+renderYScaleArea :: ViewParameters -> HECs -> Double -> Render ()
+renderYScaleArea ViewParameters{..} hecs xoffset =
+  drawYScaleArea maxSpkValue (maxSparkPool hecs) xoffset
     0 labelsMode viewTraces
 
 renderXScaleArea :: ViewParameters -> HECs -> Int -> Render ()
@@ -308,14 +308,14 @@ renderXScaleArea  ViewParameters{..} hecs yoffset = do
   renderXScale startPos endPos scaleValue yoffset
   restore
 
-updateLabelDrawingArea :: TimelineState -> Double -> Bool -> [Trace] -> IO ()
-updateLabelDrawingArea TimelineState{..} maxSparkPool showLabels traces = do
-  win <- widgetGetDrawWindow timelineLabelDrawingArea
-  maxSpkValue <- readIORef maxSpkIORef
-  vadj_value  <- adjustmentGetValue timelineVAdj
-  (xoffset, _) <- widgetGetSize timelineLabelDrawingArea
+updateYScaleArea :: TimelineState -> Double -> Bool -> [Trace] -> IO ()
+updateYScaleArea TimelineState{..} maxSparkPool showLabels traces = do
+  win <- widgetGetDrawWindow timelineYScaleArea
+  maxSpkValue  <- readIORef maxSpkIORef
+  vadj_value   <- adjustmentGetValue timelineVAdj
+  (xoffset, _) <- widgetGetSize timelineYScaleArea
   renderWithDrawable win $
-    renderYLabelsAndAxis maxSpkValue maxSparkPool (fromIntegral xoffset)
+    drawYScaleArea maxSpkValue maxSparkPool (fromIntegral xoffset)
       vadj_value showLabels traces
 
 -- For simplicity, unlike for the traces, we redraw the whole area,
@@ -342,16 +342,15 @@ updateXScaleArea TimelineState{..} lastTx = do
     restore
   return ()
 
-renderYLabelsAndAxis :: Double -> Double -> Double ->  Double -> Bool -> [Trace]
+drawYScaleArea :: Double -> Double -> Double ->  Double -> Bool -> [Trace]
                         -> Render ()
-renderYLabelsAndAxis maxSpkValue maxSparkPool xoffset
-                     vadj_value showLabels traces =
+drawYScaleArea maxSpkValue maxSparkPool xoffset vadj_value showLabels traces =
   let ys = map (subtract (round vadj_value)) $
              traceYPositions showLabels traces
-  in zipWithM_ (drawYLabelAndAxis maxSpkValue maxSparkPool xoffset) traces ys
+  in zipWithM_ (drawSingleYScale maxSpkValue maxSparkPool xoffset) traces ys
 
-drawYLabelAndAxis :: Double -> Double -> Double -> Trace -> Int -> Render ()
-drawYLabelAndAxis maxSpkValue maxSparkPool xoffset trace y = do
+drawSingleYScale :: Double -> Double -> Double -> Trace -> Int -> Render ()
+drawSingleYScale maxSpkValue maxSparkPool xoffset trace y = do
   setSourceRGBAhex black 1
   move_to (ox, y + 8)
   layout <- createLayout $ showTrace trace

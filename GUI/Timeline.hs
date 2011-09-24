@@ -104,7 +104,7 @@ timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, showLabelsIORef
 
 timelineGetYScaleAreaWidth :: TimelineView -> IO Double
 timelineGetYScaleAreaWidth timelineWin = do
-  (w, _) <- widgetGetSize $ timelineLabelDrawingArea $ timelineState timelineWin
+  (w, _) <- widgetGetSize $ timelineYScaleArea $ timelineState timelineWin
   return $ fromIntegral w
 
 timelineGetXScaleAreaHeight :: TimelineView -> IO Double
@@ -134,14 +134,14 @@ timelineViewNew :: Builder -> TimelineViewActions -> IO TimelineView
 timelineViewNew builder actions@TimelineViewActions{..} = do
 
   let getWidget cast = builderGetObject builder cast
-  timelineViewport         <- getWidget castToWidget "timeline_viewport"
-  timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
-  timelineLabelDrawingArea <- getWidget castToDrawingArea "timeline_labels_drawingarea"
-  timelineXScaleArea       <- getWidget castToDrawingArea "timeline_labels_drawingarea2"
-  timelineHScrollbar       <- getWidget castToHScrollbar "timeline_hscroll"
-  timelineVScrollbar       <- getWidget castToVScrollbar "timeline_vscroll"
-  timelineAdj              <- rangeGetAdjustment timelineHScrollbar
-  timelineVAdj             <- rangeGetAdjustment timelineVScrollbar
+  timelineViewport    <- getWidget castToWidget "timeline_viewport"
+  timelineDrawingArea <- getWidget castToDrawingArea "timeline_drawingarea"
+  timelineYScaleArea  <- getWidget castToDrawingArea "timeline_yscale_area"
+  timelineXScaleArea  <- getWidget castToDrawingArea "timeline_xscale_area"
+  timelineHScrollbar  <- getWidget castToHScrollbar "timeline_hscroll"
+  timelineVScrollbar  <- getWidget castToVScrollbar "timeline_vscroll"
+  timelineAdj         <- rangeGetAdjustment timelineHScrollbar
+  timelineVAdj        <- rangeGetAdjustment timelineVScrollbar
 
   cursorIBeam <- cursorNew Xterm
   cursorMove  <- cursorNew Fleur
@@ -161,7 +161,7 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
 
   ------------------------------------------------------------------------
   -- Redrawing labelDrawingArea
-  timelineLabelDrawingArea `onExpose` \_ -> do
+  timelineYScaleArea `onExpose` \_ -> do
     maybeEventArray <- readIORef hecsIORef
 
     -- Check to see if an event trace has been loaded
@@ -171,7 +171,7 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
         traces <- readIORef tracesIORef
         showLabels <- readIORef showLabelsIORef
         let maxP = maxSparkPool hecs
-        updateLabelDrawingArea timelineState maxP showLabels traces
+        updateYScaleArea timelineState maxP showLabels traces
         return True
 
   ------------------------------------------------------------------------
@@ -317,7 +317,7 @@ viewRangeToTimeRange view (x, x') = do
 queueRedrawTimelines :: TimelineState -> IO ()
 queueRedrawTimelines TimelineState{..} = do
   widgetQueueDraw timelineDrawingArea
-  widgetQueueDraw timelineLabelDrawingArea
+  widgetQueueDraw timelineYScaleArea
   widgetQueueDraw timelineXScaleArea
 
 --FIXME: we are still unclear about which state changes involve which updates

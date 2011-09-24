@@ -1,7 +1,7 @@
 module GUI.SaveAs (saveAsPDF, saveAsPNG) where
 
 -- Imports for ThreadScope
-import GUI.Timeline.Render (renderTraces, renderLabelArea, renderXScaleArea)
+import GUI.Timeline.Render (renderTraces, renderYScaleArea, renderXScaleArea)
 import GUI.Types
 import Events.HECs
 
@@ -20,10 +20,10 @@ saveAs hecs params yScaleAreaWidth xScaleAreaHeight =
       drawXScale =
         renderXScaleArea params hecs (ceiling xScaleAreaHeight)
       drawYScale =
-        renderLabelArea params hecs yScaleAreaWidth
+        renderYScaleArea params hecs yScaleAreaWidth
       -- Functions renderTraces and renderXScaleArea draw to the left of 0
       -- which is not seen in the normal mode, but would be seen in export,
-      -- so it has to be cleared before renderLabelArea is written on top:
+      -- so it has to be cleared before renderYScaleArea is written on top:
       clearLeftArea = do
         rectangle 0 0 yScaleAreaWidth (fromIntegral h')
         op <- getOperator
