@@ -17,7 +17,6 @@ import GUI.ViewerColours
 import GUI.Timeline.Ticks (renderHRulers)
 
 import Graphics.Rendering.Cairo
-import Graphics.UI.Gtk
 
 -- import Text.Printf
 

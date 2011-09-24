@@ -3,7 +3,7 @@
 --- $Source: //depot/satnams/haskell/ThreadScope/ViewerColours.hs $
 -------------------------------------------------------------------------------
 
-module GUI.ViewerColours where
+module GUI.ViewerColours (Color, module GUI.ViewerColours) where
 
 import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo
