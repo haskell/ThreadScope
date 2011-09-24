@@ -6,7 +6,7 @@ module GUI.Timeline (
     timelineSetBWMode,
     timelineSetShowLabels,
     timelineGetViewParameters,
-    timelineGetLabelAreaWidth,
+    timelineGetYScaleAreaWidth,
     timelineGetXScaleAreaHeight,
     timelineWindowSetHECs,
     timelineWindowSetTraces,
@@ -102,8 +102,8 @@ timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, showLabelsIORef
            labelsMode = showLabels
          }
 
-timelineGetLabelAreaWidth :: TimelineView -> IO Double
-timelineGetLabelAreaWidth timelineWin = do
+timelineGetYScaleAreaWidth :: TimelineView -> IO Double
+timelineGetYScaleAreaWidth timelineWin = do
   (w, _) <- widgetGetSize $ timelineLabelDrawingArea $ timelineState timelineWin
   return $ fromIntegral w
 

@@ -9,60 +9,47 @@ import Events.HECs
 import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo
 
--------------------------------------------------------------------------------
+saveAs :: HECs -> ViewParameters -> Double -> Double -> (Int, Int, Render ())
+saveAs hecs params yScaleAreaWidth xScaleAreaHeight =
+  let w = width params
+      h = height params
+      w' = ceiling yScaleAreaWidth + w
+      h' = ceiling xScaleAreaHeight + h
+      drawTraces =
+        renderTraces params hecs (Rectangle 0 0 w h)
+      drawXScale =
+        renderXScaleArea params hecs (ceiling xScaleAreaHeight)
+      drawYScale =
+        renderLabelArea params hecs yScaleAreaWidth
+      -- Functions renderTraces and renderXScaleArea draw to the left of 0
+      -- which is not seen in the normal mode, but would be seen in export,
+      -- so it has to be cleared before renderLabelArea is written on top:
+      clearLeftArea = do
+        rectangle 0 0 yScaleAreaWidth (fromIntegral h')
+        op <- getOperator
+        setOperator OperatorClear
+        fill
+        setOperator op
+      drawAll = do
+        translate yScaleAreaWidth xScaleAreaHeight
+        drawTraces
+        translate 0 (-xScaleAreaHeight)
+        drawXScale
+        translate (-yScaleAreaWidth) 0
+        clearLeftArea
+        translate 0 xScaleAreaHeight
+        drawYScale
+  in (w', h', drawAll)
 
 saveAsPDF :: FilePath -> HECs -> ViewParameters -> Double -> Double -> IO ()
-saveAsPDF file hecs viewParams label_area_width xscale_area_height =
+saveAsPDF filename hecs params yScaleAreaWidth xScaleAreaHeight =
+  let (w', h', drawAll) = saveAs hecs params yScaleAreaWidth xScaleAreaHeight
+  in withPDFSurface filename (fromIntegral w') (fromIntegral h') $ \surface ->
+       renderWith surface drawAll
 
-    withPDFSurface file w' h' $ \surface ->
-      renderWith surface $ do
-        translate label_area_width xscale_area_height
-        renderTraces viewParams hecs (Rectangle 0 0 w h)
-        translate 0 (-xscale_area_height)
-        renderXScaleArea viewParams hecs (ceiling xscale_area_height)
-        -- Functions renderTraces and renderXScaleArea draw to the left of 0
-        -- which is not seen in the normal mode, but would be seen in export.
-        -- Workaround:
-        translate (-label_area_width) 0
-        rectangle 0 0 label_area_width h'
-        op <- getOperator
-        setOperator OperatorClear
-        fill
-        setOperator op
-        -- End of workaround.
-        translate 0 xscale_area_height
-        renderLabelArea viewParams hecs label_area_width
-  where
-    w = width  viewParams; w' = fromIntegral $ ceiling label_area_width + w
-    h = height viewParams; h' = fromIntegral $ ceiling xscale_area_height + h
-
--------------------------------------------------------------------------------
-
--- TODO: factor out the common parts
 saveAsPNG :: FilePath -> HECs -> ViewParameters -> Double -> Double -> IO ()
-saveAsPNG file hecs viewParams label_area_width xscale_area_height =
-
-    withImageSurface FormatARGB32 w' h' $ \surface -> do
-      renderWith surface $ do
-        translate label_area_width xscale_area_height
-        renderTraces viewParams hecs (Rectangle 0 0 w h)
-        translate 0 (-xscale_area_height)
-        renderXScaleArea viewParams hecs (ceiling xscale_area_height)
-        -- Functions renderTraces and renderXScaleArea draw to the left of 0
-        -- which is not seen in the normal mode, but would be seen in export.
-        -- Workaround:
-        translate (-label_area_width) 0
-        rectangle 0 0 label_area_width (fromIntegral h')
-        op <- getOperator
-        setOperator OperatorClear
-        fill
-        setOperator op
-        -- End of workaround.
-        translate 0 xscale_area_height
-        renderLabelArea viewParams hecs label_area_width
-      surfaceWriteToPNG surface file
-  where
-    w = width  viewParams; w' = fromIntegral $ ceiling label_area_width + w
-    h = height viewParams; h' = fromIntegral $ ceiling xscale_area_height + h
-
--------------------------------------------------------------------------------
+saveAsPNG filename hecs params yScaleAreaWidth xScaleAreaHeight =
+  let (w', h', drawAll) = saveAs hecs params yScaleAreaWidth xScaleAreaHeight
+  in withImageSurface FormatARGB32 w' h' $ \surface -> do
+       renderWith surface drawAll
+       surfaceWriteToPNG surface filename
