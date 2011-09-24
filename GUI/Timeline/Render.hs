@@ -41,7 +41,7 @@ renderView TimelineState{timelineDrawingArea, timelineVAdj, timelinePrevView}
            params hecs selection bookmarks exposeRegion = do
 
   -- Get state information from user-interface components
-  (dAreaWidth, _) <- widgetGetSize timelineDrawingArea
+  (w, _) <- widgetGetSize timelineDrawingArea
   vadj_value <- adjustmentGetValue timelineVAdj
 
   prev_view <- readIORef timelinePrevView
@@ -53,11 +53,10 @@ renderView TimelineState{timelineDrawingArea, timelineVAdj, timelinePrevView}
 
   let renderToNewSurface = do
         new_surface <- withTargetSurface $ \surface ->
-                         liftIO $ createSimilarSurface surface ContentColor
-                                    dAreaWidth (height params)
+          liftIO $ createSimilarSurface surface ContentColor w (height params)
         renderWith new_surface $ do
-             clearWhite
-             renderTraces params hecs rect
+          clearWhite
+          renderTraces params hecs rect
         return new_surface
 
   surface <-
@@ -287,12 +286,6 @@ scrollView surface old new hecs = do
    surfaceFinish surface
    return new_surface
 
-------------------------------------------------------------------------------
-
-toWholePixels :: Double -> Double -> Double
-toWholePixels 0    _x = 0
-toWholePixels scale x = fromIntegral (truncate (x / scale)) * scale
-
 -------------------------------------------------------------------------------
 
 -- TODO: refactor all below (deduplicate, rename, move)
@@ -374,40 +367,40 @@ drawYLabelAndAxis maxSpkValue maxSparkPool xoffset trace y = do
 --------------------------------------------------------------------------------
 
 traceYPositions :: Bool -> [Trace] -> [Int]
-traceYPositions showLabels traces
-  = scanl (\a b -> a + (traceHeight b) + extra + tracePad) firstTraceY traces
-  where
+traceYPositions showLabels traces =
+  scanl (\a b -> a + (traceHeight b) + extra + tracePad) firstTraceY traces
+    where
       extra = if showLabels then hecLabelExtra else 0
-
-      traceHeight (TraceHEC _)  = hecTraceHeight
-      traceHeight (SparkCreationHEC _) = hecSparksHeight
-      traceHeight (SparkConversionHEC _) = hecSparksHeight
-      traceHeight (SparkPoolHEC _) = hecSparksHeight
-      traceHeight TraceActivity = activityGraphHeight
-      traceHeight _             = 0
-
---------------------------------------------------------------------------------
-
-showTrace :: Trace -> String
-showTrace (TraceHEC n)  = "HEC " ++ show n
-showTrace (SparkCreationHEC n) = "\nHEC " ++ show n ++ "\n\nSpark creation rate (spark/ms)"
-showTrace (SparkConversionHEC n) = "\nHEC " ++ show n ++ "\n\nSpark conversion rate (spark/ms)"
-showTrace (SparkPoolHEC n) = "\nHEC " ++ show n ++ "\n\nSpark pool size"
-showTrace TraceActivity = "Activity"
-showTrace _             = "?"
-
---------------------------------------------------------------------------------
-
-traceMaxSpark :: Double -> Double -> Trace -> Maybe Double
-traceMaxSpark maxS _ SparkCreationHEC{} = Just $ maxS * 1000000
-traceMaxSpark maxS _ SparkConversionHEC{} = Just $ maxS * 1000000
-traceMaxSpark _ maxP SparkPoolHEC{} = Just $ maxP
-traceMaxSpark _ _ _ = Nothing
-
---------------------------------------------------------------------------------
+      traceHeight TraceHEC{}           = hecTraceHeight
+      traceHeight SparkCreationHEC{}   = hecSparksHeight
+      traceHeight SparkConversionHEC{} = hecSparksHeight
+      traceHeight SparkPoolHEC{}       = hecSparksHeight
+      traceHeight TraceActivity        = activityGraphHeight
+      traceHeight _ = 0
 
 calculateTotalTimelineHeight :: Bool -> [Trace] -> Int
 calculateTotalTimelineHeight showLabels traces =
-   last (traceYPositions showLabels traces)
+ last (traceYPositions showLabels traces)
 
---------------------------------------------------------------------------------
+showTrace :: Trace -> String
+showTrace (TraceHEC n) =
+  "HEC " ++ show n
+showTrace (SparkCreationHEC n) =
+  "\nHEC " ++ show n ++ "\n\nSpark creation rate (spark/ms)"
+showTrace (SparkConversionHEC n) =
+  "\nHEC " ++ show n ++ "\n\nSpark conversion rate (spark/ms)"
+showTrace (SparkPoolHEC n) =
+  "\nHEC " ++ show n ++ "\n\nSpark pool size"
+showTrace TraceActivity =
+  "Activity"
+showTrace _ = error "Render.showTrace"
+
+traceMaxSpark :: Double -> Double -> Trace -> Maybe Double
+traceMaxSpark maxS _ SparkCreationHEC{}   = Just $ maxS * 1000000
+traceMaxSpark maxS _ SparkConversionHEC{} = Just $ maxS * 1000000
+traceMaxSpark _ maxP SparkPoolHEC{}       = Just $ maxP
+traceMaxSpark _ _ _ = Nothing
+
+toWholePixels :: Double -> Double -> Double
+toWholePixels 0     _ = 0
+toWholePixels scale x = fromIntegral (truncate (x / scale)) * scale

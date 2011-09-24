@@ -62,7 +62,6 @@ data TimelineViewActions = TimelineViewActions {
      }
 
 -- | Draw some parts of the timeline in black and white rather than colour.
---
 timelineSetBWMode :: TimelineView -> Bool -> IO ()
 timelineSetBWMode timelineWin bwmode = do
   writeIORef (bwmodeIORef timelineWin) bwmode
@@ -74,9 +73,10 @@ timelineSetShowLabels timelineWin showLabels = do
   widgetQueueDraw (timelineDrawingArea (timelineState timelineWin))
 
 timelineGetViewParameters :: TimelineView -> IO ViewParameters
-timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, showLabelsIORef, timelineState=TimelineState{..}} = do
+timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, showLabelsIORef,
+                                       timelineState=TimelineState{..}} = do
 
-  (dAreaWidth,_) <- widgetGetSize timelineDrawingArea
+  (w, _) <- widgetGetSize timelineDrawingArea
   scaleValue  <- readIORef scaleIORef
   maxSpkValue <- readIORef maxSpkIORef
 
@@ -91,7 +91,7 @@ timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, showLabelsIORef
   let timelineHeight = calculateTotalTimelineHeight showLabels traces
 
   return ViewParameters {
-           width      = dAreaWidth,
+           width      = w,
            height     = timelineHeight,
            viewTraces = traces,
            hadjValue  = hadj_value,
@@ -270,8 +270,8 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
            -- render either the whole height of the timeline, or the window, whichever
            -- is larger (this just ensure we fill the background if the timeline is
            -- smaller than the window).
-           (_,dAreaHeight) <- widgetGetSize timelineDrawingArea
-           let params' = params { height = max (height params) dAreaHeight }
+           (_, h) <- widgetGetSize timelineDrawingArea
+           let params' = params { height = max (height params) h }
            selection  <- readIORef selectionRef
            bookmarks <- readIORef bookmarkIORef
 
