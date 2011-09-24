@@ -75,8 +75,16 @@ drawVRulers tickWidthInPixels height scaleValue pos incr endPos =
 
 
 -- TODO: refactor common parts with renderVRulers
-renderXScale :: Timestamp -> Timestamp -> Double -> Int -> Render()
-renderXScale startPos endPos scaleValue yoffset = do
+renderXScale :: Double -> Double -> Int -> Timestamp -> Int -> Render()
+renderXScale scaleValue hadjValue width lastTx yoffset = do
+  let scale_width = fromIntegral width * scaleValue
+      startPos :: Timestamp
+      startPos = truncate hadjValue
+      endPos :: Timestamp
+      endPos = minimum [ceiling (hadjValue + scale_width), lastTx]
+  save
+  scale (1/scaleValue) 1.0
+  translate (-hadjValue) 0
   selectFontFace "sans serif" FontSlantNormal FontWeightNormal
   setFontSize 12
   setSourceRGBAhex blue 1.0
@@ -99,6 +107,7 @@ renderXScale startPos endPos scaleValue yoffset = do
   setLineWidth scaleValue
   drawXTicks
     tickWidthInPixels scaleValue firstTick snappedTickDuration endPos yoffset
+  restore
 
 
 drawXTicks :: Int -> Double -> Timestamp -> Timestamp -> Timestamp -> Int

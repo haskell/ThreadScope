@@ -2,12 +2,12 @@
 module GUI.Timeline.Render (
     renderView,
     renderTraces,
-    updateYScaleArea,
+    renderXScaleArea,
     updateXScaleArea,
+    renderYScaleArea,
+    updateYScaleArea,
     calculateTotalTimelineHeight,
     toWholePixels,
-    renderYScaleArea,
-    renderXScaleArea,
   ) where
 
 import GUI.Timeline.Types
@@ -286,27 +286,34 @@ scrollView surface old new hecs = do
    surfaceFinish surface
    return new_surface
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
--- TODO: refactor all below (deduplicate, move)
+renderXScaleArea :: ViewParameters -> HECs -> Int -> Render ()
+renderXScaleArea  ViewParameters{..} hecs yoffset = do
+  let lastTx = hecLastEventTime hecs
+  renderXScale scaleValue hadjValue width lastTx yoffset
+
+-- For simplicity, unlike for the traces, we redraw the whole area,
+-- not only the newly exposed one.
+updateXScaleArea :: TimelineState -> Timestamp -> IO ()
+updateXScaleArea TimelineState{..} lastTx = do
+  win <- widgetGetDrawWindow timelineXScaleArea
+  (width, _) <- widgetGetSize timelineDrawingArea
+  (_, yoffset) <- widgetGetSize timelineXScaleArea
+  scaleValue <- readIORef scaleIORef
+  -- snap the view to whole pixels, to avoid blurring
+  hadjValue0 <- adjustmentGetValue timelineAdj
+  let hadjValue = toWholePixels scaleValue hadjValue0
+  renderWithDrawable win $
+    renderXScale scaleValue hadjValue width lastTx yoffset
+  return ()
+
+--------------------------------------------------------------------------------
+
 renderYScaleArea :: ViewParameters -> HECs -> Double -> Render ()
 renderYScaleArea ViewParameters{..} hecs xoffset =
   drawYScaleArea maxSpkValue (maxSparkPool hecs) xoffset
     0 labelsMode viewTraces
-
-renderXScaleArea :: ViewParameters -> HECs -> Int -> Render ()
-renderXScaleArea  ViewParameters{..} hecs yoffset = do
-  let scale_rw = fromIntegral width * scaleValue
-      startPos :: Timestamp
-      startPos = truncate hadjValue
-      lastTx = hecLastEventTime hecs
-      endPos :: Timestamp
-      endPos = minimum [ceiling (hadjValue + scale_rw), lastTx]
-  save
-  scale (1/scaleValue) 1.0
-  translate (-hadjValue) 0
-  renderXScale startPos endPos scaleValue yoffset
-  restore
 
 updateYScaleArea :: TimelineState -> Double -> Bool -> [Trace] -> IO ()
 updateYScaleArea TimelineState{..} maxSparkPool showLabels traces = do
@@ -317,30 +324,6 @@ updateYScaleArea TimelineState{..} maxSparkPool showLabels traces = do
   renderWithDrawable win $
     drawYScaleArea maxSpkValue maxSparkPool (fromIntegral xoffset)
       vadj_value showLabels traces
-
--- For simplicity, unlike for the traces, we redraw the whole area,
--- not only the newly exposed one.
-updateXScaleArea :: TimelineState -> Timestamp -> IO ()
-updateXScaleArea TimelineState{..} lastTx = do
-  win <- widgetGetDrawWindow timelineXScaleArea
-  (rw, _) <- widgetGetSize timelineDrawingArea
-  (_, yoffset) <- widgetGetSize timelineXScaleArea
-  scaleValue <- readIORef scaleIORef
-  -- snap the view to whole pixels, to avoid blurring
-  hadjValue0 <- adjustmentGetValue timelineAdj
-  let hadjValue = toWholePixels scaleValue hadjValue0
-      scale_rw = fromIntegral rw * scaleValue
-      startPos :: Timestamp
-      startPos = truncate hadjValue
-      endPos :: Timestamp
-      endPos = minimum [ceiling (hadjValue + scale_rw), lastTx]
-  renderWithDrawable win $ do
-    save
-    scale (1/scaleValue) 1.0
-    translate (-hadjValue) 0
-    renderXScale startPos endPos scaleValue yoffset
-    restore
-  return ()
 
 drawYScaleArea :: Double -> Double -> Double ->  Double -> Bool -> [Trace]
                         -> Render ()
