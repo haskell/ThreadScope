@@ -99,7 +99,7 @@ data Event
    | EventTimelineZoomIn
    | EventTimelineZoomOut
    | EventTimelineZoomToFit
-   | EventTimelineShowLabels Bool
+   | EventTimelineLabelsMode Bool
    | EventTimelineShowBW     Bool
 
    | EventCursorChangedIndex     Int
@@ -139,7 +139,7 @@ constructUI = failOnGError $ do
     mainWinJumpZoomIn    = post EventTimelineZoomIn,
     mainWinJumpZoomOut   = post EventTimelineZoomOut,
     mainWinJumpZoomFit   = post EventTimelineZoomToFit,
-    mainWinDisplayLabels = post . EventTimelineShowLabels,
+    mainWinDisplayLabels = post . EventTimelineLabelsMode,
     mainWinViewBW        = post . EventTimelineShowBW
   }
 
@@ -268,13 +268,13 @@ eventLoop uienv@UIEnv{..} eventlogState = do
                           bwMode     = False,
                           labelsMode = False
                         }
-      label_area_width  <- timelineGetLabelAreaWidth timelineWin
-      xscale_area_height <- timelineGetXScaleAreaHeight timelineWin
+      yScaleAreaWidth  <- timelineGetYScaleAreaWidth  timelineWin
+      xScaleAreaHeight <- timelineGetXScaleAreaHeight timelineWin
       case format of
         FormatPDF ->
-          saveAsPDF filename hecs viewParams' label_area_width xscale_area_height
+          saveAsPDF filename hecs viewParams' yScaleAreaWidth xScaleAreaHeight
         FormatPNG ->
-          saveAsPNG filename hecs viewParams' label_area_width xscale_area_height
+          saveAsPNG filename hecs viewParams' yScaleAreaWidth xScaleAreaHeight
       continue
 
     dispatch EventAboutDialog _ = do
@@ -322,8 +322,8 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       timelineZoomToFit timelineWin
       continue
 
-    dispatch (EventTimelineShowLabels showLabels) _ = do
-      timelineSetShowLabels timelineWin showLabels
+    dispatch (EventTimelineLabelsMode labelsMode) _ = do
+      timelineSetLabelsMode timelineWin labelsMode
       continue
 
     dispatch (EventTimelineShowBW showBW) _ = do

@@ -4,9 +4,9 @@ module GUI.Timeline (
     TimelineViewActions(..),
 
     timelineSetBWMode,
-    timelineSetShowLabels,
+    timelineSetLabelsMode,
     timelineGetViewParameters,
-    timelineGetLabelAreaWidth,
+    timelineGetYScaleAreaWidth,
     timelineGetXScaleAreaHeight,
     timelineWindowSetHECs,
     timelineWindowSetTraces,
@@ -50,7 +50,7 @@ data TimelineView = TimelineView {
        bookmarkIORef   :: IORef [Timestamp],
 
        selectionRef    :: IORef TimeSelection,
-       showLabelsIORef :: IORef Bool,
+       labelsModeIORef :: IORef Bool,
        bwmodeIORef     :: IORef Bool,
 
        cursorIBeam     :: Cursor,
@@ -62,21 +62,21 @@ data TimelineViewActions = TimelineViewActions {
      }
 
 -- | Draw some parts of the timeline in black and white rather than colour.
---
 timelineSetBWMode :: TimelineView -> Bool -> IO ()
 timelineSetBWMode timelineWin bwmode = do
   writeIORef (bwmodeIORef timelineWin) bwmode
   widgetQueueDraw (timelineDrawingArea (timelineState timelineWin))
 
-timelineSetShowLabels :: TimelineView -> Bool -> IO ()
-timelineSetShowLabels timelineWin showLabels = do
-  writeIORef (showLabelsIORef timelineWin) showLabels
+timelineSetLabelsMode :: TimelineView -> Bool -> IO ()
+timelineSetLabelsMode timelineWin labelsMode = do
+  writeIORef (labelsModeIORef timelineWin) labelsMode
   widgetQueueDraw (timelineDrawingArea (timelineState timelineWin))
 
 timelineGetViewParameters :: TimelineView -> IO ViewParameters
-timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, showLabelsIORef, timelineState=TimelineState{..}} = do
+timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, labelsModeIORef,
+                                       timelineState=TimelineState{..}} = do
 
-  (dAreaWidth,_) <- widgetGetSize timelineDrawingArea
+  (w, _) <- widgetGetSize timelineDrawingArea
   scaleValue  <- readIORef scaleIORef
   maxSpkValue <- readIORef maxSpkIORef
 
@@ -86,12 +86,12 @@ timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, showLabelsIORef
 
   traces <- readIORef tracesIORef
   bwmode <- readIORef bwmodeIORef
-  showLabels <- readIORef showLabelsIORef
+  labelsMode <- readIORef labelsModeIORef
 
-  let timelineHeight = calculateTotalTimelineHeight showLabels traces
+  let timelineHeight = calculateTotalTimelineHeight labelsMode traces
 
   return ViewParameters {
-           width      = dAreaWidth,
+           width      = w,
            height     = timelineHeight,
            viewTraces = traces,
            hadjValue  = hadj_value,
@@ -99,12 +99,12 @@ timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, showLabelsIORef
            maxSpkValue = maxSpkValue,
            detail     = 3, --for now
            bwMode     = bwmode,
-           labelsMode = showLabels
+           labelsMode = labelsMode
          }
 
-timelineGetLabelAreaWidth :: TimelineView -> IO Double
-timelineGetLabelAreaWidth timelineWin = do
-  (w, _) <- widgetGetSize $ timelineLabelDrawingArea $ timelineState timelineWin
+timelineGetYScaleAreaWidth :: TimelineView -> IO Double
+timelineGetYScaleAreaWidth timelineWin = do
+  (w, _) <- widgetGetSize $ timelineYScaleArea $ timelineState timelineWin
   return $ fromIntegral w
 
 timelineGetXScaleAreaHeight :: TimelineView -> IO Double
@@ -134,14 +134,14 @@ timelineViewNew :: Builder -> TimelineViewActions -> IO TimelineView
 timelineViewNew builder actions@TimelineViewActions{..} = do
 
   let getWidget cast = builderGetObject builder cast
-  timelineViewport         <- getWidget castToWidget "timeline_viewport"
-  timelineDrawingArea      <- getWidget castToDrawingArea "timeline_drawingarea"
-  timelineLabelDrawingArea <- getWidget castToDrawingArea "timeline_labels_drawingarea"
-  timelineXScaleArea       <- getWidget castToDrawingArea "timeline_labels_drawingarea2"
-  timelineHScrollbar       <- getWidget castToHScrollbar "timeline_hscroll"
-  timelineVScrollbar       <- getWidget castToVScrollbar "timeline_vscroll"
-  timelineAdj              <- rangeGetAdjustment timelineHScrollbar
-  timelineVAdj             <- rangeGetAdjustment timelineVScrollbar
+  timelineViewport    <- getWidget castToWidget "timeline_viewport"
+  timelineDrawingArea <- getWidget castToDrawingArea "timeline_drawingarea"
+  timelineYScaleArea  <- getWidget castToDrawingArea "timeline_yscale_area"
+  timelineXScaleArea  <- getWidget castToDrawingArea "timeline_xscale_area"
+  timelineHScrollbar  <- getWidget castToHScrollbar "timeline_hscroll"
+  timelineVScrollbar  <- getWidget castToVScrollbar "timeline_vscroll"
+  timelineAdj         <- rangeGetAdjustment timelineHScrollbar
+  timelineVAdj        <- rangeGetAdjustment timelineVScrollbar
 
   cursorIBeam <- cursorNew Xterm
   cursorMove  <- cursorNew Fleur
@@ -153,7 +153,7 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
   maxSpkIORef <- newIORef 0
   selectionRef <- newIORef (PointSelection 0)
   bwmodeIORef <- newIORef False
-  showLabelsIORef <- newIORef False
+  labelsModeIORef <- newIORef False
   timelinePrevView <- newIORef Nothing
 
   let timelineState = TimelineState{..}
@@ -161,7 +161,7 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
 
   ------------------------------------------------------------------------
   -- Redrawing labelDrawingArea
-  timelineLabelDrawingArea `onExpose` \_ -> do
+  timelineYScaleArea `onExpose` \_ -> do
     maybeEventArray <- readIORef hecsIORef
 
     -- Check to see if an event trace has been loaded
@@ -169,9 +169,9 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
       Nothing   -> return False
       Just hecs -> do
         traces <- readIORef tracesIORef
-        showLabels <- readIORef showLabelsIORef
+        labelsMode <- readIORef labelsModeIORef
         let maxP = maxSparkPool hecs
-        updateLabelDrawingArea timelineState maxP showLabels traces
+        updateYScaleArea timelineState maxP labelsMode traces
         return True
 
   ------------------------------------------------------------------------
@@ -270,8 +270,8 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
            -- render either the whole height of the timeline, or the window, whichever
            -- is larger (this just ensure we fill the background if the timeline is
            -- smaller than the window).
-           (_,dAreaHeight) <- widgetGetSize timelineDrawingArea
-           let params' = params { height = max (height params) dAreaHeight }
+           (_, h) <- widgetGetSize timelineDrawingArea
+           let params' = params { height = max (height params) h }
            selection  <- readIORef selectionRef
            bookmarks <- readIORef bookmarkIORef
 
@@ -317,7 +317,7 @@ viewRangeToTimeRange view (x, x') = do
 queueRedrawTimelines :: TimelineState -> IO ()
 queueRedrawTimelines TimelineState{..} = do
   widgetQueueDraw timelineDrawingArea
-  widgetQueueDraw timelineLabelDrawingArea
+  widgetQueueDraw timelineYScaleArea
   widgetQueueDraw timelineXScaleArea
 
 --FIXME: we are still unclear about which state changes involve which updates
@@ -332,10 +332,10 @@ configureTimelineDrawingArea timelineWin@TimelineView{timelineState} = do
   updateTimelineHPageSize timelineState
 
 updateTimelineVScroll :: TimelineView -> IO ()
-updateTimelineVScroll TimelineView{tracesIORef, showLabelsIORef, timelineState=TimelineState{..}} = do
+updateTimelineVScroll TimelineView{tracesIORef, labelsModeIORef, timelineState=TimelineState{..}} = do
   traces <- readIORef tracesIORef
-  showLabels <- readIORef showLabelsIORef
-  let h = calculateTotalTimelineHeight showLabels traces
+  labelsMode <- readIORef labelsModeIORef
+  let h = calculateTotalTimelineHeight labelsMode traces
   (_,winh) <- widgetGetSize timelineDrawingArea
   let winh' = fromIntegral winh; h' = fromIntegral h
   adjustmentSetLower    timelineVAdj 0

@@ -124,7 +124,7 @@ mainWindowNew builder actions = do
   zoomOutButton      <- getWidget castToToolButton "cpus_zoomout"
   zoomFitButton      <- getWidget castToToolButton "cpus_zoomfit"
 
-  showLabelsToggle   <- getWidget castToToggleToolButton "cpus_showlabels"
+  labelsModeToggle   <- getWidget castToToggleToolButton "cpus_labels_mode"
   firstButton        <- getWidget castToToolButton "cpus_first"
   lastButton         <- getWidget castToToolButton "cpus_last"
   centreButton       <- getWidget castToToolButton "cpus_centre"
@@ -186,8 +186,8 @@ mainWindowNew builder actions = do
   onToolButtonClicked zoomOutButton $ mainWinJumpZoomOut actions
   onToolButtonClicked zoomFitButton $ mainWinJumpZoomFit actions
 
-  onToolButtonToggled showLabelsToggle $
-    toggleToolButtonGetActive showLabelsToggle >>= mainWinDisplayLabels actions
+  onToolButtonToggled labelsModeToggle $
+    toggleToolButtonGetActive labelsModeToggle >>= mainWinDisplayLabels actions
 
   -- Key bindings
   --TODO: move these to the timeline module
