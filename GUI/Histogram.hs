@@ -48,6 +48,12 @@ histogramViewNew :: Builder -> IO HistogramView
 histogramViewNew builder = do
   let getWidget cast = builderGetObject builder cast
   histogramDrawingArea <- getWidget castToDrawingArea "histogram_drawingarea"
+  timelineYScaleArea  <- getWidget castToDrawingArea "timeline_yscale_area"
+  timelineXScaleArea  <- getWidget castToDrawingArea "timeline_xscale_area"
+  (w, _) <- widgetGetSize timelineYScaleArea
+  (_, h) <- widgetGetSize timelineXScaleArea
+  let yScaleAreaWidth  =  fromIntegral w
+      xScaleAreaHeight = fromIntegral h
 
   hecsIORef <- newIORef Nothing
   intervalIORef <- newIORef Nothing
@@ -61,14 +67,15 @@ histogramViewNew builder = do
        -- Check if an event trace has been loaded.
        case maybeEventArray of
          Nothing   -> return True
-         Just hecs ->
-           renderViewHistogram histogramDrawingArea hecs minterval
+         Just hecs -> renderViewHistogram histogramDrawingArea hecs minterval
+                        yScaleAreaWidth xScaleAreaHeight
 
   return histogramView
 
-renderViewHistogram :: DrawingArea -> HECs -> Maybe Interval
+renderViewHistogram :: DrawingArea -> HECs -> Maybe Interval -> Double -> Double
                        -> IO Bool
-renderViewHistogram historamDrawingArea hecs minterval = do
+renderViewHistogram historamDrawingArea hecs minterval
+                    yScaleAreaWidth xScaleAreaHeight = do
   let intDoub :: Integral a => a -> Double
       intDoub = fromIntegral
       histo :: [(Int, Timestamp)] -> [(Int, Timestamp)]
@@ -81,6 +88,12 @@ renderViewHistogram historamDrawingArea hecs minterval = do
       inRange :: [(Timestamp, Int, Timestamp)] -> [(Int, Timestamp)]
       inRange xs = [(logdur, dur)
                    | (start, logdur, dur) <- xs, inR start]
+      -- TODO: factor out to module with helper stuff (mu, deZero, this)
+      fromListWith' :: (a -> a -> a) -> [(IM.Key, a)] -> IM.IntMap a
+      fromListWith' f xs =
+        L.foldl' ins IM.empty xs
+          where
+            ins t (k,x) = IM.insertWith' f k x t
       plot xs =
         let layout = Chart.layout1_plots ^= [Left plot]
                    $ Chart.layout1_left_axis ^= yaxis
@@ -106,7 +119,9 @@ renderViewHistogram historamDrawingArea hecs minterval = do
                     | (t, height) <- histo $ inRange xs]
         in layout
       xs = durHistogram hecs
+      renderable :: Chart.Renderable ()
       renderable = ChartR.toRenderable (plot xs)
+-- TODO: translate 0 xScaleAreaHeight
   if null xs
     then return False  -- TODO: perhaps display "No data" in the tab?
     else ChartG.updateCanvas renderable historamDrawingArea
