@@ -49,14 +49,19 @@ histogramViewNew builder = do
   histogramDrawingArea <- getWidget castToDrawingArea "histogram_drawingarea"
   timelineYScaleArea  <- getWidget castToDrawingArea "timeline_yscale_area"
   timelineXScaleArea  <- getWidget castToDrawingArea "timeline_xscale_area"
+  (width, height) <- widgetGetSize histogramDrawingArea
   (w, _) <- widgetGetSize timelineYScaleArea
   (_, h) <- widgetGetSize timelineXScaleArea
-  let yScaleAreaWidth  =  fromIntegral w
+  let yScaleAreaWidth  = fromIntegral w
       xScaleAreaHeight = fromIntegral h
+      size = (fromIntegral width  - yScaleAreaWidth,
+              fromIntegral height - xScaleAreaHeight)
+      renderHist hecs minterval = do
+        C.translate yScaleAreaWidth 0
+        renderViewHistogram hecs minterval size
 
   hecsIORef <- newIORef Nothing
   intervalIORef <- newIORef Nothing
-  let histogramView = HistogramView{..}
 
   -- Program the callback for the capability drawingArea
   on histogramDrawingArea exposeEvent $ do
@@ -66,15 +71,15 @@ histogramViewNew builder = do
        -- Check if an event trace has been loaded.
        case maybeEventArray of
          Nothing   -> return True
-         Just hecs -> renderViewHistogram histogramDrawingArea hecs minterval
-                        yScaleAreaWidth xScaleAreaHeight
+         Just hecs -> do
+           win <- widgetGetDrawWindow histogramDrawingArea
+           renderWithDrawable win (renderHist hecs minterval)
 
-  return histogramView
+  return HistogramView{..}
 
-renderViewHistogram :: DrawingArea -> HECs -> Maybe Interval -> Double -> Double
-                       -> IO Bool
-renderViewHistogram historamDrawingArea hecs minterval
-                    yScaleAreaWidth xScaleAreaHeight =
+renderViewHistogram :: HECs -> Maybe Interval -> (Double, Double)
+                       -> C.Render Bool
+renderViewHistogram hecs minterval size =
   let intDoub :: Integral a => a -> Double
       intDoub = fromIntegral
       histo :: [(Int, Timestamp)] -> [(Int, Timestamp)]
