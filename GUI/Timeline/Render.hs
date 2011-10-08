@@ -289,7 +289,7 @@ scrollView surface old new hecs = do
 
 -- | Render the X scale, based on view parameters and hecs.
 renderXScaleArea :: ViewParameters -> HECs -> Int -> Render ()
-renderXScaleArea  ViewParameters{..} hecs yoffset =
+renderXScaleArea ViewParameters{width, scaleValue, hadjValue} hecs yoffset =
   let lastTx = hecLastEventTime hecs
   in renderXScale scaleValue hadjValue width lastTx yoffset
 
@@ -314,7 +314,8 @@ updateXScaleArea TimelineState{..} lastTx = do
 -- | Render the Y scale area (an axis, ticks and a label for each graph),
 -- based on view parameters and hecs.
 renderYScaleArea :: ViewParameters -> HECs -> Double -> Render ()
-renderYScaleArea ViewParameters{..} hecs xoffset =
+renderYScaleArea ViewParameters{maxSpkValue, labelsMode, viewTraces}
+                 hecs xoffset =
   drawYScaleArea maxSpkValue (maxSparkPool hecs) xoffset
     0 labelsMode viewTraces
 

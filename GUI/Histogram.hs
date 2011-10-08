@@ -8,6 +8,8 @@ module GUI.Histogram (
 
 import Events.HECs
 import GUI.Timeline.Ticks (mu, deZero)
+import GUI.Timeline.Render (renderYScaleArea, renderXScaleArea)
+import GUI.Types
 
 import Graphics.UI.Gtk
 import qualified Graphics.Rendering.Cairo as C
@@ -49,22 +51,42 @@ histogramViewNew builder = do
   histogramDrawingArea <- getWidget castToDrawingArea "histogram_drawingarea"
   timelineYScaleArea  <- getWidget castToDrawingArea "timeline_yscale_area"
   timelineXScaleArea  <- getWidget castToDrawingArea "timeline_xscale_area"
-  (width, height) <- widgetGetSize histogramDrawingArea
+  (width, height) <- widgetGetSize histogramDrawingArea  -- TODO: update at runtime, not only at the start
   (w, _) <- widgetGetSize timelineYScaleArea
   (_, h) <- widgetGetSize timelineXScaleArea
   let yScaleAreaWidth  = fromIntegral w
       xScaleAreaHeight = fromIntegral h
       size = (fromIntegral width  - yScaleAreaWidth,
               fromIntegral height - xScaleAreaHeight)
+      params = ViewParameters  -- TODO: a hack
+        { width = ceiling (fst size)
+        , height = undefined
+        , viewTraces = [SparkPoolHEC 99]  -- TODO
+        , hadjValue = 0
+        , scaleValue = 1
+        , maxSpkValue = snd size
+        , detail = undefined
+        , bwMode = undefined
+        , labelsMode = False
+        }
       renderHist hecs minterval = do
+        let drawHist = renderViewHistogram hecs minterval size
+            drawXScale = renderXScaleArea params hecs (ceiling xScaleAreaHeight)
+            drawYScale = renderYScaleArea params hecs yScaleAreaWidth
         C.translate yScaleAreaWidth 0
-        renderViewHistogram hecs minterval size
+        b <- drawHist
+        if not b then return False else do
+        C.translate 0 (snd size)
+        drawXScale
+        C.translate (-yScaleAreaWidth) (-(snd size))
+        drawYScale
+        return True
 
   hecsIORef <- newIORef Nothing
   intervalIORef <- newIORef Nothing
 
   -- Program the callback for the capability drawingArea
-  on histogramDrawingArea exposeEvent $ do
+  on histogramDrawingArea exposeEvent $
      C.liftIO $ do
        maybeEventArray <- readIORef hecsIORef
        minterval <- readIORef intervalIORef
