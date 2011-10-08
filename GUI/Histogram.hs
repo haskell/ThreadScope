@@ -14,7 +14,6 @@ import qualified Graphics.Rendering.Cairo as C
 
 import qualified Graphics.Rendering.Chart as Chart
 import qualified Graphics.Rendering.Chart.Renderable as ChartR
-import qualified Graphics.Rendering.Chart.Gtk as ChartG
 import qualified Graphics.Rendering.Chart.Plot.Hidden as ChartH
 
 import Data.Accessor
@@ -75,7 +74,7 @@ histogramViewNew builder = do
 renderViewHistogram :: DrawingArea -> HECs -> Maybe Interval -> Double -> Double
                        -> IO Bool
 renderViewHistogram historamDrawingArea hecs minterval
-                    yScaleAreaWidth xScaleAreaHeight = do
+                    yScaleAreaWidth xScaleAreaHeight =
   let intDoub :: Integral a => a -> Double
       intDoub = fromIntegral
       histo :: [(Int, Timestamp)] -> [(Int, Timestamp)]
@@ -125,15 +124,3 @@ renderViewHistogram historamDrawingArea hecs minterval
   if null xs
     then return False  -- TODO: perhaps display "No data" in the tab?
     else ChartG.updateCanvas renderable historamDrawingArea
-
--- TODO: factor out to module with helper stuff (mu, deZero, this)
-fromListWith' :: (a -> a -> a) -> [(Int, a)] -> IM.IntMap a
-#if MIN_VERSION_containers(0,4,1)
-fromListWith' f xs =
-    L.foldl' ins IM.empty xs
-  where
-    ins t (k,x) = IM.insertWith' f k x t
-#else
-fromListWith' f xs = let im = IM.fromListWith f xs
-                      in Foldable.foldr seq () im `seq` im
-#endif
