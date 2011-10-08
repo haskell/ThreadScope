@@ -51,14 +51,11 @@ histogramViewNew builder = do
   histogramDrawingArea <- getWidget castToDrawingArea "histogram_drawingarea"
   timelineYScaleArea  <- getWidget castToDrawingArea "timeline_yscale_area"
   timelineXScaleArea  <- getWidget castToDrawingArea "timeline_xscale_area"
-  (width, height) <- widgetGetSize histogramDrawingArea  -- TODO: update at runtime, not only at the start
   (w, _) <- widgetGetSize timelineYScaleArea
   (_, h) <- widgetGetSize timelineXScaleArea
   let yScaleAreaWidth  = fromIntegral w
       xScaleAreaHeight = fromIntegral h
-      size = (fromIntegral width  - yScaleAreaWidth,
-              fromIntegral height - xScaleAreaHeight)
-      params = ViewParameters  -- TODO: a hack
+      paramsHack size = ViewParameters  -- TODO: a hack
         { width = ceiling (fst size)
         , height = undefined
         , viewTraces = [SparkPoolHEC 99]  -- TODO
@@ -69,8 +66,9 @@ histogramViewNew builder = do
         , bwMode = undefined
         , labelsMode = False
         }
-      renderHist hecs minterval = do
-        let drawHist = renderViewHistogram hecs minterval size
+      renderHist hecs minterval size = do
+        let params = paramsHack size
+            drawHist = renderViewHistogram hecs minterval size
             drawXScale = renderXScaleArea params hecs (ceiling xScaleAreaHeight)
             drawYScale = renderYScaleArea params hecs yScaleAreaWidth
         C.translate yScaleAreaWidth 0
@@ -88,6 +86,9 @@ histogramViewNew builder = do
   -- Program the callback for the capability drawingArea
   on histogramDrawingArea exposeEvent $
      C.liftIO $ do
+       (width, height) <- widgetGetSize histogramDrawingArea
+       let size = (fromIntegral width  - yScaleAreaWidth,
+                   fromIntegral height - xScaleAreaHeight)
        maybeEventArray <- readIORef hecsIORef
        minterval <- readIORef intervalIORef
        -- Check if an event trace has been loaded.
@@ -95,7 +96,7 @@ histogramViewNew builder = do
          Nothing   -> return True
          Just hecs -> do
            win <- widgetGetDrawWindow histogramDrawingArea
-           renderWithDrawable win (renderHist hecs minterval)
+           renderWithDrawable win (renderHist hecs minterval size)
 
   return HistogramView{..}
 
