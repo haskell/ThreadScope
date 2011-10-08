@@ -1,4 +1,4 @@
-pristine:42778093f377e9a7d79e00136b0f265f69484e00d45d01eb3eedb9b1f03c8535
+pristine:03eb784fcbdc6360ed51e7b99886dbb63f149de51b334325ce5c786ace637832
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1458,3 +1458,59 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20110924124431
  Ignore-this: cbd1020a857880cade95bcae130032a8
 ] 
 hash: 0000006960-100f9c9c3c9457eaf1b3d6727137d535159ba182bd46623c1f88cbacc585a313
+[Make the activity plot follow the black and white mode
+Duncan Coutts <duncan@well-typed.com>**20110924215415
+ Ignore-this: c5feb15bc4048297910b7e5bebc714a2
+] 
+hash: 0000000540-9ad3b3f7a795494f03eaeb2749bf164c19ea34414c6b6811c928d9f5e72dad1e
+[Re-export Colour from ViewerColours
+Duncan Coutts <duncan@well-typed.com>**20110924215507
+ Ignore-this: f39d24548749437eafc5f58a0c921120
+] 
+hash: 0000000382-2f37ac7bcb844cbaa2cdce6d1a789ea70605c5a0f9e946229d641d8b6aced9bc
+[Make the green and orange colours a bit darker
+Duncan Coutts <duncan@well-typed.com>**20110924215558
+ Ignore-this: 992a0270210e5e820a321bfd17468737
+ Better contrast
+] 
+hash: 0000000650-71b0968e0df63cf41322847aa4124f928332bd301e0073ffa2a36ab49e10b3a3
+[Update TODO
+Mikolaj Konarski <mikolaj@well-typed.com>**20111005205840
+ Ignore-this: 8b558c2ea573dfea9984e71d0eb1c69a
+] 
+hash: 0000002322-4e950de1226cf0ce0732e696b9275e3e110cebb430bd84a713ff82b8f68388fe
+[Rewrite Charts, step 1: make scale sizes known to histogram
+Mikolaj Konarski <mikolaj@well-typed.com>**20111008175637
+ Ignore-this: 5437c1775b4344184e2e0a2a2d61c33a
+] 
+hash: 0000001395-11d011d5b1a93b5e60c45b644f97c036100102ab184f3520f6e10bb428d488f5
+[Rewrite Charts, step 3: leave space for histogram scales
+Mikolaj Konarski <mikolaj@well-typed.com>**20111008184107
+ Ignore-this: 339d71dc16a95a815db88f0eab66ab2e
+] 
+hash: 0000001175-b06a7a1896e5a2c86fd13d1ed8e9506913b78fc64f32ef22ce764a8345a64848
+[Rewrite Charts, step 1: disable axis titles and numbers in spark histogram
+Mikolaj Konarski <mikolaj@well-typed.com>**20111008184439
+ Ignore-this: 7e1c2235f43ca9b853eae627e3f0f579
+] 
+hash: 0000001061-6eac01e0fef9cd788101ffd568ba2456a04fa5b47879c823f67e86db808fd5d6
+[SQUASH_ME: TODO: change "1" to "2" in "Rewrite Charts, step 1: make scale sizes known to histogram"
+Mikolaj Konarski <mikolaj@well-typed.com>**20111008184644
+ Ignore-this: 4d2f9ee6341ccbe12097ec3996f8b43
+] 
+hash: 0000000311-474c1d327764a16c1904aa0c5512bff46f229dfd6e4fb853a8b9162fe257641d
+[Rewrite Charts, step 4: translate the histogram graph
+Mikolaj Konarski <mikolaj@well-typed.com>**20111008205045
+ Ignore-this: 90ab2ee7917a178b128a641c93c60b93
+] 
+hash: 0000002063-a3ebffe5df8226dfb98f792f2905e4c72fea44e3c74881d996758f7892827b62
+[Rewrite Charts, step 5: draw (badly) histogram scales
+Mikolaj Konarski <mikolaj@well-typed.com>**20111008224507
+ Ignore-this: 5123b00a57da2097961f1573941e38f5
+] 
+hash: 0000002312-c9b989c5fd686607b3022d307a88e44f0b5603a53d795c6724df7644326d3d27
+[Rewrite Charts, step 6: redraw scales when histogram window size changes
+Mikolaj Konarski <mikolaj@well-typed.com>**20111008225450
+ Ignore-this: ba4a0b0bc54afe0880b22a8c52021b07
+] 
+hash: 0000001200-68e1952db6e4a083164d3968bfc0f0a857c16d496f86d114ca3d5c6f1416d154

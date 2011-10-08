@@ -3,7 +3,7 @@
 --- $Source: //depot/satnams/haskell/ThreadScope/ViewerColours.hs $
 -------------------------------------------------------------------------------
 
-module GUI.ViewerColours where
+module GUI.ViewerColours (Color, module GUI.ViewerColours) where
 
 import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo
@@ -13,14 +13,14 @@ import Graphics.Rendering.Cairo
 -- Colours
 
 runningColour :: Color
-runningColour = green
+runningColour = darkGreen
 
 gcColour :: Color
 gcColour = orange
 
 gcStartColour, gcWorkColour, gcIdleColour, gcEndColour :: Color
 gcStartColour = orange
-gcWorkColour  = green
+gcWorkColour  = orange
 gcIdleColour  = white
 gcEndColour   = orange
 
@@ -28,7 +28,7 @@ createThreadColour :: Color
 createThreadColour = lightBlue
 
 threadRunnableColour :: Color
-threadRunnableColour = darkGreen
+threadRunnableColour = green
 
 seqGCReqColour :: Color
 seqGCReqColour = cyan
@@ -53,7 +53,7 @@ bookmarkColour = Color 0xff00 0x0000 0xff00 -- pinkish
 
 fizzledDudsColour, createdConvertedColour, overflowedColour :: Color
 fizzledDudsColour      = grey
-createdConvertedColour = green
+createdConvertedColour = darkGreen
 overflowedColour       = red
 
 outerPercentilesColour :: Color
@@ -107,7 +107,7 @@ darkRed :: Color
 darkRed = Color 0xcc00 0x0000 0x0000
 
 orange :: Color
-orange = Color 0xFFFF 0x9900 0x0000 -- orange
+orange = Color 0xE000 0x7000 0x0000 -- orange
 
 profileBackground :: Color
 profileBackground = Color 0xFFFF 0xFFFF 0xFFFF

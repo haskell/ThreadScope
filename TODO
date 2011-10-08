@@ -306,15 +306,30 @@ after the event for this introduced
 for events defined and implemented
 
 - perhaps the far left and far right bars on the histogram should be in red,
-since extreme spark sizes are usually bad
+since extreme spark sizes are usually bad (or mark it in some other way)
 
 - or colour stacked bars of the histogram according to strategy label
+
+- determine which bars represent too small and too large sparks
+based on the estimation of spark overhead divided by spark duration, etc.
 
 - dynamic strategy labelling (lots of stuff has to be done elsewhere, first)
 
 - rewrite the spark duration histogram manually, to have a look
 similar to the other graphs (e;g;, scales) and to control details, e.g.,
 if the axis description is printed vertically or horizontally
+
+- determine log base to fit the data, e.g. smaller base for small eventlogs,
+to avoid strange numbers with fractional parts
+
+- scale marks should always fall on bucket boundaries; consequently, bucket
+boundaries should preferably fall on not fractional numbers, e.g.,
+consecutive powers of 2
+
+- mousing over or clicking a bar should tell "1.3s worth of sparks (28 total)
+that took between 16--64ms to evaluate"; people want to know the number
+of sparks as well as the total eval time, in particular kosmikus wants
+to know this
 
 - either show "Loading" when calculating spark duration histogram
 for a selected range on the timeline graph, or store precomputed data
@@ -328,6 +343,6 @@ then move the selection, etc.
 
 - add a new info / stats tab giving numeric info about the current selection, e.g., the amount of cpu time used on each hec, mutator, gc, also sparks, basically all the things that ./prog +RTS --blah  can give you, but for any time period, not just whole run
 
-- perhaps the current "reset zoom" button could change the x and y scale of timeline and histogram to fit the curent region (which initially and most of the time later on is just the whole eventlog)?
+- perhaps the current "reset zoom" button could change the x and y scale of timeline and histogram to fit the current region (which initially and most of the time later on is just the whole eventlog)?
 
-- perhaps we need a floating "resize me" button to pop up on the graph whenever your current view ought to be resized , e.g. clipping at the top, or tallest bar taking up less than half the vertical space, or put that in red letters into the popups that we'll have at some point, or mark the upper or lower edge of the grap red (depending if it's clipped or too small) and blink the y-zoom reset button (to the right of the x-zoom reset button) in red, too
+- perhaps we need a floating "resize me" button to pop up on the graph whenever your current view ought to be resized , e.g. clipping at the top, or tallest bar taking up less than half the vertical space, or put that in red letters into the popups that we'll have at some point, or mark the upper or lower edge of the graph red (depending if it's clipped or too small) and blink the y-zoom reset button (to the right of the x-zoom reset button) in red, too

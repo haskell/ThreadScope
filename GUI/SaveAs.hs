@@ -15,12 +15,9 @@ saveAs hecs params yScaleAreaWidth xScaleAreaHeight =
       h = height params
       w' = ceiling yScaleAreaWidth + w
       h' = ceiling xScaleAreaHeight + h
-      drawTraces =
-        renderTraces params hecs (Rectangle 0 0 w h)
-      drawXScale =
-        renderXScaleArea params hecs (ceiling xScaleAreaHeight)
-      drawYScale =
-        renderYScaleArea params hecs yScaleAreaWidth
+      drawTraces = renderTraces params hecs (Rectangle 0 0 w h)
+      drawXScale = renderXScaleArea params hecs (ceiling xScaleAreaHeight)
+      drawYScale = renderYScaleArea params hecs yScaleAreaWidth
       -- Functions renderTraces and renderXScaleArea draw to the left of 0
       -- which is not seen in the normal mode, but would be seen in export,
       -- so it has to be cleared before renderYScaleArea is written on top:
