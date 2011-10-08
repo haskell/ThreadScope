@@ -98,15 +98,17 @@ renderViewHistogram historamDrawingArea hecs minterval
                    $ Chart.layout1_left_axis ^= yaxis
                    $ Chart.layout1_bottom_axis ^= xaxis
                    $ Chart.defaultLayout1 :: Chart.Layout1 Double Double
-            yaxis  = Chart.laxis_title ^= ytitle
+            yaxis  = Chart.laxis_title ^= ""
+                   $ Chart.laxis_override ^= Chart.axis_labels ^: map override0
                    $ Chart.defaultLayoutAxis
-            xaxis  = Chart.laxis_title ^= xtitle
-                   $ Chart.laxis_override ^= Chart.axis_labels ^: map override
+            xaxis  = Chart.laxis_title ^= ""
+                   $ Chart.laxis_override ^= Chart.axis_labels ^: map override0
                    $ Chart.defaultLayoutAxis
             ytitle = "Total duration (" ++ mu ++ "s)"
             xtitle = "Individual spark duration (" ++ mu ++ "s)"
-            override d = [(x, deZero (printf "%.4f" (10 ** (x / 5) / 1000)))
-                         | (x, _) <- d]  -- TODO: round it up before **
+            override0 d = [ (x, "") | (x, _) <- d]
+            overrideX d = [ (x, deZero (printf "%.4f" (10 ** (x / 5) / 1000)))
+                          | (x, _) <- d]  -- TODO: round it up before **
             plot = Chart.joinPlot plotBars plotHidden
             plotHidden =  -- to fix the x an y scales
               Chart.toPlot $ ChartH.PlotHidden
