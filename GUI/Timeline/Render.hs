@@ -1,4 +1,3 @@
-{-# LANGUAGE NamedFieldPuns #-}
 module GUI.Timeline.Render (
     renderView,
     renderTraces,

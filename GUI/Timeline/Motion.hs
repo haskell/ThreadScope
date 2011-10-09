@@ -1,4 +1,3 @@
-{-# LANGUAGE NamedFieldPuns #-}
 module GUI.Timeline.Motion (
     zoomIn, zoomOut, zoomToFit,
     scrollLeft, scrollRight, scrollToBeginning, scrollToEnd, scrollTo, centreOnCursor,

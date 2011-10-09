@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module GUI.Timeline (
     TimelineView,
     timelineViewNew,

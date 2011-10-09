@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module GUI.Timeline.Ticks (
     renderVRulers,
     renderXScale,
