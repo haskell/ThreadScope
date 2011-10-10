@@ -22,7 +22,6 @@ import Data.Accessor
 import Data.IORef
 import qualified Data.List as L
 import qualified Data.IntMap as IM
-import qualified Data.Foldable as Foldable
 
 import Text.Printf
 
@@ -153,12 +152,14 @@ renderViewHistogram hecs minterval size =
 
 -- TODO: factor out to module with helper stuff (mu, deZero, this)
 fromListWith' :: (a -> a -> a) -> [(Int, a)] -> IM.IntMap a
-#if MIN_VERSION_containers(0,4,1)
 fromListWith' f xs =
     L.foldl' ins IM.empty xs
   where
+#if MIN_VERSION_containers(0,4,1)
     ins t (k,x) = IM.insertWith' f k x t
 #else
-fromListWith' f xs = let im = IM.fromListWith f xs
-                      in Foldable.foldr seq () im `seq` im
+    ins t (k,x) =
+      let r = IM.insertWith f k x t
+          v = r IM.! k
+      in v `seq` r
 #endif

@@ -23,7 +23,6 @@ import System.FilePath
 import Control.Monad
 import Control.Exception
 import qualified Control.DeepSeq as DeepSeq
-import qualified Data.Foldable as Foldable
 
 -------------------------------------------------------------------------------
 -- The GHC.RTS.Events library returns the profile information
@@ -192,13 +191,14 @@ buildEventLog progress from =
 
 -- TODO: factor out to module with helper stuff (mu, deZero, this)
 fromListWith' :: (a -> a -> a) -> [(Int, a)] -> IM.IntMap a
-#if MIN_VERSION_containers(0,4,1)
 fromListWith' f xs =
     L.foldl' ins IM.empty xs
   where
+#if MIN_VERSION_containers(0,4,1)
     ins t (k,x) = IM.insertWith' f k x t
 #else
-fromListWith' f xs = let im = IM.fromListWith f xs
-                      in Foldable.foldr seq () im `seq` im
-
+    ins t (k,x) =
+      let r = IM.insertWith f k x t
+          v = r IM.! k
+      in v `seq` r
 #endif
