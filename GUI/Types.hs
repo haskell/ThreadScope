@@ -13,6 +13,7 @@ data Trace
   | TraceCreationHEC Int
   | TraceConversionHEC Int
   | TracePoolHEC  Int
+  | TraceHistogram
   | TraceGroup    String
   | TraceActivity
   -- more later ...

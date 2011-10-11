@@ -70,6 +70,7 @@ traceViewNew builder actions = do
     renderTrace (TraceCreationHEC   hec) = "HEC " ++ show hec
     renderTrace (TraceConversionHEC hec) = "HEC " ++ show hec
     renderTrace (TracePoolHEC       hec) = "HEC " ++ show hec
+    renderTrace (TraceHistogram)         = "Spark Histogram"
     renderTrace (TraceGroup       label) = label
     renderTrace (TraceActivity)          = "Activity Profile"
 
@@ -99,6 +100,7 @@ traceViewSetHECs :: TraceView -> HECs -> IO ()
 traceViewSetHECs TraceView{tracesStore} hecs = do
     treeStoreClear tracesStore
     go 0
+    -- testing only:  treeStoreInsert tracesStore [] 0 (TraceHistogram, Visible)
     treeStoreInsert tracesStore [] 0 (TraceActivity, Visible)
   where
     newt = Node { rootLabel = (TraceGroup "HEC Traces", Visible),

@@ -11,7 +11,7 @@ module GUI.Timeline.Render (
 
 import GUI.Timeline.Types
 import GUI.Timeline.Render.Constants
-import GUI.Timeline.Ticks (renderXScale, renderYScale, renderVRulers)
+import GUI.Timeline.Ticks (mu, renderXScale, renderYScale, renderVRulers)
 import GUI.Timeline.HEC
 import GUI.Timeline.Sparks
 import GUI.Timeline.Activity
@@ -223,6 +223,10 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                TracePoolHEC c ->
                  let maxP = maxSparkPool hecs
                  in renderSparkPool params slice start end (prof !! c) maxP
+               TraceHistogram ->
+                 -- TODO
+                 let maxP = maxSparkPool hecs
+                 in renderSparkPool params slice start end (prof !! 0) maxP
                TraceGroup _ -> error "renderTrace"
                TraceActivity ->
                  renderActivity params hecs startPos endPos
@@ -367,6 +371,7 @@ traceYPositions labelsMode traces =
       traceHeight TraceCreationHEC{}   = hecSparksHeight
       traceHeight TraceConversionHEC{} = hecSparksHeight
       traceHeight TracePoolHEC{}       = hecSparksHeight
+      traceHeight TraceHistogram       = hecSparksHeight  -- TODO
       traceHeight TraceGroup{}         = error "traceYPositions"
       traceHeight TraceActivity        = activityGraphHeight
 
@@ -385,6 +390,8 @@ showTrace (TraceConversionHEC n) =
   "\nHEC " ++ show n ++ "\n\nSpark conversion rate (spark/ms)"
 showTrace (TracePoolHEC n) =
   "\nHEC " ++ show n ++ "\n\nSpark pool size"
+showTrace TraceHistogram =
+  "Total duration (" ++ mu ++ "s)"
 showTrace TraceGroup{} = error "Render.showTrace"
 showTrace TraceActivity =
   "Activity"
@@ -394,6 +401,7 @@ traceMaxSpark :: Double -> Double -> Trace -> Maybe Double
 traceMaxSpark maxS _ TraceCreationHEC{}   = Just $ maxS * 1000000
 traceMaxSpark maxS _ TraceConversionHEC{} = Just $ maxS * 1000000
 traceMaxSpark _ maxP TracePoolHEC{}       = Just $ maxP
+traceMaxSpark _ maxP TraceHistogram       = Just $ maxP  -- TODO
 traceMaxSpark _ _ _ = Nothing
 
 -- | Snap a value to a whole pixel, based on drawing scale.
