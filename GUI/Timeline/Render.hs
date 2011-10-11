@@ -216,11 +216,11 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                TraceHEC c ->
                  let (dtree, etree, _) = hecTrees hecs !! c
                  in renderHEC params startPos endPos (dtree, etree)
-               SparkCreationHEC c ->
+               TraceCreationHEC c ->
                  renderSparkCreation params slice start end (prof !! c)
-               SparkConversionHEC c ->
+               TraceConversionHEC c ->
                  renderSparkConversion params slice start end (prof !! c)
-               SparkPoolHEC c ->
+               TracePoolHEC c ->
                  let maxP = maxSparkPool hecs
                  in renderSparkPool params slice start end (prof !! c) maxP
                TraceActivity ->
@@ -365,9 +365,9 @@ traceYPositions labelsMode traces =
     where
       extra = if labelsMode then hecLabelExtra else 0
       traceHeight TraceHEC{}           = hecTraceHeight
-      traceHeight SparkCreationHEC{}   = hecSparksHeight
-      traceHeight SparkConversionHEC{} = hecSparksHeight
-      traceHeight SparkPoolHEC{}       = hecSparksHeight
+      traceHeight TraceCreationHEC{}   = hecSparksHeight
+      traceHeight TraceConversionHEC{} = hecSparksHeight
+      traceHeight TracePoolHEC{}       = hecSparksHeight
       traceHeight TraceActivity        = activityGraphHeight
       traceHeight _ = 0
 
@@ -380,11 +380,11 @@ calculateTotalTimelineHeight labelsMode traces =
 showTrace :: Trace -> String
 showTrace (TraceHEC n) =
   "HEC " ++ show n
-showTrace (SparkCreationHEC n) =
+showTrace (TraceCreationHEC n) =
   "\nHEC " ++ show n ++ "\n\nSpark creation rate (spark/ms)"
-showTrace (SparkConversionHEC n) =
+showTrace (TraceConversionHEC n) =
   "\nHEC " ++ show n ++ "\n\nSpark conversion rate (spark/ms)"
-showTrace (SparkPoolHEC n) =
+showTrace (TracePoolHEC n) =
   "\nHEC " ++ show n ++ "\n\nSpark pool size"
 showTrace TraceActivity =
   "Activity"
@@ -392,9 +392,9 @@ showTrace _ = error "Render.showTrace"
 
 -- | Calcaulate the maximal Y value for a graph-like trace, or Nothing.
 traceMaxSpark :: Double -> Double -> Trace -> Maybe Double
-traceMaxSpark maxS _ SparkCreationHEC{}   = Just $ maxS * 1000000
-traceMaxSpark maxS _ SparkConversionHEC{} = Just $ maxS * 1000000
-traceMaxSpark _ maxP SparkPoolHEC{}       = Just $ maxP
+traceMaxSpark maxS _ TraceCreationHEC{}   = Just $ maxS * 1000000
+traceMaxSpark maxS _ TraceConversionHEC{} = Just $ maxS * 1000000
+traceMaxSpark _ maxP TracePoolHEC{}       = Just $ maxP
 traceMaxSpark _ _ _ = Nothing
 
 -- | Snap a value to a whole pixel, based on drawing scale.
