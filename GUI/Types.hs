@@ -13,10 +13,10 @@ data Trace
   | TraceCreationHEC Int
   | TraceConversionHEC Int
   | TracePoolHEC  Int
-  | TraceThread   ThreadId
   | TraceGroup    String
   | TraceActivity
   -- more later ...
+  --  | TraceThread   ThreadId
   deriving Eq
 
 -- the parameters for a timeline render; used to figure out whether

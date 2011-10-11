@@ -223,10 +223,9 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                TracePoolHEC c ->
                  let maxP = maxSparkPool hecs
                  in renderSparkPool params slice start end (prof !! c) maxP
+               TraceGroup _ -> error "renderTrace"
                TraceActivity ->
                  renderActivity params hecs startPos endPos
-               _   ->
-                 return ()
             restore
       -- Now render all the HECs.
       zipWithM_ renderTrace viewTraces (traceYPositions labelsMode viewTraces)
@@ -368,8 +367,8 @@ traceYPositions labelsMode traces =
       traceHeight TraceCreationHEC{}   = hecSparksHeight
       traceHeight TraceConversionHEC{} = hecSparksHeight
       traceHeight TracePoolHEC{}       = hecSparksHeight
+      traceHeight TraceGroup{}         = error "traceYPositions"
       traceHeight TraceActivity        = activityGraphHeight
-      traceHeight _ = 0
 
 -- | Calculate the total Y span of all traces.
 calculateTotalTimelineHeight :: Bool -> [Trace] -> Int
@@ -386,9 +385,9 @@ showTrace (TraceConversionHEC n) =
   "\nHEC " ++ show n ++ "\n\nSpark conversion rate (spark/ms)"
 showTrace (TracePoolHEC n) =
   "\nHEC " ++ show n ++ "\n\nSpark pool size"
+showTrace TraceGroup{} = error "Render.showTrace"
 showTrace TraceActivity =
   "Activity"
-showTrace _ = error "Render.showTrace"
 
 -- | Calcaulate the maximal Y value for a graph-like trace, or Nothing.
 traceMaxSpark :: Double -> Double -> Trace -> Maybe Double

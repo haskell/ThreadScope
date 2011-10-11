@@ -70,7 +70,6 @@ traceViewNew builder actions = do
     renderTrace (TraceCreationHEC   hec) = "HEC " ++ show hec
     renderTrace (TraceConversionHEC hec) = "HEC " ++ show hec
     renderTrace (TracePoolHEC       hec) = "HEC " ++ show hec
-    renderTrace (TraceThread        tid) = "Thread " ++ show tid
     renderTrace (TraceGroup       label) = label
     renderTrace (TraceActivity)          = "Activity Profile"
 
