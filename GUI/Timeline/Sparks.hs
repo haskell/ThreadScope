@@ -1,9 +1,12 @@
+{-# LANGUAGE CPP #-}
 module GUI.Timeline.Sparks (
     treesProfile,
     maxSparkRenderedValue,
     renderSparkCreation,
     renderSparkConversion,
     renderSparkPool,
+    Interval,
+    renderSparkHistogram,
   ) where
 
 import GUI.Timeline.Render.Constants
@@ -14,9 +17,18 @@ import qualified Events.SparkStats as SparkStats
 
 import GUI.Types
 import GUI.ViewerColours
-import GUI.Timeline.Ticks (renderHRulers)
+import GUI.Timeline.Ticks (mu, deZero, renderHRulers)
 
 import Graphics.Rendering.Cairo
+
+import qualified Data.List as L
+import qualified Data.IntMap as IM
+import Data.Accessor
+import Text.Printf
+
+import qualified Graphics.Rendering.Chart as Chart
+import qualified Graphics.Rendering.Chart.Renderable as ChartR
+import qualified Graphics.Rendering.Chart.Plot.Hidden as ChartH
 
 -- import Text.Printf
 
@@ -147,3 +159,70 @@ addSparks colour maxSliceSpark f0 f1 start slice ts = do
       mapM_ (uncurry lineTo) (reverse t0)
       setSourceRGBAhex colour 1.0
       fill
+
+type Interval = (Timestamp, Timestamp)
+
+renderSparkHistogram :: HECs -> Maybe Interval -> (Double, Double)
+                       -> Render Bool
+renderSparkHistogram hecs minterval size =
+  let intDoub :: Integral a => a -> Double
+      intDoub = fromIntegral
+      histo :: [(Int, Timestamp)] -> [(Int, Timestamp)]
+      histo durs = IM.toList $ fromListWith' (+) durs
+      inR :: Timestamp -> Bool
+      inR = case minterval of
+              Nothing -> const True
+              Just (from, to) -> \ t -> t >= from && t <= to
+      -- TODO: if xs is sorted, we can slightly optimize the filtering
+      inRange :: [(Timestamp, Int, Timestamp)] -> [(Int, Timestamp)]
+      inRange xs = [(logdur, dur)
+                   | (start, logdur, dur) <- xs, inR start]
+      plot :: [(Timestamp, Int, Timestamp)] -> Chart.Layout1 Double Double
+      plot xs =
+        let layout = Chart.layout1_plots ^= [Left plot]
+                   $ Chart.layout1_left_axis ^= yaxis
+                   $ Chart.layout1_bottom_axis ^= xaxis
+                   $ Chart.defaultLayout1 :: Chart.Layout1 Double Double
+            yaxis  = Chart.laxis_title ^= ""
+                   $ Chart.laxis_override ^= Chart.axis_labels ^: map override0
+                   $ Chart.defaultLayoutAxis
+            xaxis  = Chart.laxis_title ^= ""
+                   $ Chart.laxis_override ^= Chart.axis_labels ^: map override0
+                   $ Chart.defaultLayoutAxis
+            ytitle = "Total duration (" ++ mu ++ "s)"
+            xtitle = "Individual spark duration (" ++ mu ++ "s)"
+            override0 d = [ (x, "") | (x, _) <- d]
+            overrideX d = [ (x, deZero (printf "%.4f" (10 ** (x / 5) / 1000)))
+                          | (x, _) <- d]  -- TODO: round it up before **
+            plot = Chart.joinPlot plotBars plotHidden
+            plotHidden =  -- to fix the x an y scales
+              Chart.toPlot $ ChartH.PlotHidden
+                [intDoub (minXHistogram hecs), intDoub (maxXHistogram hecs)]
+                [0, intDoub (maxYHistogram hecs) / 1000]
+            plotBars = Chart.plotBars bars
+            bars = Chart.plot_bars_values ^= barvs $ Chart.defaultPlotBars
+            barvs = [(intDoub t, [intDoub height / 1000])
+                    | (t, height) <- histo $ inRange xs]
+        in layout
+      xs = durHistogram hecs
+      renderable :: Chart.Renderable ()
+      renderable = ChartR.toRenderable (plot xs)
+  in if null xs
+     then return False  -- TODO: perhaps display "No data" in the tab?
+     else do
+       Chart.runCRender (Chart.render renderable size) ChartR.bitmapEnv
+       return True
+
+-- TODO: factor out to module with helper stuff (mu, deZero, this)
+fromListWith' :: (a -> a -> a) -> [(Int, a)] -> IM.IntMap a
+fromListWith' f xs =
+    L.foldl' ins IM.empty xs
+  where
+#if MIN_VERSION_containers(0,4,1)
+    ins t (k,x) = IM.insertWith' f k x t
+#else
+    ins t (k,x) =
+      let r = IM.insertWith f k x t
+          v = r IM.! k
+      in v `seq` r
+#endif

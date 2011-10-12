@@ -225,8 +225,13 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                  in renderSparkPool params slice start end (prof !! c) maxP
                TraceHistogram ->
                  -- TODO
-                 let maxP = maxSparkPool hecs
-                 in renderSparkPool params slice start end (prof !! 0) maxP
+                 let size = (fromIntegral width, fromIntegral hecSparksHeight)
+                 in do
+                   save
+                   identityMatrix
+                   translate 0 (fromIntegral y)
+                   renderSparkHistogram hecs Nothing {-minterval-} size
+                   restore
                TraceGroup _ -> error "renderTrace"
                TraceActivity ->
                  renderActivity params hecs startPos endPos

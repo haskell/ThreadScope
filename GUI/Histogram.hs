@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 module GUI.Histogram (
     HistogramView,
     histogramViewNew,
@@ -7,23 +6,14 @@ module GUI.Histogram (
  ) where
 
 import Events.HECs
-import GUI.Timeline.Ticks (mu, deZero)
 import GUI.Timeline.Render (renderYScaleArea, renderXScaleArea)
+import GUI.Timeline.Sparks
 import GUI.Types
 
 import Graphics.UI.Gtk
 import qualified Graphics.Rendering.Cairo as C
 
-import qualified Graphics.Rendering.Chart as Chart
-import qualified Graphics.Rendering.Chart.Renderable as ChartR
-import qualified Graphics.Rendering.Chart.Plot.Hidden as ChartH
-
-import Data.Accessor
 import Data.IORef
-import qualified Data.List as L
-import qualified Data.IntMap as IM
-
-import Text.Printf
 
 data HistogramView =
   HistogramView
@@ -31,8 +21,6 @@ data HistogramView =
   , intervalIORef :: IORef (Maybe Interval)
   , histogramDrawingArea :: DrawingArea
   }
-
-type Interval = (Timestamp, Timestamp)
 
 histogramViewSetHECs :: HistogramView -> Maybe HECs -> IO ()
 histogramViewSetHECs HistogramView{..} mhecs = do
@@ -67,7 +55,7 @@ histogramViewNew builder = do
         }
       renderHist hecs minterval size = do
         let params = paramsHack (fst size)
-            drawHist = renderViewHistogram hecs minterval size
+            drawHist = renderSparkHistogram hecs minterval size
             drawXScale = renderXScaleArea params hecs (ceiling xScaleAreaHeight)
             drawYScale = renderYScaleArea params hecs yScaleAreaWidth
         C.translate yScaleAreaWidth 0
@@ -98,68 +86,3 @@ histogramViewNew builder = do
            renderWithDrawable win (renderHist hecs minterval size)
 
   return HistogramView{..}
-
-renderViewHistogram :: HECs -> Maybe Interval -> (Double, Double)
-                       -> C.Render Bool
-renderViewHistogram hecs minterval size =
-  let intDoub :: Integral a => a -> Double
-      intDoub = fromIntegral
-      histo :: [(Int, Timestamp)] -> [(Int, Timestamp)]
-      histo durs = IM.toList $ fromListWith' (+) durs
-      inR :: Timestamp -> Bool
-      inR = case minterval of
-              Nothing -> const True
-              Just (from, to) -> \ t -> t >= from && t <= to
-      -- TODO: if xs is sorted, we can slightly optimize the filtering
-      inRange :: [(Timestamp, Int, Timestamp)] -> [(Int, Timestamp)]
-      inRange xs = [(logdur, dur)
-                   | (start, logdur, dur) <- xs, inR start]
-      plot :: [(Timestamp, Int, Timestamp)] -> Chart.Layout1 Double Double
-      plot xs =
-        let layout = Chart.layout1_plots ^= [Left plot]
-                   $ Chart.layout1_left_axis ^= yaxis
-                   $ Chart.layout1_bottom_axis ^= xaxis
-                   $ Chart.defaultLayout1 :: Chart.Layout1 Double Double
-            yaxis  = Chart.laxis_title ^= ""
-                   $ Chart.laxis_override ^= Chart.axis_labels ^: map override0
-                   $ Chart.defaultLayoutAxis
-            xaxis  = Chart.laxis_title ^= ""
-                   $ Chart.laxis_override ^= Chart.axis_labels ^: map override0
-                   $ Chart.defaultLayoutAxis
-            ytitle = "Total duration (" ++ mu ++ "s)"
-            xtitle = "Individual spark duration (" ++ mu ++ "s)"
-            override0 d = [ (x, "") | (x, _) <- d]
-            overrideX d = [ (x, deZero (printf "%.4f" (10 ** (x / 5) / 1000)))
-                          | (x, _) <- d]  -- TODO: round it up before **
-            plot = Chart.joinPlot plotBars plotHidden
-            plotHidden =  -- to fix the x an y scales
-              Chart.toPlot $ ChartH.PlotHidden
-                [intDoub (minXHistogram hecs), intDoub (maxXHistogram hecs)]
-                [0, intDoub (maxYHistogram hecs) / 1000]
-            plotBars = Chart.plotBars bars
-            bars = Chart.plot_bars_values ^= barvs $ Chart.defaultPlotBars
-            barvs = [(intDoub t, [intDoub height / 1000])
-                    | (t, height) <- histo $ inRange xs]
-        in layout
-      xs = durHistogram hecs
-      renderable :: Chart.Renderable ()
-      renderable = ChartR.toRenderable (plot xs)
-  in if null xs
-     then return False  -- TODO: perhaps display "No data" in the tab?
-     else do
-       Chart.runCRender (Chart.render renderable size) ChartR.bitmapEnv
-       return True
-
--- TODO: factor out to module with helper stuff (mu, deZero, this)
-fromListWith' :: (a -> a -> a) -> [(Int, a)] -> IM.IntMap a
-fromListWith' f xs =
-    L.foldl' ins IM.empty xs
-  where
-#if MIN_VERSION_containers(0,4,1)
-    ins t (k,x) = IM.insertWith' f k x t
-#else
-    ins t (k,x) =
-      let r = IM.insertWith f k x t
-          v = r IM.! k
-      in v `seq` r
-#endif
