@@ -1,4 +1,4 @@
-pristine:03eb784fcbdc6360ed51e7b99886dbb63f149de51b334325ce5c786ace637832
+pristine:1cdf8bcecad60533c4b3bf625a317d1f45c28dc6c3b0bee169dc9bd1a6baa318
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1514,3 +1514,78 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111008225450
  Ignore-this: ba4a0b0bc54afe0880b22a8c52021b07
 ] 
 hash: 0000001200-68e1952db6e4a083164d3968bfc0f0a857c16d496f86d114ca3d5c6f1416d154
+[Clean up the declared haskell extensions
+Mikolaj Konarski <mikolaj@well-typed.com>**20111009232108
+ Ignore-this: bb46b626c0cde11759c0cd41d4559fa0
+] 
+hash: 0000000510-f59fbf076364b2333bc1b62ed46caacb50426b13c574102c21067ed963a74149
+[SQUASH_ME: fix to the extension cleanup (forgotten darcs amen)
+Mikolaj Konarski <mikolaj@well-typed.com>**20111009234015
+ Ignore-this: 933a3f3eb50e3e48890cb64282fc2dd2
+] 
+hash: 0000000453-9d77f3e11b1b2841ab608053d9f81b9e7b8f50aca185116647e7464f8876f6ff
+[Fix building with -fsparks-histogram with older ghc
+Duncan Coutts <duncan@well-typed.com>**20111010140838
+ Ignore-this: 1946accbd8a8587dedcd31df5d92c5e4
+ The IntMap.insertWith' is only available in later versions of
+ the containers package. Add a workaround for older versions.
+] 
+hash: 0000003819-fd3b34ddd245d4e69af6b467ce84f8d83f68ad50b9eb70a40d96ecab241bfecf
+[SQUASH_ME: Re-add an import to fix compilation with -fsparks-histogram
+Mikolaj Konarski <mikolaj@well-typed.com>**20111010150118
+ Ignore-this: 757abfdeace920c3ca16ced05403dd06
+] 
+hash: 0000000238-edf774b39ec4c6238660575b1c7e29b23faf57d12ea9e08d89ad945b9d160f4f
+[Fix the conflict between histogram rewrite and fromListWith' work
+Mikolaj Konarski <mikolaj@well-typed.com>**20111010151349
+ Ignore-this: a6504de4b5d50f6bdd40d6272ce30fce
+] 
+hash: 0000001359-6a34a0229829aeef07f9f60428e4a48995d479007924ee36eb402ce640c9cc46
+[Fix stack overflow with old versions of containers
+Mikolaj Konarski <mikolaj@well-typed.com>**20111010154350
+ Ignore-this: 2be55dee6a673a3d3e480bf08f92546b
+] 
+hash: 0000001054-d6281b8b9b9602fb507dfadd19592ee9ffa814f10234cd044400160f462822c8
+[Rename trace constructors
+Mikolaj Konarski <mikolaj@well-typed.com>**20111011092728
+ Ignore-this: 312c65d8c948197ff77b49e657172ba8
+] 
+hash: 0000002717-1a5ba4cb9ad5113072cb9c9ada6df139379ed7ace5a4c4fab339f5af7676861d
+[Remove TraceThread, harden trace matching code
+Mikolaj Konarski <mikolaj@well-typed.com>**20111011100143
+ Ignore-this: 8d0b9103de1ab7286ad15b56a523b6c1
+] 
+hash: 0000000846-29459ebe51694f01bf70c81670e40c19e90e9b038c9a2b1ae07d513dd846b412
+[Add Open toolbar button
+Mikolaj Konarski <mikolaj@well-typed.com>**20111011104430
+ Ignore-this: fba250529099dde7ab50c5f792697897
+ 
+ Speeds up turnaround for commandline-averse people or when looking
+ at several logs in succession.
+] 
+hash: 0000001154-53a6ce8e5632017432b09b1f7db75770f65ef67268c9d3af1c2c201be08f59d9
+[Add TraceHistogram
+Mikolaj Konarski <mikolaj@well-typed.com>**20111011111207
+ Ignore-this: c948be923d3ea9143a757c4595a9fa49
+] 
+hash: 0000001186-83280929543225f11527817a1d0fccbee2b9f5e5f461c9c1921e8d562fbce09a
+[Rewrite Charts, step 8: provide max y scale value for histogram
+Mikolaj Konarski <mikolaj@well-typed.com>**20111012193645
+ Ignore-this: fb045905ae6c9d49965f02793c260597
+] 
+hash: 0000003564-2705f36b9aba6f55826b7b23c8d2231ddf5896c8e0808e43db9c81a303a92877
+[SQUASH_ME: TODO: add "Rewrite Charts, step 7: " before the commit message "add TraceHistogram" (Skipping depended-upon patch, blah, blah, blah) 
+Mikolaj Konarski <mikolaj@well-typed.com>**20111012193735
+ Ignore-this: df92d73b457db17acdd73fd183336a33
+] 
+hash: 0000000443-d8b23d33ddbcbf7d763567a6014bbaf952a0bf3aad55e65ece7bf3682fed08a5
+[Rewrite Charts, step 9: draw histogram graph as a trace
+Mikolaj Konarski <mikolaj@well-typed.com>**20111012212831
+ Ignore-this: 3ef7e0137c9f50559ee4b8f13077f7f0
+] 
+hash: 0000008072-6992069177cee2d4deba84ac82f939739f4cfb72c89d734252a4ad70260ed3e7
+[Rewrite Charts, step 10: draw x scale as part of histogram trace
+Mikolaj Konarski <mikolaj@well-typed.com>**20111012231425
+ Ignore-this: 8f93a81f1324263e7d959a0da6c81259
+] 
+hash: 0000005916-e3c4f59b408e6ffbf229b305df886206d01c7ff45a8309a7145def8beca2edaa

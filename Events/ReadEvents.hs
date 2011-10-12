@@ -138,12 +138,6 @@ buildEventLog progress from =
          allHisto     = map prepHisto sparks
          -- Sparks of zero lenght are already well visualized in other graphs:
          durHistogram = filter (\ (_, logdur, _) -> logdur > 0) allHisto
-         -- TODO: factor out to a module with helper stuff (mu, deZero, this)
-         fromListWith' :: (a -> a -> a) -> [(IM.Key, a)] -> IM.IntMap a
-         fromListWith' f xs =
-           L.foldl' ins IM.empty xs
-             where
-               ins t (k,x) = IM.insertWith' f k x t
          -- TODO: perhaps pass histo and related inside HECs, instead of max*
          -- also pass functions that use the "5", to make sure it's in sync
          histo :: [(Int, Timestamp)] -> [(Int, Timestamp)]
@@ -194,3 +188,17 @@ buildEventLog progress from =
        return (hecs, name, n_events, fromIntegral lastTx * 1.0e-9)
 
 -------------------------------------------------------------------------------
+
+-- TODO: factor out to module with helper stuff (mu, deZero, this)
+fromListWith' :: (a -> a -> a) -> [(Int, a)] -> IM.IntMap a
+fromListWith' f xs =
+    L.foldl' ins IM.empty xs
+  where
+#if MIN_VERSION_containers(0,4,1)
+    ins t (k,x) = IM.insertWith' f k x t
+#else
+    ins t (k,x) =
+      let r = IM.insertWith f k x t
+          v = r IM.! k
+      in v `seq` r
+#endif

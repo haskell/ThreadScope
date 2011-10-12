@@ -47,9 +47,7 @@ Executable threadscope
                      ghc-events == 0.3.* && >= 0.3.1,
                      containers >= 0.3 && < 0.5,
                      deepseq >= 1.1
-  Extensions:        RecordWildCards, NamedFieldPuns,
-                     BangPatterns, PatternGuards,
-                     CPP
+  Extensions:        RecordWildCards, NamedFieldPuns, BangPatterns, PatternGuards
   Other-Modules:     Events.HECs,
                      Events.EventDuration,
                      Events.EventTree,
@@ -83,8 +81,7 @@ Executable threadscope
 
   if flag(sparks-histogram)
     build-depends:   Chart >= 0.14,
-                     data-accessor >= 0.2.2,
-                     containers >= 0.4.1
+                     data-accessor >= 0.2.2
     other-modules:   GUI.Histogram
     cpp-options:     -DUSE_SPARK_HISTOGRAM
 

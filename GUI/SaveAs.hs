@@ -1,7 +1,8 @@
 module GUI.SaveAs (saveAsPDF, saveAsPNG) where
 
 -- Imports for ThreadScope
-import GUI.Timeline.Render (renderTraces, renderYScaleArea, renderXScaleArea)
+import GUI.Timeline.Render (renderTraces, renderYScaleArea)
+import GUI.Timeline.Ticks (renderXScaleArea)
 import GUI.Types
 import Events.HECs
 

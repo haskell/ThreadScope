@@ -10,13 +10,14 @@ import GHC.RTS.Events
 
 data Trace
   = TraceHEC      Int
-  | SparkCreationHEC Int
-  | SparkConversionHEC Int
-  | SparkPoolHEC  Int
-  | TraceThread   ThreadId
+  | TraceCreationHEC Int
+  | TraceConversionHEC Int
+  | TracePoolHEC  Int
+  | TraceHistogram
   | TraceGroup    String
   | TraceActivity
   -- more later ...
+  --  | TraceThread   ThreadId
   deriving Eq
 
 -- the parameters for a timeline render; used to figure out whether

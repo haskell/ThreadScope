@@ -1,8 +1,6 @@
-{-# LANGUAGE NamedFieldPuns #-}
 module GUI.Timeline.Render (
     renderView,
     renderTraces,
-    renderXScaleArea,
     updateXScaleArea,
     renderYScaleArea,
     updateYScaleArea,
@@ -12,7 +10,7 @@ module GUI.Timeline.Render (
 
 import GUI.Timeline.Types
 import GUI.Timeline.Render.Constants
-import GUI.Timeline.Ticks (renderXScale, renderYScale, renderVRulers)
+import GUI.Timeline.Ticks (mu, renderXScale, renderYScale, renderVRulers)
 import GUI.Timeline.HEC
 import GUI.Timeline.Sparks
 import GUI.Timeline.Activity
@@ -217,17 +215,28 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                TraceHEC c ->
                  let (dtree, etree, _) = hecTrees hecs !! c
                  in renderHEC params startPos endPos (dtree, etree)
-               SparkCreationHEC c ->
+               TraceCreationHEC c ->
                  renderSparkCreation params slice start end (prof !! c)
-               SparkConversionHEC c ->
+               TraceConversionHEC c ->
                  renderSparkConversion params slice start end (prof !! c)
-               SparkPoolHEC c ->
+               TracePoolHEC c ->
                  let maxP = maxSparkPool hecs
                  in renderSparkPool params slice start end (prof !! c) maxP
+               TraceHistogram ->
+                 -- TODO
+                 let size = (fromIntegral width,
+                             fromIntegral $ 2 * hecSparksHeight)  -- TODO
+                     xScaleAreaHeight = 45 -- TODO: should not be hardcoded, get it from "timeline_xscale_area"
+                 in do
+                   save
+                   identityMatrix
+                   translate 0 (fromIntegral y)
+                   renderSparkHistogram
+                     hecs Nothing {-minterval-} size xScaleAreaHeight
+                   restore
+               TraceGroup _ -> error "renderTrace"
                TraceActivity ->
                  renderActivity params hecs startPos endPos
-               _   ->
-                 return ()
             restore
       -- Now render all the HECs.
       zipWithM_ renderTrace viewTraces (traceYPositions labelsMode viewTraces)
@@ -288,12 +297,6 @@ scrollView surface old new hecs = do
 
 --------------------------------------------------------------------------------
 
--- | Render the X scale, based on view parameters and hecs.
-renderXScaleArea :: ViewParameters -> HECs -> Int -> Render ()
-renderXScaleArea ViewParameters{width, scaleValue, hadjValue} hecs yoffset =
-  let lastTx = hecLastEventTime hecs
-  in renderXScale scaleValue hadjValue width lastTx yoffset
-
 -- | Update the X scale widget, based on the state of all timeline areas.
 -- For simplicity, unlike for the traces, we redraw the whole area
 -- and not only the newly exposed area. This is comparatively very cheap.
@@ -317,34 +320,41 @@ updateXScaleArea TimelineState{..} lastTx = do
 renderYScaleArea :: ViewParameters -> HECs -> Double -> Render ()
 renderYScaleArea ViewParameters{maxSpkValue, labelsMode, viewTraces}
                  hecs xoffset =
-  drawYScaleArea maxSpkValue (maxSparkPool hecs) xoffset
-    0 labelsMode viewTraces
+  let maxP = maxSparkPool hecs
+      maxH = fromIntegral (maxYHistogram hecs) / 1000
+  in drawYScaleArea maxSpkValue maxP maxH xoffset 0 labelsMode viewTraces
 
 -- | Update the Y scale widget, based on the state of all timeline areas
 -- and on traces (only for graph labels and relative positions).
-updateYScaleArea :: TimelineState -> Double -> Bool -> [Trace] -> IO ()
-updateYScaleArea TimelineState{..} maxSparkPool labelsMode traces = do
+updateYScaleArea :: TimelineState -> Double -> Double -> Bool -> [Trace] -> IO ()
+updateYScaleArea TimelineState{..} maxSparkPool maxYHistogram
+                 labelsMode traces = do
   win <- widgetGetDrawWindow timelineYScaleArea
   maxSpkValue  <- readIORef maxSpkIORef
   vadj_value   <- adjustmentGetValue timelineVAdj
   (xoffset, _) <- widgetGetSize timelineYScaleArea
   renderWithDrawable win $
-    drawYScaleArea maxSpkValue maxSparkPool (fromIntegral xoffset)
+    drawYScaleArea maxSpkValue maxSparkPool maxYHistogram (fromIntegral xoffset)
       vadj_value labelsMode traces
 
 -- | Render the Y scale area, by rendering an axis, ticks and a label
 -- for each graph-like trace in turn (and only labels for other traces).
-drawYScaleArea :: Double -> Double -> Double -> Double -> Bool -> [Trace]
+drawYScaleArea :: Double -> Double -> Double -> Double -> Double
+                  -> Bool -> [Trace]
                   -> Render ()
-drawYScaleArea maxSpkValue maxSparkPool xoffset vadj_value labelsMode traces =
+drawYScaleArea maxSpkValue maxSparkPool maxYHistogram
+               xoffset vadj_value labelsMode traces =
   let ys = map (subtract (round vadj_value)) $
              traceYPositions labelsMode traces
-  in zipWithM_ (drawSingleYScale maxSpkValue maxSparkPool xoffset) traces ys
+  in zipWithM_
+       (drawSingleYScale maxSpkValue maxSparkPool maxYHistogram xoffset)
+       traces ys
 
 -- | Render a single Y scale axis, set of ticks and label, or only a label,
 -- if the trace is not a graph.
-drawSingleYScale :: Double -> Double -> Double -> Trace -> Int -> Render ()
-drawSingleYScale maxSpkValue maxSparkPool xoffset trace y = do
+drawSingleYScale :: Double -> Double -> Double -> Double -> Trace -> Int
+                    -> Render ()
+drawSingleYScale maxSpkValue maxSparkPool maxYHistogram xoffset trace y = do
   setSourceRGBAhex black 1
   move_to (ox, y + 8)
   layout <- createLayout $ showTrace trace
@@ -353,8 +363,9 @@ drawSingleYScale maxSpkValue maxSparkPool xoffset trace y = do
     layoutSetAttributes layout [AttrSize minBound maxBound 8,
                                 AttrFamily minBound maxBound "sans serif"]
   showLayout layout
-  case traceMaxSpark maxSpkValue maxSparkPool trace of
-    Just v  -> renderYScale hecSparksHeight 1 v (xoffset - 13) (fromIntegral y)
+  case traceMaxSpark maxSpkValue maxSparkPool maxYHistogram trace of
+    Just v  ->
+      renderYScale (traceHeight trace) 1 v (xoffset - 13) (fromIntegral y)
     Nothing -> return ()  -- not a graph-like trace
 
 --------------------------------------------------------------------------------
@@ -365,12 +376,15 @@ traceYPositions labelsMode traces =
   scanl (\a b -> a + (traceHeight b) + extra + tracePad) firstTraceY traces
     where
       extra = if labelsMode then hecLabelExtra else 0
-      traceHeight TraceHEC{}           = hecTraceHeight
-      traceHeight SparkCreationHEC{}   = hecSparksHeight
-      traceHeight SparkConversionHEC{} = hecSparksHeight
-      traceHeight SparkPoolHEC{}       = hecSparksHeight
-      traceHeight TraceActivity        = activityGraphHeight
-      traceHeight _ = 0
+
+traceHeight :: Trace -> Int
+traceHeight TraceHEC{}           = hecTraceHeight
+traceHeight TraceCreationHEC{}   = hecSparksHeight
+traceHeight TraceConversionHEC{} = hecSparksHeight
+traceHeight TracePoolHEC{}       = hecSparksHeight
+traceHeight TraceHistogram       = 2 * hecSparksHeight  -- TODO
+traceHeight TraceGroup{}         = error "traceYPositions"
+traceHeight TraceActivity        = activityGraphHeight
 
 -- | Calculate the total Y span of all traces.
 calculateTotalTimelineHeight :: Bool -> [Trace] -> Int
@@ -381,22 +395,25 @@ calculateTotalTimelineHeight labelsMode traces =
 showTrace :: Trace -> String
 showTrace (TraceHEC n) =
   "HEC " ++ show n
-showTrace (SparkCreationHEC n) =
+showTrace (TraceCreationHEC n) =
   "\nHEC " ++ show n ++ "\n\nSpark creation rate (spark/ms)"
-showTrace (SparkConversionHEC n) =
+showTrace (TraceConversionHEC n) =
   "\nHEC " ++ show n ++ "\n\nSpark conversion rate (spark/ms)"
-showTrace (SparkPoolHEC n) =
+showTrace (TracePoolHEC n) =
   "\nHEC " ++ show n ++ "\n\nSpark pool size"
+showTrace TraceHistogram =
+  "Total duration (" ++ mu ++ "s)"
+showTrace TraceGroup{} = error "Render.showTrace"
 showTrace TraceActivity =
   "Activity"
-showTrace _ = error "Render.showTrace"
 
 -- | Calcaulate the maximal Y value for a graph-like trace, or Nothing.
-traceMaxSpark :: Double -> Double -> Trace -> Maybe Double
-traceMaxSpark maxS _ SparkCreationHEC{}   = Just $ maxS * 1000000
-traceMaxSpark maxS _ SparkConversionHEC{} = Just $ maxS * 1000000
-traceMaxSpark _ maxP SparkPoolHEC{}       = Just $ maxP
-traceMaxSpark _ _ _ = Nothing
+traceMaxSpark :: Double -> Double -> Double -> Trace -> Maybe Double
+traceMaxSpark maxS _ _ TraceCreationHEC{}   = Just $ maxS * 1000000
+traceMaxSpark maxS _ _ TraceConversionHEC{} = Just $ maxS * 1000000
+traceMaxSpark _ maxP _ TracePoolHEC{}       = Just $ maxP
+traceMaxSpark _ _ maxH TraceHistogram       = Just $ maxH
+traceMaxSpark _ _ _ _ = Nothing
 
 -- | Snap a value to a whole pixel, based on drawing scale.
 toWholePixels :: Double -> Double -> Double

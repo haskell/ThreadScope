@@ -67,10 +67,10 @@ traceViewNew builder actions = do
 
   where
     renderTrace (TraceHEC           hec) = "HEC " ++ show hec
-    renderTrace (SparkCreationHEC   hec) = "HEC " ++ show hec
-    renderTrace (SparkConversionHEC hec) = "HEC " ++ show hec
-    renderTrace (SparkPoolHEC       hec) = "HEC " ++ show hec
-    renderTrace (TraceThread        tid) = "Thread " ++ show tid
+    renderTrace (TraceCreationHEC   hec) = "HEC " ++ show hec
+    renderTrace (TraceConversionHEC hec) = "HEC " ++ show hec
+    renderTrace (TracePoolHEC       hec) = "HEC " ++ show hec
+    renderTrace (TraceHistogram)         = "Spark Histogram"
     renderTrace (TraceGroup       label) = label
     renderTrace (TraceActivity)          = "Activity Profile"
 
@@ -99,6 +99,9 @@ traceViewNew builder actions = do
 traceViewSetHECs :: TraceView -> HECs -> IO ()
 traceViewSetHECs TraceView{tracesStore} hecs = do
     treeStoreClear tracesStore
+    -- testing only (or to add histogram to PNG/PDF export:
+    -- treeStoreInsert tracesStore [] 0 (TraceHistogram, Visible)
+    treeStoreInsert tracesStore [] 0 (TraceHistogram, Visible)
     go 0
     treeStoreInsert tracesStore [] 0 (TraceActivity, Visible)
   where
@@ -107,15 +110,15 @@ traceViewSetHECs TraceView{tracesStore} hecs = do
                                        subForest = [] }
                               | k <- [ 0 .. hecCount hecs - 1 ] ] }
     nCre = Node { rootLabel = (TraceGroup "Spark Creation", Hidden),
-                  subForest = [ Node { rootLabel = (SparkCreationHEC k, Hidden),
+                  subForest = [ Node { rootLabel = (TraceCreationHEC k, Hidden),
                                        subForest = [] }
                               | k <- [ 0 .. hecCount hecs - 1 ] ] }
     nCon = Node { rootLabel = (TraceGroup "Spark Conversion", Hidden),
-                  subForest = [ Node { rootLabel = (SparkConversionHEC k, Hidden),
+                  subForest = [ Node { rootLabel = (TraceConversionHEC k, Hidden),
                                        subForest = [] }
                               | k <- [ 0 .. hecCount hecs - 1 ] ] }
     nPoo = Node { rootLabel = (TraceGroup "Spark Pool", Hidden),
-                  subForest = [ Node { rootLabel = (SparkPoolHEC k, Hidden),
+                  subForest = [ Node { rootLabel = (TracePoolHEC k, Hidden),
                                        subForest = [] }
                               | k <- [ 0 .. hecCount hecs - 1 ] ] }
     go n = do

@@ -125,6 +125,7 @@ mainWindowNew builder actions = do
   zoomFitButton      <- getWidget castToToolButton "cpus_zoomfit"
 
   labelsModeToggle   <- getWidget castToToggleToolButton "cpus_labels_mode"
+  zerothButton       <- getWidget castToToolButton "cpus_zeroth"
   firstButton        <- getWidget castToToolButton "cpus_first"
   lastButton         <- getWidget castToToolButton "cpus_last"
   centreButton       <- getWidget castToToolButton "cpus_centre"
@@ -178,6 +179,7 @@ mainWindowNew builder actions = do
   on aboutMenuItem  menuItemActivate     $ mainWinAbout actions
 
   -- Toolbar
+  onToolButtonClicked zerothButton $ mainWinOpen       actions
   onToolButtonClicked firstButton  $ mainWinJumpStart  actions
   onToolButtonClicked lastButton   $ mainWinJumpEnd    actions
   onToolButtonClicked centreButton $ mainWinJumpCursor actions
