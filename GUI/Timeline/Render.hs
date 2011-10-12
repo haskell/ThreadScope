@@ -1,7 +1,6 @@
 module GUI.Timeline.Render (
     renderView,
     renderTraces,
-    renderXScaleArea,
     updateXScaleArea,
     renderYScaleArea,
     updateYScaleArea,
@@ -225,12 +224,15 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                  in renderSparkPool params slice start end (prof !! c) maxP
                TraceHistogram ->
                  -- TODO
-                 let size = (fromIntegral width, fromIntegral hecSparksHeight)
+                 let size = (fromIntegral width,
+                             fromIntegral $ 2 * hecSparksHeight)  -- TODO
+                     xScaleAreaHeight = 45 -- TODO: should not be hardcoded, get it from "timeline_xscale_area"
                  in do
                    save
                    identityMatrix
                    translate 0 (fromIntegral y)
-                   renderSparkHistogram hecs Nothing {-minterval-} size
+                   renderSparkHistogram
+                     hecs Nothing {-minterval-} size xScaleAreaHeight
                    restore
                TraceGroup _ -> error "renderTrace"
                TraceActivity ->
@@ -294,12 +296,6 @@ scrollView surface old new hecs = do
    return new_surface
 
 --------------------------------------------------------------------------------
-
--- | Render the X scale, based on view parameters and hecs.
-renderXScaleArea :: ViewParameters -> HECs -> Int -> Render ()
-renderXScaleArea ViewParameters{width, scaleValue, hadjValue} hecs yoffset =
-  let lastTx = hecLastEventTime hecs
-  in renderXScale scaleValue hadjValue width lastTx yoffset
 
 -- | Update the X scale widget, based on the state of all timeline areas.
 -- For simplicity, unlike for the traces, we redraw the whole area
@@ -368,7 +364,8 @@ drawSingleYScale maxSpkValue maxSparkPool maxYHistogram xoffset trace y = do
                                 AttrFamily minBound maxBound "sans serif"]
   showLayout layout
   case traceMaxSpark maxSpkValue maxSparkPool maxYHistogram trace of
-    Just v  -> renderYScale hecSparksHeight 1 v (xoffset - 13) (fromIntegral y)
+    Just v  ->
+      renderYScale (traceHeight trace) 1 v (xoffset - 13) (fromIntegral y)
     Nothing -> return ()  -- not a graph-like trace
 
 --------------------------------------------------------------------------------
@@ -379,13 +376,15 @@ traceYPositions labelsMode traces =
   scanl (\a b -> a + (traceHeight b) + extra + tracePad) firstTraceY traces
     where
       extra = if labelsMode then hecLabelExtra else 0
-      traceHeight TraceHEC{}           = hecTraceHeight
-      traceHeight TraceCreationHEC{}   = hecSparksHeight
-      traceHeight TraceConversionHEC{} = hecSparksHeight
-      traceHeight TracePoolHEC{}       = hecSparksHeight
-      traceHeight TraceHistogram       = hecSparksHeight  -- TODO
-      traceHeight TraceGroup{}         = error "traceYPositions"
-      traceHeight TraceActivity        = activityGraphHeight
+
+traceHeight :: Trace -> Int
+traceHeight TraceHEC{}           = hecTraceHeight
+traceHeight TraceCreationHEC{}   = hecSparksHeight
+traceHeight TraceConversionHEC{} = hecSparksHeight
+traceHeight TracePoolHEC{}       = hecSparksHeight
+traceHeight TraceHistogram       = 2 * hecSparksHeight  -- TODO
+traceHeight TraceGroup{}         = error "traceYPositions"
+traceHeight TraceActivity        = activityGraphHeight
 
 -- | Calculate the total Y span of all traces.
 calculateTotalTimelineHeight :: Bool -> [Trace] -> Int

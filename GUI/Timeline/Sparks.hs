@@ -17,7 +17,7 @@ import qualified Events.SparkStats as SparkStats
 
 import GUI.Types
 import GUI.ViewerColours
-import GUI.Timeline.Ticks (mu, deZero, renderHRulers)
+import GUI.Timeline.Ticks (mu, deZero, renderHRulers, renderXScaleArea)
 
 import Graphics.Rendering.Cairo
 
@@ -162,9 +162,9 @@ addSparks colour maxSliceSpark f0 f1 start slice ts = do
 
 type Interval = (Timestamp, Timestamp)
 
-renderSparkHistogram :: HECs -> Maybe Interval -> (Double, Double)
+renderSparkHistogram :: HECs -> Maybe Interval -> (Double, Double) -> Double
                        -> Render Bool
-renderSparkHistogram hecs minterval size =
+renderSparkHistogram hecs minterval (w, h) xScaleAreaHeight =
   let intDoub :: Integral a => a -> Double
       intDoub = fromIntegral
       histo :: [(Int, Timestamp)] -> [(Int, Timestamp)]
@@ -210,7 +210,28 @@ renderSparkHistogram hecs minterval size =
   in if null xs
      then return False  -- TODO: perhaps display "No data" in the tab?
      else do
-       Chart.runCRender (Chart.render renderable size) ChartR.bitmapEnv
+       let drawHist =
+             Chart.runCRender (Chart.render renderable size) ChartR.bitmapEnv
+           drawXScale = renderXScaleArea params hecs (ceiling xScaleAreaHeight)
+           size = (w, h - xScaleAreaHeight)
+           params = ViewParameters  -- TODO: a hack
+             { width = ceiling w
+             , height = undefined
+             , viewTraces = [TraceHistogram]
+             , hadjValue = 0
+             , scaleValue = 1
+             , maxSpkValue = undefined
+             , detail = undefined
+             , bwMode = undefined
+             , labelsMode = False
+             }
+           mult = 1000  -- HACK for PNG/PDF export: clear rulers everywhere below
+       rectangle 0 0 w (h * mult)
+       setSourceRGBAhex white 1.0
+       fill
+       drawHist
+       translate 0 (snd size)
+       drawXScale
        return True
 
 -- TODO: factor out to module with helper stuff (mu, deZero, this)

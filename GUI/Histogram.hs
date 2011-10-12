@@ -6,7 +6,7 @@ module GUI.Histogram (
  ) where
 
 import Events.HECs
-import GUI.Timeline.Render (renderYScaleArea, renderXScaleArea)
+import GUI.Timeline.Render (renderYScaleArea)
 import GUI.Timeline.Sparks
 import GUI.Types
 
@@ -36,8 +36,8 @@ histogramViewNew :: Builder -> IO HistogramView
 histogramViewNew builder = do
   let getWidget cast = builderGetObject builder cast
   histogramDrawingArea <- getWidget castToDrawingArea "histogram_drawingarea"
-  timelineYScaleArea  <- getWidget castToDrawingArea "timeline_yscale_area"
-  timelineXScaleArea  <- getWidget castToDrawingArea "timeline_xscale_area"
+  timelineYScaleArea <- getWidget castToDrawingArea "timeline_yscale_area"
+  timelineXScaleArea <- getWidget castToDrawingArea "timeline_xscale_area"
   (w, _) <- widgetGetSize timelineYScaleArea
   (_, h) <- widgetGetSize timelineXScaleArea
   let yScaleAreaWidth  = fromIntegral w
@@ -55,15 +55,12 @@ histogramViewNew builder = do
         }
       renderHist hecs minterval size = do
         let params = paramsHack (fst size)
-            drawHist = renderSparkHistogram hecs minterval size
-            drawXScale = renderXScaleArea params hecs (ceiling xScaleAreaHeight)
+            drawHist = renderSparkHistogram hecs minterval size xScaleAreaHeight
             drawYScale = renderYScaleArea params hecs yScaleAreaWidth
         C.translate yScaleAreaWidth 0
         b <- drawHist
         if not b then return False else do
-        C.translate 0 (snd size)
-        drawXScale
-        C.translate (-yScaleAreaWidth) (-(snd size))
+        C.translate (-yScaleAreaWidth) (-snd size + xScaleAreaHeight)
         drawYScale
         return True
 
@@ -74,8 +71,7 @@ histogramViewNew builder = do
   on histogramDrawingArea exposeEvent $
      C.liftIO $ do
        (width, height) <- widgetGetSize histogramDrawingArea
-       let size = (fromIntegral width  - yScaleAreaWidth,
-                   fromIntegral height - xScaleAreaHeight)
+       let size = (fromIntegral width  - yScaleAreaWidth, fromIntegral height)
        maybeEventArray <- readIORef hecsIORef
        minterval <- readIORef intervalIORef
        -- Check if an event trace has been loaded.

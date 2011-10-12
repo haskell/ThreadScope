@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 module GUI.Timeline.Ticks (
     renderVRulers,
+    renderXScaleArea,
     renderXScale,
     renderHRulers,
     renderYScale,
@@ -9,10 +10,11 @@ module GUI.Timeline.Ticks (
     dashedLine1,
   ) where
 
+import Events.HECs
+import GUI.Types
 import GUI.Timeline.Render.Constants
 import GUI.Timeline.CairoDrawing
 import GUI.ViewerColours
-import GHC.RTS.Events hiding (Event)
 
 import Graphics.Rendering.Cairo
 import Control.Monad
@@ -66,6 +68,14 @@ drawVRulers tickWidthInPixels height scaleValue pos incr endPos =
     -- We cheat at pos 0, to avoid half covering the tick by the grey label area.
     lineWidth = scaleValue
     x1 = if pos == 0 then ceiling (lineWidth / 2) else pos
+
+
+-- | Render the X scale, based on view parameters and hecs.
+renderXScaleArea :: ViewParameters -> HECs -> Int -> Render ()
+renderXScaleArea ViewParameters{width, scaleValue, hadjValue} hecs yoffset =
+  let lastTx = hecLastEventTime hecs
+  in renderXScale scaleValue hadjValue width lastTx yoffset
+
 
 -- | Render the X (vertical) scale: render X axis and call ticks rendering.
 -- TODO: refactor common parts with renderVRulers, in particlar to expose
