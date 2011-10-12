@@ -54,19 +54,19 @@ histogramViewNew builder = do
   (_, h) <- widgetGetSize timelineXScaleArea
   let yScaleAreaWidth  = fromIntegral w
       xScaleAreaHeight = fromIntegral h
-      paramsHack size = ViewParameters  -- TODO: a hack
-        { width = ceiling (fst size)
+      paramsHack width = ViewParameters  -- TODO: a hack
+        { width = ceiling width
         , height = undefined
         , viewTraces = [TraceHistogram]
         , hadjValue = 0
         , scaleValue = 1
-        , maxSpkValue = snd size
+        , maxSpkValue = undefined
         , detail = undefined
         , bwMode = undefined
         , labelsMode = False
         }
       renderHist hecs minterval size = do
-        let params = paramsHack size
+        let params = paramsHack (fst size)
             drawHist = renderViewHistogram hecs minterval size
             drawXScale = renderXScaleArea params hecs (ceiling xScaleAreaHeight)
             drawYScale = renderYScaleArea params hecs yScaleAreaWidth
