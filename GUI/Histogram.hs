@@ -6,7 +6,7 @@ module GUI.Histogram (
  ) where
 
 import Events.HECs
-import GUI.Timeline.Render (renderYScaleArea)
+import GUI.Timeline.Render (renderTraces, renderYScaleArea)
 import GUI.Timeline.Sparks
 import GUI.Types
 
@@ -42,9 +42,9 @@ histogramViewNew builder = do
   (_, h) <- widgetGetSize timelineXScaleArea
   let yScaleAreaWidth  = fromIntegral w
       xScaleAreaHeight = fromIntegral h
-      paramsHack width = ViewParameters  -- TODO: a hack
-        { width = ceiling width
-        , height = undefined
+      paramsHack size = ViewParameters  -- TODO: create here properly and pass around
+        { width = ceiling $ fst size
+        , height = ceiling $ snd size
         , viewTraces = [TraceHistogram]
         , hadjValue = 0
         , scaleValue = 1
@@ -54,14 +54,13 @@ histogramViewNew builder = do
         , labelsMode = False
         }
       renderHist hecs minterval size = do
-        let params = paramsHack (fst size)
-            drawHist = renderSparkHistogram hecs minterval size xScaleAreaHeight
+        let params = paramsHack size
+            rect = Rectangle 0 0 (ceiling $ fst size) (ceiling $ snd size)
+            drawHist = renderTraces params hecs rect  --renderSparkHistogram hecs minterval size xScaleAreaHeight
             drawYScale = renderYScaleArea params hecs yScaleAreaWidth
-        C.translate yScaleAreaWidth 0
-        b <- drawHist
-        if not b then return False else do
-        C.translate (-yScaleAreaWidth) (-snd size + xScaleAreaHeight)
-        drawYScale
+        drawHist
+--        C.translate 0 (-snd size + xScaleAreaHeight)
+--        drawYScale
         return True
 
   hecsIORef <- newIORef Nothing
@@ -77,8 +76,10 @@ histogramViewNew builder = do
        -- Check if an event trace has been loaded.
        case maybeEventArray of
          Nothing   -> return True
-         Just hecs -> do
-           win <- widgetGetDrawWindow histogramDrawingArea
-           renderWithDrawable win (renderHist hecs minterval size)
+         Just hecs
+           | null (durHistogram hecs) -> return True
+           | otherwise -> do
+               win <- widgetGetDrawWindow histogramDrawingArea
+               renderWithDrawable win (renderHist hecs minterval size)
 
   return HistogramView{..}

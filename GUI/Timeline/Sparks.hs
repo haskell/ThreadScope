@@ -163,7 +163,7 @@ addSparks colour maxSliceSpark f0 f1 start slice ts = do
 type Interval = (Timestamp, Timestamp)
 
 renderSparkHistogram :: HECs -> Maybe Interval -> (Double, Double) -> Double
-                       -> Render Bool
+                       -> Render ()
 renderSparkHistogram hecs minterval (w, h) xScaleAreaHeight =
   let intDoub :: Integral a => a -> Double
       intDoub = fromIntegral
@@ -207,9 +207,7 @@ renderSparkHistogram hecs minterval (w, h) xScaleAreaHeight =
       xs = durHistogram hecs
       renderable :: Chart.Renderable ()
       renderable = ChartR.toRenderable (plot xs)
-  in if null xs
-     then return False  -- TODO: perhaps display "No data" in the tab?
-     else do
+  in do
        let drawHist =
              Chart.runCRender (Chart.render renderable size) ChartR.bitmapEnv
            drawXScale = renderXScaleArea params hecs (ceiling xScaleAreaHeight)
@@ -232,7 +230,6 @@ renderSparkHistogram hecs minterval (w, h) xScaleAreaHeight =
        drawHist
        translate 0 (snd size)
        drawXScale
-       return True
 
 -- TODO: factor out to module with helper stuff (mu, deZero, this)
 fromListWith' :: (a -> a -> a) -> [(Int, a)] -> IM.IntMap a
