@@ -1,7 +1,8 @@
 module GUI.Types (
     ViewParameters(..),
     Trace(..),
-    Timestamp
+    Timestamp,
+    Interval,
   ) where
 
 import GHC.RTS.Events
@@ -20,6 +21,8 @@ data Trace
   --  | TraceThread   ThreadId
   deriving Eq
 
+type Interval = (Timestamp, Timestamp)
+
 -- the parameters for a timeline render; used to figure out whether
 -- we're drawing the same thing twice.
 data ViewParameters = ViewParameters {
@@ -30,6 +33,8 @@ data ViewParameters = ViewParameters {
     maxSpkValue   :: Double,
     detail        :: Int,
     bwMode, labelsMode :: Bool,
-    histogramHeight :: Int
+    histogramHeight :: Int,
+    minterval :: Maybe Interval,
+    xScaleAreaHeight :: Int
   }
   deriving Eq

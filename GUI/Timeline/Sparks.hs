@@ -5,7 +5,6 @@ module GUI.Timeline.Sparks (
     renderSparkCreation,
     renderSparkConversion,
     renderSparkPool,
-    Interval,
     renderSparkHistogram,
   ) where
 
@@ -160,10 +159,8 @@ addSparks colour maxSliceSpark f0 f1 start slice ts = do
       setSourceRGBAhex colour 1.0
       fill
 
-type Interval = (Timestamp, Timestamp)
-
-renderSparkHistogram :: ViewParameters -> HECs -> Maybe Interval -> Render ()
-renderSparkHistogram params@ViewParameters{..} hecs minterval =
+renderSparkHistogram :: ViewParameters -> HECs -> Render ()
+renderSparkHistogram params@ViewParameters{..} hecs =
   let intDoub :: Integral a => a -> Double
       intDoub = fromIntegral
       histo :: [(Int, Timestamp)] -> [(Int, Timestamp)]
@@ -209,10 +206,9 @@ renderSparkHistogram params@ViewParameters{..} hecs minterval =
   in do
        let drawHist =
              Chart.runCRender (Chart.render renderable size) ChartR.bitmapEnv
-           drawXScale = renderXScaleArea params hecs (ceiling xScaleAreaHeight)
-           xScaleAreaHeight = 45 -- TODO: should not be hardcoded, get it from "timeline_xscale_area"
+           drawXScale = renderXScaleArea params hecs xScaleAreaHeight
            size = (fromIntegral width,
-                   fromIntegral histogramHeight - xScaleAreaHeight)
+                   fromIntegral $ histogramHeight - xScaleAreaHeight)
            mult = 1000  -- HACK for PNG/PDF export: clear rulers everywhere below
        rectangle 0 (- fromIntegral firstTraceY) (fst size) (mult * snd size)
        setSourceRGBAhex white 1.0

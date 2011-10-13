@@ -92,19 +92,23 @@ timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, labelsModeIORef
 
   let timelineHeight =
         calculateTotalTimelineHeight labelsMode stdHistogramHeight traces
+  (_, xh) <- widgetGetSize timelineXScaleArea
+  let xScaleAreaHeight = fromIntegral xh
 
-  return ViewParameters {
-           width      = w,
-           height     = timelineHeight,
-           viewTraces = traces,
-           hadjValue  = hadj_value,
-           scaleValue = scaleValue,
-           maxSpkValue = maxSpkValue,
-           detail     = 3, --for now
-           bwMode     = bwmode,
-           labelsMode = labelsMode,
-           histogramHeight = stdHistogramHeight
-         }
+  return ViewParameters
+           { width      = w
+           , height     = timelineHeight
+           , viewTraces = traces
+           , hadjValue  = hadj_value
+           , scaleValue = scaleValue
+           , maxSpkValue = maxSpkValue
+           , detail     = 3 --for now
+           , bwMode     = bwmode
+           , labelsMode = labelsMode
+           , histogramHeight = stdHistogramHeight
+           , minterval = Nothing
+           , xScaleAreaHeight = xScaleAreaHeight
+           }
 
 timelineGetYScaleAreaWidth :: TimelineView -> IO Double
 timelineGetYScaleAreaWidth timelineWin = do

@@ -226,7 +226,7 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                  save
                  identityMatrix
                  translate 0 (fromIntegral y)
-                 renderSparkHistogram params hecs Nothing {-TODO:minterval-}
+                 renderSparkHistogram params hecs
                  restore
                TraceGroup _ -> error "renderTrace"
                TraceActivity ->

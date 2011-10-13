@@ -8,7 +8,6 @@ module GUI.Histogram (
 import Events.HECs
 import GUI.Timeline.Render (renderTraces, renderYScaleArea)
 import GUI.Timeline.Render.Constants
-import GUI.Timeline.Sparks
 import GUI.Types
 
 import Graphics.UI.Gtk
@@ -42,7 +41,7 @@ histogramViewNew builder = do
   (_, xh) <- widgetGetSize timelineXScaleArea
   let xScaleAreaHeight = fromIntegral xh
       traces = [TraceHistogram]
-      paramsHist (w, h) = ViewParameters  -- TODO: create here properly and pass around
+      paramsHist (w, h) minterval = ViewParameters
         { width = w
         , height = h
         , viewTraces = traces
@@ -53,6 +52,8 @@ histogramViewNew builder = do
         , bwMode = undefined
         , labelsMode = False
         , histogramHeight = h
+        , minterval = minterval
+        , xScaleAreaHeight = xScaleAreaHeight
         }
 
   hecsIORef <- newIORef Nothing
@@ -71,10 +72,10 @@ histogramViewNew builder = do
                minterval <- readIORef intervalIORef
                (w, h) <- widgetGetSize histogramDrawingArea
                let size = (w, h - firstTraceY)
-                   params = paramsHist size
+                   params = paramsHist size minterval
                    rect = Rectangle 0 0 w (snd size)
                renderWithDrawable win $
-                 renderTraces params hecs rect  -- TODO: pass minterval (and xScaleAreaHeight?)
+                 renderTraces params hecs rect
                return True
 
   -- Redrawing labelDrawingArea
@@ -86,9 +87,10 @@ histogramViewNew builder = do
         | null (durHistogram hecs) -> return False
         | otherwise -> do
             win <- widgetGetDrawWindow histogramYScaleArea
+            minterval <- readIORef intervalIORef
             (xoffset, histogramHeight) <- widgetGetSize histogramYScaleArea
             let h = histogramHeight - xScaleAreaHeight - firstTraceY
-                params = paramsHist (undefined, h)
+                params = paramsHist (undefined, h) minterval
             renderWithDrawable win $
               -- TODO: looks bad when h is not a multiple of 10
               renderYScaleArea params hecs (fromIntegral xoffset)
