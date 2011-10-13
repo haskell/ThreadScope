@@ -29,6 +29,7 @@ data ViewParameters = ViewParameters {
     scaleValue    :: Double,
     maxSpkValue   :: Double,
     detail        :: Int,
-    bwMode, labelsMode :: Bool
+    bwMode, labelsMode :: Bool,
+    histogramHeight :: Int
   }
   deriving Eq

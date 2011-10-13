@@ -30,6 +30,7 @@ import GUI.Timeline.Types
 
 import GUI.Timeline.Motion
 import GUI.Timeline.Render
+import GUI.Timeline.Render.Constants
 
 import Events.HECs
 
@@ -89,7 +90,8 @@ timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, labelsModeIORef
   bwmode <- readIORef bwmodeIORef
   labelsMode <- readIORef labelsModeIORef
 
-  let timelineHeight = calculateTotalTimelineHeight labelsMode traces
+  let timelineHeight =
+        calculateTotalTimelineHeight labelsMode stdHistogramHeight traces
 
   return ViewParameters {
            width      = w,
@@ -100,7 +102,8 @@ timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, labelsModeIORef
            maxSpkValue = maxSpkValue,
            detail     = 3, --for now
            bwMode     = bwmode,
-           labelsMode = labelsMode
+           labelsMode = labelsMode,
+           histogramHeight = stdHistogramHeight
          }
 
 timelineGetYScaleAreaWidth :: TimelineView -> IO Double
@@ -337,7 +340,7 @@ updateTimelineVScroll :: TimelineView -> IO ()
 updateTimelineVScroll TimelineView{tracesIORef, labelsModeIORef, timelineState=TimelineState{..}} = do
   traces <- readIORef tracesIORef
   labelsMode <- readIORef labelsModeIORef
-  let h = calculateTotalTimelineHeight labelsMode traces
+  let h = calculateTotalTimelineHeight labelsMode stdHistogramHeight traces
   (_,winh) <- widgetGetSize timelineDrawingArea
   let winh' = fromIntegral winh; h' = fromIntegral h
   adjustmentSetLower    timelineVAdj 0

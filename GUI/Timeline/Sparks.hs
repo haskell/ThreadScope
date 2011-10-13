@@ -162,9 +162,8 @@ addSparks colour maxSliceSpark f0 f1 start slice ts = do
 
 type Interval = (Timestamp, Timestamp)
 
-renderSparkHistogram :: HECs -> Maybe Interval -> (Double, Double) -> Double
-                       -> Render ()
-renderSparkHistogram hecs minterval (w, h) xScaleAreaHeight =
+renderSparkHistogram :: ViewParameters -> HECs -> Maybe Interval -> Render ()
+renderSparkHistogram params@ViewParameters{..} hecs minterval =
   let intDoub :: Integral a => a -> Double
       intDoub = fromIntegral
       histo :: [(Int, Timestamp)] -> [(Int, Timestamp)]
@@ -211,20 +210,11 @@ renderSparkHistogram hecs minterval (w, h) xScaleAreaHeight =
        let drawHist =
              Chart.runCRender (Chart.render renderable size) ChartR.bitmapEnv
            drawXScale = renderXScaleArea params hecs (ceiling xScaleAreaHeight)
-           size = (w, h - xScaleAreaHeight)
-           params = ViewParameters  -- TODO: a hack
-             { width = ceiling w
-             , height = undefined
-             , viewTraces = [TraceHistogram]
-             , hadjValue = 0
-             , scaleValue = 1
-             , maxSpkValue = undefined
-             , detail = undefined
-             , bwMode = undefined
-             , labelsMode = False
-             }
+           xScaleAreaHeight = 45 -- TODO: should not be hardcoded, get it from "timeline_xscale_area"
+           size = (fromIntegral width,
+                   fromIntegral histogramHeight - xScaleAreaHeight)
            mult = 1000  -- HACK for PNG/PDF export: clear rulers everywhere below
-       rectangle 0 (- fromIntegral firstTraceY) w (h * mult)
+       rectangle 0 (- fromIntegral firstTraceY) (fst size) (mult * snd size)
        setSourceRGBAhex white 1.0
        fill
        drawHist

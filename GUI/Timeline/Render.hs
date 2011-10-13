@@ -3,7 +3,6 @@ module GUI.Timeline.Render (
     renderTraces,
     updateXScaleArea,
     renderYScaleArea,
-    drawYScaleArea,
     updateYScaleArea,
     calculateTotalTimelineHeight,
     toWholePixels,
@@ -223,24 +222,19 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                TracePoolHEC c ->
                  let maxP = maxSparkPool hecs
                  in renderSparkPool params slice start end (prof !! c) maxP
-               TraceHistogram ->
-                 -- TODO
-                 let size = (fromIntegral width,
-                             fromIntegral $ 2 * hecSparksHeight)  -- TODO
-                     xScaleAreaHeight = 45 -- TODO: should not be hardcoded, get it from "timeline_xscale_area"
-                 in do
-                   save
-                   identityMatrix
-                   translate 0 (fromIntegral y)
-                   renderSparkHistogram
-                     hecs Nothing {-minterval-} size xScaleAreaHeight
-                   restore
+               TraceHistogram -> do
+                 save
+                 identityMatrix
+                 translate 0 (fromIntegral y)
+                 renderSparkHistogram params hecs Nothing {-TODO:minterval-}
+                 restore
                TraceGroup _ -> error "renderTrace"
                TraceActivity ->
                  renderActivity params hecs startPos endPos
             restore
       -- Now render all the HECs.
-      zipWithM_ renderTrace viewTraces (traceYPositions labelsMode viewTraces)
+      zipWithM_ renderTrace viewTraces
+        (traceYPositions labelsMode histogramHeight viewTraces)
 
 -------------------------------------------------------------------------------
 
@@ -319,11 +313,13 @@ updateXScaleArea TimelineState{..} lastTx = do
 -- | Render the Y scale area (an axis, ticks and a label for each graph),
 -- based on view parameters and hecs.
 renderYScaleArea :: ViewParameters -> HECs -> Double -> Render ()
-renderYScaleArea ViewParameters{maxSpkValue, labelsMode, viewTraces}
+renderYScaleArea ViewParameters{maxSpkValue, labelsMode, viewTraces,
+                                histogramHeight}
                  hecs xoffset =
   let maxP = maxSparkPool hecs
       maxH = fromIntegral (maxYHistogram hecs) / 1000
-  in drawYScaleArea maxSpkValue maxP maxH xoffset 0 labelsMode viewTraces
+  in drawYScaleArea
+       maxSpkValue maxP maxH xoffset 0 labelsMode histogramHeight viewTraces
 
 -- | Update the Y scale widget, based on the state of all timeline areas
 -- and on traces (only for graph labels and relative positions).
@@ -336,26 +332,28 @@ updateYScaleArea TimelineState{..} maxSparkPool maxYHistogram
   (xoffset, _) <- widgetGetSize timelineYScaleArea
   renderWithDrawable win $
     drawYScaleArea maxSpkValue maxSparkPool maxYHistogram (fromIntegral xoffset)
-      vadj_value labelsMode traces
+      vadj_value labelsMode stdHistogramHeight traces
 
 -- | Render the Y scale area, by rendering an axis, ticks and a label
 -- for each graph-like trace in turn (and only labels for other traces).
 drawYScaleArea :: Double -> Double -> Double -> Double -> Double
-                  -> Bool -> [Trace]
+                  -> Bool -> Int -> [Trace]
                   -> Render ()
 drawYScaleArea maxSpkValue maxSparkPool maxYHistogram
-               xoffset vadj_value labelsMode traces =
+               xoffset vadj_value labelsMode histogramHeight traces =
   let ys = map (subtract (round vadj_value)) $
-             traceYPositions labelsMode traces
+             traceYPositions labelsMode histogramHeight traces
   in zipWithM_
-       (drawSingleYScale maxSpkValue maxSparkPool maxYHistogram xoffset)
+       (drawSingleYScale
+          maxSpkValue maxSparkPool maxYHistogram xoffset histogramHeight)
        traces ys
 
 -- | Render a single Y scale axis, set of ticks and label, or only a label,
 -- if the trace is not a graph.
-drawSingleYScale :: Double -> Double -> Double -> Double -> Trace -> Int
+drawSingleYScale :: Double -> Double -> Double -> Double -> Int -> Trace -> Int
                     -> Render ()
-drawSingleYScale maxSpkValue maxSparkPool maxYHistogram xoffset trace y = do
+drawSingleYScale maxSpkValue maxSparkPool maxYHistogram
+                 xoffset histogramHeight trace y = do
   setSourceRGBAhex black 1
   move_to (ox, y + 8)
   layout <- createLayout $ showTrace trace
@@ -366,31 +364,33 @@ drawSingleYScale maxSpkValue maxSparkPool maxYHistogram xoffset trace y = do
   showLayout layout
   case traceMaxSpark maxSpkValue maxSparkPool maxYHistogram trace of
     Just v  ->
-      renderYScale (traceHeight trace) 1 v (xoffset - 13) (fromIntegral y)
+      renderYScale
+        (traceHeight histogramHeight trace) 1 v (xoffset - 13) (fromIntegral y)
     Nothing -> return ()  -- not a graph-like trace
 
 --------------------------------------------------------------------------------
 
 -- | Calculate Y positions of all traces.
-traceYPositions :: Bool -> [Trace] -> [Int]
-traceYPositions labelsMode traces =
-  scanl (\a b -> a + (traceHeight b) + extra + tracePad) firstTraceY traces
+traceYPositions :: Bool -> Int -> [Trace] -> [Int]
+traceYPositions labelsMode histogramHeight traces =
+  scanl (\a b -> a + (height b) + extra + tracePad) firstTraceY traces
     where
+      height b = traceHeight histogramHeight b
       extra = if labelsMode then hecLabelExtra else 0
 
-traceHeight :: Trace -> Int
-traceHeight TraceHEC{}           = hecTraceHeight
-traceHeight TraceCreationHEC{}   = hecSparksHeight
-traceHeight TraceConversionHEC{} = hecSparksHeight
-traceHeight TracePoolHEC{}       = hecSparksHeight
-traceHeight TraceHistogram       = 2 * hecSparksHeight  -- TODO
-traceHeight TraceGroup{}         = error "traceYPositions"
-traceHeight TraceActivity        = activityGraphHeight
+traceHeight :: Int -> Trace -> Int
+traceHeight _ TraceHEC{}           = hecTraceHeight
+traceHeight _ TraceCreationHEC{}   = hecSparksHeight
+traceHeight _ TraceConversionHEC{} = hecSparksHeight
+traceHeight _ TracePoolHEC{}       = hecSparksHeight
+traceHeight h TraceHistogram       = h
+traceHeight _ TraceGroup{}         = error "traceYPositions"
+traceHeight _ TraceActivity        = activityGraphHeight
 
 -- | Calculate the total Y span of all traces.
-calculateTotalTimelineHeight :: Bool -> [Trace] -> Int
-calculateTotalTimelineHeight labelsMode traces =
- last (traceYPositions labelsMode traces)
+calculateTotalTimelineHeight :: Bool -> Int -> [Trace] -> Int
+calculateTotalTimelineHeight labelsMode histogramHeight traces =
+ last (traceYPositions labelsMode histogramHeight traces)
 
 -- | Produce a descriptive label for a trace.
 showTrace :: Trace -> String
@@ -404,9 +404,9 @@ showTrace (TracePoolHEC n) =
   "\nHEC " ++ show n ++ "\n\nSpark pool size"
 showTrace TraceHistogram =
   "Total duration (" ++ mu ++ "s)"
-showTrace TraceGroup{} = error "Render.showTrace"
 showTrace TraceActivity =
   "Activity"
+showTrace TraceGroup{} = error "Render.showTrace"
 
 -- | Calcaulate the maximal Y value for a graph-like trace, or Nothing.
 traceMaxSpark :: Double -> Double -> Double -> Trace -> Maybe Double
