@@ -224,7 +224,7 @@ renderSparkHistogram hecs minterval (w, h) xScaleAreaHeight =
              , labelsMode = False
              }
            mult = 1000  -- HACK for PNG/PDF export: clear rulers everywhere below
-       rectangle 0 0 w (h * mult)
+       rectangle 0 (- fromIntegral firstTraceY) w (h * mult)
        setSourceRGBAhex white 1.0
        fill
        drawHist

@@ -3,6 +3,7 @@ module GUI.Timeline.Render (
     renderTraces,
     updateXScaleArea,
     renderYScaleArea,
+    drawYScaleArea,
     updateYScaleArea,
     calculateTotalTimelineHeight,
     toWholePixels,

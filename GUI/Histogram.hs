@@ -6,7 +6,7 @@ module GUI.Histogram (
  ) where
 
 import Events.HECs
-import GUI.Timeline.Render (renderTraces, renderYScaleArea)
+import GUI.Timeline.Render (renderTraces, drawYScaleArea)
 import GUI.Timeline.Sparks
 import GUI.Types
 
@@ -36,16 +36,15 @@ histogramViewNew :: Builder -> IO HistogramView
 histogramViewNew builder = do
   let getWidget cast = builderGetObject builder cast
   histogramDrawingArea <- getWidget castToDrawingArea "histogram_drawingarea"
-  timelineYScaleArea <- getWidget castToDrawingArea "timeline_yscale_area"
+  histogramYScaleArea <- getWidget castToDrawingArea "timeline_yscale_area2"
   timelineXScaleArea <- getWidget castToDrawingArea "timeline_xscale_area"
-  (w, _) <- widgetGetSize timelineYScaleArea
   (_, h) <- widgetGetSize timelineXScaleArea
-  let yScaleAreaWidth  = fromIntegral w
-      xScaleAreaHeight = fromIntegral h
+  let xScaleAreaHeight = fromIntegral h
+      traces = [TraceHistogram]
       paramsHack size = ViewParameters  -- TODO: create here properly and pass around
         { width = ceiling $ fst size
         , height = ceiling $ snd size
-        , viewTraces = [TraceHistogram]
+        , viewTraces = traces
         , hadjValue = 0
         , scaleValue = 1
         , maxSpkValue = undefined
@@ -56,12 +55,7 @@ histogramViewNew builder = do
       renderHist hecs minterval size = do
         let params = paramsHack size
             rect = Rectangle 0 0 (ceiling $ fst size) (ceiling $ snd size)
-            drawHist = renderTraces params hecs rect  --renderSparkHistogram hecs minterval size xScaleAreaHeight
-            drawYScale = renderYScaleArea params hecs yScaleAreaWidth
-        drawHist
---        C.translate 0 (-snd size + xScaleAreaHeight)
---        drawYScale
-        return True
+        renderTraces params hecs rect  --renderSparkHistogram hecs minterval size xScaleAreaHeight
 
   hecsIORef <- newIORef Nothing
   intervalIORef <- newIORef Nothing
@@ -70,16 +64,37 @@ histogramViewNew builder = do
   on histogramDrawingArea exposeEvent $
      C.liftIO $ do
        (width, height) <- widgetGetSize histogramDrawingArea
-       let size = (fromIntegral width  - yScaleAreaWidth, fromIntegral height)
+       let size = (fromIntegral width, fromIntegral height)
        maybeEventArray <- readIORef hecsIORef
        minterval <- readIORef intervalIORef
        -- Check if an event trace has been loaded.
        case maybeEventArray of
-         Nothing   -> return True
+         Nothing -> return True
          Just hecs
            | null (durHistogram hecs) -> return True
            | otherwise -> do
                win <- widgetGetDrawWindow histogramDrawingArea
                renderWithDrawable win (renderHist hecs minterval size)
+               return True
+
+  -- Redrawing labelDrawingArea
+  histogramYScaleArea `onExpose` \_ -> do
+    maybeEventArray <- readIORef hecsIORef
+    case maybeEventArray of
+      Nothing -> return False
+      Just hecs
+        | null (durHistogram hecs) -> return True
+        | otherwise -> do
+            let maxP = maxSparkPool hecs
+                maxH = fromIntegral (maxYHistogram hecs) / 1000
+                maxS = 0  -- TODO
+                labelsMode = False
+            win <- widgetGetDrawWindow histogramYScaleArea
+            vadj_value <- return 0  -- TODO
+            (xoffset, _) <- widgetGetSize histogramYScaleArea
+            renderWithDrawable win $
+              drawYScaleArea maxS maxP maxH (fromIntegral xoffset)
+                vadj_value labelsMode traces
+            return True
 
   return HistogramView{..}

@@ -550,8 +550,6 @@
                                 <property name="can_focus">False</property>
                                 <property name="n_rows">2</property>
                                 <property name="n_columns">2</property>
-                                <property name="column_spacing">0</property>
-                                <property name="row_spacing">0</property>
                                 <child>
                                   <object class="GtkDrawingArea" id="timeline_yscale_area">
                                     <property name="width_request">110</property>
@@ -697,9 +695,35 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkDrawingArea" id="histogram_drawingarea">
+                      <object class="GtkTable" id="table3">
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="n_rows">1</property>
+                        <property name="n_columns">2</property>
+                        <child>
+                          <object class="GtkDrawingArea" id="timeline_yscale_area2">
+                            <property name="width_request">110</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">1</property>
+                            <property name="bottom_attach">2</property>
+                            <property name="x_options">GTK_SHRINK</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkDrawingArea" id="histogram_drawingarea">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="top_attach">1</property>
+                            <property name="bottom_attach">2</property>
+                          </packing>
+                        </child>
                       </object>
                       <packing>
                         <property name="position">1</property>
