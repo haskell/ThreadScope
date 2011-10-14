@@ -8,7 +8,6 @@ module GUI.Timeline (
     timelineSetLabelsMode,
     timelineGetViewParameters,
     timelineGetYScaleAreaWidth,
-    timelineGetXScaleAreaHeight,
     timelineWindowSetHECs,
     timelineWindowSetTraces,
     timelineWindowSetBookmarks,
@@ -114,11 +113,6 @@ timelineGetYScaleAreaWidth :: TimelineView -> IO Double
 timelineGetYScaleAreaWidth timelineWin = do
   (w, _) <- widgetGetSize $ timelineYScaleArea $ timelineState timelineWin
   return $ fromIntegral w
-
-timelineGetXScaleAreaHeight :: TimelineView -> IO Double
-timelineGetXScaleAreaHeight timelineWin = do
-  (_, h) <- widgetGetSize $ timelineXScaleArea $ timelineState timelineWin
-  return $ fromIntegral h
 
 timelineWindowSetHECs :: TimelineView -> Maybe HECs -> IO ()
 timelineWindowSetHECs timelineWin@TimelineView{..} mhecs = do

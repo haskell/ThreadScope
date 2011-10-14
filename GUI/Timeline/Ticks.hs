@@ -71,10 +71,11 @@ drawVRulers tickWidthInPixels height scaleValue pos incr endPos =
 
 
 -- | Render the X scale, based on view parameters and hecs.
-renderXScaleArea :: ViewParameters -> HECs -> Int -> Render ()
-renderXScaleArea ViewParameters{width, scaleValue, hadjValue} hecs yoffset =
+renderXScaleArea :: ViewParameters -> HECs -> Render ()
+renderXScaleArea ViewParameters{width, scaleValue, hadjValue, xScaleAreaHeight}
+                 hecs =
   let lastTx = hecLastEventTime hecs
-  in renderXScale scaleValue hadjValue width lastTx yoffset
+  in renderXScale scaleValue hadjValue width lastTx xScaleAreaHeight
 
 
 -- | Render the X (vertical) scale: render X axis and call ticks rendering.
