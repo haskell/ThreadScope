@@ -2,6 +2,7 @@ module GUI.SaveAs (saveAsPDF, saveAsPNG) where
 
 -- Imports for ThreadScope
 import GUI.Timeline.Render (renderTraces, renderYScaleArea)
+import GUI.Timeline.Render.Constants
 import GUI.Timeline.Ticks (renderXScaleArea)
 import GUI.Types
 import Events.HECs
@@ -11,19 +12,23 @@ import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo
 
 saveAs :: HECs -> ViewParameters -> Double -> (Int, Int, Render ())
-saveAs hecs params@ViewParameters{xScaleAreaHeight} yScaleAreaWidth =
-  let w = width params
-      h = height params
-      w' = ceiling yScaleAreaWidth + w
-      h' = xScaleAreaHeight + h
-      drawTraces = renderTraces params hecs (Rectangle 0 0 w h)
+saveAs hecs params'@ViewParameters{xScaleAreaHeight, width,
+                                   height = oldHeight, histogramHeight}
+       yScaleAreaWidth =
+  let params@ViewParameters{height} =
+        params'{ viewTraces = viewTraces params' ++ [TraceHistogram]
+               , height = oldHeight + histogramHeight + tracePad
+               }
+      w = ceiling yScaleAreaWidth + width
+      h = xScaleAreaHeight + height
+      drawTraces = renderTraces params hecs (Rectangle 0 0 width height)
       drawXScale = renderXScaleArea params hecs True
       drawYScale = renderYScaleArea params hecs yScaleAreaWidth
       -- Functions renderTraces and renderXScaleArea draw to the left of 0
       -- which is not seen in the normal mode, but would be seen in export,
       -- so it has to be cleared before renderYScaleArea is written on top:
       clearLeftArea = do
-        rectangle 0 0 yScaleAreaWidth (fromIntegral h')
+        rectangle 0 0 yScaleAreaWidth (fromIntegral h)
         op <- getOperator
         setOperator OperatorClear
         fill
@@ -37,7 +42,7 @@ saveAs hecs params@ViewParameters{xScaleAreaHeight} yScaleAreaWidth =
         clearLeftArea
         translate 0 (fromIntegral xScaleAreaHeight)
         drawYScale
-  in (w', h', drawAll)
+  in (w, h, drawAll)
 
 saveAsPDF :: FilePath -> HECs -> ViewParameters -> Double -> IO ()
 saveAsPDF filename hecs params yScaleAreaWidth =

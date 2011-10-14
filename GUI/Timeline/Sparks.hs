@@ -209,13 +209,19 @@ renderSparkHistogram params@ViewParameters{..} hecs =
            drawXScale = renderXScaleArea params hecs False
            size = (fromIntegral width,
                    fromIntegral $ histogramHeight - xScaleAreaHeight)
-           mult = 1000  -- HACK for PNG/PDF export: clear rulers everywhere below
-       rectangle 0 (- fromIntegral firstTraceY) (fst size) (mult * snd size)
-       setSourceRGBAhex white 1.0
+       save
+       scale scaleValue 1.0
+       rectangle 0 (fromIntegral $ - tracePad)
+         (fromIntegral width) (fromIntegral $ histogramHeight + 2 * tracePad)
+       setSourceRGBAhex white 1
+       op <- getOperator
+       setOperator OperatorAtop  -- ensures nothing is painted for PNG/PDF
        fill
+       setOperator op
        drawHist
        translate 0 (snd size)
        drawXScale
+       restore
 
 -- TODO: factor out to module with helper stuff (mu, deZero, this)
 fromListWith' :: (a -> a -> a) -> [(Int, a)] -> IM.IntMap a

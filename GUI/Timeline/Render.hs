@@ -222,12 +222,8 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                TracePoolHEC c ->
                  let maxP = maxSparkPool hecs
                  in renderSparkPool params slice start end (prof !! c) maxP
-               TraceHistogram -> do
-                 save
-                 identityMatrix
-                 translate 0 (fromIntegral y)
+               TraceHistogram ->
                  renderSparkHistogram params hecs
-                 restore
                TraceGroup _ -> error "renderTrace"
                TraceActivity ->
                  renderActivity params hecs startPos endPos
@@ -385,7 +381,7 @@ traceHeight _ TraceCreationHEC{}   = hecSparksHeight
 traceHeight _ TraceConversionHEC{} = hecSparksHeight
 traceHeight _ TracePoolHEC{}       = hecSparksHeight
 traceHeight h TraceHistogram       = h
-traceHeight _ TraceGroup{}         = error "traceYPositions"
+traceHeight _ TraceGroup{}         = error "traceHeight"
 traceHeight _ TraceActivity        = activityGraphHeight
 
 -- | Calculate the total Y span of all traces.
