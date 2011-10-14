@@ -1,4 +1,4 @@
-pristine:1cdf8bcecad60533c4b3bf625a317d1f45c28dc6c3b0bee169dc9bd1a6baa318
+pristine:0964beff38a4dc1cb62e5074e9d45567398d90d3b3dcfa02f7b63f7e3fbf5df5
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1589,3 +1589,51 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111012231425
  Ignore-this: 8f93a81f1324263e7d959a0da6c81259
 ] 
 hash: 0000005916-e3c4f59b408e6ffbf229b305df886206d01c7ff45a8309a7145def8beca2edaa
+[Rewrite Charts, step 11: draw in histogram pane via traces
+Mikolaj Konarski <mikolaj@well-typed.com>**20111013114731
+ Ignore-this: 1118a3e02e355f5b4f9e0965ecbe05a5
+] 
+hash: 0000002049-068e9c31c9eab34f492c7dcb0680f37d0e1ac33be25f245a43319c6e39565a1a
+[Rewrite Charts, step 12: draw Y scale in histogram pane via traces
+Mikolaj Konarski <mikolaj@well-typed.com>**20111013151233
+ Ignore-this: 5794cc84bd0aeddb547d760831cc9a6f
+] 
+hash: 0000004627-c5e7f2adcf00b28efabb805fdd87e9df35f2a85db4bf7ea90b9743801d24c166
+[Rewrite Charts, step 13: pass around histogram height
+Mikolaj Konarski <mikolaj@well-typed.com>**20111013185407
+ Ignore-this: d55b60acb67523efbeea0fe483a85e5e
+ 
+ And general clean-up of argument passing among affected functions,
+ in particular, 'params' for histogram are created once and passed around.
+] 
+hash: 0000010362-7676dc89519abc44d3910f2e1d09b5197bec9e98049c4ecc97ba6351934bbd9e
+[Rewrite Charts, step 14: pass around histogram interval and x scale height
+Mikolaj Konarski <mikolaj@well-typed.com>**20111013193439
+ Ignore-this: 4b677f81622ccf63ef61bc38178ae588
+] 
+hash: 0000003376-3683285c6821a14c7b04e56504f6669360e433c2672ac7fda83071dbc5b5939e
+[Rewrite Charts, step 15: simplify passing around xScaleAreaHeight
+Mikolaj Konarski <mikolaj@well-typed.com>**20111014062708
+ Ignore-this: f4e61c45e20ab25f65e8c8bd61d1e2fd
+] 
+hash: 0000003333-e5f1fe3da10fa2639ca6f538a39990a2e1b6e5a46e864b9b250429fb0c522ce0
+[Align the events text display with the Y scale and label area
+Mikolaj Konarski <mikolaj@well-typed.com>**20111014183118
+ Ignore-this: 1e931ce9bd4980e0d8dfee451d33adc2
+] 
+hash: 0000000723-c374724ac133b55cdd581033a8722acd51bb4cbb43d17cb24c6a3c3420d7f178
+[Rewrite Charts, step 16: invert the histogram X scale 
+Mikolaj Konarski <mikolaj@well-typed.com>**20111014191832
+ Ignore-this: 1ca3a19207b998079e69db5c0dbe1f2a
+] 
+hash: 0000003097-46f7881ceccfecbfe8dc1584010a3d591f308709e67c907aa1fd7a34ea0bd242
+[Rewrite Charts, step 17: draw histogram as part of PNG/PDF export
+Mikolaj Konarski <mikolaj@well-typed.com>**20111014211324
+ Ignore-this: 7a09f513b8c9bef8221bdbaaba80f95a
+] 
+hash: 0000002297-3f1a3158edbf65b221e5865981f2d315ce76ac76cfc7e493b5d956501c3aeb34
+[Rewrite Charts, step 18: correct size of the histogram Y scale
+Mikolaj Konarski <mikolaj@well-typed.com>**20111014215101
+ Ignore-this: 62924ce10a69f8741caaead13b1e0024
+] 
+hash: 0000005352-e10aa5acf15c1f49c328a1df96db0a3eb14e3f53ba7efc733a7bc143a379ca8a

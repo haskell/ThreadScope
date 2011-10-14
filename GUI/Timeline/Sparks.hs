@@ -5,7 +5,6 @@ module GUI.Timeline.Sparks (
     renderSparkCreation,
     renderSparkConversion,
     renderSparkPool,
-    Interval,
     renderSparkHistogram,
   ) where
 
@@ -160,11 +159,8 @@ addSparks colour maxSliceSpark f0 f1 start slice ts = do
       setSourceRGBAhex colour 1.0
       fill
 
-type Interval = (Timestamp, Timestamp)
-
-renderSparkHistogram :: HECs -> Maybe Interval -> (Double, Double) -> Double
-                       -> Render Bool
-renderSparkHistogram hecs minterval (w, h) xScaleAreaHeight =
+renderSparkHistogram :: ViewParameters -> HECs -> Render ()
+renderSparkHistogram params@ViewParameters{..} hecs =
   let intDoub :: Integral a => a -> Double
       intDoub = fromIntegral
       histo :: [(Int, Timestamp)] -> [(Int, Timestamp)]
@@ -207,32 +203,24 @@ renderSparkHistogram hecs minterval (w, h) xScaleAreaHeight =
       xs = durHistogram hecs
       renderable :: Chart.Renderable ()
       renderable = ChartR.toRenderable (plot xs)
-  in if null xs
-     then return False  -- TODO: perhaps display "No data" in the tab?
-     else do
-       let drawHist =
+  in do
+       let size = (fromIntegral width, fromIntegral histogramHeight)
+           drawHist =
              Chart.runCRender (Chart.render renderable size) ChartR.bitmapEnv
-           drawXScale = renderXScaleArea params hecs (ceiling xScaleAreaHeight)
-           size = (w, h - xScaleAreaHeight)
-           params = ViewParameters  -- TODO: a hack
-             { width = ceiling w
-             , height = undefined
-             , viewTraces = [TraceHistogram]
-             , hadjValue = 0
-             , scaleValue = 1
-             , maxSpkValue = undefined
-             , detail = undefined
-             , bwMode = undefined
-             , labelsMode = False
-             }
-           mult = 1000  -- HACK for PNG/PDF export: clear rulers everywhere below
-       rectangle 0 0 w (h * mult)
-       setSourceRGBAhex white 1.0
+           drawXScale = renderXScaleArea params hecs False
+       save
+       scale scaleValue 1.0
+       rectangle 0 (fromIntegral $ - tracePad) (fromIntegral width)
+         (fromIntegral $ histogramHeight + xScaleAreaHeight + 2 * tracePad)
+       setSourceRGBAhex white 1
+       op <- getOperator
+       setOperator OperatorAtop  -- ensures nothing is painted for PNG/PDF
        fill
+       setOperator op
        drawHist
-       translate 0 (snd size)
+       translate 0 (fromIntegral histogramHeight)
        drawXScale
-       return True
+       restore
 
 -- TODO: factor out to module with helper stuff (mu, deZero, this)
 fromListWith' :: (a -> a -> a) -> [(Int, a)] -> IM.IntMap a

@@ -6,8 +6,8 @@ module GUI.Histogram (
  ) where
 
 import Events.HECs
-import GUI.Timeline.Render (renderYScaleArea)
-import GUI.Timeline.Sparks
+import GUI.Timeline.Render (renderTraces, renderYScaleArea)
+import GUI.Timeline.Render.Constants
 import GUI.Types
 
 import Graphics.UI.Gtk
@@ -36,33 +36,25 @@ histogramViewNew :: Builder -> IO HistogramView
 histogramViewNew builder = do
   let getWidget cast = builderGetObject builder cast
   histogramDrawingArea <- getWidget castToDrawingArea "histogram_drawingarea"
-  timelineYScaleArea <- getWidget castToDrawingArea "timeline_yscale_area"
+  histogramYScaleArea <- getWidget castToDrawingArea "timeline_yscale_area2"
   timelineXScaleArea <- getWidget castToDrawingArea "timeline_xscale_area"
-  (w, _) <- widgetGetSize timelineYScaleArea
-  (_, h) <- widgetGetSize timelineXScaleArea
-  let yScaleAreaWidth  = fromIntegral w
-      xScaleAreaHeight = fromIntegral h
-      paramsHack width = ViewParameters  -- TODO: a hack
-        { width = ceiling width
-        , height = undefined
-        , viewTraces = [TraceHistogram]
+  (_, xh) <- widgetGetSize timelineXScaleArea
+  let xScaleAreaHeight = fromIntegral xh
+      traces = [TraceHistogram]
+      paramsHist (w, h) minterval = ViewParameters
+        { width = w
+        , height = h
+        , viewTraces = traces
         , hadjValue = 0
         , scaleValue = 1
         , maxSpkValue = undefined
         , detail = undefined
         , bwMode = undefined
         , labelsMode = False
+        , histogramHeight = h - xScaleAreaHeight
+        , minterval = minterval
+        , xScaleAreaHeight = xScaleAreaHeight
         }
-      renderHist hecs minterval size = do
-        let params = paramsHack (fst size)
-            drawHist = renderSparkHistogram hecs minterval size xScaleAreaHeight
-            drawYScale = renderYScaleArea params hecs yScaleAreaWidth
-        C.translate yScaleAreaWidth 0
-        b <- drawHist
-        if not b then return False else do
-        C.translate (-yScaleAreaWidth) (-snd size + xScaleAreaHeight)
-        drawYScale
-        return True
 
   hecsIORef <- newIORef Nothing
   intervalIORef <- newIORef Nothing
@@ -70,15 +62,38 @@ histogramViewNew builder = do
   -- Program the callback for the capability drawingArea
   on histogramDrawingArea exposeEvent $
      C.liftIO $ do
-       (width, height) <- widgetGetSize histogramDrawingArea
-       let size = (fromIntegral width  - yScaleAreaWidth, fromIntegral height)
        maybeEventArray <- readIORef hecsIORef
-       minterval <- readIORef intervalIORef
-       -- Check if an event trace has been loaded.
        case maybeEventArray of
-         Nothing   -> return True
-         Just hecs -> do
-           win <- widgetGetDrawWindow histogramDrawingArea
-           renderWithDrawable win (renderHist hecs minterval size)
+         Nothing -> return False
+         Just hecs
+           | null (durHistogram hecs) -> return False
+           | otherwise -> do
+               win <- widgetGetDrawWindow histogramDrawingArea
+               minterval <- readIORef intervalIORef
+               (w, windowHeight) <- widgetGetSize histogramDrawingArea
+               let size = (w, windowHeight - firstTraceY)
+                   params = paramsHist size minterval
+                   rect = Rectangle 0 0 w (snd size)
+               renderWithDrawable win $
+                 renderTraces params hecs rect
+               return True
+
+  -- Redrawing labelDrawingArea
+  histogramYScaleArea `onExpose` \_ -> do
+    maybeEventArray <- readIORef hecsIORef
+    case maybeEventArray of
+      Nothing -> return False
+      Just hecs
+        | null (durHistogram hecs) -> return False
+        | otherwise -> do
+            win <- widgetGetDrawWindow histogramYScaleArea
+            minterval <- readIORef intervalIORef
+            (xoffset, windowHeight) <- widgetGetSize histogramYScaleArea
+            let size = (undefined, windowHeight - firstTraceY)
+                params = paramsHist size minterval
+            renderWithDrawable win $
+              -- TODO: looks bad when h is not a multiple of 10
+              renderYScaleArea params hecs (fromIntegral xoffset)
+            return True
 
   return HistogramView{..}

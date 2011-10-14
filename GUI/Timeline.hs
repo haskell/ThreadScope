@@ -8,7 +8,6 @@ module GUI.Timeline (
     timelineSetLabelsMode,
     timelineGetViewParameters,
     timelineGetYScaleAreaWidth,
-    timelineGetXScaleAreaHeight,
     timelineWindowSetHECs,
     timelineWindowSetTraces,
     timelineWindowSetBookmarks,
@@ -30,6 +29,7 @@ import GUI.Timeline.Types
 
 import GUI.Timeline.Motion
 import GUI.Timeline.Render
+import GUI.Timeline.Render.Constants
 
 import Events.HECs
 
@@ -89,29 +89,30 @@ timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, labelsModeIORef
   bwmode <- readIORef bwmodeIORef
   labelsMode <- readIORef labelsModeIORef
 
-  let timelineHeight = calculateTotalTimelineHeight labelsMode traces
+  (_, xScaleAreaHeight) <- widgetGetSize timelineXScaleArea
+  let histTotalHeight = stdHistogramHeight + xScaleAreaHeight
+      timelineHeight =
+        calculateTotalTimelineHeight labelsMode histTotalHeight traces
 
-  return ViewParameters {
-           width      = w,
-           height     = timelineHeight,
-           viewTraces = traces,
-           hadjValue  = hadj_value,
-           scaleValue = scaleValue,
-           maxSpkValue = maxSpkValue,
-           detail     = 3, --for now
-           bwMode     = bwmode,
-           labelsMode = labelsMode
-         }
+  return ViewParameters
+           { width      = w
+           , height     = timelineHeight
+           , viewTraces = traces
+           , hadjValue  = hadj_value
+           , scaleValue = scaleValue
+           , maxSpkValue = maxSpkValue
+           , detail     = 3 --for now
+           , bwMode     = bwmode
+           , labelsMode = labelsMode
+           , histogramHeight = stdHistogramHeight
+           , minterval = Nothing
+           , xScaleAreaHeight = xScaleAreaHeight
+           }
 
 timelineGetYScaleAreaWidth :: TimelineView -> IO Double
 timelineGetYScaleAreaWidth timelineWin = do
   (w, _) <- widgetGetSize $ timelineYScaleArea $ timelineState timelineWin
   return $ fromIntegral w
-
-timelineGetXScaleAreaHeight :: TimelineView -> IO Double
-timelineGetXScaleAreaHeight timelineWin = do
-  (_, h) <- widgetGetSize $ timelineXScaleArea $ timelineState timelineWin
-  return $ fromIntegral h
 
 timelineWindowSetHECs :: TimelineView -> Maybe HECs -> IO ()
 timelineWindowSetHECs timelineWin@TimelineView{..} mhecs = do
@@ -337,9 +338,12 @@ updateTimelineVScroll :: TimelineView -> IO ()
 updateTimelineVScroll TimelineView{tracesIORef, labelsModeIORef, timelineState=TimelineState{..}} = do
   traces <- readIORef tracesIORef
   labelsMode <- readIORef labelsModeIORef
-  let h = calculateTotalTimelineHeight labelsMode traces
+  (_, xScaleAreaHeight) <- widgetGetSize timelineXScaleArea
+  let histTotalHeight = stdHistogramHeight + xScaleAreaHeight
+      h = calculateTotalTimelineHeight labelsMode histTotalHeight traces
   (_,winh) <- widgetGetSize timelineDrawingArea
-  let winh' = fromIntegral winh; h' = fromIntegral h
+  let winh' = fromIntegral winh;
+      h' = fromIntegral h
   adjustmentSetLower    timelineVAdj 0
   adjustmentSetUpper    timelineVAdj h'
 

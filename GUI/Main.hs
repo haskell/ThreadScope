@@ -269,12 +269,11 @@ eventLoop uienv@UIEnv{..} eventlogState = do
                           labelsMode = False
                         }
       yScaleAreaWidth  <- timelineGetYScaleAreaWidth  timelineWin
-      xScaleAreaHeight <- timelineGetXScaleAreaHeight timelineWin
       case format of
         FormatPDF ->
-          saveAsPDF filename hecs viewParams' yScaleAreaWidth xScaleAreaHeight
+          saveAsPDF filename hecs viewParams' yScaleAreaWidth
         FormatPNG ->
-          saveAsPNG filename hecs viewParams' yScaleAreaWidth xScaleAreaHeight
+          saveAsPNG filename hecs viewParams' yScaleAreaWidth
       continue
 
     dispatch EventAboutDialog _ = do
