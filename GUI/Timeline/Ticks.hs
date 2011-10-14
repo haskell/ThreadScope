@@ -71,18 +71,20 @@ drawVRulers tickWidthInPixels height scaleValue pos incr endPos =
 
 
 -- | Render the X scale, based on view parameters and hecs.
-renderXScaleArea :: ViewParameters -> HECs -> Render ()
+renderXScaleArea :: ViewParameters -> HECs -> Bool -> Render ()
 renderXScaleArea ViewParameters{width, scaleValue, hadjValue, xScaleAreaHeight}
-                 hecs =
+                 hecs onTop =
   let lastTx = hecLastEventTime hecs
-  in renderXScale scaleValue hadjValue width lastTx xScaleAreaHeight
+      off y | onTop     = xScaleAreaHeight - y
+            | otherwise = y
+  in renderXScale scaleValue hadjValue width lastTx off
 
 
 -- | Render the X (vertical) scale: render X axis and call ticks rendering.
 -- TODO: refactor common parts with renderVRulers, in particlar to expose
 -- that ruler positions match tick positions.
-renderXScale :: Double -> Double -> Int -> Timestamp -> Int -> Render()
-renderXScale scaleValue hadjValue width lastTx yoffset = do
+renderXScale :: Double -> Double -> Int -> Timestamp -> (Int -> Int) -> Render ()
+renderXScale scaleValue hadjValue width lastTx off = do
   let scale_width = fromIntegral width * scaleValue
       startPos :: Timestamp
       startPos = truncate hadjValue
@@ -95,7 +97,7 @@ renderXScale scaleValue hadjValue width lastTx yoffset = do
   setFontSize 12
   setSourceRGBAhex blue 1.0
   setLineWidth 1.0
-  draw_line (startPos, yoffset - 16) (endPos, yoffset - 16)
+  draw_line (startPos, off 16) (endPos, off 16)
   let timestampFor100Pixels = truncate (100 * scaleValue)  -- ns time for 100 ps
       snappedTickDuration :: Timestamp
       snappedTickDuration =
@@ -107,28 +109,32 @@ renderXScale scaleValue hadjValue width lastTx yoffset = do
       firstTick = snappedTickDuration * (startPos `div` snappedTickDuration)
   setLineWidth scaleValue
   drawXTicks
-    tickWidthInPixels scaleValue firstTick snappedTickDuration endPos yoffset
+    tickWidthInPixels scaleValue firstTick snappedTickDuration endPos off
   restore
 
 -- | Render a single X scale tick and then recurse.
-drawXTicks :: Int -> Double -> Timestamp -> Timestamp -> Timestamp -> Int
+drawXTicks :: Int -> Double -> Timestamp -> Timestamp -> Timestamp
+              -> (Int -> Int)
               -> Render ()
-drawXTicks tickWidthInPixels scaleValue pos incr endPos yoffset =
+drawXTicks tickWidthInPixels scaleValue pos incr endPos off =
   if pos <= endPos then do
-    draw_line (x1, yoffset - 16) (x1, yoffset - 16 + tickLength)
+    draw_line (x1, off 16) (x1, off (16 - tickLength))
     when (atMajorTick || atMidTick || tickWidthInPixels > 30) $ do
-      move_to (pos - truncate (scaleValue * 4.0), yoffset - 26)
+      tExtent <- textExtents tickTimeText
+      move_to (pos - truncate (scaleValue * 4.0), testPos tExtent)
       m <- getMatrix
       identityMatrix
-      tExtent <- textExtents tickTimeText
       (fourPixels, _) <- deviceToUserDistance 4 0
       when (isWideEnough tExtent fourPixels || atMajorTick) $
         showText tickTimeText
       setMatrix m
-    drawXTicks tickWidthInPixels scaleValue (pos + incr) incr endPos yoffset
+    drawXTicks tickWidthInPixels scaleValue (pos + incr) incr endPos off
   else
     return ()
   where
+    testPos tExtent = if off 0 /= 0
+                      then off $ 26
+                      else off $ 26 + floor (textExtentsHeight tExtent)
     tickTimeText = showMultiTime pos
     width = if atMidTick then 5 * tickWidthInPixels
             else tickWidthInPixels

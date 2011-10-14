@@ -299,13 +299,14 @@ updateXScaleArea :: TimelineState -> Timestamp -> IO ()
 updateXScaleArea TimelineState{..} lastTx = do
   win <- widgetGetDrawWindow timelineXScaleArea
   (width, _) <- widgetGetSize timelineDrawingArea
-  (_, yoffset) <- widgetGetSize timelineXScaleArea
+  (_, xScaleAreaHeight) <- widgetGetSize timelineXScaleArea
   scaleValue <- readIORef scaleIORef
   -- Snap the view to whole pixels, to avoid blurring.
   hadjValue0 <- adjustmentGetValue timelineAdj
   let hadjValue = toWholePixels scaleValue hadjValue0
+      off y = xScaleAreaHeight - y
   renderWithDrawable win $
-    renderXScale scaleValue hadjValue width lastTx yoffset
+    renderXScale scaleValue hadjValue width lastTx off
   return ()
 
 --------------------------------------------------------------------------------

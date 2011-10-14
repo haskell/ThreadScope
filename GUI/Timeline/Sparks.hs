@@ -206,7 +206,7 @@ renderSparkHistogram params@ViewParameters{..} hecs =
   in do
        let drawHist =
              Chart.runCRender (Chart.render renderable size) ChartR.bitmapEnv
-           drawXScale = renderXScaleArea params hecs
+           drawXScale = renderXScaleArea params hecs False
            size = (fromIntegral width,
                    fromIntegral $ histogramHeight - xScaleAreaHeight)
            mult = 1000  -- HACK for PNG/PDF export: clear rulers everywhere below

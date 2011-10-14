@@ -17,7 +17,7 @@ saveAs hecs params@ViewParameters{xScaleAreaHeight} yScaleAreaWidth =
       w' = ceiling yScaleAreaWidth + w
       h' = xScaleAreaHeight + h
       drawTraces = renderTraces params hecs (Rectangle 0 0 w h)
-      drawXScale = renderXScaleArea params hecs
+      drawXScale = renderXScaleArea params hecs True
       drawYScale = renderYScaleArea params hecs yScaleAreaWidth
       -- Functions renderTraces and renderXScaleArea draw to the left of 0
       -- which is not seen in the normal mode, but would be seen in export,
