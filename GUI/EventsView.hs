@@ -274,8 +274,12 @@ drawEvents EventsView{drawArea, adj}
   (width,clipHeight) <- widgetGetSize drawArea
   let clipRect = Rectangle 0 0 width clipHeight
 
-  let --TODO: calculate based on average char width and n digits
-      timeWidth  = 120
+  let -- With average char width, timeWidth is enough for 24 hours of logs
+      -- (way more than TS can handle, currently). Aligns nicely with
+      -- current timeline_yscale_area width, too.
+      -- TODO: perhaps make the timeWidth area grey, too?
+      -- TODO: perhaps limit the display to the selected interval?
+      timeWidth  = 105
       columnGap  = 20
       descrWidth = width - timeWidth - columnGap
 
