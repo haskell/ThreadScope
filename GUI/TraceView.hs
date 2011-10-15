@@ -101,6 +101,7 @@ traceViewSetHECs TraceView{tracesStore} hecs = do
     treeStoreClear tracesStore
     -- testing only (or to add histogram to PNG/PDF export:
     -- treeStoreInsert tracesStore [] 0 (TraceHistogram, Visible)
+    treeStoreInsert tracesStore [] 0 (TraceHistogram, Visible)
     go 0
     treeStoreInsert tracesStore [] 0 (TraceActivity, Visible)
   where

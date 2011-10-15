@@ -1632,8 +1632,8 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111014211324
  Ignore-this: 7a09f513b8c9bef8221bdbaaba80f95a
 ] 
 hash: 0000002297-3f1a3158edbf65b221e5865981f2d315ce76ac76cfc7e493b5d956501c3aeb34
-[Rewrite Charts, step 18: correct size of the histogram Y scale
-Mikolaj Konarski <mikolaj@well-typed.com>**20111014215101
- Ignore-this: 62924ce10a69f8741caaead13b1e0024
+[Rewrite Charts, step 18: correct the size of the histogram Y scale
+Mikolaj Konarski <mikolaj@well-typed.com>**20111015104747
+ Ignore-this: 9a43c0e0767cba7a1fade9ddbab8eb6e
 ] 
-hash: 0000005352-e10aa5acf15c1f49c328a1df96db0a3eb14e3f53ba7efc733a7bc143a379ca8a
+hash: 0000005356-06b4d48b2f4f27eff0529badf2d86f55c9e5895579f6ce523ed58e6af480b754
