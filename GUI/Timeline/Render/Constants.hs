@@ -45,7 +45,7 @@ hecSparksHeight = 10 * (activityGraphHeight `div` 10)
 
 -- Histogram height when displayed with other traces (e.g., in PNG/PDF).
 stdHistogramHeight :: Int
-stdHistogramHeight = 2 * hecSparksHeight
+stdHistogramHeight = hecSparksHeight
 
 -- Ticks
 
