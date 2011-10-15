@@ -12,12 +12,13 @@ import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo
 
 saveAs :: HECs -> ViewParameters -> Double -> (Int, Int, Render ())
-saveAs hecs params'@ViewParameters{xScaleAreaHeight, width,
-                                   height = oldHeight, histogramHeight}
+saveAs hecs params' @ViewParameters{xScaleAreaHeight, width,
+                                    height = oldHeight, histogramHeight}
        yScaleAreaWidth =
-  let params@ViewParameters{height} =
+  let histTotalHeight = histogramHeight + xScaleAreaHeight
+      params@ViewParameters{height} =
         params'{ viewTraces = viewTraces params' ++ [TraceHistogram]
-               , height = oldHeight + histogramHeight + tracePad
+               , height = oldHeight + histTotalHeight + tracePad
                }
       w = ceiling yScaleAreaWidth + width
       h = xScaleAreaHeight + height

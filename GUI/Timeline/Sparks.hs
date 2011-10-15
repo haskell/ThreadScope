@@ -204,22 +204,21 @@ renderSparkHistogram params@ViewParameters{..} hecs =
       renderable :: Chart.Renderable ()
       renderable = ChartR.toRenderable (plot xs)
   in do
-       let drawHist =
+       let size = (fromIntegral width, fromIntegral histogramHeight)
+           drawHist =
              Chart.runCRender (Chart.render renderable size) ChartR.bitmapEnv
            drawXScale = renderXScaleArea params hecs False
-           size = (fromIntegral width,
-                   fromIntegral $ histogramHeight - xScaleAreaHeight)
        save
        scale scaleValue 1.0
-       rectangle 0 (fromIntegral $ - tracePad)
-         (fromIntegral width) (fromIntegral $ histogramHeight + 2 * tracePad)
+       rectangle 0 (fromIntegral $ - tracePad) (fromIntegral width)
+         (fromIntegral $ histogramHeight + xScaleAreaHeight + 2 * tracePad)
        setSourceRGBAhex white 1
        op <- getOperator
        setOperator OperatorAtop  -- ensures nothing is painted for PNG/PDF
        fill
        setOperator op
        drawHist
-       translate 0 (snd size)
+       translate 0 (fromIntegral histogramHeight)
        drawXScale
        restore
 

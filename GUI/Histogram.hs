@@ -51,7 +51,7 @@ histogramViewNew builder = do
         , detail = undefined
         , bwMode = undefined
         , labelsMode = False
-        , histogramHeight = h
+        , histogramHeight = h - xScaleAreaHeight
         , minterval = minterval
         , xScaleAreaHeight = xScaleAreaHeight
         }
@@ -70,8 +70,8 @@ histogramViewNew builder = do
            | otherwise -> do
                win <- widgetGetDrawWindow histogramDrawingArea
                minterval <- readIORef intervalIORef
-               (w, h) <- widgetGetSize histogramDrawingArea
-               let size = (w, h - firstTraceY)
+               (w, windowHeight) <- widgetGetSize histogramDrawingArea
+               let size = (w, windowHeight - firstTraceY)
                    params = paramsHist size minterval
                    rect = Rectangle 0 0 w (snd size)
                renderWithDrawable win $
@@ -88,9 +88,9 @@ histogramViewNew builder = do
         | otherwise -> do
             win <- widgetGetDrawWindow histogramYScaleArea
             minterval <- readIORef intervalIORef
-            (xoffset, histogramHeight) <- widgetGetSize histogramYScaleArea
-            let h = histogramHeight - xScaleAreaHeight - firstTraceY
-                params = paramsHist (undefined, h) minterval
+            (xoffset, windowHeight) <- widgetGetSize histogramYScaleArea
+            let size = (undefined, windowHeight - firstTraceY)
+                params = paramsHist size minterval
             renderWithDrawable win $
               -- TODO: looks bad when h is not a multiple of 10
               renderYScaleArea params hecs (fromIntegral xoffset)
