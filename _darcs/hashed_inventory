@@ -1,4 +1,4 @@
-pristine:0964beff38a4dc1cb62e5074e9d45567398d90d3b3dcfa02f7b63f7e3fbf5df5
+pristine:efb24fcca5d478a0c279cc46f289bb31e732fcededb8af717bb48ea04e2ce2f3
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1637,3 +1637,13 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111015104747
  Ignore-this: 9a43c0e0767cba7a1fade9ddbab8eb6e
 ] 
 hash: 0000005356-06b4d48b2f4f27eff0529badf2d86f55c9e5895579f6ce523ed58e6af480b754
+[Rewrite Charts, step 19: improve histogram drawing for PDF/PNG
+Mikolaj Konarski <mikolaj@well-typed.com>**20111015122035
+ Ignore-this: 89711124fb769a92c6d4284dcf7693ce
+] 
+hash: 0000000833-24707ce59ef7472d7240f5600c1c7447344d560341141c2eef01277d8a712167
+[Mark even text lines that are within the selected timeline interval
+Mikolaj Konarski <mikolaj@well-typed.com>**20111015205801
+ Ignore-this: 9da828e212f114568546bd7119e27ec6
+] 
+hash: 0000003305-37b18a33f94089f8ee49208447ec35f837f09c74dd9d8c902463239b83a361fb
