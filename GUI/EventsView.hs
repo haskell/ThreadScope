@@ -41,6 +41,7 @@ data EventsState
    = EventsEmpty
    | EventsLoaded {
        cursorPos  :: !Int,
+       mrange     :: !(Maybe (Int, Int)),
        eventsArr  :: Array Int CapEvent
      }
 
@@ -181,6 +182,7 @@ eventsViewSetEvents eventWin@EventsView{drawArea, stateRef} mevents = do
         Nothing     -> EventsEmpty
         Just events -> EventsLoaded {
                           cursorPos  = 0,
+                          mrange = Nothing,
                           eventsArr  = events
                        }
       viewState' = viewState { eventsState = eventsState' }
@@ -197,15 +199,15 @@ eventsViewGetCursor EventsView{stateRef} = do
     EventsEmpty             -> return Nothing
     EventsLoaded{cursorPos} -> return (Just cursorPos)
 
-eventsViewSetCursor :: EventsView -> Int -> IO ()
-eventsViewSetCursor eventsView@EventsView{drawArea, stateRef} n = do
+eventsViewSetCursor :: EventsView -> Int -> Maybe (Int, Int) -> IO ()
+eventsViewSetCursor eventsView@EventsView{drawArea, stateRef} n mrange = do
   viewState@ViewState{eventsState} <- readIORef stateRef
   case eventsState of
     EventsEmpty             -> return ()
     EventsLoaded{eventsArr} -> do
       let n' = clampBounds (bounds eventsArr) n
       writeIORef stateRef viewState {
-        eventsState = eventsState { cursorPos = n' }
+        eventsState = eventsState { cursorPos = n', mrange }
       }
       eventsViewScrollToLine eventsView  n'
       widgetQueueDraw drawArea
@@ -277,23 +279,21 @@ drawEvents EventsView{drawArea, adj}
   let -- With average char width, timeWidth is enough for 24 hours of logs
       -- (way more than TS can handle, currently). Aligns nicely with
       -- current timeline_yscale_area width, too.
+      -- TODO: take timeWidth from the yScaleDrawingArea width
       -- TODO: perhaps make the timeWidth area grey, too?
-      -- TODO: perhaps limit the display to the selected interval?
+      -- TODO: perhaps limit scroll to the selected interval (perhaps not strictly, but only so that the interval area does not completely vanish from the visible area)?
       timeWidth  = 105
       columnGap  = 20
       descrWidth = width - timeWidth - columnGap
 
   sequence_
-    [ do when selected $
+    [ do when (inside || selected) $
            GtkExt.stylePaintFlatBox
              style win
-             state ShadowNone
+             state1 ShadowNone
              clipRect
              drawArea ""
              0 (round y) width (round lineHeight)
-
-         let state' | selected  = state
-                    | otherwise = StateNormal
 
          -- The event time
          layoutSetText layout (showEventTime event)
@@ -301,7 +301,7 @@ drawEvents EventsView{drawArea, adj}
          layoutSetWidth layout (Just (fromIntegral timeWidth))
          GtkExt.stylePaintLayout
            style win
-           state' True
+           state2 True
            clipRect
            drawArea ""
            0 (round y)
@@ -313,7 +313,7 @@ drawEvents EventsView{drawArea, adj}
          layoutSetWidth layout (Just (fromIntegral descrWidth))
          GtkExt.stylePaintLayout
            style win
-           state' True
+           state2 True
            clipRect
            drawArea ""
            (timeWidth + columnGap) (round y)
@@ -322,7 +322,12 @@ drawEvents EventsView{drawArea, adj}
     | n <- [begin..end]
     , let y = fromIntegral n * lineHeight - yOffset
           event    = eventsArr ! n
+          inside   = maybe False (\ (s, e) -> s <= n && n <= e) mrange
           selected = cursorPos == n
+          (state1, state2)
+            | inside    = (StatePrelight, StatePrelight)
+            | selected  = (state, state)
+            | otherwise = (state, StateNormal)
     ]
 
   where

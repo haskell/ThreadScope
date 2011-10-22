@@ -18,7 +18,7 @@ import Data.IORef
 data HistogramView =
   HistogramView
   { hecsIORef :: IORef (Maybe HECs)
-  , intervalIORef :: IORef (Maybe Interval)
+  , mintervalIORef :: IORef (Maybe Interval)
   , histogramDrawingArea :: DrawingArea
   }
 
@@ -29,7 +29,7 @@ histogramViewSetHECs HistogramView{..} mhecs = do
 
 histogramViewSetInterval :: HistogramView -> Maybe Interval -> IO ()
 histogramViewSetInterval HistogramView{..} minterval = do
-  writeIORef intervalIORef minterval
+  writeIORef mintervalIORef minterval
   widgetQueueDraw histogramDrawingArea
 
 histogramViewNew :: Builder -> IO HistogramView
@@ -57,7 +57,7 @@ histogramViewNew builder = do
         }
 
   hecsIORef <- newIORef Nothing
-  intervalIORef <- newIORef Nothing
+  mintervalIORef <- newIORef Nothing
 
   -- Program the callback for the capability drawingArea
   on histogramDrawingArea exposeEvent $
@@ -69,7 +69,7 @@ histogramViewNew builder = do
            | null (durHistogram hecs) -> return False
            | otherwise -> do
                win <- widgetGetDrawWindow histogramDrawingArea
-               minterval <- readIORef intervalIORef
+               minterval <- readIORef mintervalIORef
                (w, windowHeight) <- widgetGetSize histogramDrawingArea
                let size = (w, windowHeight - firstTraceY)
                    params = paramsHist size minterval
@@ -87,7 +87,7 @@ histogramViewNew builder = do
         | null (durHistogram hecs) -> return False
         | otherwise -> do
             win <- widgetGetDrawWindow histogramYScaleArea
-            minterval <- readIORef intervalIORef
+            minterval <- readIORef mintervalIORef
             (xoffset, windowHeight) <- widgetGetSize histogramYScaleArea
             let size = (undefined, windowHeight - firstTraceY)
                 params = paramsHist size minterval
