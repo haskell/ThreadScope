@@ -99,7 +99,8 @@ traceViewNew builder actions = do
 traceViewSetHECs :: TraceView -> HECs -> IO ()
 traceViewSetHECs TraceView{tracesStore} hecs = do
     treeStoreClear tracesStore
-    -- testing only (or to add histogram to PNG/PDF export:
+    -- for testing only (e.g., to compare with histogram of data from interval
+    -- or to compare visually with other traces):
     -- treeStoreInsert tracesStore [] 0 (TraceHistogram, Visible)
     go 0
     treeStoreInsert tracesStore [] 0 (TraceActivity, Visible)
