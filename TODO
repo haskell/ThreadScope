@@ -142,6 +142,21 @@ at the ends, but somehow this does not show (perhaps one is not enough)
 
 - perhaps enlarge the main timeline canvas to the right to the nearest tick
 
+- let the histogram X axis ticks point downwards
+
+- reduce the size of the histogram X axis, let the rule touch bar bottoms,
+but don't change the size of numbers --- it's OK
+
+- fix resizing Y scale
+
+- don't draw histogram if the tab too small
+
+- change histogram caption when the data is taken from the selected interval
+
+- make sure our labels are sensible, and that the key actually matches the graphs
+e.g. we know red means overflowed sparks, but the UI does not say so anywhere
+(this is probably elsewhere in this TODO)
+
 
 IDEAS FOR FUTURE WORK:
 
@@ -346,3 +361,15 @@ then move the selection, etc.
 - perhaps the current "reset zoom" button could change the x and y scale of timeline and histogram to fit the current region (which initially and most of the time later on is just the whole eventlog)?
 
 - perhaps we need a floating "resize me" button to pop up on the graph whenever your current view ought to be resized , e.g. clipping at the top, or tallest bar taking up less than half the vertical space, or put that in red letters into the popups that we'll have at some point, or mark the upper or lower edge of the graph red (depending if it's clipped or too small) and blink the y-zoom reset button (to the right of the x-zoom reset button) in red, too
+
+- zoom histogram (increase/decrease the number of bars)
+
+- compare any of the graphs for the whole time and for the interval: either
+by opening/detaching window/pane dedicated to the interval data
+or by a permanent tab in the bottom pane with selectable traces
+that only ever show the data from the selected interval
+and when you zoom it, the interval changes in the upper pane
+(but histogram should not be among those traces, because it does not scroll,
+does not have the time X axis, and generally does not fit and is confusing)
+
+- perhaps use the tab with traces to guide what is exported to PDF/PNG

@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module GUI.Timeline.Render (
     renderView,
     renderTraces,
@@ -223,7 +224,11 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                  let maxP = maxSparkPool hecs
                  in renderSparkPool params slice start end (prof !! c) maxP
                TraceHistogram ->
+#ifdef USE_SPARK_HISTOGRAM
                  renderSparkHistogram params hecs
+#else
+                 undefined
+#endif
                TraceGroup _ -> error "renderTrace"
                TraceActivity ->
                  renderActivity params hecs startPos endPos
@@ -303,7 +308,7 @@ updateXScaleArea TimelineState{..} lastTx = do
   let hadjValue = toWholePixels scaleValue hadjValue0
       off y = xScaleAreaHeight - y
   renderWithDrawable win $
-    renderXScale scaleValue hadjValue width lastTx off
+    renderXScale scaleValue hadjValue width lastTx off True
   return ()
 
 --------------------------------------------------------------------------------
@@ -315,7 +320,10 @@ renderYScaleArea ViewParameters{maxSpkValue, labelsMode, viewTraces,
                                 histogramHeight, xScaleAreaHeight}
                  hecs xoffset =
   let maxP = maxSparkPool hecs
-      maxH = fromIntegral (maxYHistogram hecs) / 1000
+      -- round up to multiples of 10ms
+      -- TODO: synchronise with the bars drawing code
+      mult10ms = ceiling $ fromIntegral (maxYHistogram hecs) / 10000000
+      maxH = 10000 * fromIntegral mult10ms
   in drawYScaleArea
        maxSpkValue maxP maxH xoffset 0
                    labelsMode histogramHeight xScaleAreaHeight viewTraces

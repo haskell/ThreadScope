@@ -5,7 +5,9 @@ module GUI.Timeline.Sparks (
     renderSparkCreation,
     renderSparkConversion,
     renderSparkPool,
+#ifdef USE_SPARK_HISTOGRAM
     renderSparkHistogram,
+#endif
   ) where
 
 import GUI.Timeline.Render.Constants
@@ -22,12 +24,14 @@ import Graphics.Rendering.Cairo
 
 import qualified Data.List as L
 import qualified Data.IntMap as IM
-import Data.Accessor
 import Text.Printf
+#ifdef USE_SPARK_HISTOGRAM
+import Data.Accessor
 
 import qualified Graphics.Rendering.Chart as Chart
 import qualified Graphics.Rendering.Chart.Renderable as ChartR
 import qualified Graphics.Rendering.Chart.Plot.Hidden as ChartH
+#endif
 
 -- import Text.Printf
 
@@ -159,6 +163,7 @@ addSparks colour maxSliceSpark f0 f1 start slice ts = do
       setSourceRGBAhex colour 1.0
       fill
 
+#ifdef USE_SPARK_HISTOGRAM
 renderSparkHistogram :: ViewParameters -> HECs -> Render ()
 renderSparkHistogram params@ViewParameters{..} hecs =
   let intDoub :: Integral a => a -> Double
@@ -183,7 +188,7 @@ renderSparkHistogram params@ViewParameters{..} hecs =
                    $ Chart.laxis_override ^= Chart.axis_labels ^: map override0
                    $ Chart.defaultLayoutAxis
             xaxis  = Chart.laxis_title ^= ""
-                   $ Chart.laxis_override ^= Chart.axis_labels ^: map override0
+                   $ Chart.laxis_override ^= Chart.axis_labels ^: map overrideX
                    $ Chart.defaultLayoutAxis
             ytitle = "Total duration (" ++ mu ++ "s)"
             xtitle = "Individual spark duration (" ++ mu ++ "s)"
@@ -222,8 +227,9 @@ renderSparkHistogram params@ViewParameters{..} hecs =
        setOperator op
        drawHist
        translate 0 (fromIntegral histogramHeight)
-       drawXScale
+--       drawXScale
        restore
+#endif
 
 -- TODO: factor out to module with helper stuff (mu, deZero, this)
 fromListWith' :: (a -> a -> a) -> [(Int, a)] -> IM.IntMap a

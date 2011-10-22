@@ -1,4 +1,4 @@
-pristine:efb24fcca5d478a0c279cc46f289bb31e732fcededb8af717bb48ea04e2ce2f3
+pristine:b1f67b5bb14343e99f8f359acd9bcf02e83fe9e62f439083627785a2dd704f08
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1642,8 +1642,38 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111015122035
  Ignore-this: 89711124fb769a92c6d4284dcf7693ce
 ] 
 hash: 0000000833-24707ce59ef7472d7240f5600c1c7447344d560341141c2eef01277d8a712167
-[Mark even text lines that are within the selected timeline interval
-Mikolaj Konarski <mikolaj@well-typed.com>**20111015205801
- Ignore-this: 9da828e212f114568546bd7119e27ec6
+[Mark event text lines that are within the selected timeline interval
+Mikolaj Konarski <mikolaj@well-typed.com>**20111022004807
+ Ignore-this: fbbbdcc41bc8a43ba6bff6bef4f40026
 ] 
-hash: 0000003305-37b18a33f94089f8ee49208447ec35f837f09c74dd9d8c902463239b83a361fb
+hash: 0000003306-c9eee41177b8a18e49a4193b791321196ab52409c669d58b746cfea72d212a39
+[Change axes colour from blue to black
+Mikolaj Konarski <mikolaj@well-typed.com>**20111022005751
+ Ignore-this: 6064c3c75b052053f36613ac10e70eca
+] 
+hash: 0000000516-b86923586ee4e947d26fea9bb32c6915c7c8ce686c8ad09cfc3931500d6f2963
+[Rewrite Charts, step 20: no major and mid ticks for histogram
+Mikolaj Konarski <mikolaj@well-typed.com>**20111022015709
+ Ignore-this: fd17da1ee1a2eb54b159707e1de7eb2a
+] 
+hash: 0000002235-f5810ce085b8268e848b0c06af4297ca17be23f16aacb137b8ddc1bb3fcec4fa
+[Rewrite Charts, step 21: round the numbers on the Y histogram axis
+Mikolaj Konarski <mikolaj@well-typed.com>**20111022015711
+ Ignore-this: b66c4506bbcbbc51ae8490304b671911
+] 
+hash: 0000000475-f5fff146c06c863310e21cf88225bc2818f807fc3d948a9b8b7817d409f2b029
+[Update TODO
+Mikolaj Konarski <mikolaj@well-typed.com>**20111022023130
+ Ignore-this: 467f3e8eecdde080280f9ddd5abddfc4
+] 
+hash: 0000001531-30cb449e5165a22fcd30fadf9393155700e413b034eb1963326204f1679fd9a1
+[SQUASH_ME: temporarily disable the new X histogram scale, until it's in sync with bar drawing
+Mikolaj Konarski <mikolaj@well-typed.com>**20111022023347
+ Ignore-this: f41cee1c931ceae86792051df5a06aec
+] 
+hash: 0000000475-06d517531f680c594e30b5edb03cb39d70f43f876e82b06bf4d56bfb19bb5f96
+[Update ifdefs for histogram-less build
+Mikolaj Konarski <mikolaj@well-typed.com>**20111022025236
+ Ignore-this: 3b252ba265918bbe646d665da93bdd9a
+] 
+hash: 0000001044-d47774f2c806da07a48442d6010367f65c2cd955fad02cfcd678428cd35020d0
