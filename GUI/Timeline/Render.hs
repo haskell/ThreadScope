@@ -303,7 +303,7 @@ updateXScaleArea TimelineState{..} lastTx = do
   let hadjValue = toWholePixels scaleValue hadjValue0
       off y = xScaleAreaHeight - y
   renderWithDrawable win $
-    renderXScale scaleValue hadjValue width lastTx off
+    renderXScale scaleValue hadjValue width lastTx off True
   return ()
 
 --------------------------------------------------------------------------------
