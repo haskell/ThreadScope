@@ -141,7 +141,7 @@ mainWindowNew builder actions = do
 
 #ifndef USE_SPARK_HISTOGRAM
   -- If we're not enabling the histogram feature then hide the tab.
-  histogram_drawingarea <- getWidget castToWidget "histogram_drawingarea"
+  histogram_drawingarea <- getWidget castToWidget "table3"
   eventsbox             <- getWidget castToNotebook "eventsbox"
   Just pgnum <- notebookPageNum eventsbox histogram_drawingarea
   notebookRemovePage eventsbox  pgnum
