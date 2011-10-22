@@ -35,7 +35,7 @@ import Text.Printf
 -- | Render vertical rulers (solid translucent lines), matching scale ticks.
 renderVRulers :: Timestamp -> Timestamp -> Double -> Int -> Render()
 renderVRulers startPos endPos scaleValue height = do
-  setSourceRGBAhex blue 0.2
+  setSourceRGBAhex black 0.15
   let timestampFor100Pixels = truncate (100 * scaleValue)  -- ns time for 100 ps
       snappedTickDuration :: Timestamp
       snappedTickDuration =
@@ -95,7 +95,7 @@ renderXScale scaleValue hadjValue width lastTx off = do
   translate (-hadjValue) 0
   selectFontFace "sans serif" FontSlantNormal FontWeightNormal
   setFontSize 12
-  setSourceRGBAhex blue 1.0
+  setSourceRGBAhex black 1.0
   setLineWidth 1.0
   draw_line (startPos, off 16) (endPos, off 16)
   let timestampFor100Pixels = truncate (100 * scaleValue)  -- ns time for 100 ps
@@ -203,12 +203,12 @@ renderYScale hecSparksHeight scaleValue maxSpark xoffset yoffset = do
   newPath
   moveTo xoffset yoffset
   lineTo xoffset (yoffset + fromIntegral hecSparksHeight)
-  setSourceRGBAhex blue 1.0
+  setSourceRGBAhex black 1.0
   stroke
 
   selectFontFace "sans serif" FontSlantNormal FontWeightNormal
   setFontSize 12
-  setSourceRGBAhex blue 1.0
+  setSourceRGBAhex black 1.0
   save
   scale scaleValue 1.0
   setLineWidth 0.5
