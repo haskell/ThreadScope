@@ -392,7 +392,7 @@ traceYPositions labelsMode histTotalHeight traces =
 
 traceHeight :: Int -> Trace -> Int
 traceHeight _ TraceHEC{}           = hecTraceHeight
-traceHeight _ TraceInstantHEC{}    = hecTraceHeight
+traceHeight _ TraceInstantHEC{}    = hecInstantHeight
 traceHeight _ TraceCreationHEC{}   = hecSparksHeight
 traceHeight _ TraceConversionHEC{} = hecSparksHeight
 traceHeight _ TracePoolHEC{}       = hecSparksHeight
@@ -410,7 +410,7 @@ showTrace :: Trace -> String
 showTrace (TraceHEC n) =
   "HEC " ++ show n
 showTrace (TraceInstantHEC n) =
-  "HEC " ++ show n ++ "\nInstant Events"
+  "HEC " ++ show n ++ "\nInstant"
 showTrace (TraceCreationHEC n) =
   "\nHEC " ++ show n ++ "\n\nSpark creation rate (spark/ms)"
 showTrace (TraceConversionHEC n) =
