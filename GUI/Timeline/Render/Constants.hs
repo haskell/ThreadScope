@@ -24,7 +24,7 @@ tracePad = 20
 
 -- HEC bar height
 
-hecTraceHeight, hecSparksHeight, hecBarHeight, hecBarOff, hecLabelExtra :: Int
+hecTraceHeight, hecBarHeight, hecBarOff, hecLabelExtra :: Int
 
 hecTraceHeight  = 40
 hecBarHeight    = 20

@@ -236,6 +236,8 @@ drawEvent params@ViewParameters{..} event
       SparkFizzle{}    -> renderInstantEvent params event fizzledDudsColour
       SparkGC{}        -> renderInstantEvent params event fizzledDudsColour
 
+      UserMessage{}    -> renderInstantEvent params event userMessageColour
+
       RunThread{}  -> return ()
       StopThread{} -> return ()
       StartGC{}    -> return ()
