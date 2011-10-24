@@ -11,6 +11,7 @@ import GHC.RTS.Events
 
 data Trace
   = TraceHEC      Int
+  | TraceInstantHEC Int
   | TraceCreationHEC Int
   | TraceConversionHEC Int
   | TracePoolHEC  Int

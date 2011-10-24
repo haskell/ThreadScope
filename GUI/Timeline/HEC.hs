@@ -1,5 +1,6 @@
 module GUI.Timeline.HEC (
-    renderHEC
+    renderHEC,
+    renderInstantHEC,
   ) where
 
 import GUI.Timeline.Render.Constants
@@ -26,6 +27,13 @@ renderHEC params@ViewParameters{..} start end (dtree,etree) = do
      case etree of
        EventTree ltime etime tree ->
            renderEvents params ltime etime start end tree
+
+renderInstantHEC :: ViewParameters -> Timestamp -> Timestamp
+                    -> EventTree
+                    -> Render ()
+renderInstantHEC params@ViewParameters{..} start end
+                 (EventTree ltime etime tree) =
+  renderEvents params ltime etime start end tree
 
 detailThreshold :: Double
 detailThreshold = 3000

@@ -216,6 +216,9 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                TraceHEC c ->
                  let (dtree, etree, _) = hecTrees hecs !! c
                  in renderHEC params startPos endPos (dtree, etree)
+               TraceInstantHEC c ->
+                 let (_, etree, _) = hecTrees hecs !! c
+                 in renderInstantHEC params startPos endPos etree
                TraceCreationHEC c ->
                  renderSparkCreation params slice start end (prof !! c)
                TraceConversionHEC c ->
@@ -389,6 +392,7 @@ traceYPositions labelsMode histTotalHeight traces =
 
 traceHeight :: Int -> Trace -> Int
 traceHeight _ TraceHEC{}           = hecTraceHeight
+traceHeight _ TraceInstantHEC{}    = hecTraceHeight
 traceHeight _ TraceCreationHEC{}   = hecSparksHeight
 traceHeight _ TraceConversionHEC{} = hecSparksHeight
 traceHeight _ TracePoolHEC{}       = hecSparksHeight
@@ -405,6 +409,8 @@ calculateTotalTimelineHeight labelsMode histTotalHeight traces =
 showTrace :: Trace -> String
 showTrace (TraceHEC n) =
   "HEC " ++ show n
+showTrace (TraceInstantHEC n) =
+  "HEC " ++ show n ++ "\nInstant Events"
 showTrace (TraceCreationHEC n) =
   "\nHEC " ++ show n ++ "\n\nSpark creation rate (spark/ms)"
 showTrace (TraceConversionHEC n) =

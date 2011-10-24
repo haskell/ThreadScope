@@ -67,6 +67,7 @@ traceViewNew builder actions = do
 
   where
     renderTrace (TraceHEC           hec) = "HEC " ++ show hec
+    renderTrace (TraceInstantHEC    hec) = "HEC " ++ show hec
     renderTrace (TraceCreationHEC   hec) = "HEC " ++ show hec
     renderTrace (TraceConversionHEC hec) = "HEC " ++ show hec
     renderTrace (TracePoolHEC       hec) = "HEC " ++ show hec
@@ -105,8 +106,12 @@ traceViewSetHECs TraceView{tracesStore} hecs = do
     go 0
     treeStoreInsert tracesStore [] 0 (TraceActivity, Visible)
   where
-    newt = Node { rootLabel = (TraceGroup "HEC Traces", Visible),
+    newT = Node { rootLabel = (TraceGroup "HEC Traces", Visible),
                   subForest = [ Node { rootLabel = (TraceHEC k, Visible),
+                                       subForest = [] }
+                              | k <- [ 0 .. hecCount hecs - 1 ] ] }
+    newI = Node { rootLabel = (TraceGroup "HEC Instant Events", Visible),
+                  subForest = [ Node { rootLabel = (TraceInstantHEC k, Visible),
                                        subForest = [] }
                               | k <- [ 0 .. hecCount hecs - 1 ] ] }
     nCre = Node { rootLabel = (TraceGroup "Spark Creation", Hidden),
@@ -128,12 +133,17 @@ traceViewSetHECs TraceView{tracesStore} hecs = do
           treeStoreInsertTree tracesStore [] 0 nPoo
           treeStoreInsertTree tracesStore [] 0 nCon
           treeStoreInsertTree tracesStore [] 0 nCre
-          treeStoreInsertTree tracesStore [] 0 newt
+          treeStoreInsertTree tracesStore [] 0 newI
+          treeStoreInsertTree tracesStore [] 0 newT
         Just t  ->
           case t of
              Node { rootLabel = (TraceGroup "HEC Traces", _) } -> do
                treeStoreRemove tracesStore [n]
-               treeStoreInsertTree tracesStore [] n newt
+               treeStoreInsertTree tracesStore [] n newT
+               go (n+1)
+             Node { rootLabel = (TraceGroup "HEC Instant Events", _) } -> do
+               treeStoreRemove tracesStore [n]
+               treeStoreInsertTree tracesStore [] n newI
                go (n+1)
              Node { rootLabel = (TraceGroup "Spark Creation", _) } -> do
                treeStoreRemove tracesStore [n]
