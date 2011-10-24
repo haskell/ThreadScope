@@ -80,7 +80,7 @@ green :: Color
 green = Color 0 0xFFFF 0
 
 darkGreen :: Color
-darkGreen = Color 0x0000 0x6600 0x0000
+darkGreen = Color 0x2E00 0x8B00 0x5700
 
 blue :: Color
 blue = Color 0 0 0xFFFF
