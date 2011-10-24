@@ -56,6 +56,9 @@ fizzledDudsColour      = grey
 createdConvertedColour = darkGreen
 overflowedColour       = red
 
+userMessageColour :: Color
+userMessageColour = darkRed
+
 outerPercentilesColour :: Color
 outerPercentilesColour = lightGrey
 

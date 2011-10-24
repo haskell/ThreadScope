@@ -52,6 +52,9 @@ BUGS:
 (visible in high zoom out); the horizontal and vertical rulers do too
 (but they don't look so bad)
 
+- for small screens with many HECs, make it possible to zoom view vertically
+(perhaps via M-mouse wheel?)
+
 
 OTHER:
 
