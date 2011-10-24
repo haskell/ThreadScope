@@ -1,4 +1,4 @@
-pristine:b1f67b5bb14343e99f8f359acd9bcf02e83fe9e62f439083627785a2dd704f08
+pristine:2c5f7322eba8f54158de6101031387528d7bbe5c4964511bccc8664e742ad9d3
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1677,3 +1677,8 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111022025236
  Ignore-this: 3b252ba265918bbe646d665da93bdd9a
 ] 
 hash: 0000001044-d47774f2c806da07a48442d6010367f65c2cd955fad02cfcd678428cd35020d0
+[Update TODO for next release
+Mikolaj Konarski <mikolaj@well-typed.com>**20111024145844
+ Ignore-this: 8f6b1379ecae62d4ce48dc924d29485e
+] 
+hash: 0000006007-5515865b947ce2bbf59c5a5db1c1c9335c7a1bc6f7d736246b68512f519030b5
