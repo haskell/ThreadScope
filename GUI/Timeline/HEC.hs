@@ -36,7 +36,7 @@ renderInstantHEC params@ViewParameters{..} start end
   renderEvents params ltime etime start end tree
 
 detailThreshold :: Double
-detailThreshold = 3000
+detailThreshold = 3
 
 -------------------------------------------------------------------------------
 -- hecView draws the trace for a single HEC
