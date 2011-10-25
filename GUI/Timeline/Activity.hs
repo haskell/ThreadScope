@@ -95,7 +95,9 @@ actProfile slice start0 end0 t
         | DurationTreeLeaf ev <- t           = (startTimeOf ev, endTimeOf ev)
         | DurationSplit s _ e _ _ _run _ <- t = (s, e)
 
-      duration = min (start+slice) e - max start s
+      mi = min (start + slice) e
+      ma = max start s
+      duration = if mi < ma then 0 else mi - ma
 
       time_in_this_slice t = case t of
         DurationTreeLeaf ThreadRun{}  -> duration

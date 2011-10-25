@@ -233,7 +233,9 @@ sparkProfile slice start0 end0 t
        (s, e) | SparkTree s e _ <- t  = (s, e)
 
        -- The common part of the slice and the duration.
-       common = min (start1 + slice) e - max start1 s
+       mi = min (start1 + slice) e
+       ma = max start1 s
+       common = if mi < ma then 0 else mi - ma
        -- Instead of drilling down the tree (unless it's a leaf),
        -- we approximate by taking a proportion of the aggregate value,
        -- depending on how much of the spark duration corresponding
