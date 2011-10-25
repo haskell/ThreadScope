@@ -25,8 +25,8 @@ import Text.Printf
 -- There are ten minor ticks to a major tick and a semi-major tick
 -- occurs half way through a major tick (overlapping the corresponding
 -- minor tick).
--- The timestamp values are in nanos-seconds (1e-9) i.e.
--- a timestamp value of 1000000000 represents 1s.The position on the drawing
+-- The timestamp values are in micro-seconds (1e-6) i.e.
+-- a timestamp value of 1000000 represents 1s. The position on the drawing
 -- canvas is in milliseconds (ms) (1e-3).
 -- scaleValue is used to divide a timestamp value to yield a pixel value.
 -- NOTE: the code below will crash if the timestampFor100Pixels is 0.
@@ -36,7 +36,7 @@ import Text.Printf
 renderVRulers :: Timestamp -> Timestamp -> Double -> Int -> Render()
 renderVRulers startPos endPos scaleValue height = do
   setSourceRGBAhex black 0.15
-  let timestampFor100Pixels = truncate (100 * scaleValue)  -- ns time for 100 ps
+  let timestampFor100Pixels = truncate (100 * scaleValue)  -- micro-second time for 100 ps
       snappedTickDuration :: Timestamp
       snappedTickDuration =
         10 ^ truncate (logBase 10 (fromIntegral timestampFor100Pixels) :: Double)
@@ -99,7 +99,7 @@ renderXScale scaleValue hadjValue width lastTx off forTime = do
   setSourceRGBAhex black 1.0
   setLineWidth 1.0
   draw_line (startPos, off 16) (endPos, off 16)
-  let timestampFor100Pixels = truncate (100 * scaleValue)  -- ns time for 100 ps
+  let timestampFor100Pixels = truncate (100 * scaleValue)  -- micro-second time for 100 ps
       snappedTickDuration :: Timestamp
       snappedTickDuration =
         10 ^ truncate (logBase 10 (fromIntegral timestampFor100Pixels) :: Double)
@@ -152,7 +152,7 @@ drawXTicks tickWidthInPixels scaleValue pos incr endPos off forTime =
                | atMidTick = 12
                | otherwise = 8
 
--- | Display the nano-second time unit with an appropriate suffix
+-- | Display the micro-second time unit with an appropriate suffix
 -- depending on the actual time value.
 -- For times < 1e-6 the time is shown in micro-seconds.
 -- For times >= 1e-6 and < 0.1 seconds the time is shown in ms
@@ -160,12 +160,12 @@ drawXTicks tickWidthInPixels scaleValue pos incr endPos off forTime =
 showMultiTime :: Timestamp -> String
 showMultiTime pos =
   if pos == 0 then "0s"
-  else if pos < 1000000 then -- Show time as micro-seconds for times < 1e-6
-         reformatMS  (posf / 1000) ++ (mu ++ "s")  -- microsecond (1e-6s).
-       else if pos < 100000000 then -- Show miliseonds for time < 0.1s
-              reformatMS (posf / 1000000) ++ "ms" -- miliseconds 1e-3
+  else if pos < 1000 then -- Show time as micro-seconds for times < 1e-6
+         reformatMS posf ++ (mu ++ "s")  -- microsecond (1e-6s).
+       else if pos < 100000 then -- Show miliseonds for time < 0.1s
+              reformatMS (posf / 1000) ++ "ms" -- miliseconds 1e-3
             else -- Show time in seconds
-              reformatMS (posf / 1000000000) ++ "s"
+              reformatMS (posf / 1000000) ++ "s"
   where
     posf :: Double
     posf = fromIntegral pos

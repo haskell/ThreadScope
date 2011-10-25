@@ -145,7 +145,7 @@ drawSelection vp@ViewParameters{height} (RangeSelection x x') = do
 -------------------------------------------------------------------------------
 
 -- We currently have two different way of converting from logical units
--- (ie timestamps in nanoseconds) to device units (ie pixels):
+-- (ie timestamps in micro-seconds) to device units (ie pixels):
 --   * the first is to set the cairo context to the appropriate scale
 --   * the second is to do the conversion ourself
 --
@@ -325,11 +325,11 @@ renderYScaleArea ViewParameters{maxSpkValue, labelsMode, viewTraces,
   let maxP = maxSparkPool hecs
       -- round up to multiples of 10ms
       -- TODO: synchronise with the bars drawing code
-      mult10ms = ceiling $ fromIntegral (maxYHistogram hecs) / 10000000
+      mult10ms = ceiling $ fromIntegral (maxYHistogram hecs) / 10000
       maxH = 10000 * fromIntegral mult10ms
   in drawYScaleArea
        maxSpkValue maxP maxH xoffset 0
-                   labelsMode histogramHeight xScaleAreaHeight viewTraces
+       labelsMode histogramHeight xScaleAreaHeight viewTraces
 
 -- | Update the Y scale widget, based on the state of all timeline areas
 -- and on traces (only for graph labels and relative positions).
@@ -425,8 +425,8 @@ showTrace TraceGroup{} = error "Render.showTrace"
 
 -- | Calcaulate the maximal Y value for a graph-like trace, or Nothing.
 traceMaxSpark :: Double -> Double -> Double -> Trace -> Maybe Double
-traceMaxSpark maxS _ _ TraceCreationHEC{}   = Just $ maxS * 1000000
-traceMaxSpark maxS _ _ TraceConversionHEC{} = Just $ maxS * 1000000
+traceMaxSpark maxS _ _ TraceCreationHEC{}   = Just $ maxS * 1000
+traceMaxSpark maxS _ _ TraceConversionHEC{} = Just $ maxS * 1000
 traceMaxSpark _ maxP _ TracePoolHEC{}       = Just $ maxP
 traceMaxSpark _ _ maxH TraceHistogram       = Just $ maxH
 traceMaxSpark _ _ _ _ = Nothing

@@ -33,8 +33,6 @@ import qualified Graphics.Rendering.Chart.Renderable as ChartR
 import qualified Graphics.Rendering.Chart.Plot.Hidden as ChartH
 #endif
 
--- import Text.Printf
-
 -- Rendering sparks. No approximation nor extrapolation is going on here.
 -- The sample data, recalculated for a given slice size in sparkProfile,
 -- before these functions are called, is straightforwardly rendered.
@@ -193,16 +191,16 @@ renderSparkHistogram params@ViewParameters{..} hecs =
             ytitle = "Total duration (" ++ mu ++ "s)"
             xtitle = "Individual spark duration (" ++ mu ++ "s)"
             override0 d = [ (x, "") | (x, _) <- d]
-            overrideX d = [ (x, deZero (printf "%.4f" (10 ** (x / 5) / 1000)))
+            overrideX d = [ (x, deZero (printf "%.4f" (10 ** (x / 5))))
                           | (x, _) <- d]  -- TODO: round it up before **
             plot = Chart.joinPlot plotBars plotHidden
             plotHidden =  -- to fix the x an y scales
               Chart.toPlot $ ChartH.PlotHidden
                 [intDoub (minXHistogram hecs), intDoub (maxXHistogram hecs)]
-                [0, intDoub (maxYHistogram hecs) / 1000]
+                [0, intDoub (maxYHistogram hecs)]
             plotBars = Chart.plotBars bars
             bars = Chart.plot_bars_values ^= barvs $ Chart.defaultPlotBars
-            barvs = [(intDoub t, [intDoub height / 1000])
+            barvs = [(intDoub t, [intDoub height])
                     | (t, height) <- histo $ inRange xs]
         in layout
       xs = durHistogram hecs

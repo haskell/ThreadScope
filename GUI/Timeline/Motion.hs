@@ -32,9 +32,9 @@ zoom :: (Double->Double) -> TimelineState -> Timestamp -> IO ()
 zoom factor TimelineState{timelineAdj, scaleIORef} cursor = do
        scaleValue <- readIORef scaleIORef
        -- TODO: we'd need HECs, as below, to fit maxScale to graphs at hand
-       let maxScale = 10000000000000  -- big enough for hours of eventlogs
+       let maxScale = 10000000000  -- big enough for hours of eventlogs
            clampedFactor =
-             if factor scaleValue < 1 || factor scaleValue > maxScale
+             if factor scaleValue < 0.2 || factor scaleValue > maxScale
              then id
              else factor
            newScaleValue = clampedFactor scaleValue
@@ -78,7 +78,7 @@ zoomToFit TimelineState{scaleIORef, maxSpkIORef,timelineAdj,
        writeIORef scaleIORef newScaleValue
        writeIORef maxSpkIORef newMaxSpkValue
 
-       -- Configure the horizontal scrollbar units to correspond to ns.
+       -- Configure the horizontal scrollbar units to correspond to micro-secs.
        adjustmentSetLower    timelineAdj lower
        adjustmentSetValue    timelineAdj lower
        adjustmentSetUpper    timelineAdj upper

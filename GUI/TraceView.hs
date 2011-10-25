@@ -110,8 +110,8 @@ traceViewSetHECs TraceView{tracesStore} hecs = do
                   subForest = [ Node { rootLabel = (TraceHEC k, Visible),
                                        subForest = [] }
                               | k <- [ 0 .. hecCount hecs - 1 ] ] }
-    newI = Node { rootLabel = (TraceGroup "HEC Instant Events", Visible),
-                  subForest = [ Node { rootLabel = (TraceInstantHEC k, Visible),
+    newI = Node { rootLabel = (TraceGroup "HEC Instant Events", Hidden),
+                  subForest = [ Node { rootLabel = (TraceInstantHEC k, Hidden),
                                        subForest = [] }
                               | k <- [ 0 .. hecCount hecs - 1 ] ] }
     nCre = Node { rootLabel = (TraceGroup "Spark Creation", Hidden),

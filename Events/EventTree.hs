@@ -209,8 +209,9 @@ splitEvents es !endTime
   = splitEvents es lhs_end
 
   | null lhs
-  = error (printf "null lhs: len = %d, startTime = %d, endTime = %d, lhs_len = %d\n" (length es) startTime endTime ++ '\n': show es)
-
+  = error (printf "null lhs: len = %d, startTime = %d, endTime = %d\n"
+             (length es) startTime endTime
+           ++ '\n': show es)
   | otherwise
   = -- trace (printf "len = %d, startTime = %d, endTime = %d, lhs_len = %d\n" len startTime endTime lhs_len) $
     -- if len /= length es || length lhs + length rhs /= len then error (printf "splitEvents3; %d %d %d %d %d" len (length es) (length lhs) lhs_len (length rhs))  else
@@ -218,8 +219,11 @@ splitEvents es !endTime
                ltree
                rtree
     where
+    -- | Integer division, rounding up.
+    divUp :: Timestamp -> Timestamp -> Timestamp
+    divUp n k = (n + k - 1) `div` k
     startTime = time (head es)
-    splitTime = startTime + (endTime - startTime) `div` 2
+    splitTime = startTime + (endTime - startTime) `divUp` 2
     duration  = endTime - startTime
 
     (lhs, lhs_end, rhs) = splitEventList es [] splitTime 0

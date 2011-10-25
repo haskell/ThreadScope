@@ -106,14 +106,24 @@ buildEventLog progress from =
         Right evs -> build filename evs
 
   where
+    -- | Integer division, rounding up.
+    divUp :: Timestamp -> Timestamp -> Timestamp
+    divUp n k = (n + k - 1) `div` k
     build name evs = do
        let
+         specBy1000 e@EventBlock{} =
+           e{end_time = end_time e `divUp` 1000,
+             block_events = map eBy1000 (block_events e)}
+         specBy1000 e = e
+         eBy1000 ev = ev{time = time ev `divUp` 1000,
+                         spec = specBy1000 (spec ev)}
+         eventsBy = map eBy1000 (events (dat evs))
          eventBlockEnd e | EventBlock{ end_time=t } <- spec e = t
          eventBlockEnd e = time e
 
-         lastTx = maximum (0 : map eventBlockEnd (events (dat evs)))
+         lastTx = maximum (0 : map eventBlockEnd eventsBy)
 
-         groups = groupEvents (events (dat evs))
+         groups = groupEvents eventsBy
          maxTrees = rawEventsToHECs groups lastTx
          maxSparkPool = maximum (0 : map fst maxTrees)
          trees = map snd maxTrees
@@ -129,7 +139,7 @@ buildEventLog progress from =
          ilog5 :: Timestamp -> Int
          ilog5 0 = 0
          ilog5 x = floor $ 5 * logBase 10 (intDoub x)
-         sparks = Sparks.sparkInfo (events (dat evs))
+         sparks = Sparks.sparkInfo eventsBy
          prepHisto s =
            let start  = Sparks.timeStarted s
                dur    = Sparks.sparkDuration s
@@ -185,7 +195,7 @@ buildEventLog progress from =
        --TODO: fully evaluate HECs before returning because othewise the last
        -- bit of work gets done after the progress window has been closed.
 
-       return (hecs, name, n_events, fromIntegral lastTx * 1.0e-9)
+       return (hecs, name, n_events, fromIntegral lastTx / 1000000)
 
 -------------------------------------------------------------------------------
 

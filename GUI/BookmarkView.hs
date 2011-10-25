@@ -84,7 +84,7 @@ bookmarkViewNew builder BookmarkViewActions{..} = do
     treeViewSetModel bookmarkTreeView bookmarkStore
 
     cellLayoutSetAttributes columnTs cellTs bookmarkStore $ \(ts,_) ->
-      [ cellText := showFFloat (Just 6) (fromIntegral ts / 1000000000) "s" ]
+      [ cellText := showFFloat (Just 6) (fromIntegral ts / 1000000) "s" ]
 
     cellLayoutSetAttributes columnLabel cellLabel bookmarkStore $ \(_,label) ->
       [ cellText := label ]
