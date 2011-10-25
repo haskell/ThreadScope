@@ -88,7 +88,9 @@ renderEvents params@ViewParameters{..} !s !e !startPos !endPos
         (EventSplit splitTime lhs rhs)
   | startPos < splitTime && endPos >= splitTime &&
         (fromIntegral (e - s) / scaleValue) <= fromIntegral detail
-  = drawTooManyEvents params s e
+  -- was: = drawTooManyEvents params s e
+  -- is: draw only the right hand side (let's say it overwrites LHS)
+  = renderEvents params splitTime e startPos endPos rhs
 
   | otherwise
   = do when (startPos < splitTime) $
