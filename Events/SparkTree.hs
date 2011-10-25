@@ -9,7 +9,7 @@ module Events.SparkTree (
 
 import qualified Events.SparkStats as SparkStats
 
-import qualified GHC.RTS.Events as GHC
+import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events (Timestamp)
 
 import Text.Printf
@@ -27,13 +27,13 @@ data SparkDuration =
 
 -- | Calculates durations and maximal rendered values from the event log.
 -- Warning: cannot be applied to a suffix of the log (assumes start at time 0).
-eventsToSparkDurations :: [GHC.Event] -> (Double, [SparkDuration])
+eventsToSparkDurations :: [GHCEvents.Event] -> (Double, [SparkDuration])
 eventsToSparkDurations es =
   let aux _startTime _startCounters [] = (0, [])
       aux startTime startCounters (event : events) =
-        case GHC.spec event of
-          GHC.SparkCounters crt dud ovf cnv fiz gcd rem ->
-            let endTime = GHC.time event
+        case GHCEvents.spec event of
+          GHCEvents.SparkCounters crt dud ovf cnv fiz gcd rem ->
+            let endTime = GHCEvents.time event
                 endCounters = (crt, dud, ovf, cnv, fiz, gcd, rem)
                 delta = SparkStats.create startCounters endCounters
                 newMaxSparkPool = SparkStats.maxPool delta
@@ -135,8 +135,11 @@ splitSparks es !endTime
                  (SparkStats.aggregate (subDelta rtree ++ subDelta ltree))
 
   where
+    -- | Integer division, rounding up.
+    divUp :: Timestamp -> Timestamp -> Timestamp
+    divUp n k = (n + k - 1) `div` k
     startTime = startT $ head es
-    splitTime = startTime + (endTime - startTime) `div` 2
+    splitTime = startTime + (endTime - startTime) `divUp` 2
 
     (lhs, lhs_end, rhs) = splitSparkList es [] splitTime 0
 
