@@ -20,12 +20,14 @@ data HistogramView =
   { hecsIORef :: IORef (Maybe HECs)
   , mintervalIORef :: IORef (Maybe Interval)
   , histogramDrawingArea :: DrawingArea
+  , histogramYScaleArea  :: DrawingArea
   }
 
 histogramViewSetHECs :: HistogramView -> Maybe HECs -> IO ()
 histogramViewSetHECs HistogramView{..} mhecs = do
   writeIORef hecsIORef mhecs
   widgetQueueDraw histogramDrawingArea
+  widgetQueueDraw histogramYScaleArea
 
 histogramViewSetInterval :: HistogramView -> Maybe Interval -> IO ()
 histogramViewSetInterval HistogramView{..} minterval = do
