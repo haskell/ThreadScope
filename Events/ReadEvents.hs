@@ -130,15 +130,13 @@ buildEventLog progress from =
 
          intDoub :: Integral a => a -> Double
          intDoub = fromIntegral
-         -- takes a log and discretizes the data; the multiplication
-         -- increases the number of bars
-         -- TODO: produce more granular discretization for data with only
-         -- small sparks (or even such intervals; but it's costly
-         -- and the scale would change between intervals)
-         -- TODO: make 5 a common constant, or even define inverse functions
+         -- Discretizes the data using log.
+         -- Log base 2 seems to result in 7--15 bars, which is OK visually.
+         -- Better would be 10--15 bars, but we want the base to be a small
+         -- integer, for readable scales, and we can't go below 2.
          ilog5 :: Timestamp -> Int
          ilog5 0 = 0
-         ilog5 x = floor $ 5 * logBase 10 (intDoub x)
+         ilog5 x = floor $ logBase 2 (intDoub x)
          sparks = Sparks.sparkInfo eventsBy
          prepHisto s =
            let start  = Sparks.timeStarted s
