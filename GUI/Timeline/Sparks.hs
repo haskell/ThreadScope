@@ -18,19 +18,20 @@ import qualified Events.SparkStats as SparkStats
 
 import GUI.Types
 import GUI.ViewerColours
-import GUI.Timeline.Ticks (mu, deZero, renderHRulers, renderXScaleArea)
+import GUI.Timeline.Ticks
 
 import Graphics.Rendering.Cairo
 
 import qualified Data.List as L
 import qualified Data.IntMap as IM
+import Control.Monad
 import Text.Printf
 #ifdef USE_SPARK_HISTOGRAM
 import Data.Accessor
 
 import qualified Graphics.Rendering.Chart as Chart
 import qualified Graphics.Rendering.Chart.Renderable as ChartR
-import qualified Graphics.Rendering.Chart.Plot.Hidden as ChartH
+-- import qualified Graphics.Rendering.Chart.Plot.Hidden as ChartH
 #endif
 
 -- Rendering sparks. No approximation nor extrapolation is going on here.
@@ -176,6 +177,9 @@ renderSparkHistogram params@ViewParameters{..} hecs =
       inRange :: [(Timestamp, Int, Timestamp)] -> [(Int, Timestamp)]
       inRange xs = [(logdur, dur)
                    | (start, logdur, dur) <- xs, inR start]
+      baris :: [(Double, Double)]
+      baris = [(intDoub t, intDoub height)
+              | (t, height) <- histo $ inRange xs]
       plot :: [(Timestamp, Int, Timestamp)] -> Chart.Layout1 Double Double
       plot xs =
         let layout = Chart.layout1_plots ^= [Left plot]
@@ -186,18 +190,18 @@ renderSparkHistogram params@ViewParameters{..} hecs =
                    $ Chart.laxis_override ^= Chart.axis_labels ^: map override0
                    $ Chart.defaultLayoutAxis
             xaxis  = Chart.laxis_title ^= ""
-                   $ Chart.laxis_override ^= Chart.axis_labels ^: map overrideX
+                   $ Chart.laxis_override ^= Chart.axis_labels ^: map override0
                    $ Chart.defaultLayoutAxis
             ytitle = "Total duration (" ++ mu ++ "s)"
             xtitle = "Individual spark duration (" ++ mu ++ "s)"
             override0 d = [ (x, "") | (x, _) <- d]
-            overrideX d = [ (x, deZero (printf "%.4f" (10 ** (x / 5))))
+            overrideX d = [ (x, deZero (printf "%.4f" (2 ** x)))
                           | (x, _) <- d]  -- TODO: round it up before **
-            plot = Chart.joinPlot plotBars plotHidden
-            plotHidden =  -- to fix the x an y scales
-              Chart.toPlot $ ChartH.PlotHidden
-                [intDoub (minXHistogram hecs), intDoub (maxXHistogram hecs)]
-                [0, intDoub (maxYHistogram hecs)]
+            plot = plotBars  -- Chart.joinPlot plotBars plotHidden
+            -- plotHidden =  -- to fix the x an y scales
+            --   Chart.toPlot $ ChartH.PlotHidden
+            --     [intDoub (minXHistogram hecs), intDoub (maxXHistogram hecs)]
+            --     [0, intDoub (maxYHistogram hecs)]
             plotBars = Chart.plotBars bars
             bars = Chart.plot_bars_values ^= barvs $ Chart.defaultPlotBars
             barvs = [(intDoub t, [intDoub height])
@@ -207,15 +211,35 @@ renderSparkHistogram params@ViewParameters{..} hecs =
       renderable :: Chart.Renderable ()
       renderable = ChartR.toRenderable (plot xs)
   in do
-       let size = (fromIntegral width + 50, fromIntegral histogramHeight + 48)
+       let -- size = (fromIntegral width + 50, fromIntegral histogramHeight + 48)
+           (w, h) = (intDoub width, intDoub histogramHeight)
+           (minX, maxX, maxY) = (intDoub (minXHistogram hecs),
+                                 intDoub (maxXHistogram hecs),
+                                 intDoub (maxYHistogram hecs))
+           nBars = max 5 (maxX - minX + 1)
+           segmentWidth = w / nBars
+           gapWidth = 10
+           barWidth = segmentWidth - gapWidth
+           sX x = gapWidth / 2 + (x - minX) * segmentWidth
+           sY y = y * h / (max 2 maxY)
+           plotRect (x, y) = do
+             setSourceRGBAhex blue 1.0
+             rectangle (sX x) (sY maxY) barWidth (sY (-y))
+             fillPreserve
+             setSourceRGBA 0 0 0 0.7
+             setLineWidth 1
+             stroke
            drawHist = do
-             translate (-50) (-16.5)
-             Chart.runCRender (Chart.render renderable size) ChartR.bitmapEnv
-             translate 50 16.5
-           drawXScale = renderXScaleArea params{hadjValue = 0} hecs False
+--             translate (-50) (-16.5)
+--             Chart.runCRender (Chart.render renderable size) ChartR.bitmapEnv
+--             translate 50 16.5
+             forM_ baris plotRect
+           off y = 16 - y
+           xScaleMode = XScaleLog minX segmentWidth
+           drawXScale = renderXScale 1 0 width maxBound off xScaleMode
        save
        translate hadjValue 0
-       scale scaleValue 1.0
+       scale scaleValue 1
        rectangle 0 (fromIntegral $ - tracePad) (fromIntegral width)
          (fromIntegral $ histogramHeight + xScaleAreaHeight + 2 * tracePad)
        setSourceRGBAhex white 1
@@ -225,7 +249,7 @@ renderSparkHistogram params@ViewParameters{..} hecs =
        setOperator op
        drawHist
        translate 0 (fromIntegral histogramHeight)
---       drawXScale
+       drawXScale
        restore
 #endif
 

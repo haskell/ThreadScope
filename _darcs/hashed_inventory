@@ -1,4 +1,4 @@
-pristine:78319043b1dabc8ad4725857d9b8536af81e9ad2f69d8dcd221a42c4ad39e218
+pristine:0000001502-a3f6c97c6924b1386b0d231fd31ba2ac1c08dafa59a27ec5ee89c1f156661573
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1712,3 +1712,38 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111025200547
  Ignore-this: a9e04d3f5bb9207109c3eee44c7f1fbe
 ] 
 hash: 0000000416-2616003c02c349fab5fc1447dca87960ac0045cf406f6274055b46dd2e44d006
+[Redraw histogram Y scale at eventlog reload
+Mikolaj Konarski <mikolaj@well-typed.com>**20111102004634
+ Ignore-this: 4cb3105ad0fe0779d3c9ba0d0aa715dd
+] 
+hash: 0000000289-da0fdb15e1f587cbe0fb533074ef3bc4ad4da984efd78bbc173ee58438a8e4ff
+[SQUASH_ME: rollback of: SQUASH_ME: temporarily disable the new X histogram scale, until it's in sync with bar drawing
+Mikolaj Konarski <mikolaj@well-typed.com>**20111102123716
+ Ignore-this: ba399410f1e4da32b81cb50863544201
+] 
+hash: 0000000499-cf85e547476fb0f98955be0b060c73407e67f3044bc939cfa8a869264bcaf5bf
+[Rewrite Charts, step 22: draw the bars
+Mikolaj Konarski <mikolaj@well-typed.com>**20111103091450
+ Ignore-this: f2bc51ad8abfd29d16e23f6e85f2d72e
+] 
+hash: 0000003495-dc5477d9779042870065c809fa3a6ef9812db236f101aac86e036a9b76341651
+[Rewrite Charts, step 23: round up histogram Y scale numbers and graph
+Mikolaj Konarski <mikolaj@well-typed.com>**20111103091747
+ Ignore-this: 25374da29afec40e598ba973b063548e
+] 
+hash: 0000000727-594e09d0e0545fafc7d39f5dc8bf009c234d6967b7b7eeb4e1a5163cdc4f54c8
+[Rewrite Charts, step 24: draw logarithmic X scale
+Mikolaj Konarski <mikolaj@well-typed.com>**20111103182642
+ Ignore-this: 7c68452f265d345858d638da8d846b1c
+] 
+hash: 0000001844-6c316b023236bf228eee7bac42d496dcc8822947068ad09d511d599f4febd3ce
+[Rewrite Charts, step 25: invert the histogram X scale once again
+Mikolaj Konarski <mikolaj@well-typed.com>**20111103193358
+ Ignore-this: 1a2072c7dd32cec35b85ce602e48fa7e
+] 
+hash: 0000002158-2b731d4cb7ffe86594a6c08326bf6957a01e051d7c4c6534b8cfecebcfa37b10
+[Rewrite Charts, step 26: pass bar width and start to the X scale
+Mikolaj Konarski <mikolaj@well-typed.com>**20111103222557
+ Ignore-this: d6e4bf70a821cb808d631754d2abec49
+] 
+hash: 0000004505-eb3bf6c4779c047c8f160b680b9a6dd03f869af93e4910c14fe106bdf110f8eb
