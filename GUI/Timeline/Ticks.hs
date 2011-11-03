@@ -67,20 +67,16 @@ drawVRulers tickWidthInPixels height scaleValue pos incr endPos =
     atMajorTick = pos `mod` majorTick == 0
     -- We cheat at pos 0, to avoid half covering the tick by the grey label area.
     lineWidth = scaleValue
-    x1 = if pos == 0 then ceiling (lineWidth / 2) else pos
+    x1 = if pos == 0 then ceiling lineWidth else pos
 
 
 -- | Render the X scale, based on view parameters and hecs.
-renderXScaleArea :: ViewParameters -> HECs -> Bool -> Render ()
+renderXScaleArea :: ViewParameters -> HECs -> Render ()
 renderXScaleArea ViewParameters{width, scaleValue, hadjValue, xScaleAreaHeight}
-                 hecs forTime =
-  let lastTx = if forTime then hecLastEventTime hecs else maxBound
-      off y | forTime   = xScaleAreaHeight - y
-            | otherwise = y
-      hadj = if forTime
-             then hadjValue
-             else scaleValue * fromIntegral (minXHistogram hecs * 100)
-  in renderXScale scaleValue hadj width lastTx off forTime
+                 hecs =
+  let lastTx = hecLastEventTime hecs
+      off y = xScaleAreaHeight - y
+  in renderXScale scaleValue hadjValue width lastTx off True
 
 
 -- | Render the X (vertical) scale: render X axis and call ticks rendering.
@@ -127,7 +123,7 @@ drawXTicks tickWidthInPixels scaleValue pos incr endPos off forTime =
     draw_line (x1, off 16) (x1, off (16 - tickLength))
     when (forTime || atMajorTick || atMidTick || tickWidthInPixels > 30) $ do
       tExtent <- textExtents tickTimeText
-      move_to (pos - truncate (scaleValue * 4.0), testPos tExtent)
+      move_to (testPos tExtent)
       m <- getMatrix
       identityMatrix
       (fourPixels, _) <- deviceToUserDistance 4 0
@@ -138,13 +134,15 @@ drawXTicks tickWidthInPixels scaleValue pos incr endPos off forTime =
   else
     return ()
   where
-    testPos tExtent = if forTime
-                      then off $ 26
-                      else off $ 26 + floor (textExtentsHeight tExtent)
+    testPos tExtent =
+      if forTime
+      then (x1 - truncate (scaleValue * 2),
+            off 26)
+      else (x1 + ceiling (scaleValue * 2),
+            tickLength + floor (textExtentsHeight tExtent))
     posTime = if forTime
               then pos
               else round (2 ** (fromIntegral pos / fromIntegral incr))
-    -- TODO: do not show 0s nor the first log value
     tickTimeText = showMultiTime posTime
     width = if atMidTick then 5 * tickWidthInPixels
             else tickWidthInPixels
@@ -156,7 +154,7 @@ drawXTicks tickWidthInPixels scaleValue pos incr endPos off forTime =
     atMajorTick = forTime && pos `mod` majorTick == 0
     -- We cheat at pos 0, to avoid half covering the tick by the grey label area.
     lineWidth = scaleValue
-    x1 = if pos == 0 then ceiling (lineWidth / 2) else pos
+    x1 = if pos == 0 then ceiling lineWidth else pos
     tickLength | atMajorTick = 16
                | atMidTick = 12
                | otherwise = 8

@@ -235,7 +235,9 @@ renderSparkHistogram params@ViewParameters{..} hecs =
 --             translate 50 16.5
              forM_ baris plotRect
            firstTick = minX * segmentWidth
-           drawXScale = renderXScale scaleValue firstTick width maxBound id False
+           off y = 16 - y
+           drawXScale =
+             renderXScale scaleValue firstTick width maxBound off False
        save
        translate hadjValue 0
        scale scaleValue 1
