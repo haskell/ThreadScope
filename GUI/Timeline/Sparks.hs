@@ -18,7 +18,7 @@ import qualified Events.SparkStats as SparkStats
 
 import GUI.Types
 import GUI.ViewerColours
-import GUI.Timeline.Ticks (mu, deZero, renderHRulers, renderXScaleArea)
+import GUI.Timeline.Ticks (mu, deZero, renderHRulers, renderXScale)
 
 import Graphics.Rendering.Cairo
 
@@ -234,10 +234,11 @@ renderSparkHistogram params@ViewParameters{..} hecs =
 --             Chart.runCRender (Chart.render renderable size) ChartR.bitmapEnv
 --             translate 50 16.5
              forM_ baris plotRect
-           drawXScale = renderXScaleArea params{hadjValue = 0} hecs False
+           firstTick = minX * segmentWidth
+           drawXScale = renderXScale scaleValue firstTick width maxBound id False
        save
        translate hadjValue 0
-       scale scaleValue 1.0
+       scale scaleValue 1
        rectangle 0 (fromIntegral $ - tracePad) (fromIntegral width)
          (fromIntegral $ histogramHeight + xScaleAreaHeight + 2 * tracePad)
        setSourceRGBAhex white 1

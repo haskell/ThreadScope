@@ -74,10 +74,13 @@ drawVRulers tickWidthInPixels height scaleValue pos incr endPos =
 renderXScaleArea :: ViewParameters -> HECs -> Bool -> Render ()
 renderXScaleArea ViewParameters{width, scaleValue, hadjValue, xScaleAreaHeight}
                  hecs forTime =
-  let lastTx = hecLastEventTime hecs
+  let lastTx = if forTime then hecLastEventTime hecs else maxBound
       off y | forTime   = xScaleAreaHeight - y
             | otherwise = y
-  in renderXScale scaleValue hadjValue width lastTx off forTime
+      hadj = if forTime
+             then hadjValue
+             else scaleValue * fromIntegral (minXHistogram hecs * 100)
+  in renderXScale scaleValue hadj width lastTx off forTime
 
 
 -- | Render the X (vertical) scale: render X axis and call ticks rendering.
@@ -99,10 +102,12 @@ renderXScale scaleValue hadjValue width lastTx off forTime = do
   setSourceRGBAhex black 1.0
   setLineWidth 1.0
   draw_line (startPos, off 16) (endPos, off 16)
-  let timestampFor100Pixels = truncate (100 * scaleValue)  -- micro-second time for 100 ps
+  let tFor100Pixels = truncate (100 * scaleValue)  -- micro-sec time for 100 pxs
       snappedTickDuration :: Timestamp
       snappedTickDuration =
-        10 ^ truncate (logBase 10 (fromIntegral timestampFor100Pixels) :: Double)
+        if forTime
+        then 10 ^ truncate (logBase 10 (fromIntegral tFor100Pixels) :: Double)
+        else truncate $ scaleValue * 100 -- TODO
       tickWidthInPixels :: Int
       tickWidthInPixels =
         truncate ((fromIntegral snappedTickDuration) / scaleValue)
@@ -136,7 +141,11 @@ drawXTicks tickWidthInPixels scaleValue pos incr endPos off forTime =
     testPos tExtent = if forTime
                       then off $ 26
                       else off $ 26 + floor (textExtentsHeight tExtent)
-    tickTimeText = showMultiTime pos
+    posTime = if forTime
+              then pos
+              else round (2 ** (fromIntegral pos / fromIntegral incr))
+    -- TODO: do not show 0s nor the first log value
+    tickTimeText = showMultiTime posTime
     width = if atMidTick then 5 * tickWidthInPixels
             else tickWidthInPixels
     isWideEnough tExtent fourPixels =
