@@ -11,7 +11,7 @@ module GUI.Timeline.Render (
 
 import GUI.Timeline.Types
 import GUI.Timeline.Render.Constants
-import GUI.Timeline.Ticks (mu, renderXScale, renderYScale, renderVRulers)
+import GUI.Timeline.Ticks
 import GUI.Timeline.HEC
 import GUI.Timeline.Sparks
 import GUI.Timeline.Activity
@@ -311,7 +311,7 @@ updateXScaleArea TimelineState{..} lastTx = do
   let hadjValue = toWholePixels scaleValue hadjValue0
       off y = xScaleAreaHeight - y
   renderWithDrawable win $
-    renderXScale scaleValue hadjValue width lastTx off True
+    renderXScale scaleValue hadjValue width lastTx off XScaleTime
   return ()
 
 --------------------------------------------------------------------------------
