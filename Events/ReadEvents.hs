@@ -154,7 +154,9 @@ buildEventLog progress from =
          (logDurs, sumDurs) = L.unzip (histo durs)
          minXHistogram = minimum (maxBound : logDurs)
          maxXHistogram = maximum (minBound : logDurs)
-         maxYHistogram = maximum (minBound : sumDurs)
+         maxY          = maximum (minBound : sumDurs)
+         -- round up to multiples of 10ms
+         maxYHistogram = 10000 * ceiling (fromIntegral maxY / 10000)
 
          -- sort the events by time and put them in an array
          sorted    = sortGroups groups

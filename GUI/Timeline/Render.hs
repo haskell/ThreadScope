@@ -323,10 +323,7 @@ renderYScaleArea ViewParameters{maxSpkValue, labelsMode, viewTraces,
                                 histogramHeight, xScaleAreaHeight}
                  hecs xoffset =
   let maxP = maxSparkPool hecs
-      -- round up to multiples of 10ms
-      -- TODO: synchronise with the bars drawing code
-      mult10ms = ceiling $ fromIntegral (maxYHistogram hecs) / 10000
-      maxH = 10000 * fromIntegral mult10ms
+      maxH = fromIntegral $ maxYHistogram hecs
   in drawYScaleArea
        maxSpkValue maxP maxH xoffset 0
        labelsMode histogramHeight xScaleAreaHeight viewTraces
