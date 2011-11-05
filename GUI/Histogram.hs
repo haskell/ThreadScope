@@ -40,6 +40,13 @@ histogramViewNew builder = do
   histogramDrawingArea <- getWidget castToDrawingArea "histogram_drawingarea"
   histogramYScaleArea <- getWidget castToDrawingArea "timeline_yscale_area2"
   timelineXScaleArea <- getWidget castToDrawingArea "timeline_xscale_area"
+
+  -- HACK: layoutSetAttributes does not work for \mu, so let's work around
+  fd <- fontDescriptionNew
+  fontDescriptionSetSize fd 8
+  fontDescriptionSetFamily fd "sans serif"
+  widgetModifyFont histogramYScaleArea (Just fd)
+
   (_, xh) <- widgetGetSize timelineXScaleArea
   let xScaleAreaHeight = fromIntegral xh
       traces = [TraceHistogram]
@@ -90,12 +97,13 @@ histogramViewNew builder = do
         | otherwise -> do
             win <- widgetGetDrawWindow histogramYScaleArea
             minterval <- readIORef mintervalIORef
-            (xoffset, windowHeight) <- widgetGetSize histogramYScaleArea
+            (_, windowHeight) <- widgetGetSize histogramYScaleArea
             let size = (undefined, windowHeight - firstTraceY)
                 params = paramsHist size minterval
             renderWithDrawable win $
               -- TODO: looks bad when h is not a multiple of 10
-              renderYScaleArea params hecs (fromIntegral xoffset)
+              renderYScaleArea
+                params hecs histogramYScaleArea
             return True
 
   return HistogramView{..}

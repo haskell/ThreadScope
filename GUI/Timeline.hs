@@ -7,7 +7,7 @@ module GUI.Timeline (
     timelineSetBWMode,
     timelineSetLabelsMode,
     timelineGetViewParameters,
-    timelineGetYScaleAreaWidth,
+    timelineGetYScaleArea,
     timelineWindowSetHECs,
     timelineWindowSetTraces,
     timelineWindowSetBookmarks,
@@ -109,10 +109,9 @@ timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, labelsModeIORef
            , xScaleAreaHeight = xScaleAreaHeight
            }
 
-timelineGetYScaleAreaWidth :: TimelineView -> IO Double
-timelineGetYScaleAreaWidth timelineWin = do
-  (w, _) <- widgetGetSize $ timelineYScaleArea $ timelineState timelineWin
-  return $ fromIntegral w
+timelineGetYScaleArea :: TimelineView -> DrawingArea
+timelineGetYScaleArea timelineWin =
+  timelineYScaleArea $ timelineState timelineWin
 
 timelineWindowSetHECs :: TimelineView -> Maybe HECs -> IO ()
 timelineWindowSetHECs timelineWin@TimelineView{..} mhecs = do
@@ -144,6 +143,12 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
   timelineVScrollbar  <- getWidget castToVScrollbar "timeline_vscroll"
   timelineAdj         <- rangeGetAdjustment timelineHScrollbar
   timelineVAdj        <- rangeGetAdjustment timelineVScrollbar
+
+  -- HACK: layoutSetAttributes does not work for \mu, so let's work around
+  fd <- fontDescriptionNew
+  fontDescriptionSetSize fd 8
+  fontDescriptionSetFamily fd "sans serif"
+  widgetModifyFont timelineYScaleArea (Just fd)
 
   cursorIBeam <- cursorNew Xterm
   cursorMove  <- cursorNew Fleur

@@ -318,15 +318,16 @@ updateXScaleArea TimelineState{..} lastTx = do
 
 -- | Render the Y scale area (an axis, ticks and a label for each graph),
 -- based on view parameters and hecs.
-renderYScaleArea :: ViewParameters -> HECs -> Double -> Render ()
+renderYScaleArea :: ViewParameters -> HECs -> DrawingArea -> Render ()
 renderYScaleArea ViewParameters{maxSpkValue, labelsMode, viewTraces,
                                 histogramHeight, xScaleAreaHeight}
-                 hecs xoffset =
+                 hecs yScaleArea = do
   let maxP = maxSparkPool hecs
       maxH = fromIntegral $ maxYHistogram hecs
-  in drawYScaleArea
-       maxSpkValue maxP maxH xoffset 0
-       labelsMode histogramHeight xScaleAreaHeight viewTraces
+  (xoffset, _) <- liftIO $ widgetGetSize yScaleArea
+  drawYScaleArea
+    maxSpkValue maxP maxH (fromIntegral xoffset) 0
+    labelsMode histogramHeight xScaleAreaHeight viewTraces yScaleArea
 
 -- | Update the Y scale widget, based on the state of all timeline areas
 -- and on traces (only for graph labels and relative positions).
@@ -341,33 +342,38 @@ updateYScaleArea TimelineState{..} maxSparkPool maxYHistogram
   renderWithDrawable win $
     drawYScaleArea maxSpkValue maxSparkPool maxYHistogram (fromIntegral xoffset)
       vadj_value labelsMode stdHistogramHeight xScaleAreaHeight traces
+      timelineYScaleArea
 
 -- | Render the Y scale area, by rendering an axis, ticks and a label
 -- for each graph-like trace in turn (and only labels for other traces).
 drawYScaleArea :: Double -> Double -> Double -> Double -> Double
-                  -> Bool -> Int -> Int -> [Trace]
+                  -> Bool -> Int -> Int -> [Trace] -> DrawingArea
                   -> Render ()
 drawYScaleArea maxSpkValue maxSparkPool maxYHistogram xoffset vadj_value
-               labelsMode histogramHeight xScaleAreaHeight traces =
+               labelsMode histogramHeight xScaleAreaHeight traces
+               yScaleArea = do
   let histTotalHeight = histogramHeight + xScaleAreaHeight
       ys = map (subtract (round vadj_value)) $
              traceYPositions labelsMode histTotalHeight traces
-  in zipWithM_
-       (drawSingleYScale
-          maxSpkValue maxSparkPool maxYHistogram xoffset histogramHeight)
-       traces ys
+  pcontext <- liftIO $ widgetCreatePangoContext yScaleArea
+  zipWithM_
+     (drawSingleYScale
+        maxSpkValue maxSparkPool maxYHistogram xoffset histogramHeight pcontext)
+     traces ys
 
 -- | Render a single Y scale axis, set of ticks and label, or only a label,
 -- if the trace is not a graph.
-drawSingleYScale :: Double -> Double -> Double -> Double -> Int -> Trace -> Int
+drawSingleYScale :: Double -> Double -> Double -> Double -> Int
+                    -> PangoContext -> Trace -> Int
                     -> Render ()
 drawSingleYScale maxSpkValue maxSparkPool maxYHistogram
-                 xoffset histogramHeight trace y = do
+                 xoffset histogramHeight pcontext trace y = do
   setSourceRGBAhex black 1
   move_to (ox, y + 8)
-  layout <- createLayout $ showTrace trace
+  layout <- liftIO $ layoutText pcontext (showTrace trace)
   liftIO $ do
     layoutSetWidth layout (Just $ xoffset - 50)
+    -- Note: the following does not always work, see the HACK in Timeline.hs
     layoutSetAttributes layout [AttrSize minBound maxBound 8,
                                 AttrFamily minBound maxBound "sans serif"]
   showLayout layout

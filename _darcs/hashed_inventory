@@ -1,4 +1,4 @@
-pristine:0000001502-a3f6c97c6924b1386b0d231fd31ba2ac1c08dafa59a27ec5ee89c1f156661573
+pristine:0000001502-b174ddd7afebc1e3bdb1d8a7a557098940379f3d6c63777f728d0470cc19adbf
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1747,3 +1747,8 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111103222557
  Ignore-this: d6e4bf70a821cb808d631754d2abec49
 ] 
 hash: 0000004505-eb3bf6c4779c047c8f160b680b9a6dd03f869af93e4910c14fe106bdf110f8eb
+[Hack around Pango layout/context bugs
+Mikolaj Konarski <mikolaj@well-typed.com>**20111105130755
+ Ignore-this: d1c5a2fb491fe3b2da0237ac479c0ef4
+] 
+hash: 0000005783-874659c133f8b1ccf77ea5306f453ff6521d3712abb511fb3edb418a8c8bd97a

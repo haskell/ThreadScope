@@ -269,12 +269,12 @@ eventLoop uienv@UIEnv{..} eventlogState = do
                           bwMode     = False,
                           labelsMode = False
                         }
-      yScaleAreaWidth  <- timelineGetYScaleAreaWidth  timelineWin
+      let yScaleArea = timelineGetYScaleArea timelineWin
       case format of
         FormatPDF ->
-          saveAsPDF filename hecs viewParams' yScaleAreaWidth
+          saveAsPDF filename hecs viewParams' yScaleArea
         FormatPNG ->
-          saveAsPNG filename hecs viewParams' yScaleAreaWidth
+          saveAsPNG filename hecs viewParams' yScaleArea
       continue
 
     dispatch EventAboutDialog _ = do
