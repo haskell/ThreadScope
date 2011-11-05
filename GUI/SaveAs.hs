@@ -12,10 +12,11 @@ import Events.HECs
 import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo
 
-saveAs :: HECs -> ViewParameters -> Double -> (Int, Int, Render ())
+saveAs :: HECs -> ViewParameters -> Double -> DrawingArea
+          -> (Int, Int, Render ())
 saveAs hecs params' @ViewParameters{xScaleAreaHeight, width,
                                     height = oldHeight, histogramHeight}
-       yScaleAreaWidth =
+       yScaleAreaWidth yScaleArea =
   let histTotalHeight = histogramHeight + xScaleAreaHeight
       params@ViewParameters{height} =
 #ifdef USE_SPARK_HISTOGRAM
@@ -29,7 +30,7 @@ saveAs hecs params' @ViewParameters{xScaleAreaHeight, width,
       h = xScaleAreaHeight + height
       drawTraces = renderTraces params hecs (Rectangle 0 0 width height)
       drawXScale = renderXScaleArea params hecs
-      drawYScale = renderYScaleArea params hecs yScaleAreaWidth
+      drawYScale = renderYScaleArea params hecs yScaleArea
       -- Functions renderTraces and renderXScaleArea draw to the left of 0
       -- which is not seen in the normal mode, but would be seen in export,
       -- so it has to be cleared before renderYScaleArea is written on top:
@@ -50,15 +51,17 @@ saveAs hecs params' @ViewParameters{xScaleAreaHeight, width,
         drawYScale
   in (w, h, drawAll)
 
-saveAsPDF :: FilePath -> HECs -> ViewParameters -> Double -> IO ()
-saveAsPDF filename hecs params yScaleAreaWidth =
-  let (w', h', drawAll) = saveAs hecs params yScaleAreaWidth
-  in withPDFSurface filename (fromIntegral w') (fromIntegral h') $ \surface ->
-       renderWith surface drawAll
+saveAsPDF :: FilePath -> HECs -> ViewParameters -> DrawingArea -> IO ()
+saveAsPDF filename hecs params yScaleArea = do
+  (xoffset, _) <- liftIO $ widgetGetSize yScaleArea
+  let (w', h', drawAll) = saveAs hecs params (fromIntegral xoffset) yScaleArea
+  withPDFSurface filename (fromIntegral w') (fromIntegral h') $ \surface ->
+    renderWith surface drawAll
 
-saveAsPNG :: FilePath -> HECs -> ViewParameters -> Double -> IO ()
-saveAsPNG filename hecs params yScaleAreaWidth =
-  let (w', h', drawAll) = saveAs hecs params yScaleAreaWidth
-  in withImageSurface FormatARGB32 w' h' $ \surface -> do
-       renderWith surface drawAll
-       surfaceWriteToPNG surface filename
+saveAsPNG :: FilePath -> HECs -> ViewParameters -> DrawingArea -> IO ()
+saveAsPNG filename hecs params yScaleArea = do
+  (xoffset, _) <- liftIO $ widgetGetSize yScaleArea
+  let (w', h', drawAll) = saveAs hecs params (fromIntegral xoffset) yScaleArea
+  withImageSurface FormatARGB32 w' h' $ \surface -> do
+    renderWith surface drawAll
+    surfaceWriteToPNG surface filename
