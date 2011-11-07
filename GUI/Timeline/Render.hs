@@ -421,7 +421,7 @@ showTrace (TraceConversionHEC n) =
 showTrace (TracePoolHEC n) =
   "\nHEC " ++ show n ++ "\n\nSpark pool size"
 showTrace TraceHistogram =
-  "Total duration (" ++ mu ++ "s)"
+  "Sum of spark times\n(" ++ mu ++ "s)"
 showTrace TraceActivity =
   "Activity"
 showTrace TraceGroup{} = error "Render.showTrace"

@@ -80,12 +80,15 @@ histogramViewNew builder = do
                win <- widgetGetDrawWindow histogramDrawingArea
                minterval <- readIORef mintervalIORef
                (w, windowHeight) <- widgetGetSize histogramDrawingArea
-               let size = (w, windowHeight - firstTraceY)
-                   params = paramsHist size minterval
-                   rect = Rectangle 0 0 w (snd size)
-               renderWithDrawable win $
-                 renderTraces params hecs rect
-               return True
+               if windowHeight < 80
+                 then return False
+                 else do
+                   let size = (w, windowHeight - firstTraceY)
+                       params = paramsHist size minterval
+                       rect = Rectangle 0 0 w (snd size)
+                   renderWithDrawable win $
+                     renderTraces params hecs rect
+                   return True
 
   -- Redrawing labelDrawingArea
   histogramYScaleArea `onExpose` \_ -> do
@@ -98,12 +101,13 @@ histogramViewNew builder = do
             win <- widgetGetDrawWindow histogramYScaleArea
             minterval <- readIORef mintervalIORef
             (_, windowHeight) <- widgetGetSize histogramYScaleArea
-            let size = (undefined, windowHeight - firstTraceY)
-                params = paramsHist size minterval
-            renderWithDrawable win $
-              -- TODO: looks bad when h is not a multiple of 10
-              renderYScaleArea
-                params hecs histogramYScaleArea
-            return True
+            if windowHeight < 80
+              then return False
+              else do
+                let size = (undefined, windowHeight - firstTraceY)
+                    params = paramsHist size minterval
+                renderWithDrawable win $
+                  renderYScaleArea params hecs histogramYScaleArea
+                return True
 
   return HistogramView{..}
