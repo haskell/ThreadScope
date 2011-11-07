@@ -97,9 +97,8 @@ renderXScale scaleValue hadjValue width lastTx off xScaleMode = do
   let scale_width = fromIntegral width * scaleValue
       startPos :: Timestamp
       startPos = truncate hadjValue
-      endDouble = minimum [hadjValue + scale_width, fromIntegral lastTx]
       endPos :: Timestamp
-      endPos = ceiling endDouble
+      endPos = ceiling $ minimum [hadjValue + scale_width, fromIntegral lastTx]
   save
   scale (1/scaleValue) 1.0
   translate (-hadjValue) 0
@@ -122,17 +121,17 @@ renderXScale scaleValue hadjValue width lastTx off xScaleMode = do
   -- perhaps when eliminating scale from Cairo drawing
   case xScaleMode of
     XScaleTime ->
-      drawXTicks tickWidthInPixels scaleValue (fromIntegral firstTick) (fromIntegral snappedTickDuration) (fromIntegral endPos) off xScaleMode
+      drawXTicks tickWidthInPixels scaleValue (fromIntegral firstTick) (fromIntegral snappedTickDuration) endPos off xScaleMode
     XScaleLog _minX segmentWidth ->
-      drawXTicks tickWidthInPixels 1 0 segmentWidth endDouble off xScaleMode
+      drawXTicks tickWidthInPixels 1 0 segmentWidth endPos off xScaleMode
   restore
 
 -- | Render a single X scale tick and then recurse.
-drawXTicks :: Int -> Double -> Double -> Double -> Double
+drawXTicks :: Int -> Double -> Double -> Double -> Timestamp
               -> (Int -> Int) -> XScaleMode
               -> Render ()
 drawXTicks tickWidthInPixels scaleValue pos incr endPos off xScaleMode =
-  if pos <= endPos then do
+  if floor pos <= endPos then do
     draw_line (x1, off 16) (x1, off (16 - tickLength))
     when (xScaleMode == XScaleTime
           || atMajorTick || atMidTick || tickWidthInPixels > 30) $ do
@@ -141,7 +140,7 @@ drawXTicks tickWidthInPixels scaleValue pos incr endPos off xScaleMode =
       m <- getMatrix
       identityMatrix
       (fourPixels, _) <- deviceToUserDistance 4 0
-      when (pos + incr <= endPos
+      when (floor (pos + incr) <= endPos
             && (isWideEnough tExtent fourPixels || atMajorTick)) $
         showText tickTimeText
       setMatrix m
@@ -221,7 +220,7 @@ renderYScale hecSparksHeight scaleValue maxSpark xoffset yoffset = do
       maxS = if maxSpark < 100
              then maxSpark  -- too small, would be visible on screen
              else fromIntegral (2 * (ceiling maxSpark ` div` 2))
-      incr = hecSparksHeight `div` 10
+      incr = fromIntegral hecSparksHeight / 10
 
   newPath
   moveTo xoffset yoffset
@@ -241,27 +240,27 @@ renderYScale hecSparksHeight scaleValue maxSpark xoffset yoffset = do
   restore
 
 -- | Render a single Y scale tick and then recurse.
-drawYTicks :: Double -> Int -> Int -> Int -> Int -> Render ()
+drawYTicks :: Double -> Double -> Double -> Int -> Int -> Render ()
 drawYTicks maxS pos incr xoffset yoffset =
-  if pos <= majorTick then do
-    draw_line (xoffset             , yoffset + majorTick - pos)
-              (xoffset + tickLength, yoffset + majorTick - pos)
+  if floor pos <= ceiling majorTick then do
+    draw_line (xoffset             , yoffset + ceiling (majorTick - pos))
+              (xoffset + tickLength, yoffset + ceiling (majorTick - pos))
     when (atMajorTick || atMidTick) $ do
       tExtent <- textExtents tickText
       (fewPixels, _) <- deviceToUserDistance 8 0
       move_to (xoffset - ceiling (textExtentsWidth tExtent + fewPixels),
-               yoffset + majorTick - pos + ceiling (fewPixels / 2))
+               yoffset + ceiling (majorTick - pos + fewPixels / 2))
       when (atMidTick || atMajorTick) $
         showText tickText
     drawYTicks maxS (pos + incr) incr xoffset yoffset
   else
     return ()
   where
-    tickText = reformatV (maxS * fromIntegral pos / fromIntegral majorTick)
-    midTick = 5 * incr
-    atMidTick = pos `mod`midTick == 0
+    tickText = reformatV (fromIntegral interations * maxS / 10)
+    interations = round (pos / incr)
+    atMidTick = interations `mod` 5 == 0
     majorTick = 10 * incr
-    atMajorTick = pos `mod` majorTick == 0
+    atMajorTick = interations `mod` 10 == 0
     tickLength | atMajorTick = 13
                | atMidTick   = 10
                | otherwise   = 6
