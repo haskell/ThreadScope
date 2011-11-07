@@ -9,6 +9,7 @@ module Events.HECs (
     timestampToEventIndex,
     extractUserMessages,
     histogram,
+    histogramCounts,
   ) where
 
 import Events.EventTree
@@ -62,6 +63,16 @@ extractUserMessages hecs =
 -- | Sum durations in the same buckets to form a histogram.
 histogram :: [(Int, Timestamp)] -> [(Int, Timestamp)]
 histogram durs = IM.toList $ fromListWith' (+) durs
+
+-- | Sum durations and spark counts in the same buckets to form a histogram.
+histogramCounts :: [(Int, (Timestamp, Int))] -> [(Int, (Timestamp, Int))]
+histogramCounts durs =
+  let agg (dur1, count1) (dur2, count2) =
+        -- bangs needed to avoid stack overflow
+        let !dur = dur1 + dur2
+            !count = count1 + count2
+        in (dur, count)
+  in IM.toList $ fromListWith' agg durs
 
 fromListWith' :: (a -> a -> a) -> [(Int, a)] -> IM.IntMap a
 fromListWith' f xs =

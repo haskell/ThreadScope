@@ -170,12 +170,12 @@ renderSparkHistogram params@ViewParameters{..} hecs =
               Nothing -> const True
               Just (from, to) -> \ t -> t >= from && t <= to
       -- TODO: if xs is sorted, we can slightly optimize the filtering
-      inRange :: [(Timestamp, Int, Timestamp)] -> [(Int, Timestamp)]
-      inRange xs = [(logdur, dur)
+      inRange :: [(Timestamp, Int, Timestamp)] -> [(Int, (Timestamp, Int))]
+      inRange xs = [(logdur, (dur, 1))
                    | (start, logdur, dur) <- xs, inR start]
-      baris :: [(Double, Double)]
-      baris = [(intDoub t, intDoub height)
-              | (t, height) <- histogram $ inRange xs]
+      baris :: [(Double, Double, Int)]
+      baris = [(intDoub t, intDoub height, count)
+              | (t, (height, count)) <- histogramCounts $ inRange xs]
       plot :: [(Timestamp, Int, Timestamp)] -> Chart.Layout1 Double Double
       plot xs =
         let layout = Chart.layout1_plots ^= [Left plot]
@@ -201,7 +201,7 @@ renderSparkHistogram params@ViewParameters{..} hecs =
             plotBars = Chart.plotBars bars
             bars = Chart.plot_bars_values ^= barvs $ Chart.defaultPlotBars
             barvs = [(intDoub t, [intDoub height])
-                    | (t, height) <- histogram $ inRange xs]
+                    | (t, (height, _)) <- histogramCounts $ inRange xs]
         in layout
       xs = durHistogram hecs
       renderable :: Chart.Renderable ()
@@ -219,13 +219,19 @@ renderSparkHistogram params@ViewParameters{..} hecs =
            barWidth = segmentWidth - gapWidth
            sX x = gapWidth / 2 + (x - minX) * segmentWidth
            sY y = y * h / (max 2 maxY)
-           plotRect (x, y) = do
+           plotRect (x, y, count) = do
              setSourceRGBAhex blue 1.0
              rectangle (sX x) (sY maxY) barWidth (sY (-y))
              fillPreserve
              setSourceRGBA 0 0 0 0.7
              setLineWidth 1
              stroke
+             selectFontFace "sans serif" FontSlantNormal FontWeightNormal
+             setFontSize 10
+             setSourceRGBAhex black 1.0
+             let aboveOrBelow = if sY (-y) > -17 then -3 else 13
+             moveTo (sX x + 3) (sY (maxY - y) + aboveOrBelow)
+             showText (show count)
            drawHist = do
 --             translate (-50) (-16.5)
 --             Chart.runCRender (Chart.render renderable size) ChartR.bitmapEnv

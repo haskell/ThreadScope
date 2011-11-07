@@ -136,7 +136,7 @@ drawXTicks tickWidthInPixels scaleValue pos incr endPos off xScaleMode =
     when (xScaleMode == XScaleTime
           || atMajorTick || atMidTick || tickWidthInPixels > 30) $ do
       tExtent <- textExtents tickTimeText
-      move_to testPos
+      move_to textPos
       m <- getMatrix
       identityMatrix
       (fourPixels, _) <- deviceToUserDistance 4 0
@@ -149,7 +149,7 @@ drawXTicks tickWidthInPixels scaleValue pos incr endPos off xScaleMode =
   else
     return ()
   where
-    testPos =
+    textPos =
       if xScaleMode == XScaleTime
       then (x1 - truncate (scaleValue * 2), off 26)
       else (x1 + ceiling (scaleValue * 2), tickLength + 13)
