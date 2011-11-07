@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 module GUI.Timeline.Render (
     renderView,
     renderTraces,
@@ -227,11 +226,7 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                  let maxP = maxSparkPool hecs
                  in renderSparkPool params slice start end (prof !! c) maxP
                TraceHistogram ->
-#ifdef USE_SPARK_HISTOGRAM
                  renderSparkHistogram params hecs
-#else
-                 undefined
-#endif
                TraceGroup _ -> error "renderTrace"
                TraceActivity ->
                  renderActivity params hecs startPos endPos

@@ -34,11 +34,6 @@ source-repository head
   type:     darcs
   location: http://code.haskell.org/ThreadScope/
 
-flag sparks-histogram
-  description: Include a new feature to visualise the granularity of
-               parallelism when using par sparks.
-  default: False
-
 Executable threadscope
   Main-is:           Main.hs
   Build-Depends:     base >= 4.0 && < 5,
@@ -78,10 +73,6 @@ Executable threadscope
                      GUI.Timeline.Types,
                      GUI.Timeline.Render.Constants,
                      GUI.GtkExtras
-
-  if flag(sparks-histogram)
-    other-modules:   GUI.Histogram
-    cpp-options:     -DUSE_SPARK_HISTOGRAM
 
   ghc-options:  -Wall -fwarn-tabs
                 -fno-warn-type-defaults -fno-warn-name-shadowing

@@ -30,9 +30,7 @@ import Events.HECs hiding (Event)
 import GUI.Dialogs
 import Events.ReadEvents
 import GUI.EventsView
-#ifdef USE_SPARK_HISTOGRAM
 import GUI.Histogram
-#endif
 import GUI.Timeline
 import GUI.TraceView
 import GUI.BookmarkView
@@ -47,9 +45,7 @@ data UIEnv = UIEnv {
 
        mainWin       :: MainWindow.MainWindow,
        eventsView    :: EventsView,
-#ifdef USE_SPARK_HISTOGRAM
        histogramView :: HistogramView,
-#endif
        timelineWin   :: TimelineView,
        traceView     :: TraceView,
        bookmarkView  :: BookmarkView,
@@ -151,9 +147,7 @@ constructUI = failOnGError $ do
     eventsViewCursorChanged = post . EventCursorChangedIndex
   }
 
-#ifdef USE_SPARK_HISTOGRAM
   histogramView <- histogramViewNew builder
-#endif
 
   traceView <- traceViewNew builder TraceViewActions {
     traceViewTracesChanged = post . EventTracesChanged
@@ -231,9 +225,7 @@ eventLoop uienv@UIEnv{..} eventlogState = do
         printf "%s (%d events, %.3fs)" name nevents timespan
 
       eventsViewSetEvents eventsView (Just (hecEventArray hecs))
-#ifdef USE_SPARK_HISTOGRAM
       histogramViewSetHECs histogramView (Just hecs)
-#endif
       traceViewSetHECs traceView hecs
       traces' <- traceViewGetTraces traceView
       timelineWindowSetHECs timelineWin (Just hecs)
@@ -345,9 +337,7 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       let cursorPos' = timestampToEventIndex hecs cursorTs'
       timelineSetSelection timelineWin selection'
       eventsViewSetCursor eventsView cursorPos' Nothing
-#ifdef USE_SPARK_HISTOGRAM
       histogramViewSetInterval histogramView Nothing
-#endif
       continueWith eventlogState {
         selection = selection',
         cursorPos = cursorPos'
@@ -359,9 +349,7 @@ eventLoop uienv@UIEnv{..} eventlogState = do
           mrange = Just (cursorPos', timestampToEventIndex hecs end)
       timelineSetSelection timelineWin selection'
       eventsViewSetCursor eventsView cursorPos' mrange
-#ifdef USE_SPARK_HISTOGRAM
       histogramViewSetInterval histogramView (Just (start, end))
-#endif
       continueWith eventlogState {
         selection = selection',
         cursorPos = cursorPos'

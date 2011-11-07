@@ -1,13 +1,10 @@
-{-# LANGUAGE CPP #-}
 module GUI.Timeline.Sparks (
     treesProfile,
     maxSparkRenderedValue,
     renderSparkCreation,
     renderSparkConversion,
     renderSparkPool,
-#ifdef USE_SPARK_HISTOGRAM
     renderSparkHistogram,
-#endif
   ) where
 
 import GUI.Timeline.Render.Constants
@@ -152,7 +149,6 @@ addSparks colour maxSliceSpark f0 f1 start slice ts = do
       setSourceRGBAhex colour 1.0
       fill
 
-#ifdef USE_SPARK_HISTOGRAM
 -- | Render the spark duration histogram together with it's X scale and
 -- horizontal and vertical rulers.
 renderSparkHistogram :: ViewParameters -> HECs -> Render ()
@@ -243,4 +239,3 @@ renderSparkHistogram ViewParameters{..} hecs =
     translate 0 (fromIntegral histogramHeight)
     drawXScale
     restore
-#endif
