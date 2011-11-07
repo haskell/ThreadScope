@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module Events.HECs (
     HECs(..),
     Event,
@@ -7,6 +8,7 @@ module Events.HECs (
     eventIndexToTimestamp,
     timestampToEventIndex,
     extractUserMessages,
+    histogram,
   ) where
 
 import Events.EventTree
@@ -14,6 +16,8 @@ import Events.SparkTree
 import GHC.RTS.Events
 
 import Data.Array
+import qualified Data.IntMap as IM
+import qualified Data.List as L
 
 -----------------------------------------------------------------------------
 
@@ -54,3 +58,20 @@ extractUserMessages :: HECs -> [(Timestamp, String)]
 extractUserMessages hecs =
   [ (ts, msg)
   | CapEvent _ (Event ts (UserMessage msg)) <- elems (hecEventArray hecs) ]
+
+-- | Sum durations in the same buckets to form a histogram.
+histogram :: [(Int, Timestamp)] -> [(Int, Timestamp)]
+histogram durs = IM.toList $ fromListWith' (+) durs
+
+fromListWith' :: (a -> a -> a) -> [(Int, a)] -> IM.IntMap a
+fromListWith' f xs =
+    L.foldl' ins IM.empty xs
+  where
+#if MIN_VERSION_containers(0,4,1)
+    ins t (k,x) = IM.insertWith' f k x t
+#else
+    ins t (k,x) =
+      let r = IM.insertWith f k x t
+          v = r IM.! k
+      in v `seq` r
+#endif

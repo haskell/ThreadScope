@@ -5,7 +5,7 @@ module Events.ReadEvents (
 
 import Events.EventTree
 import Events.SparkTree
-import Events.HECs (HECs(..))
+import Events.HECs (HECs(..), histogram)
 import Events.TestEvents
 import Events.EventDuration
 import qualified GUI.ProgressView as ProgressView
@@ -17,7 +17,6 @@ import qualified GHC.RTS.Events.Sparks as Sparks
 
 import Data.Array
 import qualified Data.List as L
-import qualified Data.IntMap as IM
 import Text.Printf
 import System.FilePath
 import Control.Monad
@@ -128,41 +127,39 @@ buildEventLog progress from =
          maxSparkPool = maximum (0 : map fst maxTrees)
          trees = map snd maxTrees
 
+         -- sort the events by time and put them in an array
+         sorted    = sortGroups groups
+         n_events  = length sorted
+         event_arr = listArray (0, n_events-1) sorted
+         hec_count = length trees
+
+         -- Pre-calculate the data for the sparks histogram.
          intDoub :: Integral a => a -> Double
          intDoub = fromIntegral
          -- Discretizes the data using log.
          -- Log base 2 seems to result in 7--15 bars, which is OK visually.
          -- Better would be 10--15 bars, but we want the base to be a small
          -- integer, for readable scales, and we can't go below 2.
-         ilog5 :: Timestamp -> Int
-         ilog5 0 = 0
-         ilog5 x = floor $ logBase 2 (intDoub x)
+         ilog :: Timestamp -> Int
+         ilog 0 = 0
+         ilog x = floor $ logBase 2 (intDoub x)
          sparks = Sparks.sparkInfo eventsBy
          prepHisto s =
            let start  = Sparks.timeStarted s
                dur    = Sparks.sparkDuration s
-               logdur = ilog5 dur
+               logdur = ilog dur
            in (start, logdur, dur)
          allHisto     = map prepHisto sparks
          -- Sparks of zero lenght are already well visualized in other graphs:
          durHistogram = filter (\ (_, logdur, _) -> logdur > 0) allHisto
-         -- TODO: perhaps pass histo and related inside HECs, instead of max*
-         -- also pass functions that use the "5", to make sure it's in sync
-         histo :: [(Int, Timestamp)] -> [(Int, Timestamp)]
-         histo durs = IM.toList $ fromListWith' (+) durs
-         durs =  [(logdur, dur) | (_start, logdur, dur) <- durHistogram]
-         (logDurs, sumDurs) = L.unzip (histo durs)
+         -- Precompute some extremums of the maximal interval, needed for scales.
+         durs = [(logdur, dur) | (_start, logdur, dur) <- durHistogram]
+         (logDurs, sumDurs) = L.unzip (histogram durs)
          minXHistogram = minimum (maxBound : logDurs)
          maxXHistogram = maximum (minBound : logDurs)
          maxY          = maximum (minBound : sumDurs)
          -- round up to multiples of 10ms
          maxYHistogram = 10000 * ceiling (fromIntegral maxY / 10000)
-
-         -- sort the events by time and put them in an array
-         sorted    = sortGroups groups
-         n_events  = length sorted
-         event_arr = listArray (0, n_events-1) sorted
-         hec_count = length trees
 
          hecs = HECs {
                   hecCount         = hec_count,
@@ -196,19 +193,3 @@ buildEventLog progress from =
        -- bit of work gets done after the progress window has been closed.
 
        return (hecs, name, n_events, fromIntegral lastTx / 1000000)
-
--------------------------------------------------------------------------------
-
--- TODO: factor out to module with helper stuff (mu, deZero, this)
-fromListWith' :: (a -> a -> a) -> [(Int, a)] -> IM.IntMap a
-fromListWith' f xs =
-    L.foldl' ins IM.empty xs
-  where
-#if MIN_VERSION_containers(0,4,1)
-    ins t (k,x) = IM.insertWith' f k x t
-#else
-    ins t (k,x) =
-      let r = IM.insertWith f k x t
-          v = r IM.! k
-      in v `seq` r
-#endif

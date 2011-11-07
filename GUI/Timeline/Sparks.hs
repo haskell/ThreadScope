@@ -22,8 +22,6 @@ import GUI.Timeline.Ticks
 
 import Graphics.Rendering.Cairo
 
-import qualified Data.List as L
-import qualified Data.IntMap as IM
 import Control.Monad
 import Text.Printf
 #ifdef USE_SPARK_HISTOGRAM
@@ -167,8 +165,6 @@ renderSparkHistogram :: ViewParameters -> HECs -> Render ()
 renderSparkHistogram params@ViewParameters{..} hecs =
   let intDoub :: Integral a => a -> Double
       intDoub = fromIntegral
-      histo :: [(Int, Timestamp)] -> [(Int, Timestamp)]
-      histo durs = IM.toList $ fromListWith' (+) durs
       inR :: Timestamp -> Bool
       inR = case minterval of
               Nothing -> const True
@@ -179,7 +175,7 @@ renderSparkHistogram params@ViewParameters{..} hecs =
                    | (start, logdur, dur) <- xs, inR start]
       baris :: [(Double, Double)]
       baris = [(intDoub t, intDoub height)
-              | (t, height) <- histo $ inRange xs]
+              | (t, height) <- histogram $ inRange xs]
       plot :: [(Timestamp, Int, Timestamp)] -> Chart.Layout1 Double Double
       plot xs =
         let layout = Chart.layout1_plots ^= [Left plot]
@@ -205,7 +201,7 @@ renderSparkHistogram params@ViewParameters{..} hecs =
             plotBars = Chart.plotBars bars
             bars = Chart.plot_bars_values ^= barvs $ Chart.defaultPlotBars
             barvs = [(intDoub t, [intDoub height])
-                    | (t, height) <- histo $ inRange xs]
+                    | (t, height) <- histogram $ inRange xs]
         in layout
       xs = durHistogram hecs
       renderable :: Chart.Renderable ()
@@ -260,18 +256,4 @@ renderSparkHistogram params@ViewParameters{..} hecs =
        translate 0 (fromIntegral histogramHeight)
        drawXScale
        restore
-#endif
-
--- TODO: factor out to module with helper stuff (mu, deZero, this)
-fromListWith' :: (a -> a -> a) -> [(Int, a)] -> IM.IntMap a
-fromListWith' f xs =
-    L.foldl' ins IM.empty xs
-  where
-#if MIN_VERSION_containers(0,4,1)
-    ins t (k,x) = IM.insertWith' f k x t
-#else
-    ins t (k,x) =
-      let r = IM.insertWith f k x t
-          v = r IM.! k
-      in v `seq` r
 #endif
