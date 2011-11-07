@@ -153,6 +153,8 @@ addSparks colour maxSliceSpark f0 f1 start slice ts = do
       fill
 
 #ifdef USE_SPARK_HISTOGRAM
+-- | Render the spark duration histogram together with it's X scale and
+-- horizontal and vertical rulers.
 renderSparkHistogram :: ViewParameters -> HECs -> Render ()
 renderSparkHistogram ViewParameters{..} hecs =
   let intDoub :: Integral a => a -> Double
@@ -169,55 +171,76 @@ renderSparkHistogram ViewParameters{..} hecs =
       bars :: [(Double, Double, Int)]
       bars = [(intDoub t, intDoub height, count)
               | (t, (height, count)) <- histogramCounts $ inRange xs]
+      -- TODO: data processing up to this point could be done only at interval
+      -- changes (keeping @bars@ in ViewParameters and in probably also in IOref.
+      -- The rest has to be recomputed at each redraw, because resizing
+      -- the window modifies the way the graph is drawn.
+      -- TODO: at least pull the above out into a separate function.
+
+      -- Define general parameters for visualization.
+      width' = width - 5  -- add a little margin on the right
+      (w, h) = (intDoub width', intDoub histogramHeight)
+      (minX, maxX, maxY) = (intDoub (minXHistogram hecs),
+                            intDoub (maxXHistogram hecs),
+                            intDoub (maxYHistogram hecs))
+      nBars = max 5 (maxX - minX + 1)
+      segmentWidth = w / nBars
+      -- Define parameters for drawing the bars.
+      gapWidth = 10
+      barWidth = segmentWidth - gapWidth
+      sX x = gapWidth / 2 + (x - minX) * segmentWidth
+      sY y = y * h / (max 2 maxY)
+      plotRect (x, y, count) = do
+        -- Draw a single bar.
+        setSourceRGBAhex blue 1.0
+        rectangle (sX x) (sY maxY) barWidth (sY (-y))
+        fillPreserve
+        setSourceRGBA 0 0 0 0.7
+        setLineWidth 1
+        stroke
+        -- Print the number of sparks in the bar.
+        selectFontFace "sans serif" FontSlantNormal FontWeightNormal
+        setFontSize 10
+        setSourceRGBAhex black 1.0
+        let aboveOrBelow = if sY (-y) > -17 then -3 else 13
+        moveTo (sX x + 3) (sY (maxY - y) + aboveOrBelow)
+        showText (show count)
+      drawHist = forM_ bars plotRect
+      -- Define parameters for X scale.
+      off y = 16 - y
+      xScaleMode = XScaleLog minX segmentWidth
+      drawXScale = renderXScale 1 0 maxBound width' off xScaleMode
+      -- Define parameters for vertical rulers.
+      mult | round nBars <= 7 = 1
+           | round nBars `mod` 5 == 0 = 5
+           | round nBars `mod` 4 == 0 = 4
+           | round nBars `mod` 3 == 0 = 3
+           | otherwise = nBars
+      drawVRulers = renderVRulers 1 0 (fromIntegral width') histogramHeight
+                      (XScaleLog undefined (segmentWidth * mult))
+      -- Define the horizontal rulers call.
+      drawHRulers = renderHRulers histogramHeight 0 (fromIntegral width')
   in do
-       let width' = width - 5  -- add a little right margin
-           (w, h) = (intDoub width', intDoub histogramHeight)
-           (minX, maxX, maxY) = (intDoub (minXHistogram hecs),
-                                 intDoub (maxXHistogram hecs),
-                                 intDoub (maxYHistogram hecs))
-           nBars = max 5 (maxX - minX + 1)
-           segmentWidth = w / nBars
-           gapWidth = 10
-           barWidth = segmentWidth - gapWidth
-           sX x = gapWidth / 2 + (x - minX) * segmentWidth
-           sY y = y * h / (max 2 maxY)
-           plotRect (x, y, count) = do
-             setSourceRGBAhex blue 1.0
-             rectangle (sX x) (sY maxY) barWidth (sY (-y))
-             fillPreserve
-             setSourceRGBA 0 0 0 0.7
-             setLineWidth 1
-             stroke
-             selectFontFace "sans serif" FontSlantNormal FontWeightNormal
-             setFontSize 10
-             setSourceRGBAhex black 1.0
-             let aboveOrBelow = if sY (-y) > -17 then -3 else 13
-             moveTo (sX x + 3) (sY (maxY - y) + aboveOrBelow)
-             showText (show count)
-           drawHist = forM_ bars plotRect
-           off y = 16 - y
-           xScaleMode = XScaleLog minX segmentWidth
-           drawXScale = renderXScale 1 0 width' maxBound off xScaleMode
-           mult | round nBars <= 7 = 1
-                | round nBars `mod` 5 == 0 = 5
-                | round nBars `mod` 4 == 0 = 4
-                | round nBars `mod` 3 == 0 = 3
-                | otherwise = nBars
-       save
-       translate hadjValue 0
-       scale scaleValue 1
-       rectangle 0 (fromIntegral $ - tracePad) (fromIntegral width)
-         (fromIntegral $ histogramHeight + xScaleAreaHeight + 2 * tracePad)
-       setSourceRGBAhex white 1
-       op <- getOperator
-       setOperator OperatorAtop  -- ensures nothing is painted for PNG/PDF  -- TODO: fixme: actually it paints white vertical rulers
-       fill
-       setOperator op
-       drawHist
-       renderHRulers histogramHeight 0 (fromIntegral width')
-       renderVRulers 0 (fromIntegral width') 1 histogramHeight
-         (Just $ segmentWidth * mult)
-       translate 0 (fromIntegral histogramHeight)
-       drawXScale
-       restore
+    -- Start the drawing by wiping out timeline vertical rules
+    -- (for PNG/PDF that require clear, transparent background)
+    save
+    translate hadjValue 0
+    scale scaleValue 1
+    rectangle 0 (fromIntegral $ - tracePad) (fromIntegral width)
+      (fromIntegral $ histogramHeight + xScaleAreaHeight + 2 * tracePad)
+    setSourceRGBAhex white 1
+    op <- getOperator
+    setOperator OperatorAtop  -- TODO: fixme: it paints white vertical rulers
+    fill
+    setOperator op
+    -- Draw the bars.
+    drawHist
+    -- Draw the rulers on top of the bars (they are partially transparent).
+    drawVRulers
+    drawHRulers
+    -- Move to the bottom and draw the X scale. The Y scale is drawn
+    -- independetly in another drawing area.
+    translate 0 (fromIntegral histogramHeight)
+    drawXScale
+    restore
 #endif

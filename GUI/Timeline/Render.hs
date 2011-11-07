@@ -203,7 +203,7 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
 
     withViewScale params $ do
       -- Render the vertical rulers across all the traces.
-      renderVRulers startPos endPos scaleValue height Nothing
+      renderVRulers scaleValue startPos endPos height XScaleTime
 
       -- This function helps to render a single HEC.
       -- Traces are rendered even if the y-region falls outside visible area.
@@ -311,7 +311,7 @@ updateXScaleArea TimelineState{..} lastTx = do
   let hadjValue = toWholePixels scaleValue hadjValue0
       off y = xScaleAreaHeight - y
   renderWithDrawable win $
-    renderXScale scaleValue hadjValue width lastTx off XScaleTime
+    renderXScale scaleValue hadjValue lastTx width off XScaleTime
   return ()
 
 --------------------------------------------------------------------------------

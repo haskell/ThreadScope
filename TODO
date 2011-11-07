@@ -9,6 +9,7 @@ BUGS:
 - Make ^C work on Windows
 
 - resizing the panes causes a grab lockup?
+  Happened to Mikolaj on 7.11.2011, too.
 
 - fix, rewrite or disable partial redrawing of the graphs pane
   that causes many of the graphical bugs reported below
@@ -148,38 +149,18 @@ at the ends, but somehow this does not show (perhaps one is not enough)
 
 - perhaps drawn the labels vertically and reduce the size of the Y axis area
 
-- draw the histogram bars without Charts
-
-- scale the histogram graph & round the numbers without Charts
-
-- let the histogram X axis ticks point downwards
-
 - reduce the size of the histogram X axis, let the rule touch bar bottoms,
-but don't change the size of numbers --- it's OK
-
-- fix resizing Y scale
+but don't change the size of numbers
 
 - don't draw histogram if the tab too small
 
 - change histogram caption when the data is taken from the selected interval
 
-- fix the wrong font for the mu symbol
-
-- determine log base to fit the data, e.g. smaller base for small eventlogs,
-to avoid strange numbers with fractional parts
-
-- X scale marks should always fall on bucket boundaries; consequently, bucket
-boundaries should preferably fall on not fractional numbers, e.g.,
-consecutive powers of 2
-
 - and add a way to add a bookmark for a user-specified event, or a kind of events
-
-- a trace with all instant events (inlcuding traceEvents);
-visualization via thin line segments for each event
 
 - medium-term: let the user configure which instant events shown in the trace
 
-- medium-term: user-defined visualisaiton frequency for the new trace (at least)
+- medium-term: user-defined visualisation frequency for the new trace (at least)
 andr any other tricks needed to visualize instant events well (show density
 even if many events at almost the same spot and so the shades of green cue
 is not possible) and fast (in particula, don't draw many lines at the same spot)
@@ -340,8 +321,7 @@ to say all
 - show time corresponding to the eventlog buffer flushing,
 after the event for this introduced
 
-- verify correctness of the input eventlog, when event state transition machines
-for events defined and implemented
+- verify correctness of the input eventlog before visualizing
 
 - perhaps the far left and far right bars on the histogram should be in red,
 since extreme spark sizes are usually bad (or mark it in some other way)
