@@ -41,9 +41,9 @@ hecLabelExtra  = 80
 activityGraphHeight :: Int
 activityGraphHeight = 100
 
--- Should be divisible by 10, for regular 1/10th size vertical scale ticks:
+-- Height of the spark graphs.
 hecSparksHeight :: Int
-hecSparksHeight = 10 * (activityGraphHeight `div` 10)
+hecSparksHeight = activityGraphHeight
 
 -- Histogram height when displayed with other traces (e.g., in PNG/PDF).
 stdHistogramHeight :: Int

@@ -22,17 +22,7 @@ import GUI.Timeline.Ticks
 
 import Graphics.Rendering.Cairo
 
-import qualified Data.List as L
-import qualified Data.IntMap as IM
 import Control.Monad
-import Text.Printf
-#ifdef USE_SPARK_HISTOGRAM
-import Data.Accessor
-
-import qualified Graphics.Rendering.Chart as Chart
-import qualified Graphics.Rendering.Chart.Renderable as ChartR
--- import qualified Graphics.Rendering.Chart.Plot.Hidden as ChartH
-#endif
 
 -- Rendering sparks. No approximation nor extrapolation is going on here.
 -- The sample data, recalculated for a given slice size in sparkProfile,
@@ -164,55 +154,24 @@ addSparks colour maxSliceSpark f0 f1 start slice ts = do
 
 #ifdef USE_SPARK_HISTOGRAM
 renderSparkHistogram :: ViewParameters -> HECs -> Render ()
-renderSparkHistogram params@ViewParameters{..} hecs =
+renderSparkHistogram ViewParameters{..} hecs =
   let intDoub :: Integral a => a -> Double
       intDoub = fromIntegral
-      histo :: [(Int, Timestamp)] -> [(Int, Timestamp)]
-      histo durs = IM.toList $ fromListWith' (+) durs
       inR :: Timestamp -> Bool
       inR = case minterval of
               Nothing -> const True
               Just (from, to) -> \ t -> t >= from && t <= to
       -- TODO: if xs is sorted, we can slightly optimize the filtering
-      inRange :: [(Timestamp, Int, Timestamp)] -> [(Int, Timestamp)]
-      inRange xs = [(logdur, dur)
+      inRange :: [(Timestamp, Int, Timestamp)] -> [(Int, (Timestamp, Int))]
+      inRange xs = [(logdur, (dur, 1))
                    | (start, logdur, dur) <- xs, inR start]
-      baris :: [(Double, Double)]
-      baris = [(intDoub t, intDoub height)
-              | (t, height) <- histo $ inRange xs]
-      plot :: [(Timestamp, Int, Timestamp)] -> Chart.Layout1 Double Double
-      plot xs =
-        let layout = Chart.layout1_plots ^= [Left plot]
-                   $ Chart.layout1_left_axis ^= yaxis
-                   $ Chart.layout1_bottom_axis ^= xaxis
-                   $ Chart.defaultLayout1 :: Chart.Layout1 Double Double
-            yaxis  = Chart.laxis_title ^= ""
-                   $ Chart.laxis_override ^= Chart.axis_labels ^: map override0
-                   $ Chart.defaultLayoutAxis
-            xaxis  = Chart.laxis_title ^= ""
-                   $ Chart.laxis_override ^= Chart.axis_labels ^: map override0
-                   $ Chart.defaultLayoutAxis
-            ytitle = "Total duration (" ++ mu ++ "s)"
-            xtitle = "Individual spark duration (" ++ mu ++ "s)"
-            override0 d = [ (x, "") | (x, _) <- d]
-            overrideX d = [ (x, deZero (printf "%.4f" (2 ** x)))
-                          | (x, _) <- d]  -- TODO: round it up before **
-            plot = plotBars  -- Chart.joinPlot plotBars plotHidden
-            -- plotHidden =  -- to fix the x an y scales
-            --   Chart.toPlot $ ChartH.PlotHidden
-            --     [intDoub (minXHistogram hecs), intDoub (maxXHistogram hecs)]
-            --     [0, intDoub (maxYHistogram hecs)]
-            plotBars = Chart.plotBars bars
-            bars = Chart.plot_bars_values ^= barvs $ Chart.defaultPlotBars
-            barvs = [(intDoub t, [intDoub height])
-                    | (t, height) <- histo $ inRange xs]
-        in layout
       xs = durHistogram hecs
-      renderable :: Chart.Renderable ()
-      renderable = ChartR.toRenderable (plot xs)
+      bars :: [(Double, Double, Int)]
+      bars = [(intDoub t, intDoub height, count)
+              | (t, (height, count)) <- histogramCounts $ inRange xs]
   in do
-       let -- size = (fromIntegral width + 50, fromIntegral histogramHeight + 48)
-           (w, h) = (intDoub width, intDoub histogramHeight)
+       let width' = width - 5  -- add a little right margin
+           (w, h) = (intDoub width', intDoub histogramHeight)
            (minX, maxX, maxY) = (intDoub (minXHistogram hecs),
                                  intDoub (maxXHistogram hecs),
                                  intDoub (maxYHistogram hecs))
@@ -222,21 +181,28 @@ renderSparkHistogram params@ViewParameters{..} hecs =
            barWidth = segmentWidth - gapWidth
            sX x = gapWidth / 2 + (x - minX) * segmentWidth
            sY y = y * h / (max 2 maxY)
-           plotRect (x, y) = do
+           plotRect (x, y, count) = do
              setSourceRGBAhex blue 1.0
              rectangle (sX x) (sY maxY) barWidth (sY (-y))
              fillPreserve
              setSourceRGBA 0 0 0 0.7
              setLineWidth 1
              stroke
-           drawHist = do
---             translate (-50) (-16.5)
---             Chart.runCRender (Chart.render renderable size) ChartR.bitmapEnv
---             translate 50 16.5
-             forM_ baris plotRect
+             selectFontFace "sans serif" FontSlantNormal FontWeightNormal
+             setFontSize 10
+             setSourceRGBAhex black 1.0
+             let aboveOrBelow = if sY (-y) > -17 then -3 else 13
+             moveTo (sX x + 3) (sY (maxY - y) + aboveOrBelow)
+             showText (show count)
+           drawHist = forM_ bars plotRect
            off y = 16 - y
            xScaleMode = XScaleLog minX segmentWidth
-           drawXScale = renderXScale 1 0 width maxBound off xScaleMode
+           drawXScale = renderXScale 1 0 width' maxBound off xScaleMode
+           mult | round nBars <= 7 = 1
+                | round nBars `mod` 5 == 0 = 5
+                | round nBars `mod` 4 == 0 = 4
+                | round nBars `mod` 3 == 0 = 3
+                | otherwise = nBars
        save
        translate hadjValue 0
        scale scaleValue 1
@@ -244,25 +210,14 @@ renderSparkHistogram params@ViewParameters{..} hecs =
          (fromIntegral $ histogramHeight + xScaleAreaHeight + 2 * tracePad)
        setSourceRGBAhex white 1
        op <- getOperator
-       setOperator OperatorAtop  -- ensures nothing is painted for PNG/PDF
+       setOperator OperatorAtop  -- ensures nothing is painted for PNG/PDF  -- TODO: fixme: actually it paints white vertical rulers
        fill
        setOperator op
        drawHist
+       renderHRulers histogramHeight 0 (fromIntegral width')
+       renderVRulers 0 (fromIntegral width') 1 histogramHeight
+         (Just $ segmentWidth * mult)
        translate 0 (fromIntegral histogramHeight)
        drawXScale
        restore
-#endif
-
--- TODO: factor out to module with helper stuff (mu, deZero, this)
-fromListWith' :: (a -> a -> a) -> [(Int, a)] -> IM.IntMap a
-fromListWith' f xs =
-    L.foldl' ins IM.empty xs
-  where
-#if MIN_VERSION_containers(0,4,1)
-    ins t (k,x) = IM.insertWith' f k x t
-#else
-    ins t (k,x) =
-      let r = IM.insertWith f k x t
-          v = r IM.! k
-      in v `seq` r
 #endif

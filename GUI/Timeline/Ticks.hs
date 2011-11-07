@@ -34,8 +34,9 @@ import Text.Printf
 -- The zoom factor should be controlled to ensure that this never happens.
 
 -- | Render vertical rulers (solid translucent lines), matching scale ticks.
-renderVRulers :: Timestamp -> Timestamp -> Double -> Int -> Render()
-renderVRulers startPos endPos scaleValue height = do
+renderVRulers :: Timestamp -> Timestamp -> Double -> Int -> Maybe Double
+                 -> Render()
+renderVRulers startPos endPos scaleValue height tick = do
   setSourceRGBAhex black 0.15
   let timestampFor100Pixels = truncate (100 * scaleValue)  -- micro-second time for 100 ps
       snappedTickDuration :: Timestamp
@@ -47,14 +48,18 @@ renderVRulers startPos endPos scaleValue height = do
       firstTick :: Timestamp
       firstTick = snappedTickDuration * (startPos `div` snappedTickDuration)
   setLineWidth scaleValue
-  drawVRulers tickWidthInPixels height scaleValue firstTick
-    snappedTickDuration endPos
+  case tick of
+    Nothing ->
+      drawVRulers (fromIntegral tickWidthInPixels) height scaleValue
+        (fromIntegral firstTick) (fromIntegral snappedTickDuration) endPos
+    Just dx ->
+      drawVRulers (dx / scaleValue) height scaleValue dx dx endPos
 
 -- | Render a single vertical ruler and then recurse.
-drawVRulers :: Int -> Int -> Double -> Timestamp -> Timestamp
+drawVRulers :: Double -> Int -> Double -> Double -> Double
                -> Timestamp -> Render ()
 drawVRulers tickWidthInPixels height scaleValue pos incr endPos =
-  if pos <= endPos then do
+  if floor pos <= endPos then do
     when (atMajorTick || atMidTick || tickWidthInPixels > 30) $ do
       draw_line (x1, 0) (x1, height)
       drawVRulers
@@ -62,13 +67,13 @@ drawVRulers tickWidthInPixels height scaleValue pos incr endPos =
   else
     return ()
   where
-    midTick = 5 * incr
-    atMidTick = pos `mod`midTick == 0
-    majorTick = 10 * incr
-    atMajorTick = pos `mod` majorTick == 0
+    midTick = 5 * round incr
+    atMidTick = round pos `mod` midTick == 0
+    majorTick = 10 * round incr
+    atMajorTick = round pos `mod` majorTick == 0
     -- We cheat at pos 0, to avoid half covering the tick by the grey label area.
     lineWidth = scaleValue
-    x1 = if pos == 0 then ceiling lineWidth else pos
+    x1 = round $ if pos == 0 then lineWidth else pos
 
 
 -- | Render the X scale, based on view parameters and hecs.
@@ -92,9 +97,8 @@ renderXScale scaleValue hadjValue width lastTx off xScaleMode = do
   let scale_width = fromIntegral width * scaleValue
       startPos :: Timestamp
       startPos = truncate hadjValue
-      endDouble = minimum [hadjValue + scale_width, fromIntegral lastTx]
       endPos :: Timestamp
-      endPos = ceiling endDouble
+      endPos = ceiling $ minimum [hadjValue + scale_width, fromIntegral lastTx]
   save
   scale (1/scaleValue) 1.0
   translate (-hadjValue) 0
@@ -117,26 +121,27 @@ renderXScale scaleValue hadjValue width lastTx off xScaleMode = do
   -- perhaps when eliminating scale from Cairo drawing
   case xScaleMode of
     XScaleTime ->
-      drawXTicks tickWidthInPixels scaleValue (fromIntegral firstTick) (fromIntegral snappedTickDuration) (fromIntegral endPos) off xScaleMode
-    XScaleLog minX segmentWidth ->
-      drawXTicks tickWidthInPixels 1 0 segmentWidth endDouble off xScaleMode
+      drawXTicks tickWidthInPixels scaleValue (fromIntegral firstTick) (fromIntegral snappedTickDuration) endPos off xScaleMode
+    XScaleLog _minX segmentWidth ->
+      drawXTicks tickWidthInPixels 1 0 segmentWidth endPos off xScaleMode
   restore
 
 -- | Render a single X scale tick and then recurse.
-drawXTicks :: Int -> Double -> Double -> Double -> Double
+drawXTicks :: Int -> Double -> Double -> Double -> Timestamp
               -> (Int -> Int) -> XScaleMode
               -> Render ()
 drawXTicks tickWidthInPixels scaleValue pos incr endPos off xScaleMode =
-  if pos <= endPos then do
+  if floor pos <= endPos then do
     draw_line (x1, off 16) (x1, off (16 - tickLength))
     when (xScaleMode == XScaleTime
           || atMajorTick || atMidTick || tickWidthInPixels > 30) $ do
       tExtent <- textExtents tickTimeText
-      move_to (testPos tExtent)
+      move_to textPos
       m <- getMatrix
       identityMatrix
       (fourPixels, _) <- deviceToUserDistance 4 0
-      when (isWideEnough tExtent fourPixels || atMajorTick) $
+      when (floor (pos + incr) <= endPos
+            && (isWideEnough tExtent fourPixels || atMajorTick)) $
         showText tickTimeText
       setMatrix m
     drawXTicks
@@ -144,12 +149,10 @@ drawXTicks tickWidthInPixels scaleValue pos incr endPos off xScaleMode =
   else
     return ()
   where
-    testPos tExtent =
+    textPos =
       if xScaleMode == XScaleTime
-      then (x1 - truncate (scaleValue * 2),
-            off 26)
-      else (x1 + ceiling (scaleValue * 2),
-            tickLength + floor (textExtentsHeight tExtent))
+      then (x1 - truncate (scaleValue * 2), off 26)
+      else (x1 + ceiling (scaleValue * 2), tickLength + 13)
     posTime = case xScaleMode of
                 XScaleTime ->  round pos
                 XScaleLog minX _ ->
@@ -165,7 +168,7 @@ drawXTicks tickWidthInPixels scaleValue pos incr endPos off xScaleMode =
     atMajorTick = xScaleMode == XScaleTime && (round pos) `mod` majorTick == 0
     -- We cheat at pos 0, to avoid half covering the tick by the grey label area.
     lineWidth = scaleValue
-    x1 = if pos == 0 then ceiling lineWidth else ceiling pos
+    x1 = round $ if pos == 0 then lineWidth else pos
     tickLength | atMajorTick = 16
                | atMidTick = 12
                | otherwise = 8
@@ -217,7 +220,7 @@ renderYScale hecSparksHeight scaleValue maxSpark xoffset yoffset = do
       maxS = if maxSpark < 100
              then maxSpark  -- too small, would be visible on screen
              else fromIntegral (2 * (ceiling maxSpark ` div` 2))
-      incr = hecSparksHeight `div` 10
+      incr = fromIntegral hecSparksHeight / 10
 
   newPath
   moveTo xoffset yoffset
@@ -237,27 +240,27 @@ renderYScale hecSparksHeight scaleValue maxSpark xoffset yoffset = do
   restore
 
 -- | Render a single Y scale tick and then recurse.
-drawYTicks :: Double -> Int -> Int -> Int -> Int -> Render ()
+drawYTicks :: Double -> Double -> Double -> Int -> Int -> Render ()
 drawYTicks maxS pos incr xoffset yoffset =
-  if pos <= majorTick then do
-    draw_line (xoffset             , yoffset + majorTick - pos)
-              (xoffset + tickLength, yoffset + majorTick - pos)
+  if floor pos <= ceiling majorTick then do
+    draw_line (xoffset             , yoffset + ceiling (majorTick - pos))
+              (xoffset + tickLength, yoffset + ceiling (majorTick - pos))
     when (atMajorTick || atMidTick) $ do
       tExtent <- textExtents tickText
       (fewPixels, _) <- deviceToUserDistance 8 0
       move_to (xoffset - ceiling (textExtentsWidth tExtent + fewPixels),
-               yoffset + majorTick - pos + ceiling (fewPixels / 2))
+               yoffset + ceiling (majorTick - pos + fewPixels / 2))
       when (atMidTick || atMajorTick) $
         showText tickText
     drawYTicks maxS (pos + incr) incr xoffset yoffset
   else
     return ()
   where
-    tickText = reformatV (maxS * fromIntegral pos / fromIntegral majorTick)
-    midTick = 5 * incr
-    atMidTick = pos `mod`midTick == 0
+    tickText = reformatV (fromIntegral interations * maxS / 10)
+    interations = round (pos / incr)
+    atMidTick = interations `mod` 5 == 0
     majorTick = 10 * incr
-    atMajorTick = pos `mod` majorTick == 0
+    atMajorTick = interations `mod` 10 == 0
     tickLength | atMajorTick = 13
                | atMidTick   = 10
                | otherwise   = 6

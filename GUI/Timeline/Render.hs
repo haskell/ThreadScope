@@ -203,7 +203,7 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
 
     withViewScale params $ do
       -- Render the vertical rulers across all the traces.
-      renderVRulers startPos endPos scaleValue height
+      renderVRulers startPos endPos scaleValue height Nothing
 
       -- This function helps to render a single HEC.
       -- Traces are rendered even if the y-region falls outside visible area.

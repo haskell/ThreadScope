@@ -1,4 +1,4 @@
-pristine:0000001502-b174ddd7afebc1e3bdb1d8a7a557098940379f3d6c63777f728d0470cc19adbf
+pristine:0000001513-f210d6d120839449b8f7482e05d2177fedf8ad1fcbe1d2a5bdc8e3d8d2c17de1
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1752,3 +1752,41 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111105130755
  Ignore-this: d1c5a2fb491fe3b2da0237ac479c0ef4
 ] 
 hash: 0000005783-874659c133f8b1ccf77ea5306f453ff6521d3712abb511fb3edb418a8c8bd97a
+[Rewrite Charts, step 27: add rulers to histogram graph
+Mikolaj Konarski <mikolaj@well-typed.com>**20111107053331
+ Ignore-this: b5fc1f61912c58f9d5404f814b2571a7
+] 
+hash: 0000003254-82abfe4fbcb76b6e3dbc4a79e581a018a14fef5fb4cbc4d783642e02697bf70b
+[Work around the inconsitent textExtentsHeight with \mu
+Mikolaj Konarski <mikolaj@well-typed.com>**20111107053336
+ Ignore-this: 27d24dd2c98b52aa86293763476286e0
+] 
+hash: 0000000644-dcf34846bfbdfc0b1b9e41aa838575562899382b7cd44b6ac2ea60ab129edf76
+[Make the Y scale resizable
+Mikolaj Konarski <mikolaj@well-typed.com>**20111107113141
+ Ignore-this: d03961d04af7e81564694a9ee0f44d6e
+] 
+hash: 0000002817-f2e24ee598c11718686d485cb758f7e593440837223f4d6667851aa0f1c80651
+[Rewrite Charts, step 28: refactor histogram data aggregation
+Mikolaj Konarski <mikolaj@well-typed.com>**20111107113146
+ Ignore-this: 78be3515f5d6f246d46a0026b9a38298
+] 
+hash: 0000004072-220ecbf8ed0acf80b2b5db43bdaa452bf7e93cb1998dfb6c2293d1e7c96dadf3
+[Show the number of sparks for each bar in histogram
+Mikolaj Konarski <mikolaj@well-typed.com>**20111107121700
+ Ignore-this: d9acd1ddfb2bbd7b7f430fb2299ec7ff
+] 
+hash: 0000001991-9994462398816e66922dfe2d849ed5b8e087f869b368fc3eb67ac07f00b628f4
+[Rewrite Charts, step (29/30): remove the code using Charts
+Mikolaj Konarski <mikolaj@well-typed.com>**20111107134246
+ Ignore-this: 2c811218bd10ce90589bc563cbf9cc9f
+ 
+ I've just compared the results of drawing a few test eventlogs with Charts
+ and with our own histogram code and the numbers agree, but the graphs
+ are different when an interval is selected. Charts change both scales
+ and the number of bars when the data changes, while our code keeps
+ the scales unchanged, similarly as the other spark graphs do. TODO: rescale
+ when the "zoom to fit" button is pressed or when an appropriate options
+ is selected.
+] 
+hash: 0000004066-11e70ac589bfaf280f11db52b904fa6262bbd855649cd9a8d6b71cfc80c7735a
