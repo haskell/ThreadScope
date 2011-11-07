@@ -212,7 +212,8 @@ renderSparkHistogram params@ViewParameters{..} hecs =
       renderable = ChartR.toRenderable (plot xs)
   in do
        let -- size = (fromIntegral width + 50, fromIntegral histogramHeight + 48)
-           (w, h) = (intDoub width, intDoub histogramHeight)
+           width' = width - 5  -- add a little right margin
+           (w, h) = (intDoub width', intDoub histogramHeight)
            (minX, maxX, maxY) = (intDoub (minXHistogram hecs),
                                  intDoub (maxXHistogram hecs),
                                  intDoub (maxYHistogram hecs))
@@ -236,7 +237,12 @@ renderSparkHistogram params@ViewParameters{..} hecs =
              forM_ baris plotRect
            off y = 16 - y
            xScaleMode = XScaleLog minX segmentWidth
-           drawXScale = renderXScale 1 0 width maxBound off xScaleMode
+           drawXScale = renderXScale 1 0 width' maxBound off xScaleMode
+           mult | round nBars <= 7 = 1
+                | round nBars `mod` 5 == 0 = 5
+                | round nBars `mod` 4 == 0 = 4
+                | round nBars `mod` 3 == 0 = 3
+                | otherwise = nBars
        save
        translate hadjValue 0
        scale scaleValue 1
@@ -244,10 +250,13 @@ renderSparkHistogram params@ViewParameters{..} hecs =
          (fromIntegral $ histogramHeight + xScaleAreaHeight + 2 * tracePad)
        setSourceRGBAhex white 1
        op <- getOperator
-       setOperator OperatorAtop  -- ensures nothing is painted for PNG/PDF
+       setOperator OperatorAtop  -- ensures nothing is painted for PNG/PDF  -- TODO: fixme: actually it paints white vertical rulers
        fill
        setOperator op
        drawHist
+       renderHRulers histogramHeight 0 (fromIntegral width')
+       renderVRulers 0 (fromIntegral width') 1 histogramHeight
+         (Just $ segmentWidth * mult)
        translate 0 (fromIntegral histogramHeight)
        drawXScale
        restore
