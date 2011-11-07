@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 module GUI.SaveAs (saveAsPDF, saveAsPNG) where
 
 -- Imports for ThreadScope
@@ -19,13 +18,9 @@ saveAs hecs params' @ViewParameters{xScaleAreaHeight, width,
        yScaleAreaWidth yScaleArea =
   let histTotalHeight = histogramHeight + xScaleAreaHeight
       params@ViewParameters{height} =
-#ifdef USE_SPARK_HISTOGRAM
         params'{ viewTraces = viewTraces params' ++ [TraceHistogram]
                , height = oldHeight + histTotalHeight + tracePad
                }
-#else
-        params'
-#endif
       w = ceiling yScaleAreaWidth + width
       h = xScaleAreaHeight + height
       drawTraces = renderTraces params hecs (Rectangle 0 0 width height)

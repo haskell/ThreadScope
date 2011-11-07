@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 module GUI.Timeline.Render (
     renderView,
     renderTraces,
@@ -203,7 +202,7 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
 
     withViewScale params $ do
       -- Render the vertical rulers across all the traces.
-      renderVRulers startPos endPos scaleValue height Nothing
+      renderVRulers scaleValue startPos endPos height XScaleTime
 
       -- This function helps to render a single HEC.
       -- Traces are rendered even if the y-region falls outside visible area.
@@ -227,11 +226,7 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) =
                  let maxP = maxSparkPool hecs
                  in renderSparkPool params slice start end (prof !! c) maxP
                TraceHistogram ->
-#ifdef USE_SPARK_HISTOGRAM
                  renderSparkHistogram params hecs
-#else
-                 undefined
-#endif
                TraceGroup _ -> error "renderTrace"
                TraceActivity ->
                  renderActivity params hecs startPos endPos
@@ -311,7 +306,7 @@ updateXScaleArea TimelineState{..} lastTx = do
   let hadjValue = toWholePixels scaleValue hadjValue0
       off y = xScaleAreaHeight - y
   renderWithDrawable win $
-    renderXScale scaleValue hadjValue width lastTx off XScaleTime
+    renderXScale scaleValue hadjValue lastTx width off XScaleTime
   return ()
 
 --------------------------------------------------------------------------------
@@ -421,7 +416,7 @@ showTrace (TraceConversionHEC n) =
 showTrace (TracePoolHEC n) =
   "\nHEC " ++ show n ++ "\n\nSpark pool size"
 showTrace TraceHistogram =
-  "Total duration (" ++ mu ++ "s)"
+  "Sum of spark times\n(" ++ mu ++ "s)"
 showTrace TraceActivity =
   "Activity"
 showTrace TraceGroup{} = error "Render.showTrace"

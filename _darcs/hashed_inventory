@@ -1,4 +1,4 @@
-pristine:0000001513-f210d6d120839449b8f7482e05d2177fedf8ad1fcbe1d2a5bdc8e3d8d2c17de1
+pristine:0000001524-114b617308dcbadf496ffc9a79ba75e22b9983e1285ec171185068717051f240
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1790,3 +1790,21 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111107134246
  is selected.
 ] 
 hash: 0000004066-11e70ac589bfaf280f11db52b904fa6262bbd855649cd9a8d6b71cfc80c7735a
+[Rewrite Charts, step (30/30): Refactor, document and fix scales and histogram
+Mikolaj Konarski <mikolaj@well-typed.com>**20111107183641
+ Ignore-this: d2071ea5d92bfdf01ed017ae11f7b3d8
+] 
+hash: 0000014731-e6cf6285cef3016e29db3c07efab4a6e82bc7d58d2b6636560c7df3a944455cf
+[Make sure histogram text is not overwritten
+Mikolaj Konarski <mikolaj@well-typed.com>**20111107184821
+ Ignore-this: 3723e7fa4c673c7abf33e4370df2a2e2
+ 
+ By choosing smaller words for the label, until we print it vertically (?),
+ and by refusing to draw anything if the tab is too low.
+] 
+hash: 0000001890-0df67f79f5b0427060c3a16e341e308c7a4825aee84a81b710644e12ab64f34b
+[Enable histogram by default now that it does not need extra packages
+Mikolaj Konarski <mikolaj@well-typed.com>**20111107190001
+ Ignore-this: 4b22859f152efcea0760269315f877b2
+] 
+hash: 0000002193-0c3ed623f8b85c9316b0d0ef32c64b1fa92483c8307c559c475ea18a0f7e13f1
