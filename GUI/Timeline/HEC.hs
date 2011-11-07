@@ -255,9 +255,9 @@ renderInstantEvent ViewParameters{..} event color = do
      labelAt labelsMode t $ showEventInfo (spec event)
 
 
-drawTooManyEvents :: ViewParameters -> Timestamp -> Timestamp
+_drawTooManyEvents :: ViewParameters -> Timestamp -> Timestamp
                   -> Render ()
-drawTooManyEvents _params@ViewParameters{..} _start _end = do
+_drawTooManyEvents _params@ViewParameters{..} _start _end = do
      return ()
 --     setSourceRGBAhex grey 1.0
 --     setLineWidth (3 * scaleValue)

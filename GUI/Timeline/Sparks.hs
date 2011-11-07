@@ -23,14 +23,6 @@ import GUI.Timeline.Ticks
 import Graphics.Rendering.Cairo
 
 import Control.Monad
-import Text.Printf
-#ifdef USE_SPARK_HISTOGRAM
-import Data.Accessor
-
-import qualified Graphics.Rendering.Chart as Chart
-import qualified Graphics.Rendering.Chart.Renderable as ChartR
--- import qualified Graphics.Rendering.Chart.Plot.Hidden as ChartH
-#endif
 
 -- Rendering sparks. No approximation nor extrapolation is going on here.
 -- The sample data, recalculated for a given slice size in sparkProfile,
@@ -162,7 +154,7 @@ addSparks colour maxSliceSpark f0 f1 start slice ts = do
 
 #ifdef USE_SPARK_HISTOGRAM
 renderSparkHistogram :: ViewParameters -> HECs -> Render ()
-renderSparkHistogram params@ViewParameters{..} hecs =
+renderSparkHistogram ViewParameters{..} hecs =
   let intDoub :: Integral a => a -> Double
       intDoub = fromIntegral
       inR :: Timestamp -> Bool
@@ -173,42 +165,12 @@ renderSparkHistogram params@ViewParameters{..} hecs =
       inRange :: [(Timestamp, Int, Timestamp)] -> [(Int, (Timestamp, Int))]
       inRange xs = [(logdur, (dur, 1))
                    | (start, logdur, dur) <- xs, inR start]
-      baris :: [(Double, Double, Int)]
-      baris = [(intDoub t, intDoub height, count)
-              | (t, (height, count)) <- histogramCounts $ inRange xs]
-      plot :: [(Timestamp, Int, Timestamp)] -> Chart.Layout1 Double Double
-      plot xs =
-        let layout = Chart.layout1_plots ^= [Left plot]
-                   $ Chart.layout1_left_axis ^= yaxis
-                   $ Chart.layout1_bottom_axis ^= xaxis
-                   $ Chart.defaultLayout1 :: Chart.Layout1 Double Double
-            yaxis  = Chart.laxis_title ^= ""
-                   $ Chart.laxis_override ^= Chart.axis_labels ^: map override0
-                   $ Chart.defaultLayoutAxis
-            xaxis  = Chart.laxis_title ^= ""
-                   $ Chart.laxis_override ^= Chart.axis_labels ^: map override0
-                   $ Chart.defaultLayoutAxis
-            ytitle = "Total duration (" ++ mu ++ "s)"
-            xtitle = "Individual spark duration (" ++ mu ++ "s)"
-            override0 d = [ (x, "") | (x, _) <- d]
-            overrideX d = [ (x, deZero (printf "%.4f" (2 ** x)))
-                          | (x, _) <- d]  -- TODO: round it up before **
-            plot = plotBars  -- Chart.joinPlot plotBars plotHidden
-            -- plotHidden =  -- to fix the x an y scales
-            --   Chart.toPlot $ ChartH.PlotHidden
-            --     [intDoub (minXHistogram hecs), intDoub (maxXHistogram hecs)]
-            --     [0, intDoub (maxYHistogram hecs)]
-            plotBars = Chart.plotBars bars
-            bars = Chart.plot_bars_values ^= barvs $ Chart.defaultPlotBars
-            barvs = [(intDoub t, [intDoub height])
-                    | (t, (height, _)) <- histogramCounts $ inRange xs]
-        in layout
       xs = durHistogram hecs
-      renderable :: Chart.Renderable ()
-      renderable = ChartR.toRenderable (plot xs)
+      bars :: [(Double, Double, Int)]
+      bars = [(intDoub t, intDoub height, count)
+              | (t, (height, count)) <- histogramCounts $ inRange xs]
   in do
-       let -- size = (fromIntegral width + 50, fromIntegral histogramHeight + 48)
-           width' = width - 5  -- add a little right margin
+       let width' = width - 5  -- add a little right margin
            (w, h) = (intDoub width', intDoub histogramHeight)
            (minX, maxX, maxY) = (intDoub (minXHistogram hecs),
                                  intDoub (maxXHistogram hecs),
@@ -232,11 +194,7 @@ renderSparkHistogram params@ViewParameters{..} hecs =
              let aboveOrBelow = if sY (-y) > -17 then -3 else 13
              moveTo (sX x + 3) (sY (maxY - y) + aboveOrBelow)
              showText (show count)
-           drawHist = do
---             translate (-50) (-16.5)
---             Chart.runCRender (Chart.render renderable size) ChartR.bitmapEnv
---             translate 50 16.5
-             forM_ baris plotRect
+           drawHist = forM_ bars plotRect
            off y = 16 - y
            xScaleMode = XScaleLog minX segmentWidth
            drawXScale = renderXScale 1 0 width' maxBound off xScaleMode
