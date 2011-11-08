@@ -147,7 +147,7 @@ at the ends, but somehow this does not show (perhaps one is not enough)
 
 - make sure our labels are sensible, and that the key actually matches the graphs
 
-- perhaps drawn the labels vertically and reduce the size of the Y axis area
+- perhaps draw the labels vertically and reduce the size of the Y axis area
 
 - change histogram caption when the data is taken from the selected interval
 
