@@ -207,13 +207,15 @@ renderSparkHistogram ViewParameters{..} hecs =
       xScaleMode = XScaleLog minX segmentWidth
       drawXScale = renderXScale 1 0 maxBound width' off xScaleMode
       -- Define parameters for vertical rulers.
-      mult | round nBars <= 7 = 1
-           | round nBars `mod` 5 == 0 = 5
-           | round nBars `mod` 4 == 0 = 4
-           | round nBars `mod` 3 == 0 = 3
-           | otherwise = nBars
+      nB = round nBars
+      mult | nB <= 7 = 1
+           | nB `mod` 5 == 0 = 5
+           | nB `mod` 4 == 0 = 4
+           | nB `mod` 3 == 0 = 3
+           | nB `mod` 2 == 0 = nB `mod` 2
+           | otherwise = nB
       drawVRulers = renderVRulers 1 0 (fromIntegral width') histogramHeight
-                      (XScaleLog undefined (segmentWidth * mult))
+                      (XScaleLog undefined (segmentWidth * fromIntegral mult))
       -- Define the horizontal rulers call.
       drawHRulers = renderHRulers histogramHeight 0 (fromIntegral width')
   in do

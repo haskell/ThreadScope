@@ -1,4 +1,4 @@
-pristine:0000001524-a732cbf0ed640133f79f0628c3a4e58b47aec25a40e4809e403c53ea1c12a893
+pristine:0000001524-023decb198621dc0c98f5938b32822968776aeb396048780caccd036539ee124
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1813,3 +1813,18 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111108181948
  Ignore-this: a9224afbe97191411909b4419bfb212e
 ] 
 hash: 0000003188-f89a87b1b7c0c3b1e3d63758abf832534c2def9ccb6f3071b60d81fe40086607
+[Fix Y axis and ticks meet points and add TODOs
+Mikolaj Konarski <mikolaj@well-typed.com>**20111108210958
+ Ignore-this: 852229829d505dd35acbb2eb6a4d679b
+] 
+hash: 0000001254-0c8f513f510353e053fbe1a5965cead81e8ba336d49dce381d93b1697045dfb4
+[Fix the last rendering bug due to resizing of the histogram tab
+Mikolaj Konarski <mikolaj@well-typed.com>**20111108212107
+ Ignore-this: e207f72d8a5ec9456291743638d5e71
+] 
+hash: 0000001145-48c8d2ccf291e826b7e9b553fc8a781dc087fb4e6c6d491198aa0f73a3a7d609
+[Put the vertical ruler in the middle of histogram, if only the number of bars even
+Mikolaj Konarski <mikolaj@well-typed.com>**20111108213237
+ Ignore-this: 622e28f3ec23220b80d2b21293cb48a5
+] 
+hash: 0000000829-47e48e7713a267edeeae782d66cf8680de8e82da3f83f6d2b25d9f0e0381a573

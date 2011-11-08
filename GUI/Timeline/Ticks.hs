@@ -101,7 +101,9 @@ renderXScale scaleValue hadjValue lastTx width off xScaleMode = do
   selectFontFace "sans serif" FontSlantNormal FontWeightNormal
   setFontSize 12
   setSourceRGBAhex black 1.0
-  setLineWidth 1.0
+-- setLineCap LineCapRound -- TODO: breaks rendering currently (see BrokenX.png)
+  setLineWidth 1.0  -- TODO: it's not really 1 pixel, due to the scale
+  -- TODO: snap to pixels, currently looks semi-transparent
   draw_line (startPos, off 16) (endPos, off 16)
   let tFor100Pixels = truncate (100 * scaleValue)
       snappedTickDuration :: Timestamp
@@ -111,7 +113,7 @@ renderXScale scaleValue hadjValue lastTx width off xScaleMode = do
       tickWidthInPixels = fromIntegral snappedTickDuration / scaleValue
       firstTick :: Timestamp
       firstTick = snappedTickDuration * (startPos `div` snappedTickDuration)
-  setLineWidth scaleValue
+  setLineWidth scaleValue  -- TODO: should be 0.5 pixels (when we rewrite stuff)
   case xScaleMode of
     XScaleTime ->
       drawXTicks tickWidthInPixels scaleValue (fromIntegral firstTick)
@@ -127,6 +129,7 @@ drawXTicks :: Double -> Double -> Double -> Double -> Timestamp
               -> Render ()
 drawXTicks tickWidthInPixels scaleValue pos incr endPos off xScaleMode i =
   if floor pos <= endPos then do
+    -- TODO: snap to pixels, currently looks semi-transparent
     draw_line (x1, off 16) (x1, off (16 - tickLength))
     when (atMajorTick || atMidTick || tickWidthInPixels > 30) $ do
       tExtent <- textExtents tickTimeText
@@ -217,28 +220,29 @@ renderYScale hecSparksHeight scaleValue maxSpark xoffset yoffset = do
   moveTo xoffset yoffset
   lineTo xoffset (yoffset + fromIntegral hecSparksHeight)
   setSourceRGBAhex black 1.0
+  setLineCap LineCapRound
+  setLineWidth 1.0  -- TODO: it's not really 1 pixel, due to the scale
   stroke
   selectFontFace "sans serif" FontSlantNormal FontWeightNormal
   setFontSize 12
-  setSourceRGBAhex black 1.0
   scale scaleValue 1.0
-  setLineWidth 0.5
-  let yoff = truncate yoffset
-      xoff = truncate xoffset
-  drawYTicks maxS 0 incr xoff yoff 0
+  setLineWidth 0.5  -- TODO: it's not really 0.5 pixels, due to the scale
+  drawYTicks maxS 0 incr xoffset yoffset 0
   restore
 
 -- | Render a single Y scale tick and then recurse.
-drawYTicks :: Double -> Double -> Double -> Int -> Int -> Int -> Render ()
+drawYTicks :: Double -> Double -> Double -> Double -> Double -> Int -> Render ()
 drawYTicks maxS pos incr xoffset yoffset i =
   if i <= 10 then do
-    draw_line (xoffset             , yoffset + ceiling (majorTick - pos))
-              (xoffset + tickLength, yoffset + ceiling (majorTick - pos))
+    -- TODO: snap to pixels, currently looks semi-transparent
+    moveTo xoffset (yoffset + majorTick - pos)
+    lineTo (xoffset + tickLength) (yoffset + majorTick - pos)
+    stroke
     when (atMajorTick || atMidTick) $ do
       tExtent <- textExtents tickText
       (fewPixels, _) <- deviceToUserDistance 8 0
-      move_to (xoffset - ceiling (textExtentsWidth tExtent + fewPixels),
-               yoffset + ceiling (majorTick - pos + fewPixels / 2))
+      moveTo (xoffset - textExtentsWidth tExtent - fewPixels)
+             (yoffset + majorTick - pos + fewPixels / 2)
       when (atMidTick || atMajorTick) $
         showText tickText
     drawYTicks maxS (pos + incr) incr xoffset yoffset (i + 1)
