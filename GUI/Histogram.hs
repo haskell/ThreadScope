@@ -60,7 +60,7 @@ histogramViewNew builder = do
         , detail = undefined
         , bwMode = undefined
         , labelsMode = False
-        , histogramHeight = h - xScaleAreaHeight
+        , histogramHeight = h - histXScaleHeight
         , minterval = minterval
         , xScaleAreaHeight = xScaleAreaHeight
         }

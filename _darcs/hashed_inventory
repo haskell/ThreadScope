@@ -1,4 +1,4 @@
-pristine:0000001524-114b617308dcbadf496ffc9a79ba75e22b9983e1285ec171185068717051f240
+pristine:0000001524-a732cbf0ed640133f79f0628c3a4e58b47aec25a40e4809e403c53ea1c12a893
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1808,3 +1808,8 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111107190001
  Ignore-this: 4b22859f152efcea0760269315f877b2
 ] 
 hash: 0000002193-0c3ed623f8b85c9316b0d0ef32c64b1fa92483c8307c559c475ea18a0f7e13f1
+[Reduce (and make constant) the size of the histogram X scale
+Mikolaj Konarski <mikolaj@well-typed.com>**20111108181948
+ Ignore-this: a9224afbe97191411909b4419bfb212e
+] 
+hash: 0000003188-f89a87b1b7c0c3b1e3d63758abf832534c2def9ccb6f3071b60d81fe40086607

@@ -223,7 +223,7 @@ renderSparkHistogram ViewParameters{..} hecs =
     translate hadjValue 0
     scale scaleValue 1
     rectangle 0 (fromIntegral $ - tracePad) (fromIntegral width)
-      (fromIntegral $ histogramHeight + xScaleAreaHeight + 2 * tracePad)
+      (fromIntegral $ histogramHeight + histXScaleHeight + 2 * tracePad)
     setSourceRGBAhex white 1
     op <- getOperator
     setOperator OperatorAtop  -- TODO: fixme: it paints white vertical rulers

@@ -16,7 +16,7 @@ saveAs :: HECs -> ViewParameters -> Double -> DrawingArea
 saveAs hecs params' @ViewParameters{xScaleAreaHeight, width,
                                     height = oldHeight, histogramHeight}
        yScaleAreaWidth yScaleArea =
-  let histTotalHeight = histogramHeight + xScaleAreaHeight
+  let histTotalHeight = histogramHeight + histXScaleHeight
       params@ViewParameters{height} =
         params'{ viewTraces = viewTraces params' ++ [TraceHistogram]
                , height = oldHeight + histTotalHeight + tracePad
