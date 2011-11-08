@@ -2,7 +2,7 @@ module GUI.Timeline.Render.Constants (
     ox, firstTraceY, tracePad,
     hecTraceHeight, hecInstantHeight, hecSparksHeight,
     hecBarOff, hecBarHeight, hecLabelExtra,
-    activityGraphHeight, stdHistogramHeight,
+    activityGraphHeight, stdHistogramHeight, histXScaleHeight,
     ticksHeight, ticksPad
   ) where
 
@@ -45,9 +45,14 @@ activityGraphHeight = 100
 hecSparksHeight :: Int
 hecSparksHeight = activityGraphHeight
 
--- Histogram height when displayed with other traces (e.g., in PNG/PDF).
+-- Histogram graph height when displayed with other traces (e.g., in PNG/PDF).
 stdHistogramHeight :: Int
 stdHistogramHeight = hecSparksHeight
+
+-- The X scale of histogram has this constant height, as opposed
+-- to the timeline X scale, which takes its height from the .ui file.
+histXScaleHeight :: Int
+histXScaleHeight = 30
 
 -- Ticks
 
