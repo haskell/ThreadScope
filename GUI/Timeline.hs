@@ -197,7 +197,7 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
 
   ------------------------------------------------------------------------
   -- Allow mouse wheel to be used for zoom in/out
-  on timelineDrawingArea scrollEvent $ tryEvent $ do
+  on timelineViewport scrollEvent $ tryEvent $ do
     dir <- eventScrollDirection
     mods <- eventModifier
     (x, _y) <- eventCoordinates
