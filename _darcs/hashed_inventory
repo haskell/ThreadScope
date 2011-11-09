@@ -1,4 +1,4 @@
-pristine:0000001524-023decb198621dc0c98f5938b32822968776aeb396048780caccd036539ee124
+pristine:0000001524-257b1dde71f288c5f6426238e59de2aca8477d99187e981be4e8b035aadc24aa
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1828,3 +1828,13 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111108213237
  Ignore-this: 622e28f3ec23220b80d2b21293cb48a5
 ] 
 hash: 0000000829-47e48e7713a267edeeae782d66cf8680de8e82da3f83f6d2b25d9f0e0381a573
+[Fix issue #7 ("histogram drawing loops in poll.c")
+Mikolaj Konarski <mikolaj@well-typed.com>**20111109151631
+ Ignore-this: 3fa9543791fb998d27ec5557ccb9d523
+] 
+hash: 0000000278-3b7d5c2eb0bd21435388b34a93ca2c6658afe4f476f89526ce274b763d121dac
+[Allow mouse-wheel scroll when it points at the scales
+Mikolaj Konarski <mikolaj@well-typed.com>**20111109154152
+ Ignore-this: 2aeb96ed9b0d592308712076a7d2c1ec
+] 
+hash: 0000000293-0da7fd95ff8dca602cd571466ccc85e10a1439777096b291685002a754c703d7

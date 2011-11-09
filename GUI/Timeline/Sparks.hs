@@ -212,7 +212,7 @@ renderSparkHistogram ViewParameters{..} hecs =
            | nB `mod` 5 == 0 = 5
            | nB `mod` 4 == 0 = 4
            | nB `mod` 3 == 0 = 3
-           | nB `mod` 2 == 0 = nB `mod` 2
+           | nB `mod` 2 == 0 = nB `div` 2
            | otherwise = nB
       drawVRulers = renderVRulers 1 0 (fromIntegral width') histogramHeight
                       (XScaleLog undefined (segmentWidth * fromIntegral mult))
