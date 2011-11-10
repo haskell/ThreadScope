@@ -12,10 +12,16 @@ import GUI.ProgressView (ProgressView)
 
 import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
-import qualified GHC.RTS.Events.Sparks as Sparks
+
+import GHC.RTS.Events.Analysis
+import GHC.RTS.Events.Analysis.SparkThread
 
 import Data.Array
 import qualified Data.List as L
+import Data.Map (Map)
+import qualified Data.Map as M
+import Data.Set (Set)
+import Data.Maybe (catMaybes)
 import Text.Printf
 import System.FilePath
 import Control.Monad
@@ -88,7 +94,6 @@ registerEvents from progress = do
   buildEventLog progress from
 
 -------------------------------------------------------------------------------
-
 -- Runs in a background thread
 --
 buildEventLog :: ProgressView -> Either FilePath String -> IO (HECs, String, Int, Double)
@@ -142,13 +147,36 @@ buildEventLog progress from =
          ilog :: Timestamp -> Int
          ilog 0 = 0
          ilog x = floor $ logBase 2 (intDoub x)
-         sparks = Sparks.sparkInfo eventsBy
-         prepHisto s =
-           let start  = Sparks.timeStarted s
-               dur    = Sparks.sparkDuration s
-               logdur = ilog dur
-           in (start, logdur, dur)
-         allHisto     = map prepHisto sparks
+
+         sparkProfile :: Process
+                           ((Map ThreadId (Profile SparkThreadState), (Map  Int ThreadId, Set ThreadId)), CapEvent)
+                           (ThreadId, (SparkThreadState, Timestamp, Timestamp))
+         sparkProfile  = profileRouted
+                           (refineM (spec . ce_event) sparkThreadMachine)
+                           capabilitySparkThreadMachine
+                           capabilitySparkThreadIndexer
+                           (time . ce_event)
+                           sorted
+
+         sparkSummary :: Map ThreadId (Int, Timestamp, Timestamp)
+                      -> [(ThreadId, (SparkThreadState, Timestamp, Timestamp))]
+                      -> [Maybe (Timestamp, Int, Timestamp)]
+         sparkSummary _ [] = []
+         sparkSummary m ((threadId, (state, timeStarted', timeElapsed')):xs) =
+           case state of
+             SparkThreadRunning sparkId' -> case M.lookup threadId m of
+               Just (sparkId, timeStarted, timeElapsed) ->
+                 if sparkId == sparkId'
+                 then sparkSummary (M.insert threadId (sparkId, timeStarted, timeElapsed + timeElapsed') m) xs
+                 else Just (timeStarted, ilog timeElapsed, timeElapsed) : newSummary sparkId' xs
+               Nothing -> newSummary sparkId' xs
+             _ -> sparkSummary m xs
+          where
+           newSummary sparkId = sparkSummary (M.insert threadId (sparkId, timeStarted', timeElapsed') m)
+
+         allHisto :: [(Timestamp, Int, Timestamp)]
+         allHisto = catMaybes . sparkSummary M.empty . toList $ sparkProfile
+
          -- Sparks of zero lenght are already well visualized in other graphs:
          durHistogram = filter (\ (_, logdur, _) -> logdur > 0) allHisto
          -- Precompute some extremums of the maximal interval, needed for scales.
