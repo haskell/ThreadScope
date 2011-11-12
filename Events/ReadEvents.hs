@@ -49,7 +49,8 @@ import qualified Control.DeepSeq as DeepSeq
 rawEventsToHECs :: [(Maybe Int, [GHCEvents.Event])] -> Timestamp
                 -> [(Double, (DurationTree, EventTree, SparkTree))]
 rawEventsToHECs eventList endTime
-  = map (toTree . flip lookup heclists)  [0 .. maximum0 (map fst heclists)]
+  = map (toTree . flip lookup heclists)
+      [0 .. maximum (minBound : map fst heclists)]
   where
     heclists = [ (h, events) | (Just h, events) <- eventList ]
 
@@ -63,13 +64,6 @@ rawEventsToHECs eventList endTime
         mkSparkTree sparkD endTime))
        where (discrete, nondiscrete) = L.partition isDiscreteEvent evs
              (maxSparkPool, sparkD)  = eventsToSparkDurations nondiscrete
-
--------------------------------------------------------------------------------
-
--- XXX: what's this for?
-maximum0 :: (Num a, Ord a) => [a] -> a
-maximum0 [] = -1
-maximum0 x = maximum x
 
 -------------------------------------------------------------------------------
 

@@ -95,7 +95,7 @@ renderXScale scaleValue hadjValue lastTx width off xScaleMode = do
       startPos :: Timestamp
       startPos = truncate hadjValue
       endPos :: Timestamp
-      endPos = ceiling $ minimum [hadjValue + scale_width, fromIntegral lastTx]
+      endPos = ceiling $ min (hadjValue + scale_width) (fromIntegral lastTx)
   save
   scale (1/scaleValue) 1.0
   translate (-hadjValue) 0

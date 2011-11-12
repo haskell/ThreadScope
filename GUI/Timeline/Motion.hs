@@ -72,8 +72,9 @@ zoomToFit TimelineState{scaleIORef, maxSpkIORef,timelineAdj,
        let newScaleValue = upper / fromIntegral w
            (sliceAll, profAll) = treesProfile newScaleValue 0 lastTx hecs
            -- TODO: verify that no empty lists possible below
-           maxAll = map (maximum . map (maxSparkRenderedValue sliceAll)) profAll
-           newMaxSpkValue = maximum maxAll
+           maxmap l = maximum (0 : map (maxSparkRenderedValue sliceAll) l)
+           maxAll = map maxmap profAll
+           newMaxSpkValue = maximum (0 : maxAll)
 
        writeIORef scaleIORef newScaleValue
        writeIORef maxSpkIORef newMaxSpkValue

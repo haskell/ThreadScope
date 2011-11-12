@@ -76,6 +76,7 @@ rescale scale s =
 -- in reverse chronological order, of consecutive subintervals
 -- that sum up to the original interval.
 aggregate :: [SparkStats] -> SparkStats
+aggregate [] = error "aggregate"
 aggregate [s] = s  -- optimization
 aggregate l =
   let meanP = sum (map meanPool l) / fromIntegral (length l) -- TODO: inaccurate
