@@ -40,7 +40,8 @@ renderVRulers scaleValue startPos endPos height xScaleMode = do
   let timestampFor100Pixels = truncate (100 * scaleValue)
       snappedTickDuration :: Timestamp
       snappedTickDuration =
-        10 ^ truncate (logBase 10 (fromIntegral timestampFor100Pixels) :: Double)
+        10 ^ max 0 (truncate (logBase 10 (fromIntegral timestampFor100Pixels)
+                              :: Double))
       tickWidthInPixels :: Double
       tickWidthInPixels = fromIntegral snappedTickDuration / scaleValue
       firstTick :: Timestamp
@@ -108,7 +109,8 @@ renderXScale scaleValue hadjValue lastTx width off xScaleMode = do
   let tFor100Pixels = truncate (100 * scaleValue)
       snappedTickDuration :: Timestamp
       snappedTickDuration =
-        10 ^ truncate (logBase 10 (fromIntegral tFor100Pixels) :: Double)
+        10 ^ max 0 (truncate (logBase 10 (fromIntegral tFor100Pixels)
+                              :: Double))
       tickWidthInPixels :: Double
       tickWidthInPixels = fromIntegral snappedTickDuration / scaleValue
       firstTick :: Timestamp
