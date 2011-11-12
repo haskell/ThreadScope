@@ -316,7 +316,8 @@ to say all
 - show time corresponding to the eventlog buffer flushing,
 after the event for this introduced
 
-- verify correctness of the input eventlog before visualizing
+- verify correctness of the input eventlog before visualizing; define a method
+of passing the error report from ghc-events to TS and displaying it
 
 - perhaps the far left and far right bars on the histogram should be in red,
 since extreme spark sizes are usually bad (or mark it in some other way)
@@ -370,3 +371,9 @@ and when you zoom it, the interval changes in the upper pane
 does not have the time X axis, and generally does not fit and is confusing)
 
 - perhaps use the tab with traces to guide what is exported to PDF/PNG
+
+- events in the info pane should be searchable, and possibly numbered
+
+- selecting a range of events (via a shift-click) in the info pane should create a selection as might be done with the mouse.
+
+- select and copy events from the info pane to the OS clipboard
