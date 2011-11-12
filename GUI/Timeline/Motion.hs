@@ -28,7 +28,7 @@ zoomIn  = zoom (/2)
 zoomOut :: TimelineState -> Timestamp -> IO ()
 zoomOut  = zoom (*2)
 
-zoom :: (Double->Double) -> TimelineState -> Timestamp -> IO ()
+zoom :: (Double -> Double) -> TimelineState -> Timestamp -> IO ()
 zoom factor TimelineState{timelineAdj, scaleIORef} cursor = do
        scaleValue <- readIORef scaleIORef
        -- TODO: we'd need HECs, as below, to fit maxScale to graphs at hand

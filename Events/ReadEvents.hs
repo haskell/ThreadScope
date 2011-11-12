@@ -124,7 +124,8 @@ buildEventLog progress from =
          eventBlockEnd e | EventBlock{ end_time=t } <- spec e = t
          eventBlockEnd e = time e
 
-         lastTx = maximum (0 : map eventBlockEnd eventsBy)
+         -- 1, to avoid graph scale 0 and division by 0 later on
+         lastTx = maximum (1 : map eventBlockEnd eventsBy)
 
          groups = groupEvents eventsBy
          maxTrees = rawEventsToHECs groups lastTx
