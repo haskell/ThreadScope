@@ -1,7 +1,4 @@
 {-# LANGUAGE CPP #-}
--- ThreadScope: a graphical viewer for Haskell event log information.
--- Maintainer: satnams@microsoft.com, s.singh@ieee.org
-
 module GUI.Main (runGUI) where
 
 -- Imports for GTK
