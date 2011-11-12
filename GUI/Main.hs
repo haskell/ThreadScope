@@ -236,13 +236,14 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       --sequence_ [ bookmarkViewAdd bookmarkView ts label
       --          | (ts, label) <- usrMsgs ]
       -- timelineWindowSetBookmarks timelineWin (map fst usrMsgs)
-
-      continueWith EventlogLoaded {
-        mfilename = mfilename,
-        hecs      = hecs,
-        selection = PointSelection 0,
-        cursorPos = 0
-      }
+      if nevents == 0
+        then continueWith NoEventlogLoaded
+        else continueWith EventlogLoaded
+          { mfilename = mfilename
+          , hecs      = hecs
+          , selection = PointSelection 0
+          , cursorPos = 0
+          }
 
     dispatch EventExportDialog
              EventlogLoaded {mfilename} = do
