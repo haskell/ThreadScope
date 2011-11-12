@@ -27,7 +27,7 @@ renderActivity :: ViewParameters -> HECs -> Timestamp -> Timestamp
 
 renderActivity ViewParameters{..} hecs start0 end0 = do
   let
-      slice = round (fromIntegral activity_detail * scaleValue)
+      slice = ceiling (fromIntegral activity_detail * scaleValue)
 
       -- round the start time down, and the end time up, to a slice boundary
       start = (start0 `div` slice) * slice
@@ -36,7 +36,7 @@ renderActivity ViewParameters{..} hecs start0 end0 = do
       hec_profs  = map (actProfile slice start end)
                      (map (\ (t, _, _) -> t) (hecTrees hecs))
       total_prof = map sum (transpose hec_profs)
-  --
+
 --  liftIO $ printf "%s\n" (show (map length hec_profs))
 --  liftIO $ printf "%s\n" (show (map (take 20) hec_profs))
   drawActivity hecs start end slice total_prof

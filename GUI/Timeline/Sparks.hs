@@ -41,7 +41,7 @@ spark_detail = 4 -- in pixels
 treesProfile :: Double -> Timestamp -> Timestamp -> HECs
                 -> (Timestamp, [[SparkStats.SparkStats]])
 treesProfile scale start end hecs =
-  let slice = round (fromIntegral spark_detail * scale)
+  let slice = ceiling (fromIntegral spark_detail * scale)
       pr trees = let (_, _, stree) = trees
                  in sparkProfile slice start end stree
   in (slice, map pr (hecTrees hecs))

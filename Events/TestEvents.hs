@@ -13,8 +13,15 @@ testTrace name = eventLog (test name)
 -------------------------------------------------------------------------------
 
 eventLog :: [Event] -> EventLog
-eventLog events
-  = EventLog (Header testEventTypes) (Data events)
+eventLog events =
+  let specBy1000 e@EventBlock{} =
+        e{end_time = end_time e * 1000,
+          block_events = map eBy1000 (block_events e)}
+      specBy1000 e = e
+      eBy1000 ev = ev{time = time ev * 1000,
+                      spec = specBy1000 (spec ev)}
+      eventsBy = map eBy1000 events
+  in EventLog (Header testEventTypes) (Data eventsBy)
 
 -------------------------------------------------------------------------------
 
@@ -329,4 +336,3 @@ chequeredPattern currentThread currentPos basicDuration runLength
       ] ++ chequeredPattern currentThread (currentPos+2*basicDuration) basicDuration runLength
 
 -------------------------------------------------------------------------------
-

@@ -1,4 +1,4 @@
-pristine:0000001524-257b1dde71f288c5f6426238e59de2aca8477d99187e981be4e8b035aadc24aa
+pristine:0000001546-625fcd6dda3274071016e2f152bc0f8f9551f9c9ed7b106f7d758222363107e6
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1838,3 +1838,48 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111109154152
  Ignore-this: 2aeb96ed9b0d592308712076a7d2c1ec
 ] 
 hash: 0000000293-0da7fd95ff8dca602cd571466ccc85e10a1439777096b291685002a754c703d7
+[Change spark profiles to new event analysis interface
+nick@well-typed.com**20111110161241
+ Ignore-this: 8db5504520ed6df6debd59d3f65b8ee9
+] 
+hash: 0000002409-dcd483f49bc81005453d7e1b4d91838697d672da96fae6bcdab69485570848ff
+[Adding Nicolas Wu as contributor
+nick@well-typed.com**20111110162107
+ Ignore-this: a94a870c2b72ef8135652e99c250d589
+] 
+hash: 0000000201-4617a4b9d8291b76421a660e4dd0e02699e949518a4db9f4013525a69d829db7
+[Clean up webpage, credits, etc.
+Mikolaj Konarski <mikolaj@well-typed.com>**20111112105136
+ Ignore-this: ee9091de5bcea5cb55480917ae649b84
+] 
+hash: 0000001847-651fab7e7d106d611bbe3f15657e27da792d50243a8801b23b0727222606408c
+[Prevent `div` by zero (none left for --test)
+Mikolaj Konarski <mikolaj@well-typed.com>**20111112201212
+ Ignore-this: b231d125452b7c30bdd82cca7256d7d2
+] 
+hash: 0000000898-275ab4c908dfefe3960f7e1e830a383fed3f5a8b4a3e74a03617de54a167da82
+[Prevent "Negative exponent" (none left for --test)
+Mikolaj Konarski <mikolaj@well-typed.com>**20111112201614
+ Ignore-this: 34384476f0c9a3161f146c7948efd671
+] 
+hash: 0000000621-a51503e28d34abe16239079f0b181fadb36dae857afde123476a28c72f7ee143
+[Prevent "maximum []" and 'minimum []" (none left for --test)
+Mikolaj Konarski <mikolaj@well-typed.com>**20111112202950
+ Ignore-this: a49f42cb755e0423093e756819434077
+] 
+hash: 0000001178-e3fbd593a57dc56e23e68b81a9fe9459a37412c68b0dc94f194d0ca3d4c9e1d2
+[Scale up --test to compensate for Timestamp scaled down
+Mikolaj Konarski <mikolaj@well-typed.com>**20111112204330
+ Ignore-this: f1360c69fb82de8a30a7d0708f59d23d
+] 
+hash: 0000000666-26658b3c9a4a92d9569145eeaa944a90aa7a19429a1b651140794fd597b6d94b
+[Don't crash if log is totally empty
+Mikolaj Konarski <mikolaj@well-typed.com>**20111112205726
+ Ignore-this: 4f902ca93c1ff4977a5cdea1830595f4
+] 
+hash: 0000000591-c601d64b82510f20b1c240f34d9f806be13214bc8ea35c0979c4f5dca45c342b
+[Update TODO with feature requests inspired by zenzike
+Mikolaj Konarski <mikolaj@well-typed.com>**20111112210312
+ Ignore-this: 90769801133376d4c1cbc05105ef467f
+] 
+hash: 0000000678-6d22a33dcb2d8d07d1e5ce3463ebe3d56e17940c785306c643cca468d0552153

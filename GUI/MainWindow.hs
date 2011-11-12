@@ -1,6 +1,3 @@
--- ThreadScope: a graphical viewer for Haskell event log information.
--- Maintainer: satnams@microsoft.com, s.singh@ieee.org
-
 module GUI.MainWindow (
     MainWindow,
     mainWindowNew,

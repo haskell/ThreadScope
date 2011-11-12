@@ -1,8 +1,3 @@
--------------------------------------------------------------------------------
---- $Id: About.hs#1 2009/03/20 13:27:50 REDMOND\\satnams $
---- $Source: //depot/satnams/haskell/ThreadScope/About.hs $
--------------------------------------------------------------------------------
-
 module GUI.Dialogs where
 
 import Paths_threadscope (getDataFileName, version)
@@ -29,9 +24,10 @@ aboutDialog parent
                                   "Simon Marlow <simonm@microsoft.com>",
                                   "Satnam Singh <s.singh@ieee.org>",
                                   "Duncan Coutts <duncan@well-typed.com>",
-                                  "Mikolaj Konarski <mikolaj@well-typed.com>"],
+                                  "Mikolaj Konarski <mikolaj@well-typed.com>",
+                                  "Nicolas Wu <nick@well-typed.com>"],
          aboutDialogLogo      := Just logo,
-         aboutDialogWebsite   := "http://research.microsoft.com/threadscope",
+         aboutDialogWebsite   := "http://www.haskell.org/haskellwiki/ThreadScope",
          windowTransientFor   := toWindow parent
         ]
       onResponse dialog $ \_ -> widgetDestroy dialog
