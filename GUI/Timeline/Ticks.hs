@@ -62,7 +62,7 @@ drawVRulers :: Double -> Double -> Double -> Double
                -> Timestamp -> Int -> Int -> Render ()
 drawVRulers tickWidthInPixels scaleValue pos incr endPos height i =
   if floor pos <= endPos then do
-    when (atMajorTick || atMidTick || tickWidthInPixels > 30) $ do
+    when (atMajorTick || atMidTick || tickWidthInPixels > 70) $ do
       draw_line (round pos, 0) (round pos, height)
     drawVRulers
       tickWidthInPixels scaleValue (pos + incr) incr endPos height (i + 1)
@@ -134,14 +134,14 @@ drawXTicks tickWidthInPixels scaleValue pos incr endPos off xScaleMode i =
     -- TODO: snap to pixels, currently looks semi-transparent
     when (pos /= 0 || xScaleMode == XScaleTime) $
       draw_line (x1, off 16) (x1, off (16 - tickLength))
-    when (atMajorTick || atMidTick || tickWidthInPixels > 30) $ do
+    when (atMajorTick || atMidTick || tickWidthInPixels > 70) $ do
       tExtent <- textExtents tickTimeText
+      let tExtentWidth = textExtentsWidth tExtent
       move_to textPos
       m <- getMatrix
       identityMatrix
-      (fourPixels, _) <- deviceToUserDistance 4 0
       when (floor (pos + incr) <= endPos
-            && (isWideEnough tExtent fourPixels || atMajorTick)) $
+            && (tExtentWidth + tExtentWidth / 3 < width || atMajorTick)) $
         showText tickTimeText
       setMatrix m
     drawXTicks
@@ -164,8 +164,6 @@ drawXTicks tickWidthInPixels scaleValue pos incr endPos off xScaleMode i =
     tickTimeText = showMultiTime posTime
     width = if atMidTick then 5 * tickWidthInPixels
             else tickWidthInPixels
-    isWideEnough tExtent fourPixels =
-      textExtentsWidth tExtent + fourPixels < width
     -- We cheat at pos 0, to avoid half covering the tick by the grey label area.
     lineWidth = scaleValue
     x1 = round $ if pos == 0 && xScaleMode == XScaleTime then lineWidth else pos
