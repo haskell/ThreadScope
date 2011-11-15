@@ -1,4 +1,4 @@
-pristine:0000001546-625fcd6dda3274071016e2f152bc0f8f9551f9c9ed7b106f7d758222363107e6
+pristine:0000001557-1fd20492a6123eda44df4ff3b4ed9c85860c8ab145a1468d4ffa14132073cce9
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1883,3 +1883,8 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111112210312
  Ignore-this: 90769801133376d4c1cbc05105ef467f
 ] 
 hash: 0000000678-6d22a33dcb2d8d07d1e5ce3463ebe3d56e17940c785306c643cca468d0552153
+[Point scale ticks outward and related tweaks
+Mikolaj Konarski <mikolaj@well-typed.com>**20111115185842
+ Ignore-this: 6283b5a7da67dabfb9f61cb14f8ac739
+] 
+hash: 0000002210-f0dc979d57f157d8350e32230d33d3338534b8aa96e658d784b1ad8deaaab243

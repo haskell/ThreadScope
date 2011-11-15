@@ -78,7 +78,7 @@ renderXScaleArea :: ViewParameters -> HECs -> Render ()
 renderXScaleArea ViewParameters{width, scaleValue, hadjValue, xScaleAreaHeight}
                  hecs =
   let lastTx = hecLastEventTime hecs
-      off y = xScaleAreaHeight - y
+      off y = y + xScaleAreaHeight - 17
   in renderXScale scaleValue hadjValue lastTx width off XScaleTime
 
 
@@ -132,7 +132,8 @@ drawXTicks :: Double -> Double -> Double -> Double -> Timestamp
 drawXTicks tickWidthInPixels scaleValue pos incr endPos off xScaleMode i =
   if floor pos <= endPos then do
     -- TODO: snap to pixels, currently looks semi-transparent
-    draw_line (x1, off 16) (x1, off (16 - tickLength))
+    when (pos /= 0 || xScaleMode == XScaleTime) $
+      draw_line (x1, off 16) (x1, off (16 - tickLength))
     when (atMajorTick || atMidTick || tickWidthInPixels > 30) $ do
       tExtent <- textExtents tickTimeText
       move_to textPos
@@ -152,11 +153,11 @@ drawXTicks tickWidthInPixels scaleValue pos incr endPos off xScaleMode i =
     atMajorTick = xScaleMode == XScaleTime && i `mod` 10 == 0
     textPos =
       if xScaleMode == XScaleTime
-      then (x1 - truncate (scaleValue * 2), off 26)
+      then (x1 + ceiling (scaleValue * 3), off (-3))
       else (x1 + ceiling (scaleValue * 2), tickLength + 13)
     tickLength | atMajorTick = 16
-               | atMidTick = 12
-               | otherwise = 8
+               | atMidTick = 10
+               | otherwise = if xScaleMode == XScaleTime then 6 else 8
     posTime = case xScaleMode of
                 XScaleTime ->  round pos
                 XScaleLog minX _ -> round $ 2 ** (minX + pos / incr)
@@ -167,7 +168,7 @@ drawXTicks tickWidthInPixels scaleValue pos incr endPos off xScaleMode i =
       textExtentsWidth tExtent + fourPixels < width
     -- We cheat at pos 0, to avoid half covering the tick by the grey label area.
     lineWidth = scaleValue
-    x1 = round $ if pos == 0 then lineWidth else pos
+    x1 = round $ if pos == 0 && xScaleMode == XScaleTime then lineWidth else pos
 
 -- | Display the micro-second time unit with an appropriate suffix
 -- depending on the actual time value.
@@ -219,8 +220,8 @@ renderYScale hecSparksHeight scaleValue maxSpark xoffset yoffset = do
       incr = fromIntegral hecSparksHeight / 10
   save
   newPath
-  moveTo xoffset yoffset
-  lineTo xoffset (yoffset + fromIntegral hecSparksHeight)
+  moveTo (xoffset + 12) yoffset
+  lineTo (xoffset + 12) (yoffset + fromIntegral hecSparksHeight)
   setSourceRGBAhex black 1.0
   setLineCap LineCapRound
   setLineWidth 1.0  -- TODO: it's not really 1 pixel, due to the scale
@@ -237,14 +238,14 @@ drawYTicks :: Double -> Double -> Double -> Double -> Double -> Int -> Render ()
 drawYTicks maxS pos incr xoffset yoffset i =
   if i <= 10 then do
     -- TODO: snap to pixels, currently looks semi-transparent
-    moveTo xoffset (yoffset + majorTick - pos)
-    lineTo (xoffset + tickLength) (yoffset + majorTick - pos)
+    moveTo (xoffset + 12) (yoffset + majorTick - pos)
+    lineTo (xoffset + 12 - tickLength) (yoffset + majorTick - pos)
     stroke
     when (atMajorTick || atMidTick) $ do
       tExtent <- textExtents tickText
-      (fewPixels, _) <- deviceToUserDistance 8 0
+      (fewPixels, yPix) <- deviceToUserDistance 3 4
       moveTo (xoffset - textExtentsWidth tExtent - fewPixels)
-             (yoffset + majorTick - pos + fewPixels / 2)
+             (yoffset + majorTick - pos + yPix)
       when (atMidTick || atMajorTick) $
         showText tickText
     drawYTicks maxS (pos + incr) incr xoffset yoffset (i + 1)
@@ -255,8 +256,8 @@ drawYTicks maxS pos incr xoffset yoffset i =
     atMajorTick = i `mod` 10 == 0
     majorTick = 10 * incr
     tickText = reformatV (fromIntegral i * maxS / 10)
-    tickLength | atMajorTick = 13
-               | atMidTick   = 10
+    tickLength | atMajorTick = 11
+               | atMidTick   = 9
                | otherwise   = 6
     reformatV :: Double -> String
     reformatV v = deZero (printf "%.2f" v)
