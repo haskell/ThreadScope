@@ -304,7 +304,7 @@ updateXScaleArea TimelineState{..} lastTx = do
   -- Snap the view to whole pixels, to avoid blurring.
   hadjValue0 <- adjustmentGetValue timelineAdj
   let hadjValue = toWholePixels scaleValue hadjValue0
-      off y = xScaleAreaHeight - y
+      off y = y + xScaleAreaHeight - 17
   renderWithDrawable win $
     renderXScale scaleValue hadjValue lastTx width off XScaleTime
   return ()
