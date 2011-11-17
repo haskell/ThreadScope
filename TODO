@@ -59,9 +59,6 @@ BUGS:
 
 OTHER:
 
-- scrolling controls should work when the pointer is in grey XScale and YScale
-areas of the timeline, too
-
 - sort bookmark view by time?
 
 - Delete key deletes bookmarks?
@@ -110,7 +107,8 @@ like the line:  ___/----, but keep min/max for ___/\___
 - in the key, label the coloured areas, according to what they represent,
 the key will have things for each colour; separate sections of the Key for
 the activity vs sparks vs next-thing; make sure the user understands
-that the _areas_ are proportional to the total number and graphs to rates
+that the _areas_ are proportional to the total number and curve points to rates;
+make sure our labels are sensible, and that the key actually matches the graphs
 
 - the same aggregate style for the activity graph, to see min/max
 (the green area does convey the total runtime, so perhaps mark min
@@ -145,8 +143,6 @@ at the ends, but somehow this does not show (perhaps one is not enough)
 
 - perhaps enlarge the main timeline canvas to the right to the nearest tick
 
-- make sure our labels are sensible, and that the key actually matches the graphs
-
 - perhaps draw the labels vertically and reduce the size of the Y axis area
 
 - change histogram caption when the data is taken from the selected interval
@@ -156,15 +152,14 @@ at the ends, but somehow this does not show (perhaps one is not enough)
 - medium-term: let the user configure which instant events shown in the trace
 
 - medium-term: user-defined visualisation frequency for the new trace (at least)
-andr any other tricks needed to visualize instant events well (show density
+and any other tricks needed to visualize instant events well (show density
 even if many events at almost the same spot and so the shades of green cue
-is not possible) and fast (in particula, don't draw many lines at the same spot)
+is not possible) and fast (in particular, don't draw many lines at the same spot)
 some random user feedback on the "lots of events" use case of traceEvents:
-13:50 < kosmikus> so, from my current experience with using traceEvents, I make the following observations:
-13:50 < kosmikus> I don't need/use bookmarking (I can use the visual clues to jump), or even grep the event log
-13:50 < kosmikus> I find the visualization helpful, but disturbing, because it hides other information
-13:51 < kosmikus> it would be great to be able to visually distinguish different "messages"
-13:51 < kosmikus> it would be nice if drawing wouldn't slow down significantly even for a relatively small number of events (i.e., 100 is noticeable slowdown already)
+1. I don't need/use bookmarking (I can use the visual clues to jump), or even grep the event log
+2. I find the visualization helpful, but disturbing, because it hides other information
+3. it would be great to be able to visually distinguish different "messages"
+4. it would be nice if drawing wouldn't slow down significantly even for a relatively small number of events (i.e., 100 is noticeable slowdown already)
 
 
 IDEAS FOR FUTURE WORK:
@@ -182,8 +177,8 @@ IDEAS FOR FUTURE WORK:
 
 - render averaged areas properly
 
-- indicate when one thread wakes up another thread, or a thread is migrated
-  - draw lines/arrows between the events?
+- indicate when one thread wakes up another thread, or a thread is migrated;
+perhaps draw lines/arrows between the events?
 
 - event list view
   - respond to page up / page down / arrows (FOCUS)
@@ -377,3 +372,7 @@ does not have the time X axis, and generally does not fit and is confusing)
 - selecting a range of events (via a shift-click) in the info pane should create a selection as might be done with the mouse.
 
 - select and copy events from the info pane to the OS clipboard
+
+- perhaps, on the X scale of timeline, show only offsets, to save space:
+that is, only give the full time for the left point of the view and all other
+times relative to that, e.g., 2.356 s, +1ms, +2ms, etc.
