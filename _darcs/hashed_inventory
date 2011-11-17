@@ -1,4 +1,4 @@
-pristine:0000001557-1fd20492a6123eda44df4ff3b4ed9c85860c8ab145a1468d4ffa14132073cce9
+pristine:0000001557-e0150b5cfe70a339daaf912df728479de96e506793652f6bfe069c849f172667
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1888,3 +1888,13 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111115185842
  Ignore-this: 6283b5a7da67dabfb9f61cb14f8ac739
 ] 
 hash: 0000002210-f0dc979d57f157d8350e32230d33d3338534b8aa96e658d784b1ad8deaaab243
+[Add more space between X numbers (and ticks and rulers)
+Mikolaj Konarski <mikolaj@well-typed.com>**20111115222339
+ Ignore-this: 5d9f117113583d05d4014d4deb687496
+] 
+hash: 0000000974-53ab42bccb4bb4d999e0a43a858ece69e15111cd661512bc5585b0e25ee896e7
+[Update TODO
+Mikolaj Konarski <mikolaj@well-typed.com>**20111117091839
+ Ignore-this: afc847c0531823eecaa77f790b6eb9b
+] 
+hash: 0000002462-8b72ba2d8ee01b74b84063b93be3decb3f93fc35fc33a35f5abb903b9bca0345
