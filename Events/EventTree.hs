@@ -18,6 +18,7 @@ import qualified GHC.RTS.Events as GHC
 import GHC.RTS.Events hiding (Event)
 
 import Text.Printf
+import Control.Exception (assert)
 
 -------------------------------------------------------------------------------
 
@@ -63,23 +64,28 @@ mkDurationTree es endTime =
   tree = splitDurations es endTime
 
 splitDurations :: [EventDuration] -- events
-             -> Timestamp       -- end time of last event in the list
-             -> DurationTree
-splitDurations []  _endTime =
+               -> Timestamp       -- end time of last event in the list
+               -> DurationTree
+splitDurations [] _endTime =
   -- if len /= 0 then error "splitDurations0" else
-  DurationTreeEmpty   -- The case for an empty list of events
+  DurationTreeEmpty  -- The case for an empty list of events.
 
 splitDurations [e] _entTime =
   DurationTreeLeaf e
 
-splitDurations es  endTime
-  | null lhs || null rhs
-  = -- error (printf "failed to split: len = %d, startTime = %d, endTime = %d\n" (length es) startTime endTime ++ '\n': show es)
-    DurationTreeEmpty
+splitDurations es endTime
+  | null rhs
+  = splitDurations es lhs_end
+
+  | null lhs
+  = error $
+    printf "splitDurations: null lhs: len = %d, startTime = %d, endTime = %d\n"
+      (length es) startTime endTime
+    ++ '\n': show es
 
   | otherwise
   = -- trace (printf "len = %d, startTime = %d, endTime = %d, lhs_len = %d\n" len startTime endTime lhs_len) $
-    -- if len /= length es || length lhs + length rhs /= len then error (printf "splitDurations3; %d %d %d %d %d" len (length es) (length lhs) lhs_len (length rhs))  else
+    assert (length lhs + length rhs == length es) $
     DurationSplit startTime
                lhs_end
                endTime
@@ -101,18 +107,18 @@ splitDurations es  endTime
 
 
 splitDurationList :: [EventDuration]
-               -> [EventDuration]
-               -> Timestamp
-               -> Timestamp
-               -> ([EventDuration], Timestamp, [EventDuration])
+                  -> [EventDuration]
+                  -> Timestamp
+                  -> Timestamp
+                  -> ([EventDuration], Timestamp, [EventDuration])
 splitDurationList []  acc !_tsplit !tmax
   = (reverse acc, tmax, [])
 splitDurationList [e] acc !_tsplit !tmax
-  = (reverse acc, tmax, [e])
-  -- just one event left: put it on the right.  This ensures that we
+  -- Just one event left: put it on the right. This ensures that we
   -- have at least one event on each side of the split.
+  = (reverse acc, tmax, [e])
 splitDurationList (e:es) acc !tsplit !tmax
-  | tstart < tsplit -- pick all events that start before the split
+  | tstart <= tsplit  -- pick all events that start at or before the split
   = splitDurationList es (e:acc) tsplit (max tmax tend)
   | otherwise
   = (reverse acc, tmax, e:es)
@@ -209,12 +215,14 @@ splitEvents es !endTime
   = splitEvents es lhs_end
 
   | null lhs
-  = error (printf "null lhs: len = %d, startTime = %d, endTime = %d\n"
-             (length es) startTime endTime
-           ++ '\n': show es)
+  = error $
+    printf "splitEvents: null lhs: len = %d, startTime = %d, endTime = %d\n"
+      (length es) startTime endTime
+    ++ '\n': show es
+
   | otherwise
   = -- trace (printf "len = %d, startTime = %d, endTime = %d, lhs_len = %d\n" len startTime endTime lhs_len) $
-    -- if len /= length es || length lhs + length rhs /= len then error (printf "splitEvents3; %d %d %d %d %d" len (length es) (length lhs) lhs_len (length rhs))  else
+    assert (length lhs + length rhs == length es) $
     EventSplit (time (head rhs))
                ltree
                rtree
@@ -239,8 +247,12 @@ splitEventList :: [GHC.Event]
                -> ([GHC.Event], Timestamp, [GHC.Event])
 splitEventList []  acc !_tsplit !tmax
   = (reverse acc, tmax, [])
+splitEventList [e] acc !_tsplit !tmax
+  -- Just one event left: put it on the right. This ensures that we
+  -- have at least one event on each side of the split.
+  = (reverse acc, tmax, [e])
 splitEventList (e:es) acc !tsplit !tmax
-  | t < tsplit -- pick all events that start before the split
+  | t <= tsplit  -- pick all events that start at or before the split
   = splitEventList es (e:acc) tsplit (max tmax t)
   | otherwise
   = (reverse acc, tmax, e:es)
