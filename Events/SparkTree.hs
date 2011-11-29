@@ -12,6 +12,7 @@ import qualified Events.SparkStats as SparkStats
 import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events (Timestamp)
 
+import Control.Exception (assert)
 import Text.Printf
 -- import Debug.Trace
 
@@ -120,20 +121,17 @@ splitSparks es !endTime
   | null rhs
   = splitSparks es lhs_end
   | null lhs
-  = error ((printf "null lhs: len = %d, startTime = %d, endTime = %d\n"
-              (length es) startTime endTime)
-           ++ '\n': show es)
+  = error $
+    printf "splitSparks: null lhs: len = %d, startTime = %d, endTime = %d\n"
+      (length es) startTime endTime
+    ++ '\n' : show es
   | otherwise
   = -- trace (printf "len = %d, startTime = %d, endTime = %d\n" (length es) startTime endTime) $
-    if length lhs + length rhs /= length es
-    then error (printf "splitSparks3; %d %d %d"
-                  (length es) (length lhs) (length rhs))
-    else
-      SparkSplit (startT $ head rhs)
-                 ltree
-                 rtree
-                 (SparkStats.aggregate (subDelta rtree ++ subDelta ltree))
-
+    assert (length lhs + length rhs == length es) $
+    SparkSplit (startT $ head rhs)
+               ltree
+               rtree
+               (SparkStats.aggregate (subDelta rtree ++ subDelta ltree))
   where
     -- | Integer division, rounding up.
     divUp :: Timestamp -> Timestamp -> Timestamp
@@ -158,9 +156,13 @@ splitSparkList :: [SparkDuration]
                -> ([SparkDuration], Timestamp, [SparkDuration])
 splitSparkList [] acc !_tsplit !tmax
   = (reverse acc, tmax, [])
+splitSparkList [e] acc !_tsplit !tmax
+  -- Just one event left: put it on the right. This ensures that we
+  -- have at least one event on each side of the split.
+  = (reverse acc, tmax, [e])
 splitSparkList (e:es) acc !tsplit !tmax
-  |  startT e < tsplit  -- pick all durations that start before the split
-  = splitSparkList es (e:acc) tsplit (max tmax  (startT e))
+  | startT e <= tsplit  -- pick all durations that start at or before the split
+  = splitSparkList es (e:acc) tsplit (max tmax (startT e))
   | otherwise
   = (reverse acc, tmax, e:es)
 
