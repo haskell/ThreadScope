@@ -197,9 +197,11 @@ renderSparkHistogram ViewParameters{..} hecs =
         -- Print the number of sparks in the bar.
         selectFontFace "sans serif" FontSlantNormal FontWeightNormal
         setFontSize 10
-        setSourceRGBAhex black 1.0
-        let aboveOrBelow = if sY (-y) > -17 then -3 else 13
-        moveTo (sX x + 3) (sY (maxY - y) + aboveOrBelow)
+        let above = sY (-y) > -20
+        if above
+          then setSourceRGBAhex black 1.0
+          else setSourceRGBAhex white 1.0
+        moveTo (sX x + 3) (sY (maxY - y) + if above then -3 else 13)
         showText (show count)
       drawHist = forM_ bars plotRect
       -- Define parameters for X scale.
