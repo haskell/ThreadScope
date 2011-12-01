@@ -245,7 +245,9 @@ sparkProfile slice start0 end0 t
        -- we approximate by taking a proportion of the aggregate value,
        -- depending on how much of the spark duration corresponding
        -- to the tree node is covered by our timeslice.
-       proportion = fromIntegral common / fromIntegral (e - s)
+       proportion = if e > s
+                    then fromIntegral common / fromIntegral (e - s)
+                    else assert (e == s && common == 0) $ 0
 
        -- Spark transitions in the tree are in units spark/duration.
        -- Here the numbers are rescaled so that the units are spark/ms.
