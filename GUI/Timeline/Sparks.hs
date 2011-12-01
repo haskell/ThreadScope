@@ -51,21 +51,21 @@ renderSparkCreation :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
                        -> [SparkStats.SparkStats]
                        -> Render ()
 renderSparkCreation params !slice !start !end prof = do
-  let f1 c =        SparkStats.rateDud c
-      f2 c = f1 c + SparkStats.rateCreated c
+  let f1 c =        SparkStats.rateCreated c
+      f2 c = f1 c + SparkStats.rateDud c
       f3 c = f2 c + SparkStats.rateOverflowed c
   renderSpark params slice start end prof
-    f1 fizzledDudsColour f2 createdConvertedColour f3 overflowedColour
+    f1 createdConvertedColour f2 fizzledDudsColour f3 overflowedColour
 
 renderSparkConversion :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
                          -> [SparkStats.SparkStats]
                          -> Render ()
 renderSparkConversion params !slice !start !end prof = do
-  let f1 c =        SparkStats.rateFizzled c
-      f2 c = f1 c + SparkStats.rateGCd c
-      f3 c = f2 c + SparkStats.rateConverted c
+  let f1 c =        SparkStats.rateConverted c
+      f2 c = f1 c + SparkStats.rateFizzled c
+      f3 c = f2 c + SparkStats.rateGCd c
   renderSpark params slice start end prof
-    f1 fizzledDudsColour f2 gcColour f3 createdConvertedColour
+    f1 createdConvertedColour f2 fizzledDudsColour f3 gcColour
 
 renderSparkPool :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
                    -> [SparkStats.SparkStats]
