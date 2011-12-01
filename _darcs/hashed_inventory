@@ -1,4 +1,4 @@
-pristine:0000001557-76d7eb8d9ae313634362760d6978e17902e359ce19f90b8bcd8cdf1756ed8f38
+pristine:0000001557-ba85619758323e386a2deddbc98d67c42620b2d2e31b6834d8e1343432784652
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1908,3 +1908,13 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111130090309
  Ignore-this: 52160e960fe13b284af5b9ecb7f8403
 ] 
 hash: 0000000591-a8eafd8515c7638d911f4371b5082f2213d981a94d8778d0c41833c44b87de36
+[Put good spark things on the bottom; closes #12
+Mikolaj Konarski <mikolaj@well-typed.com>**20111201073230
+ Ignore-this: e6609e65064c65870f6c1a0c56fcd935
+] 
+hash: 0000001011-8b55d836570e2f29e527cfc3c93ad638862984d1079ac09df3a750481f62c163
+[Accept spark trees with duration 0; fix #14
+Mikolaj Konarski <mikolaj@well-typed.com>**20111201092334
+ Ignore-this: ccfef4c22dc98484515d6a3ec3c7332a
+] 
+hash: 0000000406-7b8237870ba98294614b02a70a32e52e5db8efbe9dc9a240357bbc49fe8bf3d3
