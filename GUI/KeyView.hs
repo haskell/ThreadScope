@@ -51,28 +51,27 @@ keyViewNew builder = do
 
 -------------------------------------------------------------------------------
 
-data KeyStyle = Box | Vertical
+data KeyStyle = KDuration | KEvent | KEventAndGraph
 
 keyData :: [(String, KeyStyle, Color)]
-keyData = [ ("running",         Box,      runningColour)
-          , ("GC",              Box,      gcColour)
+keyData = [ ("running",         KDuration, runningColour)
+          , ("GC",              KDuration, gcColour)
 
-          , ("create thread",   Vertical, createThreadColour)
-          , ("thread runnable", Vertical, threadRunnableColour)
-          , ("seq GC req",      Vertical, seqGCReqColour)
-          , ("par GC req",      Vertical, parGCReqColour)
-          , ("migrate thread",  Vertical, migrateThreadColour)
-          , ("thread wakeup",   Vertical, threadWakeupColour)
-          , ("shutdown",        Vertical, shutdownColour)
+          , ("create thread",   KEvent, createThreadColour)
+          , ("thread runnable", KEvent, threadRunnableColour)
+          , ("seq GC req",      KEvent, seqGCReqColour)
+          , ("par GC req",      KEvent, parGCReqColour)
+          , ("migrate thread",  KEvent, migrateThreadColour)
+          , ("thread wakeup",   KEvent, threadWakeupColour)
+          , ("shutdown",        KEvent, shutdownColour)
+          , ("user message",    KEvent, userMessageColour)
 
-          , ("create spark",    Vertical, createdConvertedColour)
-          , ("dud spark",       Vertical, fizzledDudsColour)
-          , ("overflowed spark", Vertical, overflowedColour)
-          , ("run spark",       Vertical, createdConvertedColour)
-          , ("fizzled spark",   Vertical, fizzledDudsColour)
-          , ("GCed spark",      Vertical, gcColour)
-
-          , ("user message",    Vertical, userMessageColour)
+          , ("create spark",    KEventAndGraph, createdConvertedColour)
+          , ("dud spark",       KEventAndGraph, fizzledDudsColour)
+          , ("ovfled spark",    KEventAndGraph, overflowedColour)
+          , ("run spark",       KEventAndGraph, createdConvertedColour)
+          , ("fizzled spark",   KEventAndGraph, fizzledDudsColour)
+          , ("GCed spark",      KEventAndGraph, gcColour)
           ]
 
 
@@ -89,11 +88,20 @@ createKeyEntries similar entries =
     | (label, style, colour) <- entries ]
 
 renderKeyIcon :: KeyStyle -> Color -> C.Render ()
-renderKeyIcon Box keyColour = do
+renderKeyIcon KDuration keyColour = do
   setSourceRGBAhex keyColour 1.0
-  C.rectangle 0 0 50 (fromIntegral (hecBarHeight `div` 2))
+  let x = fromIntegral ox
+  C.rectangle (x - 2) 5 38 (fromIntegral (hecBarHeight `div` 2))
   C.fill
-renderKeyIcon Vertical keyColour = do
+renderKeyIcon KEvent keyColour = renderKEvent keyColour
+renderKeyIcon KEventAndGraph keyColour = do
+  renderKEvent keyColour
+  let x = fromIntegral ox
+  C.arc (3.1 * x) 11 5 0 (2 * pi)
+  C.fill
+
+renderKEvent :: Color -> C.Render ()
+renderKEvent keyColour = do
   setSourceRGBAhex keyColour 1.0
   C.setLineWidth 3.0
   let x = fromIntegral ox
