@@ -18,12 +18,15 @@ Copyright:           2009-2010 Satnam Singh,
                      2009 Donnie Jones,
                      2011 Duncan Coutts,
                      2011 Mikolaj Konarski
+                     2011 Nicolas Wu
+                     2011 Eric Kow
 Author:              Satnam Singh <s.singh@ieee.org>,
                      Simon Marlow <marlowsd@gmail.com>,
                      Donnie Jones <donnie@darthik.com>,
                      Duncan Coutts <duncan@well-typed.com>,
                      Mikolaj Konarski <mikolaj@well-typed.com>,
-                     Nicolas Wu <nick@well-typed.com>
+                     Nicolas Wu <nick@well-typed.com>,
+                     Eric Kow <eric@well-typed.com>
 Maintainer:          Satnam Singh <s.singh@ieee.org>
 Homepage:            http://www.haskell.org/haskellwiki/ThreadScope
 Bug-reports:         http://trac.haskell.org/ThreadScope/

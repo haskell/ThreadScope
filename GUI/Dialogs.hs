@@ -25,7 +25,8 @@ aboutDialog parent
                                   "Satnam Singh <s.singh@ieee.org>",
                                   "Duncan Coutts <duncan@well-typed.com>",
                                   "Mikolaj Konarski <mikolaj@well-typed.com>",
-                                  "Nicolas Wu <nick@well-typed.com>"],
+                                  "Nicolas Wu <nick@well-typed.com>",
+                                  "Eric Kow <eric@well-typed.com>"],
          aboutDialogLogo      := Just logo,
          aboutDialogWebsite   := "http://www.haskell.org/haskellwiki/ThreadScope",
          windowTransientFor   := toWindow parent
