@@ -1,4 +1,4 @@
-pristine:0000001557-ba85619758323e386a2deddbc98d67c42620b2d2e31b6834d8e1343432784652
+pristine:0000001557-549538256f8bf7c662e4d4196c9ecdd7c217ad6a175390d9712d47daa011098f
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1918,3 +1918,28 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111201092334
  Ignore-this: ccfef4c22dc98484515d6a3ec3c7332a
 ] 
 hash: 0000000406-7b8237870ba98294614b02a70a32e52e5db8efbe9dc9a240357bbc49fe8bf3d3
+[Shorten a trace label (may help a bit with #15)
+Mikolaj Konarski <mikolaj@well-typed.com>**20111203123503
+ Ignore-this: 275426d4d1de3811c6f79a82c6284c3
+] 
+hash: 0000000326-19c55d71754f3ac09845d513cc1d838381021f09a671c55326398644cb45b03d
+[Add kowey as a contributor
+Mikolaj Konarski <mikolaj@well-typed.com>**20111203214052
+ Ignore-this: cec54247016d30a806e874cd95cd69a7
+] 
+hash: 0000000670-19456994528cc4f4203b423541ad4c8bbcead843e3af24e7b32b2f06c0ba8e5e
+[Change SparkGC event colour to match spark graph
+Mikolaj Konarski <mikolaj@well-typed.com>**20111203220454
+ Ignore-this: 1152ca8d424bead1dac21e607a289084
+] 
+hash: 0000000332-856da996756f7a9fa836d1c4446dd69ed8dd9f7939dd6eebfe179f4692ec1c1e
+[Add all remaining event colours to key
+Mikolaj Konarski <mikolaj@well-typed.com>**20111203220549
+ Ignore-this: 6e86453e59833d4f033681ed5528eba9
+] 
+hash: 0000000733-fba2ced441ac40d7211d2d06dc9ddc379ca3a680f371fc1cc41035b49d633989
+[Overhaul the display of keys
+Mikolaj Konarski <mikolaj@well-typed.com>**20111203223429
+ Ignore-this: aa14adfed11f009edd8cf023185c1345
+] 
+hash: 0000002915-b4e1c5af039bb3d70077acb1161ac0fde94555ef9d3a15f4b39de5fec3f211bc

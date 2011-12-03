@@ -236,7 +236,7 @@ drawEvent params@ViewParameters{..} event
       SparkRun{}       -> renderInstantEvent params event createdConvertedColour
       SparkSteal{}     -> renderInstantEvent params event createdConvertedColour
       SparkFizzle{}    -> renderInstantEvent params event fizzledDudsColour
-      SparkGC{}        -> renderInstantEvent params event fizzledDudsColour
+      SparkGC{}        -> renderInstantEvent params event gcColour
 
       UserMessage{}    -> renderInstantEvent params event userMessageColour
 
