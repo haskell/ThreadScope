@@ -12,7 +12,7 @@ import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo
 
 saveAs :: HECs -> ViewParameters -> Double -> DrawingArea
-          -> (Int, Int, Render ())
+       -> (Int, Int, Render ())
 saveAs hecs params' @ViewParameters{xScaleAreaHeight, width,
                                     height = oldHeight, histogramHeight}
        yScaleAreaWidth yScaleArea =

@@ -110,7 +110,7 @@ renderKEvent keyColour = do
   C.stroke
 
 renderToPixbuf :: DrawableClass dw => dw -> (Int, Int) -> C.Render ()
-                  -> IO Pixbuf
+               -> IO Pixbuf
 renderToPixbuf similar (w, h) draw = do
   pixmap <- pixmapNew (Just similar) w h Nothing
   renderWithDrawable pixmap draw

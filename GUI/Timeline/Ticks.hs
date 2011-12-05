@@ -35,7 +35,7 @@ import Text.Printf
 
 -- | Render vertical rulers (solid translucent lines), matching scale ticks.
 renderVRulers :: Double -> Timestamp -> Timestamp -> Int -> XScaleMode
-                 -> Render()
+              -> Render()
 renderVRulers scaleValue startPos endPos height xScaleMode = do
   let timestampFor100Pixels = truncate (100 * scaleValue)
       snappedTickDuration :: Timestamp
@@ -59,7 +59,7 @@ renderVRulers scaleValue startPos endPos height xScaleMode = do
 
 -- | Render a single vertical ruler and then recurse.
 drawVRulers :: Double -> Double -> Double -> Double
-               -> Timestamp -> Int -> Int -> Render ()
+            -> Timestamp -> Int -> Int -> Render ()
 drawVRulers tickWidthInPixels scaleValue pos incr endPos height i =
   if floor pos <= endPos then do
     when (atMajorTick || atMidTick || tickWidthInPixels > 70) $ do
@@ -88,8 +88,8 @@ data XScaleMode = XScaleTime | XScaleLog Double Double deriving Eq
 -- TODO: refactor common parts with renderVRulers, in particlar to expose
 -- that ruler positions match tick positions.
 renderXScale :: Double -> Double -> Timestamp -> Int
-                -> (Int -> Int) -> XScaleMode
-                -> Render ()
+             -> (Int -> Int) -> XScaleMode
+             -> Render ()
 renderXScale scaleValue hadjValue lastTx width off xScaleMode = do
   let scale_width = fromIntegral width * scaleValue
       startPos :: Timestamp
@@ -127,8 +127,8 @@ renderXScale scaleValue hadjValue lastTx width off xScaleMode = do
 
 -- | Render a single X scale tick and then recurse.
 drawXTicks :: Double -> Double -> Double -> Double -> Timestamp
-              -> (Int -> Int) -> XScaleMode -> Int
-              -> Render ()
+           -> (Int -> Int) -> XScaleMode -> Int
+           -> Render ()
 drawXTicks tickWidthInPixels scaleValue pos incr endPos off xScaleMode i =
   if floor pos <= endPos then do
     -- TODO: snap to pixels, currently looks semi-transparent

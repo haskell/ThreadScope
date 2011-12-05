@@ -84,7 +84,7 @@ durationOf ed = endTimeOf ed - startTimeOf ed
 -------------------------------------------------------------------------------
 
 eventsToDurations :: [GHC.Event] -> [EventDuration]
-eventsToDurations []     = []
+eventsToDurations [] = []
 eventsToDurations (event : events) =
   case spec event of
      RunThread{thread=t} -> runDuration t : rest
