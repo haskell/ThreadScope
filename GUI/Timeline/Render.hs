@@ -315,55 +315,57 @@ updateXScaleArea TimelineState{..} lastTx = do
 -- based on view parameters and hecs.
 renderYScaleArea :: ViewParameters -> HECs -> DrawingArea -> Render ()
 renderYScaleArea ViewParameters{maxSpkValue, labelsMode, viewTraces,
-                                histogramHeight}
+                                histogramHeight, minterval}
                  hecs yScaleArea = do
   let maxP = maxSparkPool hecs
       maxH = fromIntegral $ maxYHistogram hecs
   (xoffset, _) <- liftIO $ widgetGetSize yScaleArea
   drawYScaleArea
-    maxSpkValue maxP maxH (fromIntegral xoffset) 0
-    labelsMode histogramHeight  viewTraces yScaleArea
+    maxSpkValue maxP maxH minterval (fromIntegral xoffset) 0
+    labelsMode histogramHeight viewTraces yScaleArea
 
 -- | Update the Y scale widget, based on the state of all timeline areas
 -- and on traces (only for graph labels and relative positions).
-updateYScaleArea :: TimelineState -> Double -> Double -> Bool -> [Trace] -> IO ()
-updateYScaleArea TimelineState{..} maxSparkPool maxYHistogram
+updateYScaleArea :: TimelineState -> Double -> Double -> Maybe Interval
+                 -> Bool -> [Trace] -> IO ()
+updateYScaleArea TimelineState{..} maxSparkPool maxYHistogram minterval
                  labelsMode traces = do
   win <- widgetGetDrawWindow timelineYScaleArea
   maxSpkValue  <- readIORef maxSpkIORef
   vadj_value   <- adjustmentGetValue timelineVAdj
   (xoffset, _) <- widgetGetSize timelineYScaleArea
   renderWithDrawable win $
-    drawYScaleArea maxSpkValue maxSparkPool maxYHistogram (fromIntegral xoffset)
-      vadj_value labelsMode stdHistogramHeight traces
+    drawYScaleArea maxSpkValue maxSparkPool maxYHistogram minterval
+      (fromIntegral xoffset) vadj_value labelsMode stdHistogramHeight traces
       timelineYScaleArea
 
 -- | Render the Y scale area, by rendering an axis, ticks and a label
 -- for each graph-like trace in turn (and only labels for other traces).
-drawYScaleArea :: Double -> Double -> Double -> Double -> Double
-                  -> Bool -> Int -> [Trace] -> DrawingArea
-                  -> Render ()
-drawYScaleArea maxSpkValue maxSparkPool maxYHistogram xoffset vadj_value
-               labelsMode histogramHeight traces yScaleArea = do
+drawYScaleArea :: Double -> Double -> Double -> Maybe Interval -> Double
+               -> Double -> Bool -> Int -> [Trace] -> DrawingArea
+               -> Render ()
+drawYScaleArea maxSpkValue maxSparkPool maxYHistogram minterval xoffset
+               vadj_value labelsMode histogramHeight traces yScaleArea = do
   let histTotalHeight = histogramHeight + histXScaleHeight
       ys = map (subtract (round vadj_value)) $
              traceYPositions labelsMode histTotalHeight traces
   pcontext <- liftIO $ widgetCreatePangoContext yScaleArea
   zipWithM_
      (drawSingleYScale
-        maxSpkValue maxSparkPool maxYHistogram xoffset histogramHeight pcontext)
+        maxSpkValue maxSparkPool maxYHistogram minterval xoffset
+        histogramHeight pcontext)
      traces ys
 
 -- | Render a single Y scale axis, set of ticks and label, or only a label,
 -- if the trace is not a graph.
-drawSingleYScale :: Double -> Double -> Double -> Double -> Int
+drawSingleYScale :: Double -> Double -> Double -> Maybe Interval -> Double -> Int
                     -> PangoContext -> Trace -> Int
                     -> Render ()
-drawSingleYScale maxSpkValue maxSparkPool maxYHistogram xoffset histogramHeight
-                 pcontext trace y = do
+drawSingleYScale maxSpkValue maxSparkPool maxYHistogram minterval xoffset
+                 histogramHeight pcontext trace y = do
   setSourceRGBAhex black 1
   move_to (ox, y + 8)
-  layout <- liftIO $ layoutText pcontext (showTrace trace)
+  layout <- liftIO $ layoutText pcontext (showTrace minterval trace)
   liftIO $ do
     layoutSetWidth layout (Just $ xoffset - 50)
     -- Note: the following does not always work, see the HACK in Timeline.hs
@@ -402,22 +404,24 @@ calculateTotalTimelineHeight labelsMode histTotalHeight traces =
  last (traceYPositions labelsMode histTotalHeight traces)
 
 -- | Produce a descriptive label for a trace.
-showTrace :: Trace -> String
-showTrace (TraceHEC n) =
+showTrace :: Maybe Interval -> Trace -> String
+showTrace _ (TraceHEC n) =
   "HEC " ++ show n
-showTrace (TraceInstantHEC n) =
+showTrace _ (TraceInstantHEC n) =
   "HEC " ++ show n ++ "\nInstant"
-showTrace (TraceCreationHEC n) =
+showTrace _ (TraceCreationHEC n) =
   "\nHEC " ++ show n ++ "\n\nSpark creation rate (spark/ms)"
-showTrace (TraceConversionHEC n) =
+showTrace _ (TraceConversionHEC n) =
   "\nHEC " ++ show n ++ "\n\nSpark conversion rate (spark/ms)"
-showTrace (TracePoolHEC n) =
+showTrace _ (TracePoolHEC n) =
   "\nHEC " ++ show n ++ "\n\nSpark pool size"
-showTrace TraceHistogram =
+showTrace Nothing TraceHistogram =
   "Sum of spark times\n(" ++ mu ++ "s)"
-showTrace TraceActivity =
+showTrace Just{}  TraceHistogram =
+  "Sum of selected spark times\n(" ++ mu ++ "s)"
+showTrace _ TraceActivity =
   "Activity"
-showTrace TraceGroup{} = error "Render.showTrace"
+showTrace _ TraceGroup{} = error "Render.showTrace"
 
 -- | Calcaulate the maximal Y value for a graph-like trace, or Nothing.
 traceMaxSpark :: Double -> Double -> Double -> Trace -> Maybe Double

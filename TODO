@@ -134,8 +134,6 @@ at the ends, but somehow this does not show (perhaps one is not enough)
 
 - perhaps draw the labels vertically and reduce the size of the Y axis area
 
-- change histogram caption when the data is taken from the selected interval
-
 - and add a way to add a bookmark for a user-specified event, or a kind of events
 
 - medium-term: let the user configure which instant events shown in the trace

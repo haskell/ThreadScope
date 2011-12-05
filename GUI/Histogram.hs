@@ -33,6 +33,7 @@ histogramViewSetInterval :: HistogramView -> Maybe Interval -> IO ()
 histogramViewSetInterval HistogramView{..} minterval = do
   writeIORef mintervalIORef minterval
   widgetQueueDraw histogramDrawingArea
+  widgetQueueDraw histogramYScaleArea
 
 histogramViewNew :: Builder -> IO HistogramView
 histogramViewNew builder = do
@@ -90,7 +91,7 @@ histogramViewNew builder = do
                      renderTraces params hecs rect
                    return True
 
-  -- Redrawing labelDrawingArea
+  -- Redrawing histogramYScaleArea
   histogramYScaleArea `onExpose` \_ -> do
     maybeEventArray <- readIORef hecsIORef
     case maybeEventArray of
