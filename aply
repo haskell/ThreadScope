@@ -1,4 +1,0 @@
-darcs send -o upload.patch -a
-scp upload.patch satnam@code.haskell.org:
-ssh satnam@code.haskell.org "cd /srv/code/ThreadScope; darcs apply ~/upload.patch"
-
