@@ -36,7 +36,9 @@ handleArgs flags args
     usageHeader  = "Usage: threadscope [eventlog]\n" ++
                    "   or: threadscope [FLAGS]"
     helpHeader   = usageHeader ++ "\n\nFlags: "
-    printHelp    = putStrLn (usageInfo helpHeader flagDescrs)
+    printHelp    = putStrLn (usageInfo helpHeader flagDescrs
+                             ++ "\nFor more details see http://www.haskell.org/haskellwiki/ThreadScope_Tour\n")
+
 
 -------------------------------------------------------------------------------
 

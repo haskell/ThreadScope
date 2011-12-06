@@ -2,82 +2,71 @@
 New patches:
 
 [unrevert
-anon**20111201091742
- Ignore-this: 8b5939e893abf5afb8e0c5e2f3f40a20
+anon**20111206182516
+ Ignore-this: fa9f4dddca87ae41b7189bc9dcf26999
 ] {
-hunk ./Events/SparkStats.hs 10
+hunk ./index.html 1
+-﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
++<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+ <html xmlns="http://www.w3.org/1999/xhtml">
  
- import Data.Word (Word64)
- 
-+import Debug.Trace
-+
- -- | Sparks change state. Each state transition process has a duration.
- -- Spark statistics, for a given duration, record the spark transition rate
- -- (the number of sparks that enter a given state within the interval)
-hunk ./Events/SparkStats.hs 45
- create :: (Word64, Word64, Word64, Word64, Word64, Word64, Word64) ->
-           (Word64, Word64, Word64, Word64, Word64, Word64, Word64) ->
-           SparkStats
--create (crt1, dud1, ovf1, cnv1, fiz1, gcd1, remaining1)
--       (crt2, dud2, ovf2, cnv2, fiz2, gcd2, _remaining2) =
-+create d1@(crt1, dud1, ovf1, cnv1, fiz1, gcd1, remaining1)
-+       d2@(crt2, dud2, ovf2, cnv2, fiz2, gcd2, _remaining2) =
-   let (crt, dud, ovf, cnv, fiz, gcd) =
-         (fromIntegral $ crt2 - crt1,
-          fromIntegral $ dud2 - dud1,
-hunk ./Events/SparkStats.hs 55
-          fromIntegral $ fiz2 - fiz1,
-          fromIntegral $ gcd2 - gcd1)
-       p = fromIntegral remaining1
--  in SparkStats crt dud ovf cnv fiz gcd p p p
-+      d = SparkStats crt dud ovf cnv fiz gcd p p p
-+  in d
- 
- -- | Reduce a list of spark stats; spark pool stats are overwritten.
- foldStats :: (Double -> Double -> Double)
-hunk ./GUI/Timeline/Sparks.hs 24
- 
- import Control.Monad
- 
-+import Debug.Trace
-+
- -- Rendering sparks. No approximation nor extrapolation is going on here.
- -- The sample data, recalculated for a given slice size in sparkProfile,
- -- before these functions are called, is straightforwardly rendered.
-hunk ./GUI/Timeline/Sparks.hs 56
-                        -> [SparkStats.SparkStats]
-                        -> Render ()
- renderSparkCreation params !slice !start !end prof = do
--  let f1 c =        SparkStats.rateCreated c
--      f2 c = f1 c + SparkStats.rateDud c
--      f3 c = f2 c + SparkStats.rateOverflowed c
-+  let f1 c =  let d = SparkStats.rateCreated c in if d < 0 then error "dddd" else d
-+      f2 c =  SparkStats.rateDud c
-+      f3 c =  SparkStats.rateOverflowed c
-   renderSpark params slice start end prof
-     f1 createdConvertedColour f2 fizzledDudsColour f3 overflowedColour
- 
-hunk ./GUI/Timeline/Sparks.hs 95
-   -- maxSpkValue is maximal spark transition rate, so
-   -- maxSliceSpark is maximal number of sparks per slice for current data.
-   let maxSliceSpark = maxSpkValue * fromIntegral slice
--  outlineSparks maxSliceSpark f3 start slice prof
--  addSparks c1 maxSliceSpark (const 0) f1 start slice prof
--  addSparks c2 maxSliceSpark f1 f2 start slice prof
--  addSparks c3 maxSliceSpark f2 f3 start slice prof
--  renderHRulers hecSparksHeight start end
-+  outlineSparks maxSliceSpark f1 start slice prof
-+--  addSparks c1 maxSliceSpark (const 0) f1 start slice prof
-+--  addSparks c2 maxSliceSpark f1 f2 start slice prof
-+--  addSparks c3 maxSliceSpark f2 f3 start slice prof
-+--  renderHRulers hecSparksHeight start end
- 
- off :: Double -> (SparkStats.SparkStats -> Double)
-        -> SparkStats.SparkStats
+ <head>
+hunk ./index.html 7
+ <meta http-equiv="Content-Language" content="en-gb" />
+ <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+-<title>ThreadScope: A Graphical Profiler for Parallel and Concurrent Haskell 
++<title>ThreadScope: A Graphical Profiler for Parallel and Concurrent Haskell
+ Programs</title>
+ <style type="text/css">
+ h1 {
 }
 
 Context:
 
+[Link to TS guided tour in 2 places
+Mikolaj Konarski <mikolaj@well-typed.com>**20111206182311
+ Ignore-this: b4042917c6f4a6fde6c38fcd470135ee
+] 
+[Remove some usless or duplicted old files
+Mikolaj Konarski <mikolaj@well-typed.com>**20111206091927
+ Ignore-this: 379fc498456170e491bdc2d1b55be339
+] 
+[Standarize layout in the recently modified code
+Mikolaj Konarski <mikolaj@well-typed.com>**20111205160627
+ Ignore-this: bebc258d730a4e364e09c3fc7bb1d6c6
+] 
+[Change histogram caption when the data is taken from the selected interval
+Mikolaj Konarski <mikolaj@well-typed.com>**20111205125440
+ Ignore-this: 1203f29225596423a2c34bcd875c5fe4
+] 
+[Update TODO for the new release
+Mikolaj Konarski <mikolaj@well-typed.com>**20111205122250
+ Ignore-this: b6bf07c8e94ce56090c8feaee61e3feb
+] 
+[Overhaul the display of keys
+Mikolaj Konarski <mikolaj@well-typed.com>**20111203223429
+ Ignore-this: aa14adfed11f009edd8cf023185c1345
+] 
+[Add all remaining event colours to key
+Mikolaj Konarski <mikolaj@well-typed.com>**20111203220549
+ Ignore-this: 6e86453e59833d4f033681ed5528eba9
+] 
+[Change SparkGC event colour to match spark graph
+Mikolaj Konarski <mikolaj@well-typed.com>**20111203220454
+ Ignore-this: 1152ca8d424bead1dac21e607a289084
+] 
+[Add kowey as a contributor
+Mikolaj Konarski <mikolaj@well-typed.com>**20111203214052
+ Ignore-this: cec54247016d30a806e874cd95cd69a7
+] 
+[Shorten a trace label (may help a bit with #15)
+Mikolaj Konarski <mikolaj@well-typed.com>**20111203123503
+ Ignore-this: 275426d4d1de3811c6f79a82c6284c3
+] 
+[Accept spark trees with duration 0; fix #14
+Mikolaj Konarski <mikolaj@well-typed.com>**20111201092334
+ Ignore-this: ccfef4c22dc98484515d6a3ec3c7332a
+] 
 [Put good spark things on the bottom; closes #12
 Mikolaj Konarski <mikolaj@well-typed.com>**20111201073230
  Ignore-this: e6609e65064c65870f6c1a0c56fcd935
@@ -1633,4 +1622,4 @@ Simon Marlow <marlowsd@gmail.com>**20100526204935
  Ignore-this: d04bf0d3d66fd70d72554f2963aba692
 ] 
 Patch bundle hash:
-80d0db0e079d4d07edf5cd0ce5fb114e5c2bc3e0
+5964121afcd5800852fc7ff48db8eb2cc0a1ad60
