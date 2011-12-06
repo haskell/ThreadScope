@@ -39,7 +39,7 @@ spark_detail :: Int
 spark_detail = 4 -- in pixels
 
 treesProfile :: Double -> Timestamp -> Timestamp -> HECs
-                -> (Timestamp, [[SparkStats.SparkStats]])
+             -> (Timestamp, [[SparkStats.SparkStats]])
 treesProfile scale start end hecs =
   let slice = ceiling (fromIntegral spark_detail * scale)
       pr trees = let (_, _, stree) = trees
@@ -48,8 +48,8 @@ treesProfile scale start end hecs =
 
 
 renderSparkCreation :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
-                       -> [SparkStats.SparkStats]
-                       -> Render ()
+                    -> [SparkStats.SparkStats]
+                    -> Render ()
 renderSparkCreation params !slice !start !end prof = do
   let f1 c =        SparkStats.rateCreated c
       f2 c = f1 c + SparkStats.rateDud c
@@ -58,8 +58,8 @@ renderSparkCreation params !slice !start !end prof = do
     f1 createdConvertedColour f2 fizzledDudsColour f3 overflowedColour
 
 renderSparkConversion :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
-                         -> [SparkStats.SparkStats]
-                         -> Render ()
+                      -> [SparkStats.SparkStats]
+                      -> Render ()
 renderSparkConversion params !slice !start !end prof = do
   let f1 c =        SparkStats.rateConverted c
       f2 c = f1 c + SparkStats.rateFizzled c
@@ -68,8 +68,8 @@ renderSparkConversion params !slice !start !end prof = do
     f1 createdConvertedColour f2 fizzledDudsColour f3 gcColour
 
 renderSparkPool :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
-                   -> [SparkStats.SparkStats]
-                   -> Double -> Render ()
+                -> [SparkStats.SparkStats]
+                -> Double -> Render ()
 renderSparkPool ViewParameters{..} !slice !start !end prof !maxSparkPool = do
   let f1 c = SparkStats.minPool c
       f2 c = SparkStats.meanPool c
@@ -81,11 +81,11 @@ renderSparkPool ViewParameters{..} !slice !start !end prof !maxSparkPool = do
   renderHRulers hecSparksHeight start end
 
 renderSpark :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
-               -> [SparkStats.SparkStats]
-               -> (SparkStats.SparkStats -> Double) -> Color
-               -> (SparkStats.SparkStats -> Double) -> Color
-               -> (SparkStats.SparkStats -> Double) -> Color
-               -> Render ()
+            -> [SparkStats.SparkStats]
+            -> (SparkStats.SparkStats -> Double) -> Color
+            -> (SparkStats.SparkStats -> Double) -> Color
+            -> (SparkStats.SparkStats -> Double) -> Color
+            -> Render ()
 renderSpark ViewParameters{..} slice start end prof f1 c1 f2 c2 f3 c3 = do
   -- maxSpkValue is maximal spark transition rate, so
   -- maxSliceSpark is maximal number of sparks per slice for current data.
@@ -97,17 +97,17 @@ renderSpark ViewParameters{..} slice start end prof f1 c1 f2 c2 f3 c3 = do
   renderHRulers hecSparksHeight start end
 
 off :: Double -> (SparkStats.SparkStats -> Double)
-       -> SparkStats.SparkStats
-       -> Double
+    -> SparkStats.SparkStats
+    -> Double
 off maxSliceSpark f t =
   let clipped = min 1 (f t / maxSliceSpark)
   in fromIntegral hecSparksHeight * (1 - clipped)
 
 outlineSparks :: Double
-                 -> (SparkStats.SparkStats -> Double)
-                 -> Timestamp -> Timestamp
-                 -> [SparkStats.SparkStats]
-                 -> Render ()
+              -> (SparkStats.SparkStats -> Double)
+              -> Timestamp -> Timestamp
+              -> [SparkStats.SparkStats]
+              -> Render ()
 outlineSparks maxSliceSpark f start slice ts = do
   case ts of
     [] -> return ()
@@ -124,12 +124,12 @@ outlineSparks maxSliceSpark f start slice ts = do
       stroke
 
 addSparks :: Color
-             -> Double
-             -> (SparkStats.SparkStats -> Double)
-             -> (SparkStats.SparkStats -> Double)
-             -> Timestamp -> Timestamp
-             -> [SparkStats.SparkStats]
-             -> Render ()
+          -> Double
+          -> (SparkStats.SparkStats -> Double)
+          -> (SparkStats.SparkStats -> Double)
+          -> Timestamp -> Timestamp
+          -> [SparkStats.SparkStats]
+          -> Render ()
 addSparks colour maxSliceSpark f0 f1 start slice ts = do
   case ts of
     [] -> return ()

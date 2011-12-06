@@ -67,10 +67,12 @@ rawEventsToHECs eventList endTime
 
 -------------------------------------------------------------------------------
 
-registerEventsFromFile :: String -> ProgressView -> IO (HECs, String, Int, Double)
+registerEventsFromFile :: String -> ProgressView
+                       -> IO (HECs, String, Int, Double)
 registerEventsFromFile filename = registerEvents (Left filename)
 
-registerEventsFromTrace :: String -> ProgressView -> IO (HECs, String, Int, Double)
+registerEventsFromTrace :: String -> ProgressView
+                        -> IO (HECs, String, Int, Double)
 registerEventsFromTrace traceName = registerEvents (Right traceName)
 
 registerEvents :: Either FilePath String
@@ -90,7 +92,8 @@ registerEvents from progress = do
 -------------------------------------------------------------------------------
 -- Runs in a background thread
 --
-buildEventLog :: ProgressView -> Either FilePath String -> IO (HECs, String, Int, Double)
+buildEventLog :: ProgressView -> Either FilePath String
+              -> IO (HECs, String, Int, Double)
 buildEventLog progress from =
   case from of
     Right test     -> build test (testTrace test)
@@ -102,113 +105,118 @@ buildEventLog progress from =
         Left  err -> fail err --FIXME: report error properly
         Right evs -> build filename evs
 
-  where
-    -- | Integer division, rounding up.
-    divUp :: Timestamp -> Timestamp -> Timestamp
-    divUp n k = (n + k - 1) `div` k
-    build name evs = do
-       let
-         specBy1000 e@EventBlock{} =
-           e{end_time = end_time e `divUp` 1000,
-             block_events = map eBy1000 (block_events e)}
-         specBy1000 e = e
-         eBy1000 ev = ev{time = time ev `divUp` 1000,
-                         spec = specBy1000 (spec ev)}
-         eventsBy = map eBy1000 (events (dat evs))
-         eventBlockEnd e | EventBlock{ end_time=t } <- spec e = t
-         eventBlockEnd e = time e
+ where
+  -- | Integer division, rounding up.
+  divUp :: Timestamp -> Timestamp -> Timestamp
+  divUp n k = (n + k - 1) `div` k
+  build name evs = do
+    let
+      specBy1000 e@EventBlock{} =
+        e{end_time = end_time e `divUp` 1000,
+          block_events = map eBy1000 (block_events e)}
+      specBy1000 e = e
+      eBy1000 ev = ev{time = time ev `divUp` 1000,
+                      spec = specBy1000 (spec ev)}
+      eventsBy = map eBy1000 (events (dat evs))
+      eventBlockEnd e | EventBlock{ end_time=t } <- spec e = t
+      eventBlockEnd e = time e
 
-         -- 1, to avoid graph scale 0 and division by 0 later on
-         lastTx = maximum (1 : map eventBlockEnd eventsBy)
+      -- 1, to avoid graph scale 0 and division by 0 later on
+      lastTx = maximum (1 : map eventBlockEnd eventsBy)
 
-         groups = groupEvents eventsBy
-         maxTrees = rawEventsToHECs groups lastTx
-         maxSparkPool = maximum (0 : map fst maxTrees)
-         trees = map snd maxTrees
+      groups = groupEvents eventsBy
+      maxTrees = rawEventsToHECs groups lastTx
+      maxSparkPool = maximum (0 : map fst maxTrees)
+      trees = map snd maxTrees
 
-         -- sort the events by time and put them in an array
-         sorted    = sortGroups groups
-         n_events  = length sorted
-         event_arr = listArray (0, n_events-1) sorted
-         hec_count = length trees
+      -- sort the events by time and put them in an array
+      sorted    = sortGroups groups
+      n_events  = length sorted
+      event_arr = listArray (0, n_events-1) sorted
+      hec_count = length trees
 
-         -- Pre-calculate the data for the sparks histogram.
-         intDoub :: Integral a => a -> Double
-         intDoub = fromIntegral
-         -- Discretizes the data using log.
-         -- Log base 2 seems to result in 7--15 bars, which is OK visually.
-         -- Better would be 10--15 bars, but we want the base to be a small
-         -- integer, for readable scales, and we can't go below 2.
-         ilog :: Timestamp -> Int
-         ilog 0 = 0
-         ilog x = floor $ logBase 2 (intDoub x)
+      -- Pre-calculate the data for the sparks histogram.
+      intDoub :: Integral a => a -> Double
+      intDoub = fromIntegral
+      -- Discretizes the data using log.
+      -- Log base 2 seems to result in 7--15 bars, which is OK visually.
+      -- Better would be 10--15 bars, but we want the base to be a small
+      -- integer, for readable scales, and we can't go below 2.
+      ilog :: Timestamp -> Int
+      ilog 0 = 0
+      ilog x = floor $ logBase 2 (intDoub x)
 
-         sparkProfile :: Process
-                           ((Map ThreadId (Profile SparkThreadState), (Map  Int ThreadId, Set ThreadId)), CapEvent)
-                           (ThreadId, (SparkThreadState, Timestamp, Timestamp))
-         sparkProfile  = profileRouted
-                           (refineM (spec . ce_event) sparkThreadMachine)
-                           capabilitySparkThreadMachine
-                           capabilitySparkThreadIndexer
-                           (time . ce_event)
-                           sorted
+      sparkProfile :: Process
+                        ((Map ThreadId (Profile SparkThreadState),
+                          (Map Int ThreadId, Set ThreadId)),
+                         CapEvent)
+                        (ThreadId, (SparkThreadState, Timestamp, Timestamp))
+      sparkProfile  = profileRouted
+                        (refineM (spec . ce_event) sparkThreadMachine)
+                        capabilitySparkThreadMachine
+                        capabilitySparkThreadIndexer
+                        (time . ce_event)
+                        sorted
 
-         sparkSummary :: Map ThreadId (Int, Timestamp, Timestamp)
-                      -> [(ThreadId, (SparkThreadState, Timestamp, Timestamp))]
-                      -> [Maybe (Timestamp, Int, Timestamp)]
-         sparkSummary _ [] = []
-         sparkSummary m ((threadId, (state, timeStarted', timeElapsed')):xs) =
-           case state of
-             SparkThreadRunning sparkId' -> case M.lookup threadId m of
-               Just (sparkId, timeStarted, timeElapsed) ->
-                 if sparkId == sparkId'
-                 then sparkSummary (M.insert threadId (sparkId, timeStarted, timeElapsed + timeElapsed') m) xs
-                 else Just (timeStarted, ilog timeElapsed, timeElapsed) : newSummary sparkId' xs
-               Nothing -> newSummary sparkId' xs
-             _ -> sparkSummary m xs
-          where
-           newSummary sparkId = sparkSummary (M.insert threadId (sparkId, timeStarted', timeElapsed') m)
+      sparkSummary :: Map ThreadId (Int, Timestamp, Timestamp)
+                   -> [(ThreadId, (SparkThreadState, Timestamp, Timestamp))]
+                   -> [Maybe (Timestamp, Int, Timestamp)]
+      sparkSummary _ [] = []
+      sparkSummary m ((threadId, (state, timeStarted', timeElapsed')):xs) =
+        case state of
+          SparkThreadRunning sparkId' -> case M.lookup threadId m of
+            Just (sparkId, timeStarted, timeElapsed) ->
+              if sparkId == sparkId'
+              then let value = (sparkId, timeStarted, timeElapsed + timeElapsed')
+                   in sparkSummary (M.insert threadId value m) xs
+              else let times = (timeStarted, ilog timeElapsed, timeElapsed)
+                   in Just times : newSummary sparkId' xs
+            Nothing -> newSummary sparkId' xs
+          _ -> sparkSummary m xs
+       where
+        newSummary sparkId = let value = (sparkId, timeStarted', timeElapsed')
+                             in sparkSummary (M.insert threadId value m)
 
-         allHisto :: [(Timestamp, Int, Timestamp)]
-         allHisto = catMaybes . sparkSummary M.empty . toList $ sparkProfile
+      allHisto :: [(Timestamp, Int, Timestamp)]
+      allHisto = catMaybes . sparkSummary M.empty . toList $ sparkProfile
 
-         -- Sparks of zero lenght are already well visualized in other graphs:
-         durHistogram = filter (\ (_, logdur, _) -> logdur > 0) allHisto
-         -- Precompute some extremums of the maximal interval, needed for scales.
-         durs = [(logdur, dur) | (_start, logdur, dur) <- durHistogram]
-         (logDurs, sumDurs) = L.unzip (histogram durs)
-         minXHistogram = minimum (maxBound : logDurs)
-         maxXHistogram = maximum (minBound : logDurs)
-         maxY          = maximum (minBound : sumDurs)
-         -- round up to multiples of 10ms
-         maxYHistogram = 10000 * ceiling (fromIntegral maxY / 10000)
+      -- Sparks of zero lenght are already well visualized in other graphs:
+      durHistogram = filter (\ (_, logdur, _) -> logdur > 0) allHisto
+      -- Precompute some extremums of the maximal interval, needed for scales.
+      durs = [(logdur, dur) | (_start, logdur, dur) <- durHistogram]
+      (logDurs, sumDurs) = L.unzip (histogram durs)
+      minXHistogram = minimum (maxBound : logDurs)
+      maxXHistogram = maximum (minBound : logDurs)
+      maxY          = maximum (minBound : sumDurs)
+      -- round up to multiples of 10ms
+      maxYHistogram = 10000 * ceiling (fromIntegral maxY / 10000)
 
-         hecs = HECs {
-                  hecCount         = hec_count,
-                  hecTrees         = trees,
-                  hecEventArray    = event_arr,
-                  hecLastEventTime = lastTx,
-                  maxSparkPool     = maxSparkPool,
-                  minXHistogram    = minXHistogram,
-                  maxXHistogram    = maxXHistogram,
-                  maxYHistogram    = maxYHistogram,
-                  durHistogram     = durHistogram
-               }
+      hecs = HECs {
+               hecCount         = hec_count,
+               hecTrees         = trees,
+               hecEventArray    = event_arr,
+               hecLastEventTime = lastTx,
+               maxSparkPool     = maxSparkPool,
+               minXHistogram    = minXHistogram,
+               maxXHistogram    = maxXHistogram,
+               maxYHistogram    = maxYHistogram,
+               durHistogram     = durHistogram
+            }
 
-         treeProgress :: Int -> (DurationTree, EventTree, SparkTree) -> IO ()
-         treeProgress hec (tree1, tree2, tree3) = do
-            ProgressView.setText progress $
-                     printf "Building HEC %d/%d" (hec+1) hec_count
-            ProgressView.setProgress progress hec_count hec
-            evaluate tree1
-            evaluate (eventTreeMaxDepth tree2)
-            evaluate (sparkTreeMaxDepth tree3)
-            when (length trees == 1 || hec == 1)  -- eval only with 2nd HEC
-              (return $! DeepSeq.rnf durHistogram)
+      treeProgress :: Int -> (DurationTree, EventTree, SparkTree) -> IO ()
+      treeProgress hec (tree1, tree2, tree3) = do
+         ProgressView.setText progress $
+                  printf "Building HEC %d/%d" (hec+1) hec_count
+         ProgressView.setProgress progress hec_count hec
+         evaluate tree1
+         evaluate (eventTreeMaxDepth tree2)
+         evaluate (sparkTreeMaxDepth tree3)
+         when (length trees == 1 || hec == 1)  -- eval only with 2nd HEC
+           (return $! DeepSeq.rnf durHistogram)
 
-       zipWithM_ treeProgress [0..] trees
+    zipWithM_ treeProgress [0..] trees
 
-       --TODO: fully evaluate HECs before returning because othewise the last
-       -- bit of work gets done after the progress window has been closed.
+    --TODO: fully evaluate HECs before returning because othewise the last
+    -- bit of work gets done after the progress window has been closed.
 
-       return (hecs, name, n_events, fromIntegral lastTx / 1000000)
+    return (hecs, name, n_events, fromIntegral lastTx / 1000000)

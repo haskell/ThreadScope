@@ -29,8 +29,8 @@ renderHEC params@ViewParameters{..} start end (dtree,etree) = do
            renderEvents params ltime etime start end tree
 
 renderInstantHEC :: ViewParameters -> Timestamp -> Timestamp
-                    -> EventTree
-                    -> Render ()
+                 -> EventTree
+                 -> Render ()
 renderInstantHEC params@ViewParameters{..} start end
                  (EventTree ltime etime tree) =
   renderEvents params ltime etime start end tree
@@ -102,39 +102,39 @@ renderEvents params@ViewParameters{..} !s !e !startPos !endPos
 -- An event is in view if it is not outside the view.
 
 inView :: Timestamp -> Timestamp -> EventDuration -> Bool
-inView viewStart viewEnd event
-  = not (eStart > viewEnd || eEnd <= viewStart)
-  where
-    eStart = startTimeOf event
-    eEnd   = endTimeOf event
+inView viewStart viewEnd event =
+  not (eStart > viewEnd || eEnd <= viewStart)
+ where
+  eStart = startTimeOf event
+  eEnd   = endTimeOf event
 
 -------------------------------------------------------------------------------
 
 drawAverageDuration :: ViewParameters
                     -> Timestamp -> Timestamp -> Timestamp -> Timestamp
                     -> Render ()
-drawAverageDuration ViewParameters{..} startTime endTime runAv gcAv
-  = do setSourceRGBAhex (if not bwMode then runningColour else black) 1.0
-       when (runAv > 0) $
-         draw_rectangle startTime hecBarOff -- x, y
-                        (endTime - startTime)        -- w
-                         hecBarHeight
-       setSourceRGBAhex black 1.0
-       --move_to (oxs + startTime, 0)
-       --relMoveTo (4/scaleValue) 13
-       --unscaledText scaleValue (show nrEvents)
-       setSourceRGBAhex (if not bwMode then gcColour else black) gcRatio
-       draw_rectangle startTime      -- x
-                      (hecBarOff+hecBarHeight)      -- y
-                      (endTime - startTime)           -- w
-                      (hecBarHeight `div` 2)             -- h
+drawAverageDuration ViewParameters{..} startTime endTime runAv gcAv = do
+  setSourceRGBAhex (if not bwMode then runningColour else black) 1.0
+  when (runAv > 0) $
+    draw_rectangle startTime hecBarOff         -- x, y
+                   (endTime - startTime)       -- w
+                    hecBarHeight
+  setSourceRGBAhex black 1.0
+  --move_to (oxs + startTime, 0)
+  --relMoveTo (4/scaleValue) 13
+  --unscaledText scaleValue (show nrEvents)
+  setSourceRGBAhex (if not bwMode then gcColour else black) gcRatio
+  draw_rectangle startTime      -- x
+                 (hecBarOff+hecBarHeight)      -- y
+                 (endTime - startTime)         -- w
+                 (hecBarHeight `div` 2)        -- h
 
-    where
-    duration = endTime - startTime
+ where
+  duration = endTime - startTime
 --    runRatio :: Double
 --    runRatio = (fromIntegral runAv) / (fromIntegral duration)
-    gcRatio :: Double
-    gcRatio = (fromIntegral gcAv) / (fromIntegral duration)
+  gcRatio :: Double
+  gcRatio = (fromIntegral gcAv) / (fromIntegral duration)
 
 -------------------------------------------------------------------------------
 
@@ -158,33 +158,31 @@ textWidth _scaleValue text
 -------------------------------------------------------------------------------
 
 drawDuration :: ViewParameters -> EventDuration -> Render ()
+drawDuration ViewParameters{..} (ThreadRun t s startTime endTime) = do
+  setSourceRGBAhex (if not bwMode then runningColour else black) 1.0
+  setLineWidth (1/scaleValue)
+  draw_rectangle_opt False
+                 startTime                  -- x
+                 hecBarOff                  -- y
+                 (endTime - startTime)      -- w
+                 hecBarHeight               -- h
+  -- Optionally label the bar with the threadID if there is room
+  tExtent <- textWidth scaleValue tStr
+  let tw = textExtentsWidth  tExtent
+      th = textExtentsHeight tExtent
+  when (tw + 6 < fromIntegral rectWidth) $ do
+    setSourceRGBAhex labelTextColour 1.0
+    move_to (fromIntegral startTime + truncate (4*scaleValue),
+             hecBarOff + (hecBarHeight + round th) `quot` 2)
+    unscaledText tStr
 
-drawDuration ViewParameters{..}
-                (ThreadRun t s startTime endTime)
-  = do setSourceRGBAhex (if not bwMode then runningColour else black) 1.0
-       setLineWidth (1/scaleValue)
-       draw_rectangle_opt False
-                      startTime                  -- x
-                      hecBarOff                  -- y
-                      (endTime - startTime)      -- w
-                      hecBarHeight               -- h
-       -- Optionally label the bar with the threadID if there is room
-       tExtent <- textWidth scaleValue tStr
-       let tw = textExtentsWidth  tExtent
-           th = textExtentsHeight tExtent
-       when (tw + 6 < fromIntegral rectWidth)
-         $ do setSourceRGBAhex labelTextColour 1.0
-              move_to (fromIntegral startTime + truncate (4*scaleValue),
-                       hecBarOff + (hecBarHeight + round th) `quot` 2)
-              unscaledText tStr
-
-        -- Optionally write the reason for the thread being stopped
-        -- depending on the zoom value
-       labelAt labelsMode endTime $
-             show t ++ " " ++ showThreadStopStatus s
-    where
-    rectWidth = truncate (fromIntegral (endTime - startTime) / scaleValue) -- as pixels
-    tStr = show t
+   -- Optionally write the reason for the thread being stopped
+   -- depending on the zoom value
+  labelAt labelsMode endTime $
+    show t ++ " " ++ showThreadStopStatus s
+ where
+  rectWidth = truncate (fromIntegral (endTime - startTime) / scaleValue) -- as pixels
+  tStr = show t
 
 drawDuration ViewParameters{..} (GCStart startTime endTime)
   = gcBar (if bwMode then black else gcStartColour) startTime endTime
@@ -199,13 +197,13 @@ drawDuration ViewParameters{..} (GCEnd startTime endTime)
   = gcBar (if bwMode then black else gcEndColour) startTime endTime
 
 gcBar :: Color -> Timestamp -> Timestamp -> Render ()
-gcBar col !startTime !endTime
-  = do setSourceRGBAhex col 1.0
-       draw_rectangle_opt False
-                      startTime                      -- x
-                      (hecBarOff+hecBarHeight)       -- y
-                      (endTime - startTime)          -- w
-                      (hecBarHeight `div` 2)         -- h
+gcBar col !startTime !endTime = do
+  setSourceRGBAhex col 1.0
+  draw_rectangle_opt False
+                     startTime                      -- x
+                     (hecBarOff+hecBarHeight)       -- y
+                     (endTime - startTime)          -- w
+                     (hecBarHeight `div` 2)         -- h
 
 labelAt :: Bool -> Timestamp -> String -> Render ()
 labelAt labelsMode t str
@@ -248,11 +246,11 @@ drawEvent params@ViewParameters{..} event
 
 renderInstantEvent :: ViewParameters -> GHC.Event -> Color -> Render ()
 renderInstantEvent ViewParameters{..} event color = do
-     setSourceRGBAhex color 1.0
-     setLineWidth (3 * scaleValue)
-     let t = time event
-     draw_line (t, hecBarOff-4) (t, hecBarOff+hecBarHeight+4)
-     labelAt labelsMode t $ showEventInfo (spec event)
+  setSourceRGBAhex color 1.0
+  setLineWidth (3 * scaleValue)
+  let t = time event
+  draw_line (t, hecBarOff-4) (t, hecBarOff+hecBarHeight+4)
+  labelAt labelsMode t $ showEventInfo (spec event)
 
 
 _drawTooManyEvents :: ViewParameters -> Timestamp -> Timestamp

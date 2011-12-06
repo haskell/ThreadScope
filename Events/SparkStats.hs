@@ -1,8 +1,6 @@
-module Events.SparkStats (
-  SparkStats(rateCreated, rateDud, rateOverflowed,
-             rateConverted, rateFizzled, rateGCd,
-             meanPool, maxPool, minPool),
-  initial, create, rescale, aggregate, agEx,
+module Events.SparkStats
+  ( SparkStats(..)
+  , initial, create, rescale, aggregate, agEx
   ) where
 
 import Data.Word (Word64)
@@ -37,9 +35,9 @@ initial = SparkStats 0 0 0 0 0 0 0 0 0
 -- but to have the same tree for rates and pool sizes, we then have
 -- to shift the durations by half interval size to the right
 -- (which would be neglectable if the interval was small and even).
-create :: (Word64, Word64, Word64, Word64, Word64, Word64, Word64) ->
-          (Word64, Word64, Word64, Word64, Word64, Word64, Word64) ->
-          SparkStats
+create :: (Word64, Word64, Word64, Word64, Word64, Word64, Word64)
+       -> (Word64, Word64, Word64, Word64, Word64, Word64, Word64)
+       -> SparkStats
 create (crt1, dud1, ovf1, cnv1, fiz1, gcd1, remaining1)
        (crt2, dud2, ovf2, cnv2, fiz2, gcd2, _remaining2) =
   let (crt, dud, ovf, cnv, fiz, gcd) =
@@ -54,8 +52,8 @@ create (crt1, dud1, ovf1, cnv1, fiz1, gcd1, remaining1)
 
 -- | Reduce a list of spark stats; spark pool stats are overwritten.
 foldStats :: (Double -> Double -> Double)
-             -> Double -> Double -> Double
-             -> [SparkStats] -> SparkStats
+          -> Double -> Double -> Double
+          -> [SparkStats] -> SparkStats
 foldStats f meanP maxP minP l
   = SparkStats
       (foldr f 0 (map rateCreated l))

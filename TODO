@@ -49,12 +49,8 @@ BUGS:
 - ticking the trace boxes off sometimes shows a black rectangle in place
   of the switched off graph
 
-- the Activity graph continues past the end of event samples to the right
-(visible in high zoom out); the horizontal and vertical rulers do too
-(but they don't look so bad)
-
-- for small screens with many HECs, make it possible to zoom view vertically
-(perhaps via M-mouse wheel?)
+- for small screens with many HECs, make it possible to zoom the canvas
+vertically (perhaps via M-mouse wheel?)
 
 
 OTHER:
@@ -104,21 +100,14 @@ and uniformity, except trivial cases)
 - remove the grey halo in trivial cases of pool size,
 like the line:  ___/----, but keep min/max for ___/\___
 
-- in the key, label the coloured areas, according to what they represent,
-the key will have things for each colour; separate sections of the Key for
-the activity vs sparks vs next-thing; make sure the user understands
-that the _areas_ are proportional to the total number and curve points to rates;
-make sure our labels are sensible, and that the key actually matches the graphs
+- make sure the user understands that the _areas_ are proportional
+to the total number and curve points to rates and that the green area
+in spark creation and the total area in spark conversion are equal;
+perhaps tell so in the help tab or makr it in the timeline text summary tab
 
 - the same aggregate style for the activity graph, to see min/max
 (the green area does convey the total runtime, so perhaps mark min
-just as a line, no grey shadow)
-
-- (do it or scratch it): as a default setup
-(in the future the user will be able to reorder the traces), put all
-the HEC0 bits together, both in the trace and in the timeline view
-ie in the timeline, top -> bottom: activity HEC0, sparks HEC0,
-activity HEC1, sparks HEC1, ...
+just as a line, no grey shadow); or just redo it completely as the pool graphs
 
 - test, in particular the quality of sampling, on the parfib suite;
 ideally generate sampled events from accurate events and compare visually
@@ -144,8 +133,6 @@ at the ends, but somehow this does not show (perhaps one is not enough)
 - perhaps enlarge the main timeline canvas to the right to the nearest tick
 
 - perhaps draw the labels vertically and reduce the size of the Y axis area
-
-- change histogram caption when the data is taken from the selected interval
 
 - and add a way to add a bookmark for a user-specified event, or a kind of events
 
@@ -174,8 +161,6 @@ IDEAS FOR FUTURE WORK:
   - measure the time between two markers
 
 - search for events in the event window
-
-- render averaged areas properly
 
 - indicate when one thread wakes up another thread, or a thread is migrated;
 perhaps draw lines/arrows between the events?
@@ -312,7 +297,9 @@ to say all
 after the event for this introduced
 
 - verify correctness of the input eventlog before visualizing; define a method
-of passing the error report from ghc-events to TS and displaying it
+of passing the error report from ghc-events to TS and displaying it; have
+a grace period when that can be disabled via an option, until RTS and validation
+stabilize
 
 - perhaps the far left and far right bars on the histogram should be in red,
 since extreme spark sizes are usually bad (or mark it in some other way)

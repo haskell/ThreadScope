@@ -1,4 +1,4 @@
-pristine:0000001557-549538256f8bf7c662e4d4196c9ecdd7c217ad6a175390d9712d47daa011098f
+pristine:0000001557-9c89b47c524439734483605d2728f985a83917920a52f53f6898f8dbeee058f8
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1943,3 +1943,18 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111203223429
  Ignore-this: aa14adfed11f009edd8cf023185c1345
 ] 
 hash: 0000002915-b4e1c5af039bb3d70077acb1161ac0fde94555ef9d3a15f4b39de5fec3f211bc
+[Update TODO for the new release
+Mikolaj Konarski <mikolaj@well-typed.com>**20111205122250
+ Ignore-this: b6bf07c8e94ce56090c8feaee61e3feb
+] 
+hash: 0000001959-17c38c5eb3d2960f77ff1456fd65db8a286f606222e0b569191251f9de9ac12a
+[Change histogram caption when the data is taken from the selected interval
+Mikolaj Konarski <mikolaj@well-typed.com>**20111205125440
+ Ignore-this: 1203f29225596423a2c34bcd875c5fe4
+] 
+hash: 0000004196-fc94dcaff63e4038feb12806d1ef5c118ceaa94f5cb6dce2dbf076a58bfff8b3
+[Standarize layout in the recently modified code
+Mikolaj Konarski <mikolaj@well-typed.com>**20111205160627
+ Ignore-this: bebc258d730a4e364e09c3fc7bb1d6c6
+] 
+hash: 0000040350-dbb69a778bba874d25248c95168d10667e99aa48b0912858c8d62d8c266e6ff1

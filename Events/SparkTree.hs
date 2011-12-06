@@ -95,8 +95,8 @@ emptySparkTree = SparkTree 0 0 SparkTreeEmpty
 -- there is no data about sparks for the last time interval
 -- (the subtree for the interval will have SparkTreeEmpty node).
 mkSparkTree :: [SparkDuration]  -- ^ spark durations calculated from events
-               -> Timestamp     -- ^ end time of last event in the list
-               -> SparkTree
+            -> Timestamp        -- ^ end time of last event in the list
+            -> SparkTree
 mkSparkTree es endTime =
   SparkTree s e $
   -- trace (show tree) $
@@ -172,7 +172,7 @@ splitSparkList (e:es) acc !tsplit !tmax
 -- at the level of the spark tree covering intervals of the size
 -- similar to the timeslice size.
 sparkProfile :: Timestamp -> Timestamp -> Timestamp -> SparkTree
-                -> [SparkStats.SparkStats]
+             -> [SparkStats.SparkStats]
 sparkProfile slice start0 end0 t
   = {- trace (show flat) $ -} chopped
 

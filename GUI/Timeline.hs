@@ -179,7 +179,7 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
         labelsMode <- readIORef labelsModeIORef
         let maxP = maxSparkPool hecs
             maxH = fromIntegral (maxYHistogram hecs)
-        updateYScaleArea timelineState maxP maxH labelsMode traces
+        updateYScaleArea timelineState maxP maxH Nothing labelsMode traces
         return True
 
   ------------------------------------------------------------------------
