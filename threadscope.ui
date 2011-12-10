@@ -925,9 +925,30 @@
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">&lt;b&gt;Region summary&lt;/b&gt;</property>
                         <property name="use_markup">True</property>
-                     </object>
+                      </object>
                       <packing>
                         <property name="position">2</property>
+                        <property name="tab_fill">False</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkDrawingArea" id="eventsDrawingArea2">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                      </object>
+                      <packing>
+                        <property name="position">3</property>
+                      </packing>
+                    </child>
+                    <child type="tab">
+                      <object class="GtkLabel" id="label8">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">&lt;b&gt;Program run information&lt;/b&gt;</property>
+                        <property name="use_markup">True</property>
+                      </object>
+                      <packing>
+                        <property name="position">3</property>
                         <property name="tab_fill">False</property>
                       </packing>
                     </child>
