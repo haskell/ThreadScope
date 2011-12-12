@@ -53,7 +53,6 @@ data MainWindowActions = MainWindowActions {
        mainWinAbout         :: IO (),
 
        -- Toolbar actions
-       --TODO: all toolbar actions should also be available from the menu
        mainWinJumpStart     :: IO (),
        mainWinJumpEnd       :: IO (),
        mainWinJumpCursor    :: IO (),
