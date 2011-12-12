@@ -105,6 +105,8 @@ mainWindowNew builder actions = do
   eventsBox          <- getWidget castToWidget "eventsbox"
 
   bwToggle           <- getWidget castToCheckMenuItem "black_and_white"
+-- TODO: tie in the button and the menu toggle and then re-enable:
+--  labModeToggle      <- getWidget castToCheckMenuItem "view_labels_mode"
   sidebarToggle      <- getWidget castToCheckMenuItem "view_sidebar"
   eventsToggle       <- getWidget castToCheckMenuItem "view_events"
   openMenuItem       <- getWidget castToMenuItem "openMenuItem"
@@ -113,17 +115,27 @@ mainWindowNew builder actions = do
   quitMenuItem       <- getWidget castToMenuItem "quitMenuItem"
   aboutMenuItem      <- getWidget castToMenuItem "aboutMenuItem"
 
+  firstMenuItem      <- getWidget castToMenuItem "move_first"
+  centreMenuItem     <- getWidget castToMenuItem "move_centre"
+  lastMenuItem       <- getWidget castToMenuItem "move_last"
+
+  zoomInMenuItem     <- getWidget castToMenuItem "move_zoomin"
+  zoomOutMenuItem    <- getWidget castToMenuItem "move_zoomout"
+  zoomFitMenuItem    <- getWidget castToMenuItem "move_zoomfit"
+
   timelineViewport   <- getWidget castToWidget "timeline_viewport"
+
+  openButton         <- getWidget castToToolButton "cpus_open"
+
+  firstButton        <- getWidget castToToolButton "cpus_first"
+  centreButton       <- getWidget castToToolButton "cpus_centre"
+  lastButton         <- getWidget castToToolButton "cpus_last"
 
   zoomInButton       <- getWidget castToToolButton "cpus_zoomin"
   zoomOutButton      <- getWidget castToToolButton "cpus_zoomout"
   zoomFitButton      <- getWidget castToToolButton "cpus_zoomfit"
 
   labelsModeToggle   <- getWidget castToToggleToolButton "cpus_labels_mode"
-  zerothButton       <- getWidget castToToolButton "cpus_zeroth"
-  firstButton        <- getWidget castToToolButton "cpus_first"
-  lastButton         <- getWidget castToToolButton "cpus_last"
-  centreButton       <- getWidget castToToolButton "cpus_centre"
 
   --TODO: this is currently not used, but it'be nice if it were!
   eventsTextEntry    <- getWidget castToEntry      "events_entry"
@@ -156,20 +168,32 @@ mainWindowNew builder actions = do
   on mainWindow   objectDestroy    $ mainWinQuit actions
 
   on sidebarToggle  checkMenuItemToggled $ checkMenuItemGetActive sidebarToggle
-                                       >>= mainWinViewSidebar actions
+                                       >>= mainWinViewSidebar   actions
   on eventsToggle   checkMenuItemToggled $ checkMenuItemGetActive eventsToggle
-                                       >>= mainWinViewEvents  actions
+                                       >>= mainWinViewEvents    actions
   on bwToggle       checkMenuItemToggled $ checkMenuItemGetActive bwToggle
-                                       >>= mainWinViewBW      actions
+                                       >>= mainWinViewBW        actions
+-- TODO: tie in the button and the menu toggle and then re-enable:
+--  on labModeToggle  checkMenuItemToggled $ checkMenuItemGetActive labModeToggle
+--                                       >>= mainWinDisplayLabels actions
   on reloadMenuItem menuItemActivate     $ mainWinViewReload actions
 
   on aboutMenuItem  menuItemActivate     $ mainWinAbout actions
 
+  on firstMenuItem   menuItemActivate     $ mainWinJumpStart  actions
+  on centreMenuItem  menuItemActivate     $ mainWinJumpCursor actions
+  on lastMenuItem    menuItemActivate     $ mainWinJumpEnd    actions
+
+  on zoomInMenuItem  menuItemActivate     $ mainWinJumpZoomIn  actions
+  on zoomOutMenuItem menuItemActivate     $ mainWinJumpZoomOut actions
+  on zoomFitMenuItem menuItemActivate     $ mainWinJumpZoomFit actions
+
   -- Toolbar
-  onToolButtonClicked zerothButton $ mainWinOpen       actions
+  onToolButtonClicked openButton $ mainWinOpen       actions
+
   onToolButtonClicked firstButton  $ mainWinJumpStart  actions
-  onToolButtonClicked lastButton   $ mainWinJumpEnd    actions
   onToolButtonClicked centreButton $ mainWinJumpCursor actions
+  onToolButtonClicked lastButton   $ mainWinJumpEnd    actions
 
   onToolButtonClicked zoomInButton  $ mainWinJumpZoomIn  actions
   onToolButtonClicked zoomOutButton $ mainWinJumpZoomOut actions
