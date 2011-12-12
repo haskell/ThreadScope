@@ -9,9 +9,9 @@ module GUI.ProgressView (
     startPulse,
   ) where
 
-import Graphics.UI.Gtk as Gtk hiding (eventKeyName)
-import Graphics.UI.Gtk.Gdk.Events
+import Graphics.UI.Gtk as Gtk
 import GUI.GtkExtras
+import Graphics.Rendering.Cairo
 
 import qualified Control.Concurrent as Concurrent
 import Control.Exception
@@ -100,10 +100,11 @@ new parent cancelAction = do
   cancel <- buttonNewFromStock stockCancel
   onClicked cancel (widgetDestroy win >> cancelAction)
   onDelete win (\_ -> cancelAction >> return True)
-  onKeyPress win $ \key ->
-    if eventKeyName key == "Escape"
-      then cancelAction >> return True
-      else return False
+  on win keyPressEvent $ do
+    keyVal <- eventKeyVal
+    case keyVal of
+      0xff1b -> liftIO $ cancelAction >> return True
+      _      -> return False
 
   vbox <- vBoxNew False 20
   hbox <- hBoxNew False 0

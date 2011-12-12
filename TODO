@@ -113,8 +113,6 @@ just as a line, no grey shadow); or just redo it completely as the pool graphs
 ideally generate sampled events from accurate events and compare visually
 and/or numerically
 
-- rewrite gth2hs code not to use deprecated functions (e.g. onButtonPress)
-
 - either change scale together with zoom level (and keep a colored box
 showing how much pictures space corresponds to how many sparks (should be
 probably constant)) or (this one implemented currently:)
