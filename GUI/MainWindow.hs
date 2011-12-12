@@ -14,7 +14,6 @@ import Paths_threadscope
 
 -- Imports for GTK
 import Graphics.UI.Gtk as Gtk
-import qualified Graphics.UI.Gtk.Gdk.Events as Old hiding (eventModifier)
 import qualified System.Glib.GObject as Glib
 
 
@@ -123,8 +122,6 @@ mainWindowNew builder actions = do
   zoomOutMenuItem    <- getWidget castToMenuItem "move_zoomout"
   zoomFitMenuItem    <- getWidget castToMenuItem "move_zoomfit"
 
-  timelineViewport   <- getWidget castToWidget "timeline_viewport"
-
   openButton         <- getWidget castToToolButton "cpus_open"
 
   firstButton        <- getWidget castToToolButton "cpus_first"
@@ -201,16 +198,5 @@ mainWindowNew builder actions = do
 
   onToolButtonToggled labelsModeToggle $
     toggleToolButtonGetActive labelsModeToggle >>= mainWinDisplayLabels actions
-
-  -- Key bindings
-  --TODO: move these to the timeline module
-  onKeyPress timelineViewport $
-   \ Old.Key { Old.eventKeyName = key, Old.eventKeyChar = mch } ->
-    case (key, mch) of
-      ("Right", _)   -> mainWinScrollRight actions >> return True
-      ("Left",  _)   -> mainWinScrollLeft  actions >> return True
-      (_ , Just '+') -> mainWinJumpZoomIn  actions >> return True
-      (_ , Just '-') -> mainWinJumpZoomOut actions >> return True
-      _              -> return False
 
   return MainWindow {..}

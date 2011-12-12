@@ -35,6 +35,7 @@ import Events.HECs
 
 import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo
+import qualified Graphics.UI.Gtk.Gdk.Events as Old hiding (eventModifier)
 
 import Data.IORef
 import Control.Monad
@@ -251,8 +252,17 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
       0xff1b -> do withMouseState (mouseMoveCancel timelineWin actions)
                    return True
       _      -> do return False
-  --TODO: the move left/right from MainWin get run first
+  --TODO: the move left/right below get run first
   -- we want to supress left/right during selection or grab/drag.
+
+  onKeyPress timelineViewport $
+   \ Old.Key { Old.eventKeyName = key, Old.eventKeyChar = mch } ->
+    case (key, mch) of
+      ("Right", _)   -> scrollRight timelineState >> return True
+      ("Left",  _)   -> scrollLeft  timelineState >> return True
+      (_ , Just '+') -> timelineZoomIn  timelineWin >> return True
+      (_ , Just '-') -> timelineZoomOut timelineWin >> return True
+      _              -> return False
 
   ------------------------------------------------------------------------
   -- Scroll bars
