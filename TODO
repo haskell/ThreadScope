@@ -366,8 +366,6 @@ some random user feedback on the "lots of events" use case of traceEvents:
 
 - make TS useful for the cloud haskell use cases
 
-- info panel with start time, RTS name, program name + args + env
-
 - info panel with the info that ghc +RTS -s shows, but for the selected interval;
 how many sparks of each kind in that time, etc.
 

@@ -63,6 +63,7 @@ Executable threadscope
                      GUI.TraceView,
                      GUI.BookmarkView,
                      GUI.KeyView,
+                     GUI.SummaryView,
                      GUI.Types,
                      GUI.ConcurrencyControl,
                      GUI.ProgressView,
