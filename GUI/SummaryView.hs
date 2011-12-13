@@ -6,7 +6,10 @@ module GUI.SummaryView (
 
 import GHC.RTS.Events
 
+import GUI.Timeline.Render.Constants
+
 import Graphics.UI.Gtk
+import Graphics.Rendering.Cairo
 
 import Control.Monad.Reader
 import Data.Array
@@ -16,7 +19,7 @@ import qualified Data.List as L
 -------------------------------------------------------------------------------
 
 data RunView = RunView
-     { drawArea :: !Widget
+     { gtkLayout :: !Layout
      , stateRef :: !(IORef RunState)
      }
 
@@ -33,12 +36,12 @@ runViewNew builder = do
 
   stateRef <- newIORef undefined
   let getWidget cast = builderGetObject builder cast
-  drawArea  <- getWidget castToWidget "eventsDrawingArea2"
+  gtkLayout  <- getWidget castToLayout "eventsLayoutRun"
   writeIORef stateRef RunEmpty
   let runView = RunView{..}
 
   -- Drawing
-  on drawArea exposeEvent $ liftIO $ do
+  on gtkLayout exposeEvent $ liftIO $ do
     drawRun runView =<< readIORef stateRef
     return True
 
@@ -47,28 +50,37 @@ runViewNew builder = do
 -------------------------------------------------------------------------------
 
 runViewSetEvents :: RunView -> Maybe (Array Int CapEvent) -> IO ()
-runViewSetEvents RunView{drawArea, stateRef} mevents = do
+runViewSetEvents RunView{gtkLayout, stateRef} mevents = do
   let runState = case mevents of
         Nothing     -> RunEmpty
         Just events -> RunLoaded (showRun events)
+      showEnv env = (5, "Program environment:") : zip [6..] (map ("   " ++) env)
+
       showEvent (CapEvent _cap (Event _time spec)) acc =
         case spec of
-          RtsIdentifier{} -> (2, showEventInfo spec) : acc
-          ProgramArgs{}   -> (3, showEventInfo spec) : acc
-          ProgramEnv{}    -> (4, showEventInfo spec) : acc
-          _               -> acc
-      showRun = unlines . map snd . L.sort . foldr showEvent [(1, "Start time: how to get it?")] . elems
+          RtsIdentifier _ i  ->
+            (2, "Haskell RTS name:  " ++ "\"" ++ i ++ "\"") : acc
+          ProgramArgs _ args ->
+            (3, "Program name:  " ++ "\"" ++ head args ++ "\"") :
+            (4, "Program arguments:  " ++ show (tail args)) :
+            acc
+          ProgramEnv _ env   -> acc ++ showEnv env
+          _                  -> acc
+      start = [(1, "Program start time:  how to get it?")]
+      showRun = unlines . map snd . L.sort . foldr showEvent start . elems
   writeIORef stateRef runState
-  widgetQueueDraw drawArea
+  widgetQueueDraw gtkLayout
 
 -------------------------------------------------------------------------------
 
 drawRun :: RunView -> RunState -> IO ()
 drawRun _ RunEmpty = return ()
-drawRun RunView{drawArea} RunLoaded{..} = do
-  win <- widgetGetDrawWindow drawArea
-  (width, _) <- widgetGetSize drawArea
-  pangoCtx <- widgetGetPangoContext drawArea
+drawRun RunView{gtkLayout} RunLoaded{..} = do
+  win <- layoutGetDrawWindow gtkLayout
+  pangoCtx <- widgetGetPangoContext gtkLayout
   layout <- layoutText pangoCtx runState
-  layoutSetWidth layout (Just $ fromIntegral width)
-  renderWithDrawable win $ showLayout layout
+  (_, Rectangle _ _ width height) <- layoutGetPixelExtents layout
+  layoutSetSize gtkLayout (width + 30) (height + 30)
+  renderWithDrawable win $ do
+    moveTo (fromIntegral ox / 2) (fromIntegral ox / 3)
+    showLayout layout

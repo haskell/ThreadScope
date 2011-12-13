@@ -879,40 +879,16 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkHBox" id="eventsHBox1">
-                        <property name="height_request">120</property>
+                      <object class="GtkScrolledWindow" id="scrolledwindowSummary">
                         <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="spacing">3</property>
-                        <child>
-                          <object class="GtkViewport" id="viewport1">
+                        <property name="can_focus">True</property>
+                        <property name="hscrollbar_policy">automatic</property>
+                        <property name="vscrollbar_policy">automatic</property>
+                       <child>
+                          <object class="GtkLayout" id="eventsLayoutSummary">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="resize_mode">queue</property>
-                            <child>
-                              <object class="GtkDrawingArea" id="eventsDrawingArea1">
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                              </object>
-                            </child>
                           </object>
-                          <packing>
-                            <property name="expand">True</property>
-                            <property name="fill">True</property>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkVScrollbar" id="eventsVScroll1">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="adjustment">adjustment1</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">1</property>
-                          </packing>
                         </child>
                       </object>
                       <packing>
@@ -932,9 +908,17 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkDrawingArea" id="eventsDrawingArea2">
+                      <object class="GtkScrolledWindow" id="scrolledwindowRun">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
+                        <property name="hscrollbar_policy">automatic</property>
+                        <property name="vscrollbar_policy">automatic</property>
+                       <child>
+                          <object class="GtkLayout" id="eventsLayoutRun">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                          </object>
+                        </child>
                       </object>
                       <packing>
                         <property name="position">3</property>
