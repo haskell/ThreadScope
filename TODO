@@ -113,8 +113,6 @@ just as a line, no grey shadow); or just redo it completely as the pool graphs
 ideally generate sampled events from accurate events and compare visually
 and/or numerically
 
-- rewrite gth2hs code not to use deprecated functions (e.g. onButtonPress)
-
 - either change scale together with zoom level (and keep a colored box
 showing how much pictures space corresponds to how many sparks (should be
 probably constant)) or (this one implemented currently:)
@@ -133,23 +131,6 @@ at the ends, but somehow this does not show (perhaps one is not enough)
 - perhaps enlarge the main timeline canvas to the right to the nearest tick
 
 - perhaps draw the labels vertically and reduce the size of the Y axis area
-
-- and add a way to add a bookmark for a user-specified event, or a kind of events
-
-- medium-term: let the user configure which instant events shown in the trace
-
-- medium-term: user-defined visualisation frequency for the new trace (at least)
-and any other tricks needed to visualize instant events well (show density
-even if many events at almost the same spot and so the shades of green cue
-is not possible) and fast (in particular, don't draw many lines at the same spot)
-some random user feedback on the "lots of events" use case of traceEvents:
-1. I don't need/use bookmarking (I can use the visual clues to jump), or even grep the event log
-2. I find the visualization helpful, but disturbing, because it hides other information
-3. it would be great to be able to visually distinguish different "messages"
-4. it would be nice if drawing wouldn't slow down significantly even for a relatively small number of events (i.e., 100 is noticeable slowdown already)
-
-
-IDEAS FOR FUTURE WORK:
 
 - click and drag the view (or the selected interval,
   perhaps shift-click or control-click when starting to drag))
@@ -333,10 +314,7 @@ then move the selection, etc.
 - perhaps we need a floating "resize me" button to pop up on the graph whenever your current view ought to be resized , e.g. clipping at the top, or tallest bar taking up less than half the vertical space, or put that in red letters into the popups that we'll have at some point, or mark the upper or lower edge of the graph red (depending if it's clipped or too small) and blink the y-zoom reset button (to the right of the x-zoom reset button) in red, too
 
 - select a region and display it in a separate tab
-(e.g. next to the events tab) and/or show in the tab for that selected time
-period how many sparks of each kind in that time: summary statistics
-for points in time, or periods of time; make the height of the graph
-in the tab configurable/resizable with mouse, or just take the whole screen
+(e.g. next to the events tab)
 
 - scroll around the graph image via a small zoomed out window
 "The Information Mural: A Technique for Displaying
@@ -363,3 +341,34 @@ does not have the time X axis, and generally does not fit and is confusing)
 - perhaps, on the X scale of timeline, show only offsets, to save space:
 that is, only give the full time for the left point of the view and all other
 times relative to that, e.g., 2.356 s, +1ms, +2ms, etc.
+
+- and add a way to add a bookmark for a user-specified event, or a kind of events
+
+- medium-term: let the user configure which instant events shown in the trace
+
+- medium-term: user-defined visualisation frequency for the new trace (at least)
+and any other tricks needed to visualize instant events well (show density
+even if many events at almost the same spot and so the shades of green cue
+is not possible) and fast (in particular, don't draw many lines at the same spot)
+some random user feedback on the "lots of events" use case of traceEvents:
+1. I don't need/use bookmarking (I can use the visual clues to jump), or even grep the event log
+2. I find the visualization helpful, but disturbing, because it hides other information
+3. it would be great to be able to visually distinguish different "messages"
+4. it would be nice if drawing wouldn't slow down significantly even for a relatively small number of events (i.e., 100 is noticeable slowdown already)
+
+- perhaps re-add and make optional the feature of bookmarks from trace events for the use case where one actually wants the bookmarks for jumping, etc.
+
+- make TS useful for par-monad: generate and visualize user code / libs events, make the same kind of granularity histogram as for sparks, etc.
+
+- make TS useful for concurrent code: forkIO concurrency events, properly implement the event merging for the cluster use case
+
+- make TS useful for sequential code, in addition to showing the GC pattern
+
+- make TS useful for the cloud haskell use cases
+
+- info panel with the info that ghc +RTS -s shows, but for the selected interval;
+how many sparks of each kind in that time, etc.
+
+- perhaps add events for memory allocation and memory reclaimed through GC to make per-interval +RTS -s possible, at least mark them as feature requests for ghc-events on Trac
+
+- another possibility to visualize sparks when there are not many of them would be to show an activity graph purely for spark evaluation, ie only counting those threads that are doing spark evaluation

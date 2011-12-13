@@ -246,13 +246,20 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
 
   -- Escape key to cancel selection or drag
   on timelineViewport keyPressEvent $ do
-    key <- eventKeyVal
-    case key of
-      0xff1b -> do withMouseState (mouseMoveCancel timelineWin actions)
-                   return True
-      _      -> do return False
-  --TODO: the move left/right from MainWin get run first
-  -- we want to supress left/right during selection or grab/drag.
+    let liftNoMouse a =
+          let whenNoMouse None = a >> return None
+              whenNoMouse st   = return st
+          in withMouseState whenNoMouse >> return True
+    keyName <- eventKeyName
+    keyVal <- eventKeyVal
+    case (keyName, keyToChar keyVal, keyVal) of
+      ("Right", _, _)   -> liftNoMouse $ scrollRight timelineState
+      ("Left",  _, _)   -> liftNoMouse $ scrollLeft  timelineState
+      (_ , Just '+', _) -> liftNoMouse $ timelineZoomIn  timelineWin
+      (_ , Just '-', _) -> liftNoMouse $ timelineZoomOut timelineWin
+      (_, _, 0xff1b)    -> withMouseState (mouseMoveCancel timelineWin actions)
+                           >> return True
+      _                 -> return False
 
   ------------------------------------------------------------------------
   -- Scroll bars

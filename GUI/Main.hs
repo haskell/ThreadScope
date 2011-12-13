@@ -27,6 +27,7 @@ import Events.HECs hiding (Event)
 import GUI.Dialogs
 import Events.ReadEvents
 import GUI.EventsView
+import GUI.SummaryView
 import GUI.Histogram
 import GUI.Timeline
 import GUI.TraceView
@@ -42,6 +43,7 @@ data UIEnv = UIEnv {
 
        mainWin       :: MainWindow.MainWindow,
        eventsView    :: EventsView,
+       runView       :: RunView,
        histogramView :: HistogramView,
        timelineWin   :: TimelineView,
        traceView     :: TraceView,
@@ -144,6 +146,8 @@ constructUI = failOnGError $ do
     eventsViewCursorChanged = post . EventCursorChangedIndex
   }
 
+  runView <- runViewNew builder
+
   histogramView <- histogramViewNew builder
 
   traceView <- traceViewNew builder TraceViewActions {
@@ -222,6 +226,7 @@ eventLoop uienv@UIEnv{..} eventlogState = do
         printf "%s (%d events, %.3fs)" name nevents timespan
 
       eventsViewSetEvents eventsView (Just (hecEventArray hecs))
+      runViewSetEvents runView (Just (hecEventArray hecs))
       histogramViewSetHECs histogramView (Just hecs)
       traceViewSetHECs traceView hecs
       traces' <- traceViewGetTraces traceView

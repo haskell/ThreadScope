@@ -2,27 +2,38 @@
 New patches:
 
 [unrevert
-anon**20111206182516
- Ignore-this: fa9f4dddca87ae41b7189bc9dcf26999
+anon**20111210213231
+ Ignore-this: 121d55fa3ffc0355b96205f7949b2eee
 ] {
-hunk ./index.html 1
--﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
- <html xmlns="http://www.w3.org/1999/xhtml">
- 
- <head>
-hunk ./index.html 7
- <meta http-equiv="Content-Language" content="en-gb" />
- <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
--<title>ThreadScope: A Graphical Profiler for Parallel and Concurrent Haskell 
-+<title>ThreadScope: A Graphical Profiler for Parallel and Concurrent Haskell
- Programs</title>
- <style type="text/css">
- h1 {
+hunk ./threadscope.ui 686
+-                      <object class="GtkLabel" id="label4">
++                      <object class="GtkLabel" id="label6">
+hunk ./threadscope.ui 689
+-                        <property name="label" translatable="yes">&lt;b&gt;Events&lt;/b&gt;</property>
++                        <property name="label" translatable="yes">&lt;b&gt;Spark sizes&lt;/b&gt;</property>
+hunk ./threadscope.ui 701
+-                        <property name="n_rows">1</property>
+hunk ./threadscope.ui 726
++                        <child>
++                          <placeholder/>
++                        </child>
++                        <child>
++                          <placeholder/>
++                        </child>
+hunk ./threadscope.ui 738
+-                      <object class="GtkLabel" id="label6">
++                      <object class="GtkLabel" id="label4">
+hunk ./threadscope.ui 741
+-                        <property name="label" translatable="yes">&lt;b&gt;Spark sizes&lt;/b&gt;</property>
++                        <property name="label" translatable="yes">&lt;b&gt;Events&lt;/b&gt;</property>
 }
 
 Context:
 
+[Update and restructure TODO
+Mikolaj Konarski <mikolaj@well-typed.com>**20111210163251
+ Ignore-this: a40f99b75d7d6ce2669b243dbb7c62c
+] 
 [Link to TS guided tour in 2 places
 Mikolaj Konarski <mikolaj@well-typed.com>**20111206182311
  Ignore-this: b4042917c6f4a6fde6c38fcd470135ee
@@ -1622,4 +1633,4 @@ Simon Marlow <marlowsd@gmail.com>**20100526204935
  Ignore-this: d04bf0d3d66fd70d72554f2963aba692
 ] 
 Patch bundle hash:
-5964121afcd5800852fc7ff48db8eb2cc0a1ad60
+0292d6e0e3d2e2162243af5e2d54ce4f12f67b84

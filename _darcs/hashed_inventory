@@ -1,4 +1,4 @@
-pristine:0000001241-7e03efb2aafbb97c3dfcb622c853b794e9a4e0acb80bc604822af3ec6f56d7d8
+pristine:0000001241-80b83491a021e41c332b6d69fc6084a6a596f7c541c24e1a5894b0a32e4afecc
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -1968,3 +1968,55 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111206182311
  Ignore-this: b4042917c6f4a6fde6c38fcd470135ee
 ] 
 hash: 0000000753-219a81de08f7896a228459c64943d5ad3ec3a5502c0821dab4055f12af2b90fc
+[Update and restructure TODO
+Mikolaj Konarski <mikolaj@well-typed.com>**20111210163251
+ Ignore-this: a40f99b75d7d6ce2669b243dbb7c62c
+] 
+hash: 0000003646-0768ba20469daa8744710f825f7199e5cdfd900792208887a1809255ff25ae26
+[Add the Region summary tab (empty for now)
+Mikolaj Konarski <mikolaj@well-typed.com>**20111210213730
+ Ignore-this: 2ed8c2a0b5f7f4a5dd6205018e3cf991
+] 
+hash: 0000003122-10082e6bb067fa43e1d7826931393fda007162574e3f3de05957186c7eb75bcf
+[Add the Program run information tab (empty for now)
+Mikolaj Konarski <mikolaj@well-typed.com>**20111210213732
+ Ignore-this: ba0f827c2eeb3274ac15c964d88507b5
+ 
+ Eventually should land in a separate window or pane (e.g., rename the bottom pane to "Local information" and create a top pane, hidden by default, called "Global information").
+] 
+hash: 0000001584-aa00b4d2a90034600403c912db4807974d23f4ce391e4ecd1ebbe56657f9a55c
+[XML part of "TODO: all toolbar actions should also be available from the menu"
+Mikolaj Konarski <mikolaj@well-typed.com>**20111212160841
+ Ignore-this: 7fedc70b422520a56bc6b131696b4c4f
+] 
+hash: 0000008594-d531c37d79bb116c4e2ab0571bc372f7e2a047c01568a691686785045579205e
+[Haskell part of "TODO: all toolbar actions should also be available from the menu"
+Mikolaj Konarski <mikolaj@well-typed.com>**20111212160844
+ Ignore-this: 814c27a3c5d88a9a08f392aadbd6bd3e
+] 
+hash: 0000003065-97252932b306735732755c6d86c41c88e6db2cd4b28ff41fb826f4b03d285109
+[Fix "TODO: move these [scroll key events] to the timeline module"
+Mikolaj Konarski <mikolaj@well-typed.com>**20111212174626
+ Ignore-this: f47a8310c9110faa79b454a5f4626547
+] 
+hash: 0000001602-58891a480421f984839be6dfc8919b880599aa61e5d585ba2e05ddee86467174
+[Fix TODO "rewrite gth2hs code not to use deprecated functions"
+Mikolaj Konarski <mikolaj@well-typed.com>**20111212181811
+ Ignore-this: a4749f9a9affd551885dadddb0cf3cd5
+] 
+hash: 0000002251-8bd69492d8fe124e0114fb4be1e6c68e8c714d7042dc1de49f8b264ac9725c34
+[Fix TODO "we want to supress left/right during selection"
+Mikolaj Konarski <mikolaj@well-typed.com>**20111212182902
+ Ignore-this: 12680c8b7933dc7d2af59b4332ddae56
+] 
+hash: 0000001131-2fa289e4cd56c5b6129854494cd1dc412a112a3971e66f1b80441d6c1ff86435
+[Simplistic program run information tab; needs a scrollbar for env
+Mikolaj Konarski <mikolaj@well-typed.com>**20111213112439
+ Ignore-this: f4e9351c2bbb614e81f1408c4b871c41
+] 
+hash: 0000002895-e82b58ebade4b605bfca4abf081ce2be580fc37bca1e86ded6d7ba0989e3519f
+[Scroll run information tab both ways
+Mikolaj Konarski <mikolaj@well-typed.com>**20111213190129
+ Ignore-this: 25c449f6bc190871938e8b17d292d7fe
+] 
+hash: 0000005507-652c735ef362aad9f15ec1289f98d46d87ad6736460f11b8f29080da880f2b0e
