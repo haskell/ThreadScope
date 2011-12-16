@@ -43,7 +43,8 @@ data UIEnv = UIEnv {
 
        mainWin       :: MainWindow.MainWindow,
        eventsView    :: EventsView,
-       runView       :: RunView,
+       runView       :: InfoView,
+       summaryView   :: InfoView,
        histogramView :: HistogramView,
        timelineWin   :: TimelineView,
        traceView     :: TraceView,
@@ -147,6 +148,7 @@ constructUI = failOnGError $ do
   }
 
   runView <- runViewNew builder
+  summaryView <- summaryViewNew builder
 
   histogramView <- histogramViewNew builder
 
@@ -225,8 +227,10 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       MainWindow.setStatusMessage mainWin $
         printf "%s (%d events, %.3fs)" name nevents timespan
 
-      eventsViewSetEvents eventsView (Just (hecEventArray hecs))
-      runViewSetEvents runView (Just (hecEventArray hecs))
+      let mevents = Just $ hecEventArray hecs
+      eventsViewSetEvents eventsView mevents
+      runViewSetEvents runView mevents
+      summaryViewSetEvents summaryView mevents
       histogramViewSetHECs histogramView (Just hecs)
       traceViewSetHECs traceView hecs
       traces' <- traceViewGetTraces traceView

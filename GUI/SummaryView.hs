@@ -1,7 +1,9 @@
 module GUI.SummaryView (
-    RunView,
+    InfoView,
     runViewNew,
+    summaryViewNew,
     runViewSetEvents,
+    summaryViewSetEvents,
   ) where
 
 import GHC.RTS.Events
@@ -18,44 +20,55 @@ import qualified Data.List as L
 
 -------------------------------------------------------------------------------
 
-data RunView = RunView
+data InfoView = InfoView
      { gtkLayout :: !Layout
-     , stateRef :: !(IORef RunState)
+     , stateRef :: !(IORef InfoState)
      }
 
-data RunState
-   = RunEmpty
-   | RunLoaded
-     { runState :: String
+data InfoState
+   = InfoEmpty
+   | InfoLoaded
+     { infoState :: String
      }
 
 -------------------------------------------------------------------------------
 
-runViewNew :: Builder -> IO RunView
-runViewNew builder = do
+infoViewNew :: String -> Builder -> IO InfoView
+infoViewNew widgetName builder = do
 
   stateRef <- newIORef undefined
   let getWidget cast = builderGetObject builder cast
-  gtkLayout  <- getWidget castToLayout "eventsLayoutRun"
-  writeIORef stateRef RunEmpty
-  let runView = RunView{..}
+  gtkLayout  <- getWidget castToLayout widgetName
+  writeIORef stateRef InfoEmpty
+  let infoView = InfoView{..}
 
   -- Drawing
   on gtkLayout exposeEvent $ liftIO $ do
-    drawRun runView =<< readIORef stateRef
+    drawInfo infoView =<< readIORef stateRef
     return True
 
-  return runView
+  return infoView
+
+runViewNew :: Builder -> IO InfoView
+runViewNew = infoViewNew "eventsLayoutRun"
+
+summaryViewNew :: Builder -> IO InfoView
+summaryViewNew = infoViewNew "eventsLayoutRun"  -- TODO: "eventsLayoutSummary"
 
 -------------------------------------------------------------------------------
 
-runViewSetEvents :: RunView -> Maybe (Array Int CapEvent) -> IO ()
-runViewSetEvents RunView{gtkLayout, stateRef} mevents = do
-  let runState = case mevents of
-        Nothing     -> RunEmpty
-        Just events -> RunLoaded (showRun events)
-      showEnv env = (5, "Program environment:") : zip [6..] (map ("   " ++) env)
+infoViewSetEvents :: (Array Int CapEvent -> InfoState)
+                  -> InfoView -> Maybe (Array Int CapEvent) -> IO ()
+infoViewSetEvents f InfoView{gtkLayout, stateRef} mevents = do
+  let infoState = case mevents of
+        Nothing     -> InfoEmpty
+        Just events -> f events
+  writeIORef stateRef infoState
+  widgetQueueDraw gtkLayout
 
+runViewProcessEvents :: Array Int CapEvent -> InfoState
+runViewProcessEvents events =
+  let showEnv env = (5, "Program environment:") : zip [6..] (map ("   " ++) env)
       showEvent (CapEvent _cap (Event _time spec)) acc =
         case spec of
           RtsIdentifier _ i  ->
@@ -67,18 +80,26 @@ runViewSetEvents RunView{gtkLayout, stateRef} mevents = do
           ProgramEnv _ env   -> acc ++ showEnv env
           _                  -> acc
       start = [(1, "Program start time:  how to get it?")]
-      showRun = unlines . map snd . L.sort . foldr showEvent start . elems
-  writeIORef stateRef runState
-  widgetQueueDraw gtkLayout
+      showInfo = unlines . map snd . L.sort . foldr showEvent start . elems
+  in InfoLoaded (showInfo events)
+
+runViewSetEvents :: InfoView -> Maybe (Array Int CapEvent) -> IO ()
+runViewSetEvents = infoViewSetEvents runViewProcessEvents
+
+summaryViewProcessEvents :: Array Int CapEvent -> InfoState
+summaryViewProcessEvents _events = InfoLoaded "TODO"
+
+summaryViewSetEvents :: InfoView -> Maybe (Array Int CapEvent) -> IO ()
+summaryViewSetEvents = infoViewSetEvents summaryViewProcessEvents
 
 -------------------------------------------------------------------------------
 
-drawRun :: RunView -> RunState -> IO ()
-drawRun _ RunEmpty = return ()
-drawRun RunView{gtkLayout} RunLoaded{..} = do
+drawInfo :: InfoView -> InfoState -> IO ()
+drawInfo _ InfoEmpty = return ()
+drawInfo InfoView{gtkLayout} InfoLoaded{..} = do
   win <- layoutGetDrawWindow gtkLayout
   pangoCtx <- widgetGetPangoContext gtkLayout
-  layout <- layoutText pangoCtx runState
+  layout <- layoutText pangoCtx infoState
   (_, Rectangle _ _ width height) <- layoutGetPixelExtents layout
   layoutSetSize gtkLayout (width + 30) (height + 30)
   renderWithDrawable win $ do
