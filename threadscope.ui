@@ -884,7 +884,7 @@
                         <property name="can_focus">True</property>
                         <property name="hscrollbar_policy">automatic</property>
                         <property name="vscrollbar_policy">automatic</property>
-                       <child>
+                        <child>
                           <object class="GtkLayout" id="eventsLayoutSummary">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
