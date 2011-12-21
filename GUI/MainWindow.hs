@@ -106,7 +106,6 @@ mainWindowNew builder actions = do
   eventsBox          <- getWidget castToWidget "eventsbox"
 
   bwToggle           <- getWidget castToCheckMenuItem "black_and_white"
--- TODO: tie in the button and the menu toggle and then re-enable:
   labModeToggle      <- getWidget castToCheckMenuItem "view_labels_mode"
   sidebarToggle      <- getWidget castToCheckMenuItem "view_sidebar"
   eventsToggle       <- getWidget castToCheckMenuItem "view_events"

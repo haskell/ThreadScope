@@ -236,7 +236,7 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       let mevents = Just $ hecEventArray hecs
       eventsViewSetEvents eventsView mevents
       startupInfoViewSetEvents startupView mevents
-      summaryViewSetEvents summaryView mevents
+      summaryViewSetEvents summaryView mevents hecs
       histogramViewSetHECs histogramView (Just hecs)
       traceViewSetHECs traceView hecs
       traces' <- traceViewGetTraces traceView
