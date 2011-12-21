@@ -8,12 +8,10 @@ module GUI.Timeline.Ticks (
     renderYScale,
     mu,
     deZero,
-    dashedLine1,
   ) where
 
 import Events.HECs
 import GUI.Types
-import GUI.Timeline.Render.Constants
 import GUI.Timeline.CairoDrawing
 import GUI.ViewerColours
 
@@ -198,13 +196,14 @@ renderHRulers hecSparksHeight start end = do
       dend = fromIntegral end
       incr = fromIntegral hecSparksHeight / 10
   -- dashed lines across the graphs
-  setSourceRGBAhex black 0.3
+  setSourceRGBAhex black 0.15
+  setLineWidth 1
   save
   forM_ [0, 5] $ \h -> do
     let y = h * incr
     moveTo dstart y
     lineTo dend y
-    dashedLine1
+    stroke
   restore
 
 -- | Render one of the Y (horizontal) scales: render the Y axis
@@ -279,14 +278,3 @@ deZero s
   | '.' `elem` s =
     reverse . dropWhile (=='.') . dropWhile (=='0') . reverse $ s
   | otherwise = s
-
--- | Draw a dashed line along the current path.
-dashedLine1 :: Render ()
-dashedLine1 = do
-  save
-  identityMatrix
-  let dash = fromIntegral ox
-  setDash [dash, dash] 0.0
-  setLineWidth 1
-  stroke
-  restore

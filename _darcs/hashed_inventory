@@ -1,4 +1,4 @@
-pristine:0000001241-807855e757bf04fd0640b1a457a74442e06b5b626fe17ee19b4c1c9088f6980e
+pristine:0000001241-8b9a5727529f50ccc24112b5a006b8e089ac3912e910ab592fead07035e30bde
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -2025,3 +2025,18 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111216181850
  Ignore-this: 74dcccef6d96cb74d48fff768b8c2896
 ] 
 hash: 0000004303-f070467e8cc76b07d8a2a8bafaba35dce5d91f07e3f3440826c9355d7b532316
+[Draw horizontal rulers with a solid line, as proposed by kowey
+Mikolaj Konarski <mikolaj@well-typed.com>**20111221105742
+ Ignore-this: a4b951a3a076696a928c1f5ddffddd12
+] 
+hash: 0000001049-35fe168acf7a90e76ce0222da44127ab7eef3546999ae146a65b215d6a942015
+[Simulate as much of +RTS -s as can be done with available events
+Mikolaj Konarski <mikolaj@well-typed.com>**20111221121304
+ Ignore-this: 24ea91b11466dbe7be6c87b4a105561
+] 
+hash: 0000007241-2cb0cb6e91d26ddf6bba2d733a7624974b83f6e1d69596f65584e25a0ec384d5
+[Show SPARKS summary for each HEC, too
+Mikolaj Konarski <mikolaj@well-typed.com>**20111221123650
+ Ignore-this: 6b9e0abbcb909d5d07b0ca178a79c6e
+] 
+hash: 0000001942-a46166d9708e7c6fc85c055bfcbe535575aa8125823924f9b00fa8019e0be38e

@@ -9,7 +9,6 @@ import Events.EventTree
 import Events.EventDuration
 import GUI.Types
 import GUI.ViewerColours
-import GUI.Timeline.Ticks (dashedLine1)
 
 import Graphics.Rendering.Cairo
 
@@ -164,3 +163,14 @@ drawActivity hecs start end slice ts color = do
   off t = fromIntegral activityGraphHeight -
             fromIntegral (t * fromIntegral activityGraphHeight) /
             fromIntegral (fromIntegral (hecCount hecs) * slice)
+
+-- | Draw a dashed line along the current path.
+dashedLine1 :: Render ()
+dashedLine1 = do
+  save
+  identityMatrix
+  let dash = fromIntegral ox
+  setDash [dash, dash] 0.0
+  setLineWidth 1
+  stroke
+  restore
