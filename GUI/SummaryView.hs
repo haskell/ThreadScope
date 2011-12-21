@@ -120,7 +120,24 @@ summaryViewProcessEvents events =
         | otherwise = gcelapsedS / fromIntegral gccolls
       infoLines = (1,        "                                     Tot elapsed time   Avg pause  Max pause") :
                   (2, printf "  Gen  all    %5d colls, %5d par      %5.2fs          %3.4fs    %3.4fs" gccolls gcpar gcelapsedS avgPauseS gcmaxPauseS) : []
-      info = unlines $ map snd $ L.sort infoLines
+      info = unlines $ map snd  (L.sort infoLines)
+                       ++ ["", "  SPARKS: 300001 (17739 converted, 282262 overflowed, 0 dud, 0 GC'd, 0 fizzled)", "", "  GC      time    0.29s elapsed", "  Total   time    0.71s elapsed"]
+
+{-
+
+statsPrintf("  SPARKS: %ld (%ld converted, %ld overflowed, %ld dud, %ld GC'd, %ld fizzled)\n\n",
+                            sparks.created + sparks.dud + sparks.overflowed,
+                            sparks.converted, sparks.overflowed, sparks.dud,
+                            sparks.gcd, sparks.fizzled);
+            }
+
+statsPrintf("  GC      time  %6.2fs  (%6.2fs elapsed)\n",
+                        TimeToSecondsDbl(gc_cpu), TimeToSecondsDbl(gc_elapsed));
+
+statsPrintf("  Total   time  %6.2fs  (%6.2fs elapsed)\n\n",
+		    TimeToSecondsDbl(tot_cpu), TimeToSecondsDbl(tot_elapsed));
+-}
+
   in InfoLoaded info
  where
   step !gcstate@GCState{..} (CapEvent mcap (Event time spec)) =
