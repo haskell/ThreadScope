@@ -121,17 +121,18 @@ summaryViewProcessEvents events hecs =
       avgPauseS
         | gccolls == 0 = 0
         | otherwise = gcelapsedS / fromIntegral gccolls
-      -- TODO: we can summarize sparks per HEC and then print the total
-      RTSSparkCounters{..} = sumSparkCounters $ IM.elems gcsparks
       gcLines =
-        [ (1,        "                                     Tot elapsed time   Avg pause  Max pause")
-        , (2, printf "  Gen  all    %5d colls, %5d par      %5.2fs          %3.4fs    %3.4fs" gccolls gcpar gcelapsedS avgPauseS gcmaxPauseS)
+        [ (-200 + 1,        "                                     Tot elapsed time   Avg pause  Max pause")
+        , (-200 + 2, printf "  GC Gen 0+1  %5d colls, %5d par      %5.2fs          %3.4fs    %3.4fs" gccolls gcpar gcelapsedS avgPauseS gcmaxPauseS)
+        , (-200 + 3, "")
         ]
+      sparkLine :: Int -> RTSSparkCounters -> String
+      sparkLine k sc = displaySparkCounter (printf "SPARKS HEC %d" k) sc
       sparkLines =
-        [ (100, "")
-        , (101, printf "  SPARKS: %d (%d converted, %d overflowed, %d dud, %d GC'd, %d fizzled)" (gcCreated + gcDud + gcOverflowed) gcConverted gcOverflowed gcDud gcGCd gcFizzled)
-        , (102, "")
-        ]
+        IM.assocs (IM.mapWithKey sparkLine gcsparks) ++
+        [(100, displaySparkCounter "SPARKS TOTAL" (sumSparkCounters $
+                                              IM.elems gcsparks))] ++
+        [(200, "")]
       timeLines =
         [ (201, printf "  GC      time  %6.2fs elapsed" gcelapsedS)
         , (202, printf "  Total   time  %6.2fs elapsed" lastTxS)
@@ -140,12 +141,14 @@ summaryViewProcessEvents events hecs =
       info = unlines $ map snd $ L.sort infoLines
   in InfoLoaded info
  where
-  -- TODO: we can list spark counts per HEC and only then print the total
   sumSparkCounters l =
     let sumPr proj = L.sum $ L.map proj l
     in RTSSparkCounters
          (sumPr gcCreated) (sumPr gcDud) (sumPr gcOverflowed)
          (sumPr gcConverted) (sumPr gcFizzled) (sumPr gcGCd)
+  displaySparkCounter :: String -> RTSSparkCounters -> String
+  displaySparkCounter header RTSSparkCounters{..} =
+    printf "  %s: %d (%d converted, %d overflowed, %d dud, %d GC'd, %d fizzled)" header (gcCreated + gcDud + gcOverflowed) gcConverted gcOverflowed gcDud gcGCd gcFizzled
   step !gcstate@RTSState{..} (CapEvent mcap (Event time spec)) =
     let cap = fromJust mcap
         -- We ignore GCWork, GCIdle and GCDone. Too detailed for the summary.
