@@ -86,90 +86,113 @@ runViewSetEvents :: InfoView -> Maybe (Array Int CapEvent) -> HECs -> IO ()
 runViewSetEvents = infoViewSetEvents runViewProcessEvents
 
 data RTSSparkCounters = RTSSparkCounters
- { gcCreated, gcDud, gcOverflowed
- , gcConverted, gcFizzled, gcGCd :: Timestamp
+ { sparkCreated, sparkDud, sparkOverflowed
+ , sparkConverted, sparkFizzled, sparkGCd :: !Timestamp
  }
 
-data RTSState = RTSState
-  { gclastEvent :: !(IM.IntMap EventInfo)
-  , gclastStart :: !(IM.IntMap Timestamp)
+data RTSGCCounters = RTSGCCounters
+  { gclastEvent :: !EventInfo
+  , gclastStart :: !Timestamp
   , gccolls     :: !Int
-  , gcpar       :: !Int  -- TODO: we probably don't have enough data for that.
+  , gcpar       :: !Int  -- TODO: We probably don't have enough data for that.
   , gcelapsed   :: !Timestamp
   , gcmaxPause  :: !Timestamp
-  , gcsparks    :: !(IM.IntMap RTSSparkCounters)
+  }
+
+data RTSState = RTSState
+  { rtsGC     :: !(IM.IntMap RTSGCCounters)
+  , rtsSparks :: !(IM.IntMap RTSSparkCounters)
   }
 
 summaryViewProcessEvents :: Array Int CapEvent -> HECs -> InfoState
 summaryViewProcessEvents events hecs =
   let start = RTSState
-        { gclastEvent = IM.empty
-        , gclastStart = IM.empty
-        , gccolls = 0
-        , gcpar = 0
-        , gcelapsed = 0
-        , gcmaxPause = 0
-        , gcsparks = IM.empty
+        { rtsGC    = IM.empty
+        , rtsSparks = IM.empty
         }
-      RTSState{..} = L.foldl' step start $ elems $ events
-      tIME_RESOLUTION = 1000000
-      timeToSecondsDbl :: Integral a => a -> Double
-      timeToSecondsDbl t = fromIntegral t / tIME_RESOLUTION
+      RTSState{rtsGC, rtsSparks} = L.foldl' step start $ elems $ events
       lastTxS = timeToSecondsDbl $ hecLastEventTime hecs
-      gcelapsedS = timeToSecondsDbl gcelapsed
-      gcmaxPauseS = timeToSecondsDbl gcmaxPause
-      avgPauseS
-        | gccolls == 0 = 0
-        | otherwise = gcelapsedS / fromIntegral gccolls
+      gcLine :: Int -> RTSGCCounters -> String
+      gcLine k = displayGCCounter (printf "GC HEC %d" k)
+      gcSum = sumGCCounters $ IM.elems rtsGC
       gcLines =
-        [ (-200 + 1,        "                                     Tot elapsed time   Avg pause  Max pause")
-        , (-200 + 2, printf "  GC Gen 0+1  %5d colls, %5d par      %5.2fs          %3.4fs    %3.4fs" gccolls gcpar gcelapsedS avgPauseS gcmaxPauseS)
-        , (-200 + 3, "")
-        ]
+        [ (-300,        "                                            Tot elapsed time   Avg pause  Max pause")] ++
+        (map (\ (k, gc) -> (-200 + k, gc)) $
+           IM.assocs (IM.mapWithKey gcLine rtsGC)) ++
+        [(-100, displayGCCounter "GC TOTAL" gcSum)] ++
+        [(-1, "")]
       sparkLine :: Int -> RTSSparkCounters -> String
-      sparkLine k sc = displaySparkCounter (printf "SPARKS HEC %d" k) sc
+      sparkLine k = displaySparkCounter (printf "SPARKS HEC %d" k)
+      sparkSum = sumSparkCounters $ IM.elems rtsSparks
       sparkLines =
-        IM.assocs (IM.mapWithKey sparkLine gcsparks) ++
-        [(100, displaySparkCounter "SPARKS TOTAL" (sumSparkCounters $
-                                              IM.elems gcsparks))] ++
+        IM.assocs (IM.mapWithKey sparkLine rtsSparks) ++
+        [(100, displaySparkCounter "SPARKS TOTAL" sparkSum)] ++
         [(200, "")]
       timeLines =
-        [ (201, printf "  GC      time  %6.2fs elapsed" gcelapsedS)
+        [ (201, printf "  GC      time  %6.2fs elapsed"
+                  (timeToSecondsDbl (gcelapsed gcSum)))
         , (202, printf "  Total   time  %6.2fs elapsed" lastTxS)
         ]
       infoLines = gcLines ++ sparkLines ++ timeLines
       info = unlines $ map snd $ L.sort infoLines
   in InfoLoaded info
  where
+  tIME_RESOLUTION = 1000000
+  timeToSecondsDbl :: Integral a => a -> Double
+  timeToSecondsDbl t = fromIntegral t / tIME_RESOLUTION
+  sumGCCounters l =
+    let sumPr proj = L.sum $ L.map proj l
+    in RTSGCCounters
+         EndGC 0 (sumPr gccolls) (sumPr gcpar) (sumPr gcelapsed)
+         (L.maximum $ 0 : map gcmaxPause l)
+  displayGCCounter :: String -> RTSGCCounters -> String
+  displayGCCounter header RTSGCCounters{..} =
+    let gcelapsedS = timeToSecondsDbl gcelapsed
+        gcmaxPauseS = timeToSecondsDbl gcmaxPause
+        gcavgPauseS
+          | gccolls == 0 = 0
+          | otherwise = gcelapsedS / fromIntegral gccolls
+    in printf "  %s  Gen 0+1  %5d colls, %5d par      %5.2fs          %3.4fs    %3.4fs" header gccolls gcpar gcelapsedS gcavgPauseS gcmaxPauseS
   sumSparkCounters l =
     let sumPr proj = L.sum $ L.map proj l
     in RTSSparkCounters
-         (sumPr gcCreated) (sumPr gcDud) (sumPr gcOverflowed)
-         (sumPr gcConverted) (sumPr gcFizzled) (sumPr gcGCd)
+         (sumPr sparkCreated) (sumPr sparkDud) (sumPr sparkOverflowed)
+         (sumPr sparkConverted) (sumPr sparkFizzled) (sumPr sparkGCd)
   displaySparkCounter :: String -> RTSSparkCounters -> String
   displaySparkCounter header RTSSparkCounters{..} =
-    printf "  %s: %d (%d converted, %d overflowed, %d dud, %d GC'd, %d fizzled)" header (gcCreated + gcDud + gcOverflowed) gcConverted gcOverflowed gcDud gcGCd gcFizzled
-  step !gcstate@RTSState{..} (CapEvent mcap (Event time spec)) =
+    printf "  %s: %7d (%7d converted, %7d overflowed, %7d dud, %7d GC'd, %7d fizzled)" header (sparkCreated + sparkDud + sparkOverflowed) sparkConverted sparkOverflowed sparkDud sparkGCd sparkFizzled
+  step !gcstate@RTSState{rtsGC, rtsSparks} (CapEvent mcap (Event time spec)) =
     let cap = fromJust mcap
+        defaultGC = RTSGCCounters
+          { gclastEvent = EndGC
+          , gclastStart = 0
+          , gccolls = 0
+          , gcpar = 0
+          , gcelapsed = 0
+          , gcmaxPause = 0
+          }
+        defGC@RTSGCCounters{..} = IM.findWithDefault defaultGC cap rtsGC
         -- We ignore GCWork, GCIdle and GCDone. Too detailed for the summary.
         gcstateNew = case spec of
           RequestSeqGC ->
-            assert (case IM.findWithDefault EndGC cap gclastEvent of
+            assert (case gclastEvent of
                       EndGC -> True
                       _     -> False) $
-            gcstate { gclastEvent = IM.insert cap RequestSeqGC gclastEvent
+            gcstate { rtsGC = IM.insert cap
+                                (defGC { gclastEvent = RequestSeqGC }) rtsGC
                     }
           RequestParGC ->
-            assert (case IM.findWithDefault EndGC cap gclastEvent of
+            assert (case gclastEvent of
                       EndGC -> True
                       _     -> False) $
-            gcstate { gclastEvent = IM.insert cap RequestParGC gclastEvent
-                    , -- Probably inaccurate, but that's the best we can do.
-                      gcpar = gcpar + 1
+            gcstate { rtsGC = IM.insert cap
+                                (defGC { gclastEvent = RequestParGC
+                      -- Probably inaccurate, but that's the best we can do.
+                                       , gcpar = gcpar + 1 }) rtsGC
                     }
           StartGC ->
 -- TODO: apparently does not hold.
---            assert (case IM.findWithDefault EndGC cap gclastEvent of
+--            assert (case gclastEvent of
 --                      RequestSeqGC -> True
 --                      RequestParGC -> True
 --                      _            -> False) $
@@ -177,23 +200,26 @@ summaryViewProcessEvents events hecs =
 -- Consequently, we move Incrementing gccolls from Request* to EndGC.
 -- We can't move gcpar, so let's hope parallel GC requires requests,
 -- or else gcpar is too low.
-            gcstate { gclastEvent = IM.insert cap StartGC gclastEvent
-                    , gclastStart = IM.insert cap time gclastStart
+            gcstate { rtsGC = IM.insert cap
+                                (defGC { gclastEvent = StartGC
+                                       , gclastStart = time }) rtsGC
                     }
           EndGC ->
-            assert (case IM.findWithDefault EndGC cap gclastEvent of
+            assert (case gclastEvent of
                       StartGC -> True
                       _       -> False) $
-            gcstate { gclastEvent = IM.insert cap EndGC gclastEvent
-                    , gccolls = gccolls + 1
-                    , gcelapsed = gcelapsed + duration
-                    , gcmaxPause = max gcmaxPause duration
+            gcstate { rtsGC = IM.insert cap
+                                (defGC { gclastEvent = EndGC
+                                       , gccolls = gccolls + 1
+                                       , gcelapsed = gcelapsed + duration
+                                       , gcmaxPause =
+                                           max gcmaxPause duration }) rtsGC
                     }
            where
-            duration = time - gclastStart IM.! cap
+            duration = time - gclastStart
           SparkCounters crt dud ovf cnv fiz gcd _rem ->
             let cnt = RTSSparkCounters crt dud ovf cnv fiz gcd
-            in gcstate { gcsparks = IM.insert cap cnt gcsparks }
+            in gcstate { rtsSparks = IM.insert cap cnt rtsSparks }
           _ -> gcstate
     in gcstateNew
 
