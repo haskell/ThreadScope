@@ -1,4 +1,4 @@
-pristine:0000001241-35e5c846830aea46652a50fc6f82416d4cac576b5773ba49340c9aa0e074c0d7
+pristine:0000001241-0cf82b37b56953026cb769951f77adbd4b5b4d2d4401de17e7fec3b6cb5de8a0
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -2045,3 +2045,8 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111223150832
  Ignore-this: 5c50f3090ae06e1de88b35a5577ab7d4
 ] 
 hash: 0000008642-71f880321f8ffb997a289cccb072755e6863348a38064623e093b1bbaef02302
+[When generating region summary, look inside EventBlock
+Mikolaj Konarski <mikolaj@well-typed.com>**20111224051820
+ Ignore-this: 6329e1bc674f1544739d38c02c94a947
+] 
+hash: 0000001053-bc59f61eb01064984bb99f012016c90d5f32ac6654b4e90b8fca8d55c3e1ad6a
