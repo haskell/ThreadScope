@@ -161,9 +161,8 @@ summaryViewProcessEvents events hecs =
   displaySparkCounter :: String -> RTSSparkCounters -> String
   displaySparkCounter header RTSSparkCounters{..} =
     printf "  %s: %7d (%7d converted, %7d overflowed, %7d dud, %7d GC'd, %7d fizzled)" header (sparkCreated + sparkDud + sparkOverflowed) sparkConverted sparkOverflowed sparkDud sparkGCd sparkFizzled
-  step !gcstate@RTSState{rtsGC, rtsSparks} (CapEvent mcap (Event time spec)) =
-    let cap = fromJust mcap
-        defaultGC = RTSGCCounters
+  step !state (CapEvent mcap ev) =
+    let defaultGC = RTSGCCounters
           { gclastEvent = EndGC
           , gclastStart = 0
           , gccolls = 0
@@ -171,9 +170,13 @@ summaryViewProcessEvents events hecs =
           , gcelapsed = 0
           , gcmaxPause = 0
           }
-        defGC@RTSGCCounters{..} = IM.findWithDefault defaultGC cap rtsGC
         -- We ignore GCWork, GCIdle and GCDone. Too detailed for the summary.
-        gcstateNew = case spec of
+        gcstateNew cap !gcstate@RTSState{rtsGC, rtsSparks} (Event time spec) =
+         let defGC@RTSGCCounters{..} = IM.findWithDefault defaultGC cap rtsGC
+         in case spec of
+          -- TODO: check EventBlock elsewhere, define {map,fold}EventBlock, etc.
+          EventBlock {cap = bcap, block_events} ->
+            L.foldl' (gcstateNew bcap) gcstate block_events
           RequestSeqGC ->
             assert (case gclastEvent of
                       EndGC -> True
@@ -221,7 +224,7 @@ summaryViewProcessEvents events hecs =
             let cnt = RTSSparkCounters crt dud ovf cnv fiz gcd
             in gcstate { rtsSparks = IM.insert cap cnt rtsSparks }
           _ -> gcstate
-    in gcstateNew
+    in gcstateNew (fromJust mcap) state ev
 
 summaryViewSetEvents :: InfoView -> Maybe (Array Int CapEvent) -> HECs -> IO ()
 summaryViewSetEvents = infoViewSetEvents summaryViewProcessEvents
