@@ -26,6 +26,7 @@ data HistogramView =
 histogramViewSetHECs :: HistogramView -> Maybe HECs -> IO ()
 histogramViewSetHECs HistogramView{..} mhecs = do
   writeIORef hecsIORef mhecs
+  writeIORef mintervalIORef Nothing  -- the old interval may make no sense
   widgetQueueDraw histogramDrawingArea
   widgetQueueDraw histogramYScaleArea
 

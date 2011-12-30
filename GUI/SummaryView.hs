@@ -28,7 +28,7 @@ import Text.Printf
 
 data InfoView = InfoView
   { gtkLayout      :: !Layout
-  , infoRef        :: !(IORef String)
+  , defaultInfoRef :: !(IORef String)
   , meventsRef     :: !(IORef (Maybe (Array Int CapEvent)))
   , mintervalIORef :: !(IORef (Maybe Interval))
   }
@@ -38,7 +38,7 @@ data InfoView = InfoView
 infoViewNew :: String -> Builder -> IO InfoView
 infoViewNew widgetName builder = do
 
-  infoRef <- newIORef ""
+  defaultInfoRef <- newIORef ""
   meventsRef <- newIORef Nothing
   mintervalIORef <- newIORef Nothing
   let getWidget cast = builderGetObject builder cast
@@ -47,10 +47,10 @@ infoViewNew widgetName builder = do
 
   -- Drawing
   on gtkLayout exposeEvent $ liftIO $ do
-    info <- readIORef infoRef
+    defaultInfo <- readIORef defaultInfoRef
     mevents <- readIORef meventsRef
     minterval <- readIORef mintervalIORef
-    drawInfo gtkLayout info mevents minterval
+    drawInfo gtkLayout defaultInfo mevents minterval
     return True
 
   return infoView
@@ -66,10 +66,11 @@ summaryViewNew = infoViewNew "eventsLayoutSummary"
 infoViewSetEvents :: (Maybe (Array Int CapEvent)
                       -> (String, Maybe (Array Int CapEvent)))
                   -> InfoView -> Maybe (Array Int CapEvent) -> IO ()
-infoViewSetEvents f InfoView{gtkLayout, infoRef, meventsRef} mev = do
-  let (info, mevents) = f mev
-  writeIORef infoRef info
+infoViewSetEvents f InfoView{..} mev = do
+  let (defaultInfo, mevents) = f mev
+  writeIORef defaultInfoRef defaultInfo
   writeIORef meventsRef mevents
+  writeIORef mintervalIORef Nothing  -- the old interval may make no sense
   widgetQueueDraw gtkLayout
 
 runViewProcessEvents :: Maybe (Array Int CapEvent)
@@ -110,23 +111,25 @@ data RTSGCCounters = RTSGCCounters
 
 data RTSState = RTSState
   { rtsGC     :: !(IM.IntMap RTSGCCounters)
-  , rtsSparks :: !(IM.IntMap RTSSparkCounters)
+  , rtsSparks :: !(IM.IntMap (RTSSparkCounters, RTSSparkCounters))
   }
 
 summaryViewProcessEvents :: Maybe Interval -> Maybe (Array Int CapEvent)
                          -> (String, Maybe (Array Int CapEvent))
 summaryViewProcessEvents _ Nothing = ("", Nothing)
-summaryViewProcessEvents _minterval (Just events) =
+summaryViewProcessEvents minterval (Just events) =
   let start = RTSState
         { rtsGC    = IM.empty
         , rtsSparks = IM.empty
         }
-      RTSState{rtsGC, rtsSparks} = L.foldl' step start $ elems $ events
-      eventBlockEnd e | EventBlock{ end_time=t } <- spec $ ce_event e = t
-      eventBlockEnd e = time $ ce_event e
-      -- Warning: stack overflow when done like in ReadEvents.hs:
-      lastTx = L.foldl'(\ acc e -> max acc (eventBlockEnd e)) 1 (elems $ events)
-      lastTxS = timeToSecondsDbl $ lastTx
+      RTSState{rtsGC, rtsSparks = rtsSparksRaw} =
+        L.foldl' step start $ elems $ events
+      diffSparks (RTSSparkCounters crt1 dud1 ovf1 cnv1 fiz1 gcd1,
+                  RTSSparkCounters crt2 dud2 ovf2 cnv2 fiz2 gcd2) =
+        RTSSparkCounters (crt2 - crt1) (dud2 - dud1) (ovf2 - ovf1)
+                         (cnv2 - cnv1) (fiz2 - fiz1) (gcd2 - gcd1)
+      rtsSparks = IM.map diffSparks rtsSparksRaw
+      totalElapsedS = timeToSecondsDbl $ iend - istart
       gcLine :: Int -> RTSGCCounters -> String
       gcLine k = displayGCCounter (printf "GC HEC %d" k)
       gcSum = sumGCCounters $ IM.elems rtsGC
@@ -146,12 +149,18 @@ summaryViewProcessEvents _minterval (Just events) =
       timeLines =
         [ (201, printf "  GC      time  %6.2fs elapsed"
                   (timeToSecondsDbl (gcelapsed gcSum)))
-        , (202, printf "  Total   time  %6.2fs elapsed" lastTxS)
+        , (202, printf "  Total   time  %6.2fs elapsed" totalElapsedS)
         ]
       infoLines = gcLines ++ sparkLines ++ timeLines
       info = unlines $ map snd $ L.sort infoLines
   in (info, Just events)
  where
+  eventBlockEnd e | EventBlock{ end_time=t } <- spec $ ce_event e = t
+  eventBlockEnd e = time $ ce_event e
+  -- Warning: stack overflow when done like in ReadEvents.hs:
+  lastTx =
+    L.foldl' (\ acc e -> max acc (eventBlockEnd e)) 1 (elems $ events)
+  (istart, iend) = fromMaybe (0, lastTx) minterval
   tIME_RESOLUTION = 1000000
   timeToSecondsDbl :: Integral a => a -> Double
   timeToSecondsDbl t = fromIntegral t / tIME_RESOLUTION
@@ -176,34 +185,36 @@ summaryViewProcessEvents _minterval (Just events) =
   displaySparkCounter :: String -> RTSSparkCounters -> String
   displaySparkCounter header RTSSparkCounters{..} =
     printf "  %s: %7d (%7d converted, %7d overflowed, %7d dud, %7d GC'd, %7d fizzled)" header (sparkCreated + sparkDud + sparkOverflowed) sparkConverted sparkOverflowed sparkDud sparkGCd sparkFizzled
+  step !state (CapEvent _ ev) | time ev < istart || time ev > iend = state
   step !state (CapEvent mcap ev) =
-    let defaultGC = RTSGCCounters
+    let defaultGC time = RTSGCCounters
           { gclastEvent = EndGC
-          , gclastStart = 0
+          , gclastStart = time
           , gccolls = 0
           , gcpar = 0
           , gcelapsed = 0
           , gcmaxPause = 0
           }
         -- We ignore GCWork, GCIdle and GCDone. Too detailed for the summary.
-        gcstateNew cap !gcstate@RTSState{rtsGC, rtsSparks} (Event time spec) =
-         let defGC@RTSGCCounters{..} = IM.findWithDefault defaultGC cap rtsGC
+        stateNew cap !rtsstate@RTSState{rtsGC, rtsSparks} (Event time spec) =
+         let defGC@RTSGCCounters{..} =
+               IM.findWithDefault (defaultGC time) cap rtsGC
          in case spec of
           -- TODO: check EventBlock elsewhere, define {map,fold}EventBlock, etc.
           EventBlock {cap = bcap, block_events} ->
-            L.foldl' (gcstateNew bcap) gcstate block_events
+            L.foldl' (stateNew bcap) rtsstate block_events
           RequestSeqGC ->
             assert (case gclastEvent of
                       EndGC -> True
                       _     -> False) $
-            gcstate { rtsGC = IM.insert cap
+            rtsstate { rtsGC = IM.insert cap
                                 (defGC { gclastEvent = RequestSeqGC }) rtsGC
                     }
           RequestParGC ->
             assert (case gclastEvent of
                       EndGC -> True
                       _     -> False) $
-            gcstate { rtsGC = IM.insert cap
+            rtsstate { rtsGC = IM.insert cap
                                 (defGC { gclastEvent = RequestParGC
                       -- Probably inaccurate, but that's the best we can do.
                                        , gcpar = gcpar + 1 }) rtsGC
@@ -218,15 +229,16 @@ summaryViewProcessEvents _minterval (Just events) =
 -- Consequently, we move Incrementing gccolls from Request* to EndGC.
 -- We can't move gcpar, so let's hope parallel GC requires requests,
 -- or else gcpar is too low.
-            gcstate { rtsGC = IM.insert cap
+            rtsstate { rtsGC = IM.insert cap
                                 (defGC { gclastEvent = StartGC
                                        , gclastStart = time }) rtsGC
                     }
           EndGC ->
-            assert (case gclastEvent of
-                      StartGC -> True
-                      _       -> False) $
-            gcstate { rtsGC = IM.insert cap
+-- TODO: not true for intervals; check in ghc-events verify
+--            assert (case gclastEvent of
+--                      StartGC -> True
+--                      _       -> False) $
+            rtsstate { rtsGC = IM.insert cap
                                 (defGC { gclastEvent = EndGC
                                        , gccolls = gccolls + 1
                                        , gcelapsed = gcelapsed + duration
@@ -235,11 +247,13 @@ summaryViewProcessEvents _minterval (Just events) =
                     }
            where
             duration = time - gclastStart
-          SparkCounters crt dud ovf cnv fiz gcd _rem ->
-            let cnt = RTSSparkCounters crt dud ovf cnv fiz gcd
-            in gcstate { rtsSparks = IM.insert cap cnt rtsSparks }
-          _ -> gcstate
-    in gcstateNew (fromJust mcap) state ev
+          SparkCounters crt dud ovf cnv fiz gcd _rem -> -- TODO
+            let current = RTSSparkCounters crt dud ovf cnv fiz gcd
+                alter Nothing = Just (current, current)
+                alter (Just (first, _previous)) = Just (first, current)
+            in rtsstate { rtsSparks = IM.alter alter cap rtsSparks }
+          _ -> rtsstate
+    in stateNew (fromJust mcap) state ev
 
 summaryViewSetEvents :: InfoView -> Maybe (Array Int CapEvent) -> IO ()
 summaryViewSetEvents = infoViewSetEvents (summaryViewProcessEvents Nothing)
