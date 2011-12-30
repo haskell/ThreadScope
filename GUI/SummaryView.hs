@@ -2,11 +2,13 @@ module GUI.SummaryView (
     InfoView,
     summaryViewNew,
     summaryViewSetEvents,
+    summaryViewSetInterval,
   ) where
 
 import GHC.RTS.Events
 
 import GUI.Timeline.Render.Constants
+import GUI.Types
 
 import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo
@@ -22,30 +24,30 @@ import Text.Printf
 -------------------------------------------------------------------------------
 
 data InfoView = InfoView
-     { gtkLayout :: !Layout
-     , stateRef :: !(IORef InfoState)
-     }
-
-data InfoState
-   = InfoEmpty
-   | InfoLoaded
-     { infoState :: String
-     }
+  { gtkLayout      :: !Layout
+  , infoRef        :: !(IORef String)
+  , meventsRef     :: !(IORef (Maybe (Array Int CapEvent)))
+  , mintervalIORef :: !(IORef (Maybe Interval))
+  }
 
 -------------------------------------------------------------------------------
 
 infoViewNew :: String -> Builder -> IO InfoView
 infoViewNew widgetName builder = do
 
-  stateRef <- newIORef undefined
+  infoRef <- newIORef ""
+  meventsRef <- newIORef Nothing
+  mintervalIORef <- newIORef Nothing
   let getWidget cast = builderGetObject builder cast
   gtkLayout  <- getWidget castToLayout widgetName
-  writeIORef stateRef InfoEmpty
   let infoView = InfoView{..}
 
   -- Drawing
   on gtkLayout exposeEvent $ liftIO $ do
-    drawInfo infoView =<< readIORef stateRef
+    info <- readIORef infoRef
+    mevents <- readIORef meventsRef
+    minterval <- readIORef mintervalIORef
+    drawInfo gtkLayout info mevents minterval
     return True
 
   return infoView
@@ -55,17 +57,19 @@ summaryViewNew = infoViewNew "eventsLayoutSummary"
 
 -------------------------------------------------------------------------------
 
-infoViewSetEvents :: (Array Int CapEvent -> InfoState)
+infoViewSetEvents :: (Maybe (Array Int CapEvent)
+                      -> (String, Maybe (Array Int CapEvent)))
                   -> InfoView -> Maybe (Array Int CapEvent) -> IO ()
-infoViewSetEvents f InfoView{gtkLayout, stateRef} mevents = do
-  let infoState = case mevents of
-        Nothing     -> InfoEmpty
-        Just events -> f events
-  writeIORef stateRef infoState
+infoViewSetEvents f InfoView{gtkLayout, infoRef, meventsRef} mev = do
+  let (info, mevents) = f mev
+  writeIORef infoRef info
+  writeIORef meventsRef mevents
   widgetQueueDraw gtkLayout
 
-runViewProcessEvents :: Array Int CapEvent -> InfoState
-runViewProcessEvents events =
+runViewProcessEvents :: Maybe (Array Int CapEvent)
+                     -> (String, Maybe (Array Int CapEvent))
+runViewProcessEvents Nothing = ("", Nothing)
+runViewProcessEvents (Just events) =
   let showEnv env = (5, "Program environment:") : zip [6..] (map ("   " ++) env)
       showEvent (CapEvent _cap (Event _time spec)) acc =
         case spec of
@@ -79,7 +83,7 @@ runViewProcessEvents events =
           _                  -> acc
       start = [(1, "Program start time: TODO: get it from a new event")]
       showInfo = unlines . map snd . L.sort . foldr showEvent start . elems
-  in InfoLoaded (showInfo events)
+  in (showInfo events, Nothing)
 
 runViewSetEvents :: InfoView -> Maybe (Array Int CapEvent) -> IO ()
 runViewSetEvents = infoViewSetEvents runViewProcessEvents
@@ -103,8 +107,10 @@ data RTSState = RTSState
   , rtsSparks :: !(IM.IntMap RTSSparkCounters)
   }
 
-summaryViewProcessEvents :: Array Int CapEvent -> InfoState
-summaryViewProcessEvents events =
+summaryViewProcessEvents :: Maybe Interval -> Maybe (Array Int CapEvent)
+                         -> (String, Maybe (Array Int CapEvent))
+summaryViewProcessEvents _ Nothing = ("", Nothing)
+summaryViewProcessEvents _minterval (Just events) =
   let start = RTSState
         { rtsGC    = IM.empty
         , rtsSparks = IM.empty
@@ -138,7 +144,7 @@ summaryViewProcessEvents events =
         ]
       infoLines = gcLines ++ sparkLines ++ timeLines
       info = unlines $ map snd $ L.sort infoLines
-  in InfoLoaded info
+  in (info, Just events)
  where
   tIME_RESOLUTION = 1000000
   timeToSecondsDbl :: Integral a => a -> Double
@@ -230,19 +236,29 @@ summaryViewProcessEvents events =
     in gcstateNew (fromJust mcap) state ev
 
 summaryViewSetEvents :: InfoView -> Maybe (Array Int CapEvent) -> IO ()
-summaryViewSetEvents = infoViewSetEvents summaryViewProcessEvents
+summaryViewSetEvents = infoViewSetEvents (summaryViewProcessEvents Nothing)
 
 -------------------------------------------------------------------------------
 
-drawInfo :: InfoView -> InfoState -> IO ()
-drawInfo _ InfoEmpty = return ()
-drawInfo InfoView{gtkLayout} InfoLoaded{..} = do
+drawInfo :: Layout -> String -> Maybe (Array Int CapEvent)
+         -> Maybe Interval -> IO ()
+drawInfo gtkLayout defaultInfo mevents minterval = do
+  let info = case minterval of
+        Nothing -> defaultInfo
+        _       -> fst (summaryViewProcessEvents minterval mevents)  -- HACK
   win <- layoutGetDrawWindow gtkLayout
   pangoCtx <- widgetGetPangoContext gtkLayout
-  layout <- layoutText pangoCtx infoState
+  layout <- layoutText pangoCtx info
   layoutSetAttributes layout [AttrFamily minBound maxBound "monospace"]
   (_, Rectangle _ _ width height) <- layoutGetPixelExtents layout
-  layoutSetSize gtkLayout (width + 30) (height + 30)
+  layoutSetSize gtkLayout (width + 30) (height + 10)
   renderWithDrawable win $ do
     moveTo (fromIntegral ox / 2) (fromIntegral ox / 3)
     showLayout layout
+
+-------------------------------------------------------------------------------
+
+summaryViewSetInterval :: InfoView -> Maybe Interval -> IO ()
+summaryViewSetInterval InfoView{gtkLayout, mintervalIORef} minterval = do
+  writeIORef mintervalIORef minterval
+  widgetQueueDraw gtkLayout

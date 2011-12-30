@@ -362,6 +362,7 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       timelineSetSelection timelineWin selection'
       eventsViewSetCursor eventsView cursorPos' Nothing
       histogramViewSetInterval histogramView Nothing
+      summaryViewSetInterval summaryView Nothing
       continueWith eventlogState {
         selection = selection',
         cursorPos = cursorPos'
@@ -374,6 +375,7 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       timelineSetSelection timelineWin selection'
       eventsViewSetCursor eventsView cursorPos' mrange
       histogramViewSetInterval histogramView (Just (start, end))
+      summaryViewSetInterval summaryView (Just (start, end))
       continueWith eventlogState {
         selection = selection',
         cursorPos = cursorPos'
