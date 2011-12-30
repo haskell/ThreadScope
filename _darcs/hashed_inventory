@@ -1,4 +1,4 @@
-pristine:0000001241-fa735e1f36e72123893f72110fe1dd58602826b4b054a148f11b5c64a5b58905
+pristine:0000001241-ef37f192d3bfce53d9a05348b983dcf68bcce78703a89ce722f37f26851eccdf
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -2055,3 +2055,8 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111230142446
  Ignore-this: 841a48901fdc5e7fe0768a64690b86e8
 ] 
 hash: 0000002140-a572fe8f953b098205ee7a661c273ff39231e7422da41300a0119b0511413740
+[Let SummaryView take interval and draw the cached info when no interval set
+Mikolaj Konarski <mikolaj@well-typed.com>**20111230154921
+ Ignore-this: 9a641f9324bb25fbcf35a2c912bfa0f4
+] 
+hash: 0000003928-27ecd4afaccf18fc45acb0b30824fb12ae6496ccced21a131b87ea6394ea973d
