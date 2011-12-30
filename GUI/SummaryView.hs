@@ -8,7 +8,6 @@ module GUI.SummaryView (
 
 import GHC.RTS.Events
 
-import Events.HECs
 import GUI.Timeline.Render.Constants
 
 import Graphics.UI.Gtk
@@ -62,17 +61,17 @@ summaryViewNew = infoViewNew "eventsLayoutSummary"
 
 -------------------------------------------------------------------------------
 
-infoViewSetEvents :: (Array Int CapEvent -> HECs -> InfoState)
-                  -> InfoView -> Maybe (Array Int CapEvent) -> HECs -> IO ()
-infoViewSetEvents f InfoView{gtkLayout, stateRef} mevents hecs = do
+infoViewSetEvents :: (Array Int CapEvent -> InfoState)
+                  -> InfoView -> Maybe (Array Int CapEvent) -> IO ()
+infoViewSetEvents f InfoView{gtkLayout, stateRef} mevents = do
   let infoState = case mevents of
         Nothing     -> InfoEmpty
-        Just events -> f events hecs
+        Just events -> f events
   writeIORef stateRef infoState
   widgetQueueDraw gtkLayout
 
-runViewProcessEvents :: Array Int CapEvent -> HECs -> InfoState
-runViewProcessEvents events _hecs =
+runViewProcessEvents :: Array Int CapEvent -> InfoState
+runViewProcessEvents events =
   let showEnv env = (5, "Program environment:") : zip [6..] (map ("   " ++) env)
       showEvent (CapEvent _cap (Event _time spec)) acc =
         case spec of
@@ -88,7 +87,7 @@ runViewProcessEvents events _hecs =
       showInfo = unlines . map snd . L.sort . foldr showEvent start . elems
   in InfoLoaded (showInfo events)
 
-runViewSetEvents :: InfoView -> Maybe (Array Int CapEvent) -> HECs -> IO ()
+runViewSetEvents :: InfoView -> Maybe (Array Int CapEvent) -> IO ()
 runViewSetEvents = infoViewSetEvents runViewProcessEvents
 
 data RTSSparkCounters = RTSSparkCounters
@@ -110,14 +109,18 @@ data RTSState = RTSState
   , rtsSparks :: !(IM.IntMap RTSSparkCounters)
   }
 
-summaryViewProcessEvents :: Array Int CapEvent -> HECs -> InfoState
-summaryViewProcessEvents events hecs =
+summaryViewProcessEvents :: Array Int CapEvent -> InfoState
+summaryViewProcessEvents events =
   let start = RTSState
         { rtsGC    = IM.empty
         , rtsSparks = IM.empty
         }
       RTSState{rtsGC, rtsSparks} = L.foldl' step start $ elems $ events
-      lastTxS = timeToSecondsDbl $ hecLastEventTime hecs
+      eventBlockEnd e | EventBlock{ end_time=t } <- spec $ ce_event e = t
+      eventBlockEnd e = time $ ce_event e
+      -- Warning: stack overflow when done like in ReadEvents.hs:
+      lastTx = L.foldl'(\ acc e -> max acc (eventBlockEnd e)) 1 (elems $ events)
+      lastTxS = timeToSecondsDbl $ lastTx
       gcLine :: Int -> RTSGCCounters -> String
       gcLine k = displayGCCounter (printf "GC HEC %d" k)
       gcSum = sumGCCounters $ IM.elems rtsGC
@@ -232,7 +235,7 @@ summaryViewProcessEvents events hecs =
           _ -> gcstate
     in gcstateNew (fromJust mcap) state ev
 
-summaryViewSetEvents :: InfoView -> Maybe (Array Int CapEvent) -> HECs -> IO ()
+summaryViewSetEvents :: InfoView -> Maybe (Array Int CapEvent) -> IO ()
 summaryViewSetEvents = infoViewSetEvents summaryViewProcessEvents
 
 -------------------------------------------------------------------------------
