@@ -211,24 +211,22 @@ summaryViewProcessEvents minterval (Just events) =
                                 (defGC { gclastEvent = RequestSeqGC }) rtsGC
                     }
           RequestParGC ->
+            -- TODO: from JaffaCake: RequestParGC is enough to distinguish between seq and par GC; only one cap issues a RequestParGC, the others will all StartGC some time later
+            -- TODO: so we can't analyse GC events for each cap in isolation, but we have instead to change here gclastEvent of _all_ caps to RequestParGC and then increas gcpar not here but at StartGC, when the last event was RequestParGC
             assert (case gclastEvent of
                       EndGC -> True
                       _     -> False) $
             rtsstate { rtsGC = IM.insert cap
                                 (defGC { gclastEvent = RequestParGC
-                      -- Probably inaccurate, but that's the best we can do.
                                        , gcpar = gcpar + 1 }) rtsGC
                     }
           StartGC ->
--- TODO: apparently does not hold.
+-- TODO: this does not hold on the same cap:
 --            assert (case gclastEvent of
 --                      RequestSeqGC -> True
 --                      RequestParGC -> True
 --                      _            -> False) $
--- TODO: Probably GC does not have to be requested.
--- Consequently, we move Incrementing gccolls from Request* to EndGC.
--- We can't move gcpar, so let's hope parallel GC requires requests,
--- or else gcpar is too low.
+-- because GC can be requested by another cap (RequestParGC only, I think)
             rtsstate { rtsGC = IM.insert cap
                                 (defGC { gclastEvent = StartGC
                                        , gclastStart = time }) rtsGC
@@ -240,7 +238,7 @@ summaryViewProcessEvents minterval (Just events) =
 --                      _       -> False) $
             rtsstate { rtsGC = IM.insert cap
                                 (defGC { gclastEvent = EndGC
-                                       , gccolls = gccolls + 1
+                                       , gccolls = gccolls + 1  -- TODO: move to StartGC so we know if it's seq or par; for intervals it would mean we count started GCs, not completed
                                        , gcelapsed = gcelapsed + duration
                                        , gcmaxPause =
                                            max gcmaxPause duration }) rtsGC
