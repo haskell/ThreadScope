@@ -97,7 +97,7 @@ data RTSSparkCounters = RTSSparkCounters
 data RTSGCCounters = RTSGCCounters
   { gclastEvent :: !EventInfo
   , gclastStart :: !Timestamp
-  , gccolls     :: !Int
+  , gcseq       :: !Int
   , gcpar       :: !Int  -- TODO: We probably don't have enough data for that.
   , gcelapsed   :: !Timestamp
   , gcmaxPause  :: !Timestamp
@@ -161,11 +161,12 @@ summaryViewProcessEvents minterval (Just events) =
   sumGCCounters l =
     let sumPr proj = L.sum $ L.map proj l
     in RTSGCCounters
-         EndGC 0 (sumPr gccolls) (sumPr gcpar) (sumPr gcelapsed)
+         EndGC 0 (sumPr gcseq) (sumPr gcpar) (sumPr gcelapsed)
          (L.maximum $ 0 : map gcmaxPause l)
   displayGCCounter :: String -> RTSGCCounters -> String
   displayGCCounter header RTSGCCounters{..} =
-    let gcelapsedS = timeToSecondsDbl gcelapsed
+    let gccolls = gcseq + gcpar
+        gcelapsedS = timeToSecondsDbl gcelapsed
         gcmaxPauseS = timeToSecondsDbl gcmaxPause
         gcavgPauseS
           | gccolls == 0 = 0
@@ -184,7 +185,7 @@ summaryViewProcessEvents minterval (Just events) =
     let defaultGC time = RTSGCCounters
           { gclastEvent = EndGC
           , gclastStart = time
-          , gccolls = 0
+          , gcseq = 0
           , gcpar = 0
           , gcelapsed = 0
           , gcmaxPause = 0
@@ -232,7 +233,7 @@ summaryViewProcessEvents minterval (Just events) =
             let timeGC = defGC { gclastEvent = StartGC
                                , gclastStart = time }
                 collsGC = case gclastEvent of
-                  RequestSeqGC -> timeGC { gccolls = gccolls + 1 }
+                  RequestSeqGC -> timeGC { gcseq = gcseq + 1 }
                   RequestParGC -> timeGC { gcpar = gcpar + 1 }
                   EndGC        -> timeGC  -- start of an interval
                   _            -> error "Wrong event before StartGC"
