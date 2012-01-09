@@ -1,4 +1,4 @@
-pristine:0000001241-c074693528683f6061c523dbbd4fee06fecce87ca80c42473b327d6b48ebe40e
+pristine:0000001241-fda8293da0304ee860489b33f3ed50deb048b41efaa4e88e9fc0d814a20733f3
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -2065,3 +2065,13 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20111230175716
  Ignore-this: 938d844b04b5173684953acd7a9cb42b
 ] 
 hash: 0000005055-7de3c9bdb7f5b67beb8354fba910ca4cd7cd1de17657206bb24f1e3bdad92a57
+[Fix par GC counts based on feedback from JaffCake
+Mikolaj Konarski <mikolaj@well-typed.com>**20120109012131
+ Ignore-this: cfed8dacac3157794a85af6029b6d242
+] 
+hash: 0000004713-3c85ff2e82d9066c397d7a0bc9ad96e6236ea198d55e06312fc5bc1fd1e710f6
+[Make the gccolls column of GC summary a total of seq and par GC, as in +RTS -s
+Mikolaj Konarski <mikolaj@well-typed.com>**20120109062744
+ Ignore-this: efcd81e2f6dbccc15351b4efd63f4c7c
+] 
+hash: 0000000831-e6fc95e37ccfe257cf81a821ac0f79d224e0c51d54ee21a1532aaa0ee3e0fcb1
