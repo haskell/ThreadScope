@@ -193,52 +193,62 @@ summaryViewProcessEvents minterval (Just events) =
         stateNew cap !rtsstate@RTSState{rtsGC, rtsSparks} (Event time spec) =
          let defGC@RTSGCCounters{..} =
                IM.findWithDefault (defaultGC time) cap rtsGC
+             _gclastEnded RTSGCCounters{gclastEvent} = case gclastEvent of
+                                                         EndGC -> True
+                                                         _     -> False
          in case spec of
           -- TODO: check EventBlock elsewhere, define {map,fold}EventBlock, etc.
           EventBlock {cap = bcap, block_events} ->
             L.foldl' (stateNew bcap) rtsstate block_events
           RequestSeqGC ->
-            assert (case gclastEvent of
-                      EndGC -> True
-                      _     -> False) $
+            assert (_gclastEnded defGC) $
             rtsstate { rtsGC = IM.insert cap
                                 (defGC { gclastEvent = RequestSeqGC }) rtsGC
-                    }
+                     }
           RequestParGC ->
-            assert (case gclastEvent of
-                      EndGC -> True
-                      _     -> False) $
-            rtsstate { rtsGC = IM.insert cap
-                                (defGC { gclastEvent = RequestParGC
-                      -- Probably inaccurate, but that's the best we can do.
-                                       , gcpar = gcpar + 1 }) rtsGC
-                    }
+            -- JaffaCake says that RequestParGC is enough to distinguish
+            -- between seq and par GC; only one cap issues a RequestParGC,
+            -- the others will all StartGC some time later.
+-- TODO: not true, probably the request can be issued before old GCs finish:
+--          assert (L.all _gclastEnded $ IM.elems rtsGC) $
+-- But this means we have to queue the RequestParGC requests (or at least one)
+-- and get back to them after the previous GC is finished.
+-- Or perhaps caps busy with old GCs don't take part in par GCs? The current
+-- code behaves as if this was the case.
+-- TODO: investigate in the parallel-gc.pdf paper and/or GC or +RTS -s code
+            rtsstate { rtsGC = IM.map (\ dGC@RTSGCCounters{gclastEvent} ->
+                                        case gclastEvent of
+                                          EndGC ->
+                                            dGC { gclastEvent = RequestParGC }
+                                          _ -> dGC)
+                                 rtsGC
+                     }
           StartGC ->
--- TODO: apparently does not hold.
---            assert (case gclastEvent of
---                      RequestSeqGC -> True
---                      RequestParGC -> True
---                      _            -> False) $
--- TODO: Probably GC does not have to be requested.
--- Consequently, we move Incrementing gccolls from Request* to EndGC.
--- We can't move gcpar, so let's hope parallel GC requires requests,
--- or else gcpar is too low.
-            rtsstate { rtsGC = IM.insert cap
-                                (defGC { gclastEvent = StartGC
-                                       , gclastStart = time }) rtsGC
-                    }
+-- TODO: not true for intervals; check in ghc-events verify:
+--           assert (case gclastEvent of
+--                     RequestSeqGC -> True
+--                     RequestParGC -> True
+--                     _            -> False) $
+            let timeGC = defGC { gclastEvent = StartGC
+                               , gclastStart = time }
+                collsGC = case gclastEvent of
+                  RequestSeqGC -> timeGC { gccolls = gccolls + 1 }
+                  RequestParGC -> timeGC { gcpar = gcpar + 1 }
+                  EndGC        -> timeGC  -- start of an interval
+                  _            -> error "Wrong event before StartGC"
+            in rtsstate { rtsGC = IM.insert cap collsGC rtsGC
+                        }
           EndGC ->
--- TODO: not true for intervals; check in ghc-events verify
---            assert (case gclastEvent of
---                      StartGC -> True
---                      _       -> False) $
+-- TODO: not true for intervals; check in ghc-events verify:
+--          assert (case gclastEvent of
+--                    StartGC -> True
+--                    _       -> False) $
             rtsstate { rtsGC = IM.insert cap
-                                (defGC { gclastEvent = EndGC
-                                       , gccolls = gccolls + 1
-                                       , gcelapsed = gcelapsed + duration
-                                       , gcmaxPause =
-                                           max gcmaxPause duration }) rtsGC
-                    }
+                                 (defGC { gclastEvent = EndGC
+                                        , gcelapsed = gcelapsed + duration
+                                        , gcmaxPause =
+                                            max gcmaxPause duration }) rtsGC
+                     }
            where
             duration = time - gclastStart
           SparkCounters crt dud ovf cnv fiz gcd _rem -> -- TODO
