@@ -219,32 +219,38 @@ summaryViewProcessEvents minterval (Just events) =
             -- have already sent their StartGC events, so the following
             -- does not hold:
 --            assert (L.all _lastGcEnded $ IM.elems rtsGC) $
-            -- TODO: The following tip from JaffaCake can help: actually you could try moving the interruptAllCapabilities() call in Schedule.c:1500 down below the traceEvent calls.
+            -- TODO: The following tip from JaffaCake can help: Actually you could try moving the interruptAllCapabilities() call in Schedule.c:1500 down below the traceEvent calls.
             rtsstate { rtsGC = IM.map (\ dGC -> dGC { gcMode = ModePar }) rtsGC
                      }
           StartGC ->
 -- TODO: try not to count GCs requested before the interval
             assert (_lastGcEnded defGC) $
-            let timeGC = defGC { gclastEvent = StartGC
-                               , gclastStart = time }
-                collsGC = case gcMode of
-                  ModeSeq -> timeGC { gcseq = gcseq + 1 }
-                  ModePar -> timeGC { gcpar = gcpar + 1 }
-            in rtsstate { rtsGC = IM.insert cap collsGC rtsGC
+            let newGC = defGC { gclastEvent = StartGC
+                              , gclastStart = time }
+            in rtsstate { rtsGC = IM.insert cap newGC rtsGC
                         }
           EndGC ->
 -- TODO: not true for intervals; check in ghc-events verify:
 --          assert (case gclastEvent of
 --                    StartGC -> True
 --                    _       -> False) $
-            rtsstate { rtsGC = IM.insert cap
-                                 (defGC { gclastEvent = EndGC
-                                        , gcelapsed = gcelapsed + duration
-                                        , gcmaxPause =
-                                            max gcmaxPause duration }) rtsGC
-                     }
-           where
-            duration = time - gclastStart
+            let duration = time - gclastStart
+                timeGC = defGC { gclastEvent = EndGC
+                               , gcelapsed = gcelapsed + duration
+                               , gcmaxPause = max gcmaxPause duration
+                               }
+                -- Par/seq GC counts are incremented here, not under StartGC,
+                -- to work around RequestParGC being issued _after_ StartGC.
+                -- Let's hope RequestParGC is issued before EndGC
+                -- and so by now we already know if the GC is par or seq.
+                -- TODO: validate eventlogs checking that each RequestParGC
+                -- is matched by a later EndGC (and by a later
+                -- or an earlier StartGC).
+                collsGC = case gcMode of
+                  ModeSeq -> timeGC { gcseq = gcseq + 1 }
+                  ModePar -> timeGC { gcpar = gcpar + 1 }
+            in rtsstate { rtsGC = IM.insert cap collsGC rtsGC
+                        }
           SparkCounters crt dud ovf cnv fiz gcd _rem -> -- TODO
             let current = RTSSparkCounters crt dud ovf cnv fiz gcd
                 alter Nothing = Just (current, current)
