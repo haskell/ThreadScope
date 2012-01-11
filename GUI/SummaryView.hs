@@ -95,7 +95,7 @@ data RTSSparkCounters = RTSSparkCounters
  , sparkConverted, sparkFizzled, sparkGCd :: !Timestamp
  }
 
-data GcMode = ModePar | ModeSeq
+data GcMode = ModePar | ModeSeq | ModeInitial | ModeEnded
 
 data RTSGCCounters = RTSGCCounters
   { gcMode      :: !GcMode
@@ -187,7 +187,7 @@ summaryViewProcessEvents minterval (Just events) =
   step !state (CapEvent _ ev) | time ev < istart || time ev > iend = state
   step !state (CapEvent mcap ev) =
     let defaultGC time = RTSGCCounters
-          { gcMode = ModeSeq
+          { gcMode = ModeInitial
           , gclastEvent = EndGC
           , gclastStart = time
           , gcseq = 0
@@ -214,7 +214,7 @@ summaryViewProcessEvents minterval (Just events) =
           RequestParGC ->
             -- JaffaCake says that RequestParGC is enough to distinguish
             -- between seq and par GC; only one cap issues a RequestParGC,
-            -- the others will all StartGC some time later.
+            -- the others will all StartGC at some point.
             -- Unfortunately, RequestParGC may register after other caps
             -- have already sent their StartGC events, so the following
             -- does not hold:
@@ -223,7 +223,6 @@ summaryViewProcessEvents minterval (Just events) =
             rtsstate { rtsGC = IM.map (\ dGC -> dGC { gcMode = ModePar }) rtsGC
                      }
           StartGC ->
--- TODO: try not to count GCs requested before the interval
             assert (_lastGcEnded defGC) $
             let newGC = defGC { gclastEvent = StartGC
                               , gclastStart = time }
@@ -235,22 +234,41 @@ summaryViewProcessEvents minterval (Just events) =
 --                    StartGC -> True
 --                    _       -> False) $
             let duration = time - gclastStart
-                timeGC = defGC { gclastEvent = EndGC
-                               , gcelapsed = gcelapsed + duration
-                               , gcmaxPause = max gcmaxPause duration
-                               }
+                endedGC = defGC { gcMode = ModeEnded
+                                , gclastEvent = EndGC
+                                }
+                timeGC = endedGC { gcelapsed = gcelapsed + duration
+                                 , gcmaxPause = max gcmaxPause duration
+                                 }
                 -- Par/seq GC counts are incremented here, not under StartGC,
                 -- to work around RequestParGC being issued _after_ StartGC.
-                -- Let's hope RequestParGC is issued before EndGC
-                -- and so by now we already know if the GC is par or seq.
-                -- TODO: validate eventlogs checking that each RequestParGC
+                -- It would be best if RequestParGC was always issued
+                -- before EndGC, so that we know if the GC is par or seq
+                -- by the time we have to add the GC to statistics.
+                -- Alas this is not the case and the error raised
+                -- at ModeEnded below that guards this property
+                -- has to be commented out, until the issue is sorted out.
+                -- TODO: validate eventlogs, checking that each RequestParGC
                 -- is matched by a later EndGC (and by a later
                 -- or an earlier StartGC).
                 collsGC = case gcMode of
                   ModeSeq -> timeGC { gcseq = gcseq + 1 }
                   ModePar -> timeGC { gcpar = gcpar + 1 }
-            in rtsstate { rtsGC = IM.insert cap collsGC rtsGC
-                        }
+                  -- We don't know if this GC requested before the selected
+                  -- interval is par or seq --- skip it.
+                  ModeInitial -> endedGC
+-- TODO: investigate, fix and reenable the error
+--                  ModeEnded   -> error "EndGC found before Request*GC"
+                  ModeEnded   -> endedGC
+            in case gclastEvent of
+              StartGC -> rtsstate { rtsGC = IM.insert cap collsGC rtsGC
+                                  }
+              -- We don't know the exact timing of this GC started before
+              -- the selected interval --- skip it. We don't know if StartGC
+              -- or RequestParGC/RequestSeqGC gets issued first,
+              -- so we have to check both gcMode above and gclastEvent here.
+              _       -> rtsstate { rtsGC = IM.insert cap endedGC rtsGC
+                                  }
           SparkCounters crt dud ovf cnv fiz gcd _rem -> -- TODO
             let current = RTSSparkCounters crt dud ovf cnv fiz gcd
                 alter Nothing = Just (current, current)
