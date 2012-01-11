@@ -95,13 +95,17 @@ runViewProcessEvents (Just events) =
 runViewSetEvents :: InfoView -> Maybe (Array Int CapEvent) -> IO ()
 runViewSetEvents = infoViewSetEvents runViewProcessEvents
 
+-- TODO: change RTS to Rts, gcpar to gcParetc.
 data RTSSparkCounters = RTSSparkCounters
  { sparkCreated, sparkDud, sparkOverflowed
  , sparkConverted, sparkFizzled, sparkGCd :: !Timestamp
  }
 
+data GcMode = ModePar | ModeSeq | ModeInitial | ModeEnded
+
 data RTSGCCounters = RTSGCCounters
-  { gclastEvent :: !EventInfo
+  { gcMode      :: !GcMode
+  , gclastEvent :: !EventInfo
   , gclastStart :: !Timestamp
   , gcseq       :: !Int
   , gcpar       :: !Int  -- TODO: We probably don't have enough data for that.
@@ -167,7 +171,7 @@ summaryViewProcessEvents minterval (Just events) =
   sumGCCounters l =
     let sumPr proj = L.sum $ L.map proj l
     in RTSGCCounters
-         EndGC 0 (sumPr gcseq) (sumPr gcpar) (sumPr gcelapsed)
+         ModePar EndGC 0 (sumPr gcseq) (sumPr gcpar) (sumPr gcelapsed)
          (L.maximum $ 0 : map gcmaxPause l)
   displayGCCounter :: String -> RTSGCCounters -> String
   displayGCCounter header RTSGCCounters{..} =
@@ -189,7 +193,8 @@ summaryViewProcessEvents minterval (Just events) =
   step !state (CapEvent _ ev) | time ev < istart || time ev > iend = state
   step !state (CapEvent mcap ev) =
     let defaultGC time = RTSGCCounters
-          { gclastEvent = EndGC
+          { gcMode = ModeInitial
+          , gclastEvent = EndGC
           , gclastStart = time
           , gcseq = 0
           , gcpar = 0
@@ -200,7 +205,7 @@ summaryViewProcessEvents minterval (Just events) =
         stateNew cap !rtsstate@RTSState{rtsGC, rtsSparks} (Event time spec) =
          let defGC@RTSGCCounters{..} =
                IM.findWithDefault (defaultGC time) cap rtsGC
-             _gclastEnded RTSGCCounters{gclastEvent} = case gclastEvent of
+             _lastGcEnded RTSGCCounters{gclastEvent} = case gclastEvent of
                                                          EndGC -> True
                                                          _     -> False
          in case spec of
@@ -208,56 +213,68 @@ summaryViewProcessEvents minterval (Just events) =
           EventBlock {cap = bcap, block_events} ->
             L.foldl' (stateNew bcap) rtsstate block_events
           RequestSeqGC ->
-            assert (_gclastEnded defGC) $
-            rtsstate { rtsGC = IM.insert cap
-                                (defGC { gclastEvent = RequestSeqGC }) rtsGC
+            -- JaffaCake says that all the other caps must stop, hence:
+            assert (L.all _lastGcEnded $ IM.elems rtsGC) $
+            rtsstate { rtsGC = IM.insert cap (defGC { gcMode = ModeSeq }) rtsGC
                      }
           RequestParGC ->
             -- JaffaCake says that RequestParGC is enough to distinguish
             -- between seq and par GC; only one cap issues a RequestParGC,
-            -- the others will all StartGC some time later.
--- TODO: not true, probably the request can be issued before old GCs finish:
---          assert (L.all _gclastEnded $ IM.elems rtsGC) $
--- But this means we have to queue the RequestParGC requests (or at least one)
--- and get back to them after the previous GC is finished.
--- Or perhaps caps busy with old GCs don't take part in par GCs? The current
--- code behaves as if this was the case.
--- TODO: investigate in the parallel-gc.pdf paper and/or GC or +RTS -s code
-            rtsstate { rtsGC = IM.map (\ dGC@RTSGCCounters{gclastEvent} ->
-                                        case gclastEvent of
-                                          EndGC ->
-                                            dGC { gclastEvent = RequestParGC }
-                                          _ -> dGC)
-                                 rtsGC
+            -- the others will all StartGC at some point.
+            -- Unfortunately, RequestParGC may register after other caps
+            -- have already sent their StartGC events, so the following
+            -- does not hold:
+--            assert (L.all _lastGcEnded $ IM.elems rtsGC) $
+            -- TODO: The following tip from JaffaCake can help: Actually you could try moving the interruptAllCapabilities() call in Schedule.c:1500 down below the traceEvent calls.
+            rtsstate { rtsGC = IM.map (\ dGC -> dGC { gcMode = ModePar }) rtsGC
                      }
           StartGC ->
--- TODO: not true for intervals; check in ghc-events verify:
---           assert (case gclastEvent of
---                     RequestSeqGC -> True
---                     RequestParGC -> True
---                     _            -> False) $
-            let timeGC = defGC { gclastEvent = StartGC
-                               , gclastStart = time }
-                collsGC = case gclastEvent of
-                  RequestSeqGC -> timeGC { gcseq = gcseq + 1 }
-                  RequestParGC -> timeGC { gcpar = gcpar + 1 }
-                  EndGC        -> timeGC  -- start of an interval
-                  _            -> error "Wrong event before StartGC"
-            in rtsstate { rtsGC = IM.insert cap collsGC rtsGC
+            assert (_lastGcEnded defGC) $
+            let newGC = defGC { gclastEvent = StartGC
+                              , gclastStart = time }
+            in rtsstate { rtsGC = IM.insert cap newGC rtsGC
                         }
           EndGC ->
 -- TODO: not true for intervals; check in ghc-events verify:
 --          assert (case gclastEvent of
 --                    StartGC -> True
 --                    _       -> False) $
-            rtsstate { rtsGC = IM.insert cap
-                                 (defGC { gclastEvent = EndGC
-                                        , gcelapsed = gcelapsed + duration
-                                        , gcmaxPause =
-                                            max gcmaxPause duration }) rtsGC
-                     }
-           where
-            duration = time - gclastStart
+            let duration = time - gclastStart
+                endedGC = defGC { gcMode = ModeEnded
+                                , gclastEvent = EndGC
+                                }
+                timeGC = endedGC { gcelapsed = gcelapsed + duration
+                                 , gcmaxPause = max gcmaxPause duration
+                                 }
+                -- Par/seq GC counts are incremented here, not under StartGC,
+                -- to work around RequestParGC being issued _after_ StartGC.
+                -- It would be best if RequestParGC was always issued
+                -- before EndGC, so that we know if the GC is par or seq
+                -- by the time we have to add the GC to statistics.
+                -- Alas this is not the case and the error raised
+                -- at ModeEnded below that guards this property
+                -- has to be commented out, until the issue is sorted out.
+                -- TODO: validate eventlogs, checking that each RequestParGC
+                -- is matched by a later EndGC (and by a later
+                -- or an earlier StartGC).
+                collsGC = case gcMode of
+                  ModeSeq -> timeGC { gcseq = gcseq + 1 }
+                  ModePar -> timeGC { gcpar = gcpar + 1 }
+                  -- We don't know if this GC requested before the selected
+                  -- interval is par or seq --- skip it.
+                  ModeInitial -> endedGC
+-- TODO: investigate, fix and reenable the error
+--                  ModeEnded   -> error "EndGC found before Request*GC"
+                  ModeEnded   -> endedGC
+            in case gclastEvent of
+              StartGC -> rtsstate { rtsGC = IM.insert cap collsGC rtsGC
+                                  }
+              -- We don't know the exact timing of this GC started before
+              -- the selected interval --- skip it. We don't know if StartGC
+              -- or RequestParGC/RequestSeqGC gets issued first,
+              -- so we have to check both gcMode above and gclastEvent here.
+              _       -> rtsstate { rtsGC = IM.insert cap endedGC rtsGC
+                                  }
           SparkCounters crt dud ovf cnv fiz gcd _rem -> -- TODO
             let current = RTSSparkCounters crt dud ovf cnv fiz gcd
                 alter Nothing = Just (current, current)

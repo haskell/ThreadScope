@@ -1,4 +1,4 @@
-pristine:0000001241-fda8293da0304ee860489b33f3ed50deb048b41efaa4e88e9fc0d814a20733f3
+pristine:0000001241-8db7658813984b922ad74c87d42637139eb0ffacdd85b21907c6f7feb7ecd1b5
 Starting with inventory:
 0000057931-abac2ae96674d7ba725832fd35d1a3a29979b5da1f1bffa834058446f884179b
 [TAG 0.1.2
@@ -2075,3 +2075,22 @@ Mikolaj Konarski <mikolaj@well-typed.com>**20120109062744
  Ignore-this: efcd81e2f6dbccc15351b4efd63f4c7c
 ] 
 hash: 0000000831-e6fc95e37ccfe257cf81a821ac0f79d224e0c51d54ee21a1532aaa0ee3e0fcb1
+[Fix telling par GC from seq GC in +RTS -s emulation
+Mikolaj Konarski <mikolaj@well-typed.com>**20120111125629
+ Ignore-this: eca8708b5a72f82e3b9e0b3bf7f2efc9
+ 
+ This still does not work correctly, because the order of RequestParGC
+ and StartGC is sometimes reversed. Possibly, this could be fixed in RTS,
+ but I will try fixing it in TS, too.
+] 
+hash: 0000003745-b9423df730ad834ca70581d32b54809f42ea6bb5209c58053db36e401e885181
+[Work around RequestParGC being issued _after_ StartGC
+Mikolaj Konarski <mikolaj@well-typed.com>**20120111135721
+ Ignore-this: 5893a4ee621677765d1321a9520bd13a
+] 
+hash: 0000002536-6adb8e018b1ba43c45311ecf790f87360bd8e75db1e85f5ae7af9a9f67e36ae6
+[Do not count GCs started before the selected interval
+Mikolaj Konarski <mikolaj@well-typed.com>**20120111151740
+ Ignore-this: 90c9a74d3664f4bd80b71c61ab509ed4
+] 
+hash: 0000002965-03273a191077e84e442ff390a0f5c90d6d27331f54a6a080cdf227d9be63179a
