@@ -65,8 +65,6 @@ keyData =
      "Indicates a period of time spent by the RTS performing garbage collection (GC)")
   , ("create thread",   KEvent, createThreadColour,
      "Indicates a new Haskell thread has been created")
-  , ("thread runnable", KEvent, threadRunnableColour,
-     "Indicates a Haskell thread has been placed on the run queue (this event is not very helpful)")
   , ("seq GC req",      KEvent, seqGCReqColour,
      "Indicates a HEC has requested to start a sequential GC")
   , ("par GC req",      KEvent, parGCReqColour,
@@ -76,7 +74,7 @@ keyData =
   , ("thread wakeup",   KEvent, threadWakeupColour,
      "Indicates that a thread that was previously blocked (e.g. I/O, MVar etc) is now ready to run")
   , ("shutdown",        KEvent, shutdownColour,
-     "Indicates the end of the program run and eventlog")
+     "Indicates a HEC is terminating")
   , ("user message",    KEvent, userMessageColour,
      "Indicates a message generated from Haskell code (via traceEvent)")
   , ("create spark",    KEventAndGraph, createdConvertedColour,
