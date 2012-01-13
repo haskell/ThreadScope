@@ -151,21 +151,19 @@
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
-                        <property name="label" translatable="yes">Black/white</property>
+                        <property name="label" translatable="yes">Black &amp; white</property>
                         <property name="use_underline">True</property>
                       </object>
                     </child>
-<!-- TODO: tie in the button and the menu toggle and then re-enable:
                     <child>
                       <object class="GtkCheckMenuItem" id="view_labels_mode">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
-                        <property name="label" translatable="yes">Show event labels</property>
+                        <property name="label" translatable="yes">Event labels</property>
                         <property name="use_underline">True</property>
                       </object>
                     </child>
--->
                     <child>
                       <object class="GtkSeparatorMenuItem" id="separatormenuitem2">
                         <property name="visible">True</property>
@@ -419,30 +417,6 @@
                 <property name="tooltip_text" translatable="yes">Fit view to the window</property>
                 <property name="use_action_appearance">False</property>
                 <property name="stock_id">gtk-zoom-fit</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">True</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkSeparatorToolItem" id="separatortoolitem4">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkToggleToolButton" id="cpus_labels_mode">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="tooltip_text" translatable="yes">Display event labels</property>
-                <property name="use_action_appearance">False</property>
-                <property name="label" translatable="yes">Show event labels</property>
-                <property name="use_underline">True</property>
-                <property name="stock_id">gtk-info</property>
               </object>
               <packing>
                 <property name="expand">False</property>

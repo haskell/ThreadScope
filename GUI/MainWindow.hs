@@ -105,7 +105,7 @@ mainWindowNew builder actions = do
 
   bwToggle           <- getWidget castToCheckMenuItem "black_and_white"
 -- TODO: tie in the button and the menu toggle and then re-enable:
---  labModeToggle      <- getWidget castToCheckMenuItem "view_labels_mode"
+  labModeToggle      <- getWidget castToCheckMenuItem "view_labels_mode"
   sidebarToggle      <- getWidget castToCheckMenuItem "view_sidebar"
   eventsToggle       <- getWidget castToCheckMenuItem "view_events"
   openMenuItem       <- getWidget castToMenuItem "openMenuItem"
@@ -131,8 +131,6 @@ mainWindowNew builder actions = do
   zoomInButton       <- getWidget castToToolButton "cpus_zoomin"
   zoomOutButton      <- getWidget castToToolButton "cpus_zoomout"
   zoomFitButton      <- getWidget castToToolButton "cpus_zoomfit"
-
-  labelsModeToggle   <- getWidget castToToggleToolButton "cpus_labels_mode"
 
   --TODO: this is currently not used, but it'be nice if it were!
   eventsTextEntry    <- getWidget castToEntry      "events_entry"
@@ -170,9 +168,8 @@ mainWindowNew builder actions = do
                                        >>= mainWinViewEvents    actions
   on bwToggle       checkMenuItemToggled $ checkMenuItemGetActive bwToggle
                                        >>= mainWinViewBW        actions
--- TODO: tie in the button and the menu toggle and then re-enable:
---  on labModeToggle  checkMenuItemToggled $ checkMenuItemGetActive labModeToggle
---                                       >>= mainWinDisplayLabels actions
+  on labModeToggle  checkMenuItemToggled $ checkMenuItemGetActive labModeToggle
+                                       >>= mainWinDisplayLabels actions
   on reloadMenuItem menuItemActivate     $ mainWinViewReload actions
 
   on aboutMenuItem  menuItemActivate     $ mainWinAbout actions
@@ -195,8 +192,5 @@ mainWindowNew builder actions = do
   onToolButtonClicked zoomInButton  $ mainWinJumpZoomIn  actions
   onToolButtonClicked zoomOutButton $ mainWinJumpZoomOut actions
   onToolButtonClicked zoomFitButton $ mainWinJumpZoomFit actions
-
-  onToolButtonToggled labelsModeToggle $
-    toggleToolButtonGetActive labelsModeToggle >>= mainWinDisplayLabels actions
 
   return MainWindow {..}
