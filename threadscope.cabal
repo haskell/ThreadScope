@@ -43,7 +43,7 @@ Executable threadscope
   Build-Depends:     base >= 4.0 && < 5,
                      gtk >= 0.12, cairo, glib, pango,
                      binary, array, mtl, filepath,
-                     ghc-events == 0.3.* && >= 0.3.1,
+                     ghc-events == 0.4.*,
                      containers >= 0.3 && < 0.5,
                      deepseq >= 1.1,
                      time >= 1.1
