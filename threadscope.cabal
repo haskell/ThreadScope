@@ -45,7 +45,8 @@ Executable threadscope
                      binary, array, mtl, filepath,
                      ghc-events == 0.3.* && >= 0.3.1,
                      containers >= 0.3 && < 0.5,
-                     deepseq >= 1.1
+                     deepseq >= 1.1,
+                     time >= 1.1
   Extensions:        RecordWildCards, NamedFieldPuns, BangPatterns, PatternGuards
   Other-Modules:     Events.HECs,
                      Events.EventDuration,
@@ -63,6 +64,7 @@ Executable threadscope
                      GUI.TraceView,
                      GUI.BookmarkView,
                      GUI.KeyView,
+                     GUI.StartupInfoView,
                      GUI.SummaryView,
                      GUI.Types,
                      GUI.ConcurrencyControl,

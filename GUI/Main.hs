@@ -28,6 +28,7 @@ import GUI.Dialogs
 import Events.ReadEvents
 import GUI.EventsView
 import GUI.SummaryView
+import GUI.StartupInfoView
 import GUI.Histogram
 import GUI.Timeline
 import GUI.TraceView
@@ -43,7 +44,7 @@ data UIEnv = UIEnv {
 
        mainWin       :: MainWindow.MainWindow,
        eventsView    :: EventsView,
-       runView       :: InfoView,
+       startupView   :: StartupInfoView,
        summaryView   :: InfoView,
        histogramView :: HistogramView,
        timelineWin   :: TimelineView,
@@ -147,7 +148,7 @@ constructUI = failOnGError $ do
     eventsViewCursorChanged = post . EventCursorChangedIndex
   }
 
-  runView <- runViewNew builder
+  startupView <- startupInfoViewNew builder
   summaryView <- summaryViewNew builder
 
   histogramView <- histogramViewNew builder
@@ -229,7 +230,7 @@ eventLoop uienv@UIEnv{..} eventlogState = do
 
       let mevents = Just $ hecEventArray hecs
       eventsViewSetEvents eventsView mevents
-      runViewSetEvents runView mevents
+      startupInfoViewSetEvents startupView mevents
       summaryViewSetEvents summaryView mevents
       histogramViewSetHECs histogramView (Just hecs)
       traceViewSetHECs traceView hecs
