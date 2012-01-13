@@ -246,6 +246,9 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       --sequence_ [ bookmarkViewAdd bookmarkView ts label
       --          | (ts, label) <- usrMsgs ]
       -- timelineWindowSetBookmarks timelineWin (map fst usrMsgs)
+      bookmarkViewClear bookmarkView
+      timelineWindowSetBookmarks timelineWin []
+
       if nevents == 0
         then continueWith NoEventlogLoaded
         else continueWith EventlogLoaded
