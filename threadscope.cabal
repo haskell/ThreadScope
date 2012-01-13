@@ -44,7 +44,7 @@ Executable threadscope
                      gtk >= 0.12, cairo, glib, pango,
                      binary, array, mtl, filepath,
                      ghc-events == 0.4.*,
-                     containers >= 0.3 && < 0.5,
+                     containers >= 0.2 && < 0.5,
                      deepseq >= 1.1,
                      time >= 1.1
   Extensions:        RecordWildCards, NamedFieldPuns, BangPatterns, PatternGuards
