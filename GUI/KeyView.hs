@@ -131,9 +131,25 @@ renderKeyIcon KDuration keyColour = do
 renderKeyIcon KEvent keyColour = renderKEvent keyColour
 renderKeyIcon KEventAndGraph keyColour = do
   renderKEvent keyColour
+  -- An icon roughly repreenting a jagedy graph.
   let x = fromIntegral ox
-  C.arc (3.1 * x) 11 5 0 (2 * pi)
+      y = fromIntegral hecBarHeight
+  C.moveTo    (2*x)    (y - 2)
+  C.relLineTo 3        (-6)
+  C.relLineTo 3        0
+  C.relLineTo 3        3
+  C.relLineTo 5        1
+  C.relLineTo 1        (-(y - 4))
+  C.relLineTo 2        (y - 4)
+  C.relLineTo 1        (-(y - 4))
+  C.relLineTo 2        (y - 4)
+  C.lineTo    (2*x+20) (y - 2)
   C.fill
+  setSourceRGBAhex black 1.0
+  C.setLineWidth 1.0
+  C.moveTo    (2*x-4)  (y - 2.5)
+  C.lineTo    (2*x+24) (y - 2.5)
+  C.stroke
 
 renderKEvent :: Color -> C.Render ()
 renderKEvent keyColour = do
