@@ -68,7 +68,7 @@ keyData = [ ("running",         KDuration, runningColour)
 
           , ("create spark",    KEventAndGraph, createdConvertedColour)
           , ("dud spark",       KEventAndGraph, fizzledDudsColour)
-          , ("ovfled spark",    KEventAndGraph, overflowedColour)
+          , ("overflowed spark",KEventAndGraph, overflowedColour)
           , ("run spark",       KEventAndGraph, createdConvertedColour)
           , ("fizzled spark",   KEventAndGraph, fizzledDudsColour)
           , ("GCed spark",      KEventAndGraph, gcColour)
