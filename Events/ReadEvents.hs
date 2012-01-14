@@ -215,6 +215,7 @@ buildEventLog progress from =
            (return $! DeepSeq.rnf durHistogram)
 
     zipWithM_ treeProgress [0..] trees
+    ProgressView.setProgress progress hec_count hec_count
 
     --TODO: fully evaluate HECs before returning because othewise the last
     -- bit of work gets done after the progress window has been closed.

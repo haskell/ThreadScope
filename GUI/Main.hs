@@ -405,6 +405,11 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       ConcurrencyControl.fullSpeed concCtl $
         ProgressView.withProgress mainWin $ \progress -> do
           (hecs, name, nevents, timespan) <- registerEvents progress
+          -- This is a desperate hack to avoid the "segfault on reload" bug
+          -- http://trac.haskell.org/ThreadScope/ticket/1
+          -- It should be enough to let other threads finish and so avoid
+          -- re-entering gtk C code (see ticket for the dirty details)
+          threadDelay 100000 -- 1/10th of a second
           post (EventSetState hecs mfilename name nevents timespan)
       return ()
 
