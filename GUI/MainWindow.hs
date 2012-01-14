@@ -49,6 +49,8 @@ data MainWindowActions = MainWindowActions {
        mainWinViewEvents    :: Bool -> IO (),
        mainWinViewBW        :: Bool -> IO (),
        mainWinViewReload    :: IO (),
+       mainWinWebsite       :: IO (),
+       mainWinTutorial      :: IO (),
        mainWinAbout         :: IO (),
 
        -- Toolbar actions
@@ -112,6 +114,8 @@ mainWindowNew builder actions = do
   exportMenuItem     <- getWidget castToMenuItem "exportMenuItem"
   reloadMenuItem     <- getWidget castToMenuItem "view_reload"
   quitMenuItem       <- getWidget castToMenuItem "quitMenuItem"
+  websiteMenuItem    <- getWidget castToMenuItem "websiteMenuItem"
+  tutorialMenuItem   <- getWidget castToMenuItem "tutorialMenuItem"
   aboutMenuItem      <- getWidget castToMenuItem "aboutMenuItem"
 
   firstMenuItem      <- getWidget castToMenuItem "move_first"
@@ -172,7 +176,9 @@ mainWindowNew builder actions = do
                                        >>= mainWinDisplayLabels actions
   on reloadMenuItem menuItemActivate     $ mainWinViewReload actions
 
-  on aboutMenuItem  menuItemActivate     $ mainWinAbout actions
+  on websiteMenuItem  menuItemActivate    $ mainWinWebsite actions
+  on tutorialMenuItem menuItemActivate    $ mainWinTutorial actions
+  on aboutMenuItem    menuItemActivate    $ mainWinAbout actions
 
   on firstMenuItem   menuItemActivate     $ mainWinJumpStart  actions
   on centreMenuItem  menuItemActivate     $ mainWinJumpCursor actions

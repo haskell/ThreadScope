@@ -37,6 +37,7 @@ import GUI.KeyView
 import GUI.SaveAs
 import qualified GUI.ConcurrencyControl as ConcurrencyControl
 import qualified GUI.ProgressView as ProgressView
+import qualified GUI.GtkExtras as GtkExtras
 
 -------------------------------------------------------------------------------
 
@@ -74,6 +75,8 @@ getEvent = Chan.readChan
 data Event
    = EventOpenDialog
    | EventExportDialog
+   | EventLaunchWebsite
+   | EventLaunchTutorial
    | EventAboutDialog
    | EventQuit
 
@@ -127,6 +130,8 @@ constructUI = failOnGError $ do
     mainWinViewSidebar   = post . EventShowSidebar,
     mainWinViewEvents    = post . EventShowEvents,
     mainWinViewReload    = post EventFileReload,
+    mainWinWebsite       = post EventLaunchWebsite,
+    mainWinTutorial      = post EventLaunchTutorial,
     mainWinAbout         = post EventAboutDialog,
     mainWinJumpStart     = post EventTimelineJumpStart,
     mainWinJumpEnd       = post EventTimelineJumpEnd,
@@ -278,6 +283,14 @@ eventLoop uienv@UIEnv{..} eventlogState = do
           saveAsPDF filename hecs viewParams' yScaleArea
         FormatPNG ->
           saveAsPNG filename hecs viewParams' yScaleArea
+      continue
+
+    dispatch EventLaunchWebsite _ = do
+      GtkExtras.launchProgramForURI "http://www.haskell.org/haskellwiki/ThreadScope"
+      continue
+
+    dispatch EventLaunchTutorial _ = do
+      GtkExtras.launchProgramForURI "http://www.haskell.org/haskellwiki/ThreadScope_Tour"
       continue
 
     dispatch EventAboutDialog _ = do

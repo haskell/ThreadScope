@@ -6,6 +6,7 @@ module GUI.GtkExtras where
 
 import Graphics.UI.GtkInternals
 import Graphics.UI.Gtk (Rectangle)
+import System.Glib.GError
 import System.Glib.MainLoop
 import Graphics.Rendering.Pango.Types
 import Graphics.Rendering.Pango.BasicTypes
@@ -13,6 +14,7 @@ import Graphics.UI.Gtk.General.Enums (StateType, ShadowType)
 
 import Foreign
 import Foreign.C
+import Control.Monad
 import Control.Concurrent.MVar
 
 waitGUI :: IO ()
@@ -74,6 +76,14 @@ stylePaintLayout style window stateType useText
     (fromIntegral x) (fromIntegral y)
     layout
 
+
+launchProgramForURI :: String -> IO Bool
+launchProgramForURI uri =
+  propagateGError $ \errPtrPtr ->
+    withCString uri $ \uriStrPtr -> do
+      timestamp <- gtk_get_current_event_time
+      liftM toBool $ gtk_show_uri nullPtr uriStrPtr timestamp errPtrPtr
+
 -------------------------------------------------------------------------------
 
 foreign import ccall safe "gtk_paint_flat_box"
@@ -81,3 +91,9 @@ foreign import ccall safe "gtk_paint_flat_box"
 
 foreign import ccall safe "gtk_paint_layout"
   gtk_paint_layout :: Ptr Style -> Ptr DrawWindow -> CInt -> CInt -> Ptr () -> Ptr Widget -> Ptr CChar -> CInt -> CInt -> Ptr PangoLayoutRaw -> IO ()
+
+foreign import ccall safe "gtk_show_uri"
+  gtk_show_uri :: Ptr Screen -> Ptr CChar -> CUInt -> Ptr (Ptr ()) -> IO CInt
+
+foreign import ccall unsafe "gtk_get_current_event_time"
+  gtk_get_current_event_time :: IO CUInt
