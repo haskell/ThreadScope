@@ -12,6 +12,7 @@ import GUI.Types
 
 import Graphics.UI.Gtk
 import qualified Graphics.Rendering.Cairo as C
+import qualified GUI.GtkExtras as GtkExt
 
 import Data.IORef
 
@@ -26,7 +27,6 @@ data HistogramView =
 histogramViewSetHECs :: HistogramView -> Maybe HECs -> IO ()
 histogramViewSetHECs HistogramView{..} mhecs = do
   writeIORef hecsIORef mhecs
-  writeIORef mintervalIORef Nothing  -- the old interval may make no sense
   widgetQueueDraw histogramDrawingArea
   widgetQueueDraw histogramYScaleArea
 
@@ -70,18 +70,32 @@ histogramViewNew builder = do
   hecsIORef <- newIORef Nothing
   mintervalIORef <- newIORef Nothing
 
+  pangoCtx <- widgetGetPangoContext histogramDrawingArea
+  style    <- get histogramDrawingArea widgetStyle
+  layout   <- layoutEmpty pangoCtx
+  layoutSetMarkup layout $ "No detailed spark events in this eventlog.\n"
+                        ++ "Re-run with <tt>+RTS -lf</tt> to generate them."
+
   -- Program the callback for the capability drawingArea
   on histogramDrawingArea exposeEvent $
      C.liftIO $ do
        maybeEventArray <- readIORef hecsIORef
+       win <- widgetGetDrawWindow histogramDrawingArea
+       (w, windowHeight) <- widgetGetSize histogramDrawingArea
        case maybeEventArray of
          Nothing -> return False
          Just hecs
-           | null (durHistogram hecs) -> return False
+           | null (durHistogram hecs) -> do
+               GtkExt.stylePaintLayout
+                 style win
+                 StateNormal True
+                 (Rectangle 0 0 w windowHeight)
+                 histogramDrawingArea ""
+                 4 20
+                 layout
+               return True
            | otherwise -> do
-               win <- widgetGetDrawWindow histogramDrawingArea
                minterval <- readIORef mintervalIORef
-               (w, windowHeight) <- widgetGetSize histogramDrawingArea
                if windowHeight < 80
                  then return False
                  else do

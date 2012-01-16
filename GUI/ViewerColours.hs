@@ -27,9 +27,6 @@ gcEndColour   = orange
 createThreadColour :: Color
 createThreadColour = lightBlue
 
-threadRunnableColour :: Color
-threadRunnableColour = green
-
 seqGCReqColour :: Color
 seqGCReqColour = cyan
 
@@ -40,7 +37,7 @@ migrateThreadColour :: Color
 migrateThreadColour = darkRed
 
 threadWakeupColour :: Color
-threadWakeupColour = purple
+threadWakeupColour = green
 
 shutdownColour :: Color
 shutdownColour = darkBrown

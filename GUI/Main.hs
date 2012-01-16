@@ -28,6 +28,7 @@ import GUI.Dialogs
 import Events.ReadEvents
 import GUI.EventsView
 import GUI.SummaryView
+import GUI.StartupInfoView
 import GUI.Histogram
 import GUI.Timeline
 import GUI.TraceView
@@ -36,6 +37,7 @@ import GUI.KeyView
 import GUI.SaveAs
 import qualified GUI.ConcurrencyControl as ConcurrencyControl
 import qualified GUI.ProgressView as ProgressView
+import qualified GUI.GtkExtras as GtkExtras
 
 -------------------------------------------------------------------------------
 
@@ -43,7 +45,7 @@ data UIEnv = UIEnv {
 
        mainWin       :: MainWindow.MainWindow,
        eventsView    :: EventsView,
-       runView       :: InfoView,
+       startupView   :: StartupInfoView,
        summaryView   :: InfoView,
        histogramView :: HistogramView,
        timelineWin   :: TimelineView,
@@ -73,6 +75,8 @@ getEvent = Chan.readChan
 data Event
    = EventOpenDialog
    | EventExportDialog
+   | EventLaunchWebsite
+   | EventLaunchTutorial
    | EventAboutDialog
    | EventQuit
 
@@ -126,6 +130,8 @@ constructUI = failOnGError $ do
     mainWinViewSidebar   = post . EventShowSidebar,
     mainWinViewEvents    = post . EventShowEvents,
     mainWinViewReload    = post EventFileReload,
+    mainWinWebsite       = post EventLaunchWebsite,
+    mainWinTutorial      = post EventLaunchTutorial,
     mainWinAbout         = post EventAboutDialog,
     mainWinJumpStart     = post EventTimelineJumpStart,
     mainWinJumpEnd       = post EventTimelineJumpEnd,
@@ -147,7 +153,7 @@ constructUI = failOnGError $ do
     eventsViewCursorChanged = post . EventCursorChangedIndex
   }
 
-  runView <- runViewNew builder
+  startupView <- startupInfoViewNew builder
   summaryView <- summaryViewNew builder
 
   histogramView <- histogramViewNew builder
@@ -229,7 +235,7 @@ eventLoop uienv@UIEnv{..} eventlogState = do
 
       let mevents = Just $ hecEventArray hecs
       eventsViewSetEvents eventsView mevents
-      runViewSetEvents runView mevents
+      startupInfoViewSetEvents startupView mevents
       summaryViewSetEvents summaryView mevents
       histogramViewSetHECs histogramView (Just hecs)
       traceViewSetHECs traceView hecs
@@ -245,6 +251,9 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       --sequence_ [ bookmarkViewAdd bookmarkView ts label
       --          | (ts, label) <- usrMsgs ]
       -- timelineWindowSetBookmarks timelineWin (map fst usrMsgs)
+      bookmarkViewClear bookmarkView
+      timelineWindowSetBookmarks timelineWin []
+
       if nevents == 0
         then continueWith NoEventlogLoaded
         else continueWith EventlogLoaded
@@ -274,6 +283,14 @@ eventLoop uienv@UIEnv{..} eventlogState = do
           saveAsPDF filename hecs viewParams' yScaleArea
         FormatPNG ->
           saveAsPNG filename hecs viewParams' yScaleArea
+      continue
+
+    dispatch EventLaunchWebsite _ = do
+      GtkExtras.launchProgramForURI "http://www.haskell.org/haskellwiki/ThreadScope"
+      continue
+
+    dispatch EventLaunchTutorial _ = do
+      GtkExtras.launchProgramForURI "http://www.haskell.org/haskellwiki/ThreadScope_Tour"
       continue
 
     dispatch EventAboutDialog _ = do
@@ -345,7 +362,6 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       timelineSetSelection timelineWin selection'
       eventsViewSetCursor eventsView cursorPos' Nothing
       histogramViewSetInterval histogramView Nothing
-      summaryViewSetInterval summaryView Nothing
       continueWith eventlogState {
         selection = selection',
         cursorPos = cursorPos'
@@ -358,7 +374,6 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       timelineSetSelection timelineWin selection'
       eventsViewSetCursor eventsView cursorPos' mrange
       histogramViewSetInterval histogramView (Just (start, end))
-      summaryViewSetInterval summaryView (Just (start, end))
       continueWith eventlogState {
         selection = selection',
         cursorPos = cursorPos'
@@ -403,6 +418,11 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       ConcurrencyControl.fullSpeed concCtl $
         ProgressView.withProgress mainWin $ \progress -> do
           (hecs, name, nevents, timespan) <- registerEvents progress
+          -- This is a desperate hack to avoid the "segfault on reload" bug
+          -- http://trac.haskell.org/ThreadScope/ticket/1
+          -- It should be enough to let other threads finish and so avoid
+          -- re-entering gtk C code (see ticket for the dirty details)
+          threadDelay 100000 -- 1/10th of a second
           post (EventSetState hecs mfilename name nevents timespan)
       return ()
 

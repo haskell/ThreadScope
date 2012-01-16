@@ -183,7 +183,7 @@ showMultiTime pos =
   where
     posf :: Double
     posf = fromIntegral pos
-    reformatMS :: Num a => a -> String
+    reformatMS :: Show a => a -> String
     reformatMS pos = deZero (show pos)
 
 -------------------------------------------------------------------------------

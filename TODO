@@ -369,8 +369,6 @@ some random user feedback on the "lots of events" use case of traceEvents:
 - info panel with the info that ghc +RTS -s shows, but for the selected interval;
 how many sparks of each kind in that time, etc.
 
-- perhaps add events for memory allocation and memory reclaimed through GC to make per-interval +RTS -s possible, at least mark them as feature requests for ghc-events on Trac; also add other events required by +RTS -s; the wiki page is http://trac.haskell.org/ThreadScope/wiki/RTSsummaryEvents
-
-- add finite machines for the GC and other events (after new events are added andold extended) and use validation profiles to count some of the summary data that is calculated by hand right now
+- perhaps add events for memory allocation and memory reclaimed through GC to make per-interval +RTS -s possible, at least mark them as feature requests for ghc-events on Trac
 
 - another possibility to visualize sparks when there are not many of them would be to show an activity graph purely for spark evaluation, ie only counting those threads that are doing spark evaluation

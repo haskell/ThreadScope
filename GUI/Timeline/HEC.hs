@@ -221,11 +221,10 @@ drawEvent :: ViewParameters -> GHC.Event -> Render ()
 drawEvent params@ViewParameters{..} event
   = case spec event of
       CreateThread{}   -> renderInstantEvent params event createThreadColour
-      ThreadRunnable{} -> renderInstantEvent params event threadRunnableColour
       RequestSeqGC{}   -> renderInstantEvent params event seqGCReqColour
       RequestParGC{}   -> renderInstantEvent params event parGCReqColour
       MigrateThread{}  -> renderInstantEvent params event migrateThreadColour
-      WakeupThread{}   -> renderInstantEvent params event threadRunnableColour
+      WakeupThread{}   -> renderInstantEvent params event threadWakeupColour
       Shutdown{}       -> renderInstantEvent params event shutdownColour
 
       SparkCreate{}    -> renderInstantEvent params event createdConvertedColour
