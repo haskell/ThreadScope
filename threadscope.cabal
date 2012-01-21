@@ -61,6 +61,7 @@ Executable threadscope
                      GUI.Dialogs,
                      GUI.SaveAs,
                      GUI.Timeline,
+                     GUI.Histogram,
                      GUI.TraceView,
                      GUI.BookmarkView,
                      GUI.KeyView,

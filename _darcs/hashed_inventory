@@ -1,4 +1,4 @@
-pristine:7f96e700f57a222dc9cbc4ce9fefb69438ef77b78bd45b6c776a886375ce3cfd
+pristine:7ecb17085a41efdd038d10062aef5fa24fb974b9d65c18c2278f2e1164f294f6
 Starting with inventory:
 0000052522-e9e39892639484a652b0bbaf56133e79167dd044a284c492517c0ba04bc2e449
 [TAG 0.2.1
@@ -6,3 +6,13 @@ Duncan Coutts <duncan@well-typed.com>**20120114020623
  Ignore-this: 35d5e60f087af5817aea77a295bb15c2
 ] 
 hash: 0000035405-a154be1f4796f97699fadeb4e25673bed641a0ce8fb2b4dd8e36bb3d076d35ec
+[Add stray module to other-modules list in .cabal file
+Duncan Coutts <duncan@well-typed.com>**20120114020838
+ Ignore-this: ef347dee1f0793f940be3c82c7a23c37
+] 
+hash: 0000000222-e759195c00f6ae0971318107ee08396907da0102af79df8ecdc6e8e1f962ce85
+[TAG 0.2.1
+Duncan Coutts <duncan@well-typed.com>**20120114020854
+ Ignore-this: d31953c998be3cfeafbb6d37f029e3d3
+] 
+hash: 0000035564-5a9d2a44d71ed735dd4d183fc1258cdf89369e5c1a674486d2d0b0ca5b8183ba
