@@ -46,7 +46,7 @@ data UIEnv = UIEnv {
        mainWin       :: MainWindow.MainWindow,
        eventsView    :: EventsView,
        startupView   :: StartupInfoView,
-       summaryView   :: InfoView,
+       summaryView   :: SummaryView,
        histogramView :: HistogramView,
        timelineWin   :: TimelineView,
        traceView     :: TraceView,
