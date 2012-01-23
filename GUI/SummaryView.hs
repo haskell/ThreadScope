@@ -25,7 +25,7 @@ import Text.Printf
 
 data SummaryView = SummaryView
   { gtkLayout      :: !Layout
-  , defaultInfoRef :: !(IORef String)
+  , defaultInfoRef :: !(IORef String)  -- ^ info for interval Nothing, speedup
   , meventsRef     :: !(IORef (Maybe (Array Int CapEvent)))
   , mintervalIORef :: !(IORef (Maybe Interval))
   }
@@ -204,19 +204,18 @@ summaryViewProcessEvents minterval (Just events) =
           EventBlock {cap = bcap, block_events} ->
             L.foldl' (stateNew bcap) rtsstate block_events
           RequestSeqGC ->
-            -- JaffaCake says that all the other caps must stop, hence:
+            -- All the other caps must stop, hence the assertion:
             assert (L.all _lastGcEnded $ IM.elems rtsGC) $
             rtsstate { rtsGC = IM.insert cap (defGC { gcMode = ModeSeq }) rtsGC
                      }
           RequestParGC ->
-            -- JaffaCake says that RequestParGC is enough to distinguish
+            -- RequestParGC is enough to distinguish
             -- between seq and par GC; only one cap issues a RequestParGC,
             -- the others will all StartGC at some point.
             -- Unfortunately, RequestParGC may register after other caps
             -- have already sent their StartGC events, so the following
-            -- does not hold:
---            assert (L.all _lastGcEnded $ IM.elems rtsGC) $
-            -- TODO: The following tip from JaffaCake can help: Actually you could try moving the interruptAllCapabilities() call in Schedule.c:1500 down below the traceEvent calls.
+            -- does not hold in rare cases:
+            -- assert (L.all _lastGcEnded $ IM.elems rtsGC) $
             rtsstate { rtsGC = IM.map (\ dGC -> dGC { gcMode = ModePar }) rtsGC
                      }
           StartGC ->
@@ -226,10 +225,11 @@ summaryViewProcessEvents minterval (Just events) =
             in rtsstate { rtsGC = IM.insert cap newGC rtsGC
                         }
           EndGC ->
--- TODO: not true for intervals; check in ghc-events verify:
---          assert (case gcLastEvent of
---                    StartGC -> True
---                    _       -> False) $
+            -- TODO: not true for intervals, but check in 'ghc-events verify'
+            -- for the whole log::
+            -- assert (case gcLastEvent of
+            --           StartGC -> True
+            --           _       -> False) $
             let duration = time - gcLastStart
                 endedGC = defGC { gcMode = ModeEnded
                                 , gcLastEvent = EndGC
@@ -238,32 +238,31 @@ summaryViewProcessEvents minterval (Just events) =
                                  , gcMaxPause = max gcMaxPause duration
                                  }
                 -- Par/seq GC counts are incremented here, not under StartGC,
-                -- to work around RequestParGC being issued _after_ StartGC.
-                -- It would be best if RequestParGC was always issued
-                -- before EndGC, so that we know if the GC is par or seq
-                -- by the time we have to add the GC to statistics.
-                -- Alas this is not the case and the error raised
-                -- at ModeEnded below that guards this property
-                -- has to be commented out, until the issue is sorted out.
-                -- TODO: validate eventlogs, checking that each RequestParGC
-                -- is matched by a later EndGC (and by a later
-                -- or an earlier StartGC).
+                -- to work around RequestParGC sometimes being issued
+                -- _after_ corresponding StartGC.
                 collsGC = case gcMode of
                   ModeSeq -> timeGC { gcSeq = gcSeq + 1 }
                   ModePar -> timeGC { gcPar = gcPar + 1 }
-                  -- We don't know if this GC requested before the selected
-                  -- interval is par or seq --- skip it.
+                  -- We don't know if the current GC, requested before
+                  -- the start of the selected interval, is par or seq,
+                  -- so we skip the GC.
                   ModeInitial -> endedGC
--- TODO: investigate, fix and reenable the error
---                  ModeEnded   -> error "EndGC found before Request*GC"
-                  ModeEnded   -> endedGC
+                  -- Rarely there is no Request*GC between two occurences
+                  -- of EndGC, e.g., when EndGC comes too late,
+                  -- after Request*GC for the next GC. We skip such GCs.
+                  -- TODO: validate eventlogs, checking that each RequestParGC
+                  -- is matched by exactly one StartGC and EndGC.
+                  -- Then use here the work of the finite machine that does
+                  -- the matching and so correctly register stats of the GC.
+                  ModeEnded -> endedGC
             in case gcLastEvent of
               StartGC -> rtsstate { rtsGC = IM.insert cap collsGC rtsGC
                                   }
               -- We don't know the exact timing of this GC started before
-              -- the selected interval --- skip it. We don't know if StartGC
-              -- or RequestParGC/RequestSeqGC gets issued first,
-              -- so we have to check both gcMode above and gcLastEvent here.
+              -- the selected interval, so we skip it.
+              -- We don't know if StartGC or RequestParGC/RequestSeqGC
+              -- gets issued first,so we have to check both gcMode
+              -- above and gcLastEvent here to correctly skip the GC.
               _       -> rtsstate { rtsGC = IM.insert cap endedGC rtsGC
                                   }
           SparkCounters crt dud ovf cnv fiz gcd _rem -> -- TODO
