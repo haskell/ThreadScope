@@ -92,7 +92,7 @@ renderEvents params@ViewParameters{..} !_s !_e !startPos !endPos
 renderEvents params@ViewParameters{..} !s !e !startPos !endPos
         (EventSplit splitTime lhs rhs)
   | startPos < splitTime && endPos >= splitTime &&
-        (fromIntegral (e - s) / scaleValue) <= fromIntegral detail
+        (fromIntegral (e - s) / scaleValue) <= fromIntegral 1
   = do drawnLhs <- renderEvents params s splitTime startPos endPos lhs
        if not drawnLhs
          then      renderEvents params splitTime e startPos endPos rhs
