@@ -26,14 +26,14 @@ renderHEC params@ViewParameters{..} start end (dtree,etree) = do
   when (scaleValue < detailThreshold) $
      case etree of
        EventTree ltime etime tree ->
-           renderEvents params ltime etime start end tree
+           renderEvents params ltime etime start end tree >> return ()
 
 renderInstantHEC :: ViewParameters -> Timestamp -> Timestamp
                  -> EventTree
                  -> Render ()
 renderInstantHEC params@ViewParameters{..} start end
                  (EventTree ltime etime tree) =
-  renderEvents params ltime etime start end tree
+  renderEvents params ltime etime start end tree >> return ()
 
 detailThreshold :: Double
 detailThreshold = 3
@@ -72,31 +72,40 @@ renderEvents :: ViewParameters
              -> Timestamp -- start time of this tree node
              -> Timestamp -- end   time of this tree node
              -> Timestamp -> Timestamp -> EventNode
-             -> Render ()
+             -> Render Bool
 
 renderEvents params@ViewParameters{..} !_s !_e !startPos !endPos
         (EventTreeLeaf es)
-  = sequence_ [ drawEvent params e
-              | e <- es, let t = time e, t >= startPos && t < endPos ]
+  = let within = [ e | e <- es, let t = time e, t >= startPos && t < endPos ]
+    in case within of
+      [] -> return False
+      evs -> do
+        -- TODO: draw only 1 of the events
+        bs <- sequence $ map (drawEvent params) evs
+        return $ or bs
+
 renderEvents params@ViewParameters{..} !_s !_e !startPos !endPos
         (EventTreeOne ev)
   | t >= startPos && t < endPos = drawEvent params ev
-  | otherwise = return ()
+  | otherwise = return False
   where t = time ev
 
 renderEvents params@ViewParameters{..} !s !e !startPos !endPos
         (EventSplit splitTime lhs rhs)
   | startPos < splitTime && endPos >= splitTime &&
         (fromIntegral (e - s) / scaleValue) <= fromIntegral detail
-  -- was: = drawTooManyEvents params s e
-  -- is: draw only the right hand side (let's say it overwrites LHS)
-  = renderEvents params splitTime e startPos endPos rhs
-
+  = do drawnLhs <- renderEvents params s splitTime startPos endPos lhs
+       if not drawnLhs
+         then      renderEvents params splitTime e startPos endPos rhs
+         else return True
   | otherwise
-  = do when (startPos < splitTime) $
-         renderEvents params s splitTime startPos endPos lhs
-       when (endPos >= splitTime) $
-         renderEvents params splitTime e startPos endPos rhs
+  = do drawnLhs <- if startPos < splitTime
+                   then renderEvents params s splitTime startPos endPos lhs
+                   else return False
+       drawnRhs <- if endPos >= splitTime
+                   then renderEvents params splitTime e startPos endPos rhs
+                   else return False
+       return $ drawnLhs || drawnRhs
 
 -------------------------------------------------------------------------------
 -- An event is in view if it is not outside the view.
@@ -217,7 +226,7 @@ labelAt labelsMode t str
        showText str
        restore
 
-drawEvent :: ViewParameters -> GHC.Event -> Render ()
+drawEvent :: ViewParameters -> GHC.Event -> Render Bool
 drawEvent params@ViewParameters{..} event
   = case spec event of
       CreateThread{}   -> renderInstantEvent params event createThreadColour
@@ -237,28 +246,19 @@ drawEvent params@ViewParameters{..} event
 
       UserMessage{}    -> renderInstantEvent params event userMessageColour
 
-      RunThread{}  -> return ()
-      StopThread{} -> return ()
-      StartGC{}    -> return ()
+      RunThread{}  -> return False
+      StopThread{} -> return False
+      StartGC{}    -> return False
 
-      _ -> return ()
+      _ -> return False
 
-renderInstantEvent :: ViewParameters -> GHC.Event -> Color -> Render ()
+renderInstantEvent :: ViewParameters -> GHC.Event -> Color -> Render Bool
 renderInstantEvent ViewParameters{..} event color = do
   setSourceRGBAhex color 1.0
   setLineWidth (3 * scaleValue)
   let t = time event
   draw_line (t, hecBarOff-4) (t, hecBarOff+hecBarHeight+4)
   labelAt labelsMode t $ showEventInfo (spec event)
-
-
-_drawTooManyEvents :: ViewParameters -> Timestamp -> Timestamp
-                  -> Render ()
-_drawTooManyEvents _params@ViewParameters{..} _start _end = do
-     return ()
---     setSourceRGBAhex grey 1.0
---     setLineWidth (3 * scaleValue)
---     draw_rectangle start (hecBarOff-4) (end - start) 4
---     draw_rectangle start (hecBarOff+hecBarHeight) (end - start) 4
+  return True
 
 -------------------------------------------------------------------------------
