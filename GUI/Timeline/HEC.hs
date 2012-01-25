@@ -25,15 +25,18 @@ renderHEC params@ViewParameters{..} start end (dtree,etree) = do
   renderDurations params start end dtree
   when (scaleValue < detailThreshold) $
      case etree of
-       EventTree ltime etime tree ->
-           renderEvents params ltime etime start end tree >> return ()
+       EventTree ltime etime tree -> do
+         renderEvents params ltime etime start end (fromIntegral detail) tree
+         return ()
 
 renderInstantHEC :: ViewParameters -> Timestamp -> Timestamp
                  -> EventTree
                  -> Render ()
 renderInstantHEC params@ViewParameters{..} start end
-                 (EventTree ltime etime tree) =
-  renderEvents params ltime etime start end tree >> return ()
+                 (EventTree ltime etime tree) = do
+  let instantDetail = 1
+  renderEvents params ltime etime start end instantDetail tree
+  return ()
 
 detailThreshold :: Double
 detailThreshold = 3
@@ -71,39 +74,41 @@ renderDurations params@ViewParameters{..} !startPos !endPos
 renderEvents :: ViewParameters
              -> Timestamp -- start time of this tree node
              -> Timestamp -- end   time of this tree node
-             -> Timestamp -> Timestamp -> EventNode
+             -> Timestamp -> Timestamp -> Double -> EventNode
              -> Render Bool
 
-renderEvents params@ViewParameters{..} !_s !_e !startPos !endPos
+renderEvents params@ViewParameters{..} !_s !_e !startPos !endPos ewidth
         (EventTreeLeaf es)
   = let within = [ e | e <- es, let t = time e, t >= startPos && t < endPos ]
         untilTrue _ [] = return False
         untilTrue f (x : xs) = do
           b <- f x
           if b then return b else untilTrue f xs
-    in untilTrue (drawEvent params) within
+    in untilTrue (drawEvent params ewidth) within
 
-renderEvents params@ViewParameters{..} !_s !_e !startPos !endPos
+renderEvents params@ViewParameters{..} !_s !_e !startPos !endPos ewidth
         (EventTreeOne ev)
-  | t >= startPos && t < endPos = drawEvent params ev
+  | t >= startPos && t < endPos = drawEvent params ewidth ev
   | otherwise = return False
   where t = time ev
 
-renderEvents params@ViewParameters{..} !s !e !startPos !endPos
+renderEvents params@ViewParameters{..} !s !e !startPos !endPos ewidth
         (EventSplit splitTime lhs rhs)
   | startPos < splitTime && endPos >= splitTime &&
-        (fromIntegral (e - s) / scaleValue) <= fromIntegral 1
-  = do drawnLhs <- renderEvents params s splitTime startPos endPos lhs
+        (fromIntegral (e - s) / scaleValue) <= ewidth
+  = do drawnLhs <- renderEvents params s splitTime startPos endPos ewidth lhs
        if not drawnLhs
-         then      renderEvents params splitTime e startPos endPos rhs
+         then      renderEvents params splitTime e startPos endPos ewidth rhs
          else return True
   | otherwise
-  = do drawnLhs <- if startPos < splitTime
-                   then renderEvents params s splitTime startPos endPos lhs
-                   else return False
-       drawnRhs <- if endPos >= splitTime
-                   then renderEvents params splitTime e startPos endPos rhs
-                   else return False
+  = do drawnLhs <-
+         if startPos < splitTime
+         then renderEvents params s splitTime startPos endPos ewidth lhs
+         else return False
+       drawnRhs <-
+         if endPos >= splitTime
+         then renderEvents params splitTime e startPos endPos ewidth rhs
+         else return False
        return $ drawnLhs || drawnRhs
 
 -------------------------------------------------------------------------------
@@ -225,36 +230,38 @@ labelAt labelsMode t str
        showText str
        restore
 
-drawEvent :: ViewParameters -> GHC.Event -> Render Bool
-drawEvent params@ViewParameters{..} event
-  = case spec event of
-      CreateThread{}   -> renderInstantEvent params event createThreadColour
-      RequestSeqGC{}   -> renderInstantEvent params event seqGCReqColour
-      RequestParGC{}   -> renderInstantEvent params event parGCReqColour
-      MigrateThread{}  -> renderInstantEvent params event migrateThreadColour
-      WakeupThread{}   -> renderInstantEvent params event threadWakeupColour
-      Shutdown{}       -> renderInstantEvent params event shutdownColour
+drawEvent :: ViewParameters -> Double -> GHC.Event -> Render Bool
+drawEvent params@ViewParameters{..} ewidth event =
+  let renderI = renderInstantEvent params event ewidth
+  in case spec event of
+    CreateThread{}  -> renderI createThreadColour
+    RequestSeqGC{}  -> renderI seqGCReqColour
+    RequestParGC{}  -> renderI parGCReqColour
+    MigrateThread{} -> renderI migrateThreadColour
+    WakeupThread{}  -> renderI threadWakeupColour
+    Shutdown{}      -> renderI shutdownColour
 
-      SparkCreate{}    -> renderInstantEvent params event createdConvertedColour
-      SparkDud{}       -> renderInstantEvent params event fizzledDudsColour
-      SparkOverflow{}  -> renderInstantEvent params event overflowedColour
-      SparkRun{}       -> renderInstantEvent params event createdConvertedColour
-      SparkSteal{}     -> renderInstantEvent params event createdConvertedColour
-      SparkFizzle{}    -> renderInstantEvent params event fizzledDudsColour
-      SparkGC{}        -> renderInstantEvent params event gcColour
+    SparkCreate{}   -> renderI createdConvertedColour
+    SparkDud{}      -> renderI fizzledDudsColour
+    SparkOverflow{} -> renderI overflowedColour
+    SparkRun{}      -> renderI createdConvertedColour
+    SparkSteal{}    -> renderI createdConvertedColour
+    SparkFizzle{}   -> renderI fizzledDudsColour
+    SparkGC{}       -> renderI gcColour
 
-      UserMessage{}    -> renderInstantEvent params event userMessageColour
+    UserMessage{}   -> renderI userMessageColour
 
-      RunThread{}  -> return False
-      StopThread{} -> return False
-      StartGC{}    -> return False
+    RunThread{}  -> return False
+    StopThread{} -> return False
+    StartGC{}    -> return False
 
-      _ -> return False
+    _ -> return False
 
-renderInstantEvent :: ViewParameters -> GHC.Event -> Color -> Render Bool
-renderInstantEvent ViewParameters{..} event color = do
+renderInstantEvent :: ViewParameters -> GHC.Event -> Double -> Color
+                   -> Render Bool
+renderInstantEvent ViewParameters{..} event ewidth color = do
   setSourceRGBAhex color 1.0
-  setLineWidth (3 * scaleValue)
+  setLineWidth (ewidth * scaleValue)
   let t = time event
   draw_line (t, hecBarOff-4) (t, hecBarOff+hecBarHeight+4)
   labelAt labelsMode t $ showEventInfo (spec event)
