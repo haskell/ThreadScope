@@ -77,12 +77,11 @@ renderEvents :: ViewParameters
 renderEvents params@ViewParameters{..} !_s !_e !startPos !endPos
         (EventTreeLeaf es)
   = let within = [ e | e <- es, let t = time e, t >= startPos && t < endPos ]
-    in case within of
-      [] -> return False
-      evs -> do
-        -- TODO: draw only 1 of the events
-        bs <- sequence $ map (drawEvent params) evs
-        return $ or bs
+        untilTrue _ [] = return False
+        untilTrue f (x : xs) = do
+          b <- f x
+          if b then return b else untilTrue f xs
+    in untilTrue (drawEvent params) within
 
 renderEvents params@ViewParameters{..} !_s !_e !startPos !endPos
         (EventTreeOne ev)
