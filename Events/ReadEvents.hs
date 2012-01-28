@@ -145,6 +145,10 @@ buildEventLog progress from =
       ilog :: Timestamp -> Int
       ilog 0 = 0
       ilog x = floor $ logBase 2 (intDoub x)
+      times :: (Int, Timestamp, Timestamp)
+            -> Maybe (Timestamp, Int, Timestamp)
+      times (_, timeStarted, timeElapsed) =
+        Just (timeStarted, ilog timeElapsed, timeElapsed)
 
       sparkProfile :: Process
                         ((Map ThreadId (Profile SparkThreadState),
@@ -161,16 +165,15 @@ buildEventLog progress from =
       sparkSummary :: Map ThreadId (Int, Timestamp, Timestamp)
                    -> [(ThreadId, (SparkThreadState, Timestamp, Timestamp))]
                    -> [Maybe (Timestamp, Int, Timestamp)]
-      sparkSummary _ [] = []
+      sparkSummary m [] = map times $ M.elems m
       sparkSummary m ((threadId, (state, timeStarted', timeElapsed')):xs) =
         case state of
           SparkThreadRunning sparkId' -> case M.lookup threadId m of
-            Just (sparkId, timeStarted, timeElapsed) ->
+            Just el@(sparkId, timeStarted, timeElapsed) ->
               if sparkId == sparkId'
               then let value = (sparkId, timeStarted, timeElapsed + timeElapsed')
                    in sparkSummary (M.insert threadId value m) xs
-              else let times = (timeStarted, ilog timeElapsed, timeElapsed)
-                   in Just times : newSummary sparkId' xs
+              else times el : newSummary sparkId' xs
             Nothing -> newSummary sparkId' xs
           _ -> sparkSummary m xs
        where
