@@ -40,10 +40,8 @@ eventsToSparkDurations es =
                 newMaxSparkPool = SparkStats.maxPool delta
                 sd = SparkDuration { startT = startTime,
                                      deltaC = delta }
-                (oldMaxSparkPool, l) =
-                  aux endTime endCounters events
-            in ( max oldMaxSparkPool newMaxSparkPool,
-                sd : l)
+                (oldMaxSparkPool, l) = aux endTime endCounters events
+            in (max oldMaxSparkPool newMaxSparkPool, sd : l)
           _otherEvent -> aux startTime startCounters events
   in aux 0 (0,0,0,0,0,0,0) es
 

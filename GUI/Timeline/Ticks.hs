@@ -257,11 +257,14 @@ drawYTicks maxS pos incr xoffset yoffset i =
                | atMidTick   = 9
                | otherwise   = 6
     reformatV :: Double -> String
-    reformatV v = deZero (printf "%.2f" v)
+    reformatV v =
+      if v < 0.01 && v > 0
+      then eps
+      else deZero (printf "%.2f" v)
 
 -------------------------------------------------------------------------------
 
--- | The 'micro' symbol.
+-- | The \'micro\' symbol.
 mu :: String
 #if MIN_VERSION_cairo(0,12,0) && !MIN_VERSION_cairo(0,12,1)
 -- this version of cairo doesn't handle Unicode properly.
@@ -271,6 +274,18 @@ mu = "\194\181"
 -- Haskell cairo bindings 0.12.1 have proper Unicode support
 mu = "\x00b5"
 #endif
+
+-- | The \'epsilon\' symbol.
+eps :: String
+#if MIN_VERSION_cairo(0,12,0) && !MIN_VERSION_cairo(0,12,1)
+-- this version of cairo doesn't handle Unicode properly.
+-- Thus, we do the encoding by hand:
+eps = "\206\181"
+#else
+-- Haskell cairo bindings 0.12.1 have proper Unicode support
+eps = "\x03b5"
+#endif
+
 
 -- | Remove all meaningless trailing zeroes.
 deZero :: String -> String
