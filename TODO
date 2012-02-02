@@ -320,7 +320,12 @@ then move the selection, etc.
 "The Information Mural: A Technique for Displaying
 and Navigating Large Information Spaces"
 
-- zoom histogram (increase/decrease the number of bars)
+- zoom histogram for granularity: increase the number of bars,
+keeping the min/max unchanged; that requires log with base other than 2
+
+- zoom histogram for detail: keep the number of bars the same,
+but change the scale to only show sparks between a narrower min/max;
+for this log 2 is enough, with a constant offset
 
 - compare any of the graphs for the whole time and for the interval: either
 by opening/detaching window/pane dedicated to the interval data
