@@ -96,6 +96,7 @@ data GcMode = ModePar | ModeSeq | ModeInitial | ModeEnded
 data RtsGCCounters = RtsGCCounters
   { gcMode      :: !GcMode
   , gcLastEvent :: !EventInfo
+  , gcLastGCStatsGHC :: Int
   , gcLastStart :: !Timestamp
   , gcSeq       :: !Int
   , gcPar       :: !Int
@@ -162,7 +163,7 @@ summaryViewProcessEvents minterval (Just events) =
   sumGCCounters l =
     let sumPr proj = L.sum $ L.map proj l
     in RtsGCCounters
-         ModePar EndGC 0 (sumPr gcSeq) (sumPr gcPar) (sumPr gcElapsed)
+         ModePar EndGC 0 0 (sumPr gcSeq) (sumPr gcPar) (sumPr gcElapsed)
          (L.maximum $ 0 : map gcMaxPause l)
   displayGCCounter :: String -> RtsGCCounters -> String
   displayGCCounter header RtsGCCounters{..} =
@@ -186,6 +187,7 @@ summaryViewProcessEvents minterval (Just events) =
     let defaultGC time = RtsGCCounters
           { gcMode = ModeInitial
           , gcLastEvent = EndGC
+          , gcLastGCStatsGHC = 3
           , gcLastStart = time
           , gcSeq = 0
           , gcPar = 0
@@ -199,6 +201,8 @@ summaryViewProcessEvents minterval (Just events) =
              _lastGcEnded RtsGCCounters{gcLastEvent} = case gcLastEvent of
                                                          EndGC -> True
                                                          _     -> False
+             _lastGcStats13 RtsGCCounters{gcLastGCStatsGHC} =
+               gcLastGCStatsGHC == 1 || gcLastGCStatsGHC == 3
          in case spec of
           -- TODO: check EventBlock elsewhere, define {map,fold}EventBlock, etc.
           EventBlock {cap = bcap, block_events} ->
@@ -219,12 +223,23 @@ summaryViewProcessEvents minterval (Just events) =
             rtsstate { rtsGC = IM.map (\ dGC -> dGC { gcMode = ModePar }) rtsGC
                      }
           StartGC ->
+            assert (gcLastGCStatsGHC == 3) $
             assert (_lastGcEnded defGC) $
             let newGC = defGC { gcLastEvent = StartGC
+                              , gcLastGCStatsGHC = 1
                               , gcLastStart = time }
             in rtsstate { rtsGC = IM.insert cap newGC rtsGC
                         }
+          GCStatsGHC{} ->
+            assert (L.all (_lastGcStats13) $ IM.elems rtsGC) $
+            assert (case gcLastEvent of
+                      StartGC -> True
+                      _       -> False) $
+            let incrGC dGC = dGC { gcLastGCStatsGHC = 2 }
+            in rtsstate { rtsGC = IM.map incrGC rtsGC
+                        }
           EndGC ->
+            assert (gcLastGCStatsGHC == 2) $
             -- TODO: not true for intervals, but check in 'ghc-events verify'
             -- for the whole log::
             -- assert (case gcLastEvent of
@@ -232,6 +247,7 @@ summaryViewProcessEvents minterval (Just events) =
             --           _       -> False) $
             let duration = time - gcLastStart
                 endedGC = defGC { gcMode = ModeEnded
+                                , gcLastGCStatsGHC = 3
                                 , gcLastEvent = EndGC
                                 }
                 timeGC = endedGC { gcElapsed = gcElapsed + duration
