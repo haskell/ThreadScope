@@ -278,7 +278,58 @@ memLines SummaryData{..} =
          (fromMaybe 0 dmaxMemory `div` (1024 * 1024)) :
   [""]
 
--- TODO: factor away gcLines, sparkLines, timeLines
+timeToSecondsDbl :: Integral a => a -> Double
+timeToSecondsDbl t = fromIntegral t / tIME_RESOLUTION
+ where tIME_RESOLUTION = 1000000
+
+gcLines :: SummaryData -> (Double, [String])
+gcLines SummaryData{dGCTable} =
+  let gcLine :: Int -> RtsGC -> String
+      gcLine k = displayGCCounter (printf "GC HEC %d" k)
+      gcSum = sumGCCounters $ IM.elems dGCTable
+      -- TODO: sort by gen, not by cap
+      sumGCCounters l =
+        let sumPr proj = L.sum $ L.map proj l
+        in RtsGC
+             ModePar EndGC 0 (sumPr gcSeq) (sumPr gcPar) (sumPr gcElapsed)
+             (L.maximum $ 0 : map gcMaxPause l)
+      displayGCCounter :: String -> RtsGC -> String
+      displayGCCounter header RtsGC{..} =
+        let gcColls = gcSeq + gcPar
+            gcElapsedS = timeToSecondsDbl gcElapsed
+            gcMaxPauseS = timeToSecondsDbl gcMaxPause
+            gcAvgPauseS
+              | gcColls == 0 = 0
+              | otherwise = gcElapsedS / fromIntegral gcColls
+        in printf "  %s  Gen 0+1  %5d colls, %5d par      %5.2fs          %3.4fs    %3.4fs" header gcColls gcPar gcElapsedS gcAvgPauseS gcMaxPauseS
+  in (timeToSecondsDbl $ gcElapsed gcSum,
+      ["                                            Tot elapsed time   Avg pause  Max pause"] ++
+      IM.elems (IM.mapWithKey gcLine dGCTable) ++
+      [displayGCCounter "GC TOTAL" gcSum] ++
+      [""])
+
+sparkLines :: SummaryData -> [String]
+sparkLines SummaryData{dsparkTable} =
+  let diffSparks (RtsSpark crt1 dud1 ovf1 cnv1 fiz1 gcd1,
+                  RtsSpark crt2 dud2 ovf2 cnv2 fiz2 gcd2) =
+        RtsSpark (crt1 - crt2) (dud1 - dud2) (ovf1 - ovf2)
+                 (cnv1 - cnv2) (fiz1 - fiz2) (gcd1 - gcd2)
+      dsparkDiff = IM.map diffSparks dsparkTable
+      sparkLine :: Int -> RtsSpark -> String
+      sparkLine k = displaySparkCounter (printf "SPARKS HEC %d" k)
+      sparkSum = sumSparkCounters $ IM.elems dsparkDiff
+      sumSparkCounters l =
+        let sumPr proj = L.sum $ L.map proj l
+        in RtsSpark
+             (sumPr sparkCreated) (sumPr sparkDud) (sumPr sparkOverflowed)
+             (sumPr sparkConverted) (sumPr sparkFizzled) (sumPr sparkGCd)
+      displaySparkCounter :: String -> RtsSpark -> String
+      displaySparkCounter header RtsSpark{..} =
+        printf "  %s: %7d (%7d converted, %7d overflowed, %7d dud, %7d GC'd, %7d fizzled)" header (sparkCreated + sparkDud + sparkOverflowed) sparkConverted sparkOverflowed sparkDud sparkGCd sparkFizzled
+  in IM.elems (IM.mapWithKey sparkLine dsparkDiff) ++
+     [displaySparkCounter "SPARKS TOTAL" sparkSum] ++
+     [""]
+
 summaryViewProcessEvents :: Maybe Interval -> Maybe (Array Int CapEvent)
                          -> (String, Maybe (Array Int CapEvent))
 summaryViewProcessEvents _ Nothing = ("", Nothing)
@@ -291,72 +342,24 @@ summaryViewProcessEvents minterval (Just events) =
                                     , dcopied = Just 0
                                     }
               else emptySummaryData
+      eventBlockEnd e | EventBlock{ end_time=t } <- spec $ ce_event e = t
+      eventBlockEnd e = time $ ce_event e
+      -- Warning: stack overflow when done like in ReadEvents.hs:
+      fx acc e = max acc (eventBlockEnd e)
+      lastTx = L.foldl' fx 1 (elems $ events)
+      (istart, iend) = fromMaybe (0, lastTx) minterval
       f summaryData CapEvent{ce_event=Event{time}}
         | time < istart || time > iend = summaryData
       f summaryData ev = scanEvents summaryData ev
-      sd@SummaryData{dsparkTable = dsparkTableRaw, ..} =
-        L.foldl' f start $ elems $ events
-      diffSparks (RtsSpark crt1 dud1 ovf1 cnv1 fiz1 gcd1,
-                  RtsSpark crt2 dud2 ovf2 cnv2 fiz2 gcd2) =
-        RtsSpark (crt1 - crt2) (dud1 - dud2) (ovf1 - ovf2)
-                 (cnv1 - cnv2) (fiz1 - fiz2) (gcd1 - gcd2)
-      dsparkTable = IM.map diffSparks dsparkTableRaw
+      sd@SummaryData{..} = L.foldl' f start $ elems $ events
       totalElapsedS = timeToSecondsDbl $ iend - istart
-      gcLine :: Int -> RtsGC -> String
-      gcLine k = displayGCCounter (printf "GC HEC %d" k)
-      gcSum = sumGCCounters $ IM.elems dGCTable
-      -- TODO: sort by gen, not by cap
-      gcLines =
-        ["                                            Tot elapsed time   Avg pause  Max pause"] ++
-        IM.elems (IM.mapWithKey gcLine dGCTable) ++
-        [displayGCCounter "GC TOTAL" gcSum] ++
-        [""]
-      sparkLine :: Int -> RtsSpark -> String
-      sparkLine k = displaySparkCounter (printf "SPARKS HEC %d" k)
-      sparkSum = sumSparkCounters $ IM.elems dsparkTable
-      sparkLines =
-        IM.elems (IM.mapWithKey sparkLine dsparkTable) ++
-        [displaySparkCounter "SPARKS TOTAL" sparkSum] ++
-        [""]
+      (gcTotalElapsed, gcLines_sd) = gcLines sd
       timeLines =
-        [ printf "  GC      time  %6.2fs elapsed"
-            (timeToSecondsDbl (gcElapsed gcSum))
+        [ printf "  GC      time  %6.2fs elapsed" gcTotalElapsed
         , printf "  Total   time  %6.2fs elapsed" totalElapsedS
         ]
-      info = unlines $ memLines sd ++ gcLines ++ sparkLines ++ timeLines
+      info = unlines $ memLines sd ++ gcLines_sd ++ sparkLines sd ++ timeLines
   in (info, Just events)
- where
-  eventBlockEnd e | EventBlock{ end_time=t } <- spec $ ce_event e = t
-  eventBlockEnd e = time $ ce_event e
-  -- Warning: stack overflow when done like in ReadEvents.hs:
-  lastTx =
-    L.foldl' (\ acc e -> max acc (eventBlockEnd e)) 1 (elems $ events)
-  (istart, iend) = fromMaybe (0, lastTx) minterval
-  tIME_RESOLUTION = 1000000
-  timeToSecondsDbl :: Integral a => a -> Double
-  timeToSecondsDbl t = fromIntegral t / tIME_RESOLUTION
-  sumGCCounters l =
-    let sumPr proj = L.sum $ L.map proj l
-    in RtsGC
-         ModePar EndGC 0 (sumPr gcSeq) (sumPr gcPar) (sumPr gcElapsed)
-         (L.maximum $ 0 : map gcMaxPause l)
-  displayGCCounter :: String -> RtsGC -> String
-  displayGCCounter header RtsGC{..} =
-    let gcColls = gcSeq + gcPar
-        gcElapsedS = timeToSecondsDbl gcElapsed
-        gcMaxPauseS = timeToSecondsDbl gcMaxPause
-        gcAvgPauseS
-          | gcColls == 0 = 0
-          | otherwise = gcElapsedS / fromIntegral gcColls
-    in printf "  %s  Gen 0+1  %5d colls, %5d par      %5.2fs          %3.4fs    %3.4fs" header gcColls gcPar gcElapsedS gcAvgPauseS gcMaxPauseS
-  sumSparkCounters l =
-    let sumPr proj = L.sum $ L.map proj l
-    in RtsSpark
-         (sumPr sparkCreated) (sumPr sparkDud) (sumPr sparkOverflowed)
-         (sumPr sparkConverted) (sumPr sparkFizzled) (sumPr sparkGCd)
-  displaySparkCounter :: String -> RtsSpark -> String
-  displaySparkCounter header RtsSpark{..} =
-    printf "  %s: %7d (%7d converted, %7d overflowed, %7d dud, %7d GC'd, %7d fizzled)" header (sparkCreated + sparkDud + sparkOverflowed) sparkConverted sparkOverflowed sparkDud sparkGCd sparkFizzled
 
 summaryViewSetEvents :: SummaryView -> Maybe (Array Int CapEvent) -> IO ()
 summaryViewSetEvents = genericSetEvents (summaryViewProcessEvents Nothing)
