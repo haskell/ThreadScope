@@ -87,6 +87,7 @@ genericSetEvents processEvents SummaryView{..} mev = do
   writeIORef mintervalIORef Nothing  -- the old interval may make no sense
   widgetQueueDraw gtkLayout
 
+-- TODO: some of these are unused yet.
 data SummaryData = SummaryData
   { dallocated     :: Maybe (Word64, Word64)
   , dcopied        :: Maybe Word64
@@ -102,7 +103,6 @@ data SummaryData = SummaryData
   , dMutTime       :: Maybe Double
   , dGCTime        :: Maybe Double
   , dtotalTime     :: Maybe Double
-  , dallocRate     :: Maybe Int
   , dproductivity  :: Maybe Double
   }
 
@@ -137,7 +137,6 @@ emptySummaryData = SummaryData
   , dMutTime       = Nothing
   , dGCTime        = Nothing
   , dtotalTime     = Nothing
-  , dallocRate     = Nothing
   , dproductivity  = Nothing
   }
 
@@ -302,7 +301,7 @@ gcLines SummaryData{dGCTable} =
               | gcColls == 0 = 0
               | otherwise = gcElapsedS / fromIntegral gcColls
         in printf "  %s  Gen 0+1  %5d colls, %5d par      %5.2fs          %3.4fs    %3.4fs" header gcColls gcPar gcElapsedS gcAvgPauseS gcMaxPauseS
-  in (timeToSecondsDbl $ gcElapsed gcSum,
+  in (timeToSecondsDbl $ gcElapsed gcSum,  -- TODO: do not add HECs
       ["                                            Tot elapsed time   Avg pause  Max pause"] ++
       IM.elems (IM.mapWithKey gcLine dGCTable) ++
       [displayGCCounter "GC TOTAL" gcSum] ++
@@ -352,11 +351,20 @@ summaryViewProcessEvents minterval (Just events) =
         | time < istart || time > iend = summaryData
       f summaryData ev = scanEvents summaryData ev
       sd@SummaryData{..} = L.foldl' f start $ elems $ events
-      totalElapsedS = timeToSecondsDbl $ iend - istart
+      totalElapsed = timeToSecondsDbl $ iend - istart
       (gcTotalElapsed, gcLines_sd) = gcLines sd
+      mutElapsed = totalElapsed - gcTotalElapsed
+      totalAllocated = fromIntegral $ maybe 0 (uncurry (-)) dallocated
+      allocRate = ppWithCommas $ truncate $ totalAllocated / mutElapsed
       timeLines =
-        [ printf "  GC      time  %6.2fs elapsed" gcTotalElapsed
-        , printf "  Total   time  %6.2fs elapsed" totalElapsedS
+        [ printf "  MUT     time  %6.2fs elapsed" mutElapsed
+        , printf "  GC      time  %6.2fs elapsed" gcTotalElapsed
+        , printf "  Total   time  %6.2fs elapsed" totalElapsed
+        , ""
+        , printf "  Alloc rate    %s bytes per MUT second" allocRate
+        , ""
+        , printf "  Productivity %.1f%% of total elapsed" $
+            mutElapsed * 100 / totalElapsed
         ]
       info = unlines $ memLines sd ++ gcLines_sd ++ sparkLines sd ++ timeLines
   in (info, Just events)
