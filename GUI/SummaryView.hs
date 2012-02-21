@@ -89,7 +89,7 @@ genericSetEvents processEvents SummaryView{..} mev = do
 
 -- TODO: some of these are unused yet.
 data SummaryData = SummaryData
-  { dallocated     :: Maybe (Word64, Word64)
+  { dallocTable    :: !(IM.IntMap (Word64, Word64))
   , dcopied        :: Maybe Word64
   , dmaxResidency  :: Maybe Word64
   , dmaxSlop       :: Maybe Word64
@@ -125,7 +125,7 @@ data RtsGC = RtsGC
 
 emptySummaryData :: SummaryData
 emptySummaryData = SummaryData
-  { dallocated     = Nothing
+  { dallocTable    = IM.empty
   , dcopied        = Nothing
   , dmaxResidency  = Nothing
   , dmaxSlop       = Nothing
@@ -185,7 +185,8 @@ scanEvents !summaryData (CapEvent mcap ev) =
           EventBlock{cap = bcap, block_events} ->
             L.foldl' (scan bcap) sd block_events
           HeapAllocated{allocBytes} ->
-            sd { dallocated = alterCounter allocBytes dallocated }
+            sd { dallocTable =
+                   IM.alter (alterCounter allocBytes) cap dallocTable }
           GCStatsGHC{copied, slop, frag} ->
             sd { dcopied = alterIncrement copied dcopied
                , dmaxSlop = alterMax slop dmaxSlop
@@ -267,7 +268,7 @@ printW s (Just w) = [printf s $ ppWithCommas w]
 memLines :: SummaryData -> [String]
 memLines SummaryData{..} =
   printW "%16s bytes allocated in the heap"
-    (fmap (uncurry (-)) dallocated) ++
+    (Just $ L.sum $ L.map (uncurry (-)) $ IM.elems dallocTable) ++
   printW "%16s bytes copied during GC" dcopied ++
   printW "%16s bytes maximum residency" dmaxResidency ++
   printW "%16s bytes maximum slop" dmaxSlop ++
@@ -333,14 +334,18 @@ summaryViewProcessEvents :: Maybe Interval -> Maybe (Array Int CapEvent)
                          -> (String, Maybe (Array Int CapEvent))
 summaryViewProcessEvents _ Nothing = ("", Nothing)
 summaryViewProcessEvents minterval (Just events) =
-  let start = if istart == 0
-              then -- Intervals beginning at time 0 are a special case,
-                   -- because morally the first event should have value 0,
-                   -- but it may be absent, so we start with 0.
-                   emptySummaryData { dallocated = Just (0, 0)
-                                    , dcopied = Just 0
-                                    }
-              else emptySummaryData
+  let start =
+        if istart == 0
+        then -- Intervals beginning at time 0 are a special case,
+             -- because morally the first event should have value 0,
+             -- but it may be absent, so we start with 0.
+             emptySummaryData { dallocTable =
+                                   -- a hack: we assume no more than 999 caps
+                                   IM.fromDistinctAscList $
+                                     zip [0..999] $ repeat (0, 0)
+                              , dcopied = Just 0
+                              }
+        else emptySummaryData
       eventBlockEnd e | EventBlock{ end_time=t } <- spec $ ce_event e = t
       eventBlockEnd e = time $ ce_event e
       -- Warning: stack overflow when done like in ReadEvents.hs:
@@ -354,7 +359,8 @@ summaryViewProcessEvents minterval (Just events) =
       totalElapsed = timeToSecondsDbl $ iend - istart
       (gcTotalElapsed, gcLines_sd) = gcLines sd
       mutElapsed = totalElapsed - gcTotalElapsed
-      totalAllocated = fromIntegral $ maybe 0 (uncurry (-)) dallocated
+      totalAllocated =
+        fromIntegral $ L.sum $ L.map (uncurry (-)) $ IM.elems dallocTable
       allocRate = ppWithCommas $ truncate $ totalAllocated / mutElapsed
       timeLines =
         [ printf "  MUT     time  %6.2fs elapsed" mutElapsed
