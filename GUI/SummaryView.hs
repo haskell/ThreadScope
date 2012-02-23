@@ -111,17 +111,24 @@ data RtsSpark = RtsSpark
  , sparkConverted, sparkFizzled, sparkGCd :: !Timestamp
  }
 
-data GcMode = ModeInit | ModeStart | ModeGHC | ModeEnd | ModeUnknown
+type Gen = Int
+
+data GcMode = ModeInit | ModeStart | ModeGHC Gen | ModeEnd | ModeUnknown
   deriving Eq
 
 data RtsGC = RtsGC
   { gcMode      :: !GcMode
   , gcStartTime :: !Timestamp
-  , gcSeq       :: !Int
-  , gcPar       :: !Int
-  , gcElapsed   :: !Timestamp
-  , gcMaxPause  :: !Timestamp
+  , gcGenStat   :: !(IM.IntMap GenStat)
   }
+
+data GenStat = GenStat
+  { gcSeq      :: !Int
+  , gcPar      :: !Int
+  , gcElapsed  :: !Timestamp
+  , gcMaxPause :: !Timestamp
+  }
+
 
 emptySummaryData :: SummaryData
 emptySummaryData = SummaryData
@@ -144,10 +151,15 @@ defaultGC :: Timestamp -> RtsGC
 defaultGC time = RtsGC
   { gcMode      = ModeInit
   , gcStartTime = time
-  , gcSeq       = 0
-  , gcPar       = 0
-  , gcElapsed   = 0
-  , gcMaxPause  = 0
+  , gcGenStat   = IM.empty
+  }
+
+emptyGenStat :: GenStat
+emptyGenStat = GenStat
+  { gcSeq      = 0
+  , gcPar      = 0
+  , gcElapsed  = 0
+  , gcMaxPause = 0
   }
 
 scanEvents :: SummaryData -> CapEvent -> SummaryData
@@ -196,54 +208,71 @@ scanEvents !summaryData (CapEvent mcap ev) =
             -- All caps must be stopped. Those that take part in the GC
             -- are in ModeInit or ModeStart, those that do not
             -- are in ModeInit or ModeEnd or ModeUnknown.
-            assert (L.all ((/= ModeGHC) . gcMode) (IM.elems dGCTable)) $
-            sd { dcopied  = alterIncrement copied dcopied
-               , dmaxSlop = alterMax slop dmaxSlop
-               , dmaxFrag = alterMax frag dmaxFrag  -- TODO
+            assert (L.all (notModeGHC . gcMode) (IM.elems dGCTable)) $
+            sd { dcopied  = alterIncrement copied dcopied  -- sum over caps
+               , dmaxSlop = alterMax slop dmaxSlop  -- max over all caps
+               , dmaxFrag = alterMax frag dmaxFrag  --TODO -- max over all caps
                , dGCTable = IM.map setParSeq dGCTable
                }
              where
+              notModeGHC ModeGHC{} = False
+              notModeGHC _         = True
               someInit = L.any ((== ModeInit) . gcMode) (IM.elems dGCTable)
-              setParSeq dGC
+              setParSeq dGC@RtsGC{gcGenStat} | someInit =
                 -- If even any cap could possibly have started GC before
                 -- the start of the interval, skip the GC.
                 -- TODO: we could be smarter and defer the decision to EndGC,
                 -- when we can deduce if the suspect caps take part in GC
                 -- or not at all.
-                | someInit = dGC { gcMode = ModeUnknown }
-                | otherwise = case gcMode dGC of
+                dGC { gcMode = ModeUnknown }
+                                             | otherwise =
+                let genGC = IM.findWithDefault emptyGenStat gen gcGenStat
+                in case gcMode dGC of
                   -- Cap takes part in the seq GC.
                   ModeStart | parNThreads == 1 ->
-                    dGC { gcMode = ModeGHC
-                        , gcSeq = gcSeq dGC + 1
+                    dGC { gcMode = ModeGHC gen
+                        , gcGenStat = IM.insert gen
+                                        genGC{ gcSeq = gcSeq genGC + 1 }
+                                        gcGenStat
                         }
                   -- Cap takes part in the par GC.
                   ModeStart ->
                     assert (parNThreads > 1) $
-                    dGC { gcMode = ModeGHC
-                        , gcPar = gcPar dGC + 1
+                    dGC { gcMode = ModeGHC gen
+                        , gcGenStat = IM.insert gen
+                                        genGC{ gcPar = gcPar genGC + 1 }
+                                        gcGenStat
                         }
                   -- Cap not in the GC, leave it alone.
                   ModeEnd -> dGC
                   -- Cap not in the GC, clear its mode.
                   ModeUnknown -> dGC { gcMode = ModeEnd }
                   -- Impossible.
-                  ModeInit -> error $ "scanEvents: ModeInit"
-                  ModeGHC  -> error $ "scanEvents: ModeGHC"
+                  ModeInit  -> error $ "scanEvents: ModeInit"
+                  ModeGHC{} -> error $ "scanEvents: ModeGHC"
           EndGC ->
             assert (gcMode capGC `notElem` [ModeStart, ModeEnd]) $
-            let duration = time - gcStartTime capGC
-                endedGC = capGC { gcMode = ModeEnd }
-                timeGC = endedGC { gcElapsed = gcElapsed capGC + duration
-                                 , gcMaxPause = max (gcMaxPause capGC) duration
-                                 }
+            let endedGC = capGC { gcMode = ModeEnd }
+                duration = time - gcStartTime capGC
+                timeGC gen =
+                  let genGC =
+                        IM.findWithDefault
+                          (error "scanEvents: GCStatsGHC failed to init gen")
+                          gen (gcGenStat capGC)
+                      newGenGC =
+                        genGC { gcElapsed = gcElapsed genGC + duration
+                              , gcMaxPause = max (gcMaxPause genGC) duration
+                              }
+                  in endedGC { gcGenStat =
+                                  IM.insert gen newGenGC (gcGenStat capGC) }
             in case gcMode capGC of
                  -- We don't know the exact timing of this GC started before
                  -- the selected interval, so we skip it and clear its mode.
                  ModeInit -> sd { dGCTable = IM.insert cap endedGC dGCTable }
                  ModeUnknown -> sd { dGCTable = IM.insert cap endedGC dGCTable}
                  -- All is known, so we update the times.
-                 ModeGHC -> sd { dGCTable = IM.insert cap timeGC dGCTable }
+                 ModeGHC gen ->
+                   sd { dGCTable = IM.insert cap (timeGC gen) dGCTable }
                  _ -> error "scanEvents: impossible gcMode"
           SparkCounters crt dud ovf cnv fiz gcd _rem ->
             -- We are guranteed the first spark counters event has all zeroes,
@@ -284,28 +313,29 @@ timeToSecondsDbl t = fromIntegral t / tIME_RESOLUTION
 
 gcLines :: SummaryData -> (Double, [String])
 gcLines SummaryData{dGCTable} =
-  let gcLine :: Int -> RtsGC -> String
-      gcLine k = displayGCCounter (printf "GC HEC %d" k)
-      gcSum = sumGCCounters $ IM.elems dGCTable
-      -- TODO: sort by gen, not by cap
-      sumGCCounters l =
-        let sumPr proj = L.sum $ L.map proj l
-        in RtsGC
-             ModeInit 0 (sumPr gcSeq) (sumPr gcPar) (sumPr gcElapsed)
-             (L.maximum $ 0 : map gcMaxPause l)
-      displayGCCounter :: String -> RtsGC -> String
-      displayGCCounter header RtsGC{..} =
+  let gcLine :: Gen -> String
+      gcLine gen = displayGC (printf "Gen  %d" gen) (gcGather gen)
+      gcGather :: Gen -> GenStat
+      gcGather gen = gcSum gen $ map gcGenStat $ IM.elems dGCTable
+      gcSum :: Gen -> [IM.IntMap GenStat] -> GenStat
+      gcSum gen l =
+        let l_genGC = map (IM.findWithDefault emptyGenStat gen) l
+            sumPr proj = sum $ map proj l_genGC
+        in GenStat (sumPr gcSeq) (sumPr gcPar) (sumPr gcElapsed)
+             (L.maximum $ 0 : map gcMaxPause l_genGC)
+      displayGC :: String -> GenStat -> String
+      displayGC header GenStat{..} =
         let gcColls = gcSeq + gcPar
             gcElapsedS = timeToSecondsDbl gcElapsed
             gcMaxPauseS = timeToSecondsDbl gcMaxPause
             gcAvgPauseS
               | gcColls == 0 = 0
               | otherwise = gcElapsedS / fromIntegral gcColls
-        in printf "  %s  Gen 0+1  %5d colls, %5d par      %5.2fs          %3.4fs    %3.4fs" header gcColls gcPar gcElapsedS gcAvgPauseS gcMaxPauseS
-  in (timeToSecondsDbl $ gcElapsed gcSum,  -- TODO: do not add HECs
-      ["                                            Tot elapsed time   Avg pause  Max pause"] ++
-      IM.elems (IM.mapWithKey gcLine dGCTable) ++
-      [displayGCCounter "GC TOTAL" gcSum] ++
+        in printf "  %s     %5d colls, %5d par      %5.2fs          %3.4fs    %3.4fs" header gcColls gcPar gcElapsedS gcAvgPauseS gcMaxPauseS
+  in (timeToSecondsDbl $ gcElapsed (gcGather 0),  -- TODO
+      ["                                    "
+       ++ "Tot elapsed time   Avg pause  Max pause"] ++
+      map gcLine [0..1] ++  -- TODO: take '1' from SummaryData
       [""])
 
 sparkLines :: SummaryData -> [String]
