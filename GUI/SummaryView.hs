@@ -314,29 +314,36 @@ timeToSecondsDbl t = fromIntegral t / tIME_RESOLUTION
 
 gcLines :: SummaryData -> (Double, [String])
 gcLines SummaryData{dGCTable} =
-  let gcLine :: Gen -> String
-      gcLine gen = displayGC (printf "Gen  %d" gen) (gcGather gen)
+  let gens = [0..1]  -- TODO: take it from SummaryData instead of hardwiring
+      gathered = map gcGather gens
       gcGather :: Gen -> GenStat
       gcGather gen = gcSum gen $ map gcGenStat $ IM.elems dGCTable
       gcSum :: Gen -> [IM.IntMap GenStat] -> GenStat
       gcSum gen l =
         let l_genGC = map (IM.findWithDefault emptyGenStat gen) l
             sumPr proj = sum $ map proj l_genGC
-        in GenStat (sumPr gcSeq) (sumPr gcPar) (sumPr gcElapsed)
-             (L.maximum $ 0 : map gcMaxPause l_genGC)
-      displayGC :: String -> GenStat -> String
-      displayGC header GenStat{..} =
+            maxPr proj = L.maximum $ map proj l_genGC
+            -- EndGC is emitted too late, so we try to compensate
+            -- by choosing the cap on which it appears soonest.
+            minPr proj = L.minimum $ filter (> 0) $ map proj l_genGC
+            -- This would be most balanced, if event times were accurate.
+            _avgPr proj = let vs = filter (> 0) $ map proj l_genGC
+                          in sum vs `div` fromIntegral (length vs)
+        in GenStat (sumPr gcSeq) (sumPr gcPar)
+                   (minPr gcElapsed) (maxPr gcMaxPause)
+      displayGC :: (Gen, GenStat) -> String
+      displayGC (gen, GenStat{..}) =
         let gcColls = gcSeq + gcPar
             gcElapsedS = timeToSecondsDbl gcElapsed
             gcMaxPauseS = timeToSecondsDbl gcMaxPause
             gcAvgPauseS
               | gcColls == 0 = 0
               | otherwise = gcElapsedS / fromIntegral gcColls
-        in printf "  %s     %5d colls, %5d par      %5.2fs         %3.4fs    %3.4fs" header gcColls gcPar gcElapsedS gcAvgPauseS gcMaxPauseS
-  in (timeToSecondsDbl $ gcElapsed (gcGather 0),  -- TODO
+        in printf "  Gen  %d     %5d colls, %5d par      %5.2fs         %3.4fs    %3.4fs" gen gcColls gcPar gcElapsedS gcAvgPauseS gcMaxPauseS
+  in (timeToSecondsDbl $ sum $ map gcElapsed gathered,
       ["                                    "
        ++ "Tot elapsed time  Avg pause  Max pause"] ++
-      map gcLine [0..1] ++  -- TODO: take '1' from SummaryData
+      map displayGC (zip [0..] gathered) ++
       [""])
 
 sparkLines :: SummaryData -> [String]
@@ -397,9 +404,9 @@ summaryViewProcessEvents minterval (Just events) =
         , printf "  GC      time  %6.2fs elapsed" gcTotalElapsed
         , printf "  Total   time  %6.2fs elapsed" totalElapsed
         , ""
-        , printf "  Alloc rate    %s bytes per MUT second" allocRate
+        , printf "  Alloc rate    %s bytes per elapsed MUT second" allocRate
         , ""
-        , printf "  Productivity %.1f%% of total elapsed" $
+        , printf "  Productivity %.1f%% of MUT elapsed vs total elapsed" $
             mutElapsed * 100 / totalElapsed
         ]
       info = unlines $ memLines sd ++ gcLines_sd ++ sparkLines sd ++ timeLines
