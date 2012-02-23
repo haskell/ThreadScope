@@ -129,7 +129,6 @@ data GenStat = GenStat
   , gcMaxPause :: !Timestamp
   }
 
-
 emptySummaryData :: SummaryData
 emptySummaryData = SummaryData
   { dallocTable    = IM.empty
@@ -212,13 +211,13 @@ scanEvents !summaryData (CapEvent mcap ev) =
             sd { dcopied  = alterIncrement copied dcopied  -- sum over caps
                , dmaxSlop = alterMax slop dmaxSlop  -- max over all caps
                , dmaxFrag = alterMax frag dmaxFrag  --TODO -- max over all caps
-               , dGCTable = IM.map setParSeq dGCTable
+               , dGCTable = IM.mapWithKey setParSeq dGCTable
                }
              where
               notModeGHC ModeGHC{} = False
               notModeGHC _         = True
               someInit = L.any ((== ModeInit) . gcMode) (IM.elems dGCTable)
-              setParSeq dGC@RtsGC{gcGenStat} | someInit =
+              setParSeq capKey dGC@RtsGC{gcGenStat} | someInit =
                 -- If even any cap could possibly have started GC before
                 -- the start of the interval, skip the GC.
                 -- TODO: we could be smarter and defer the decision to EndGC,
@@ -231,17 +230,21 @@ scanEvents !summaryData (CapEvent mcap ev) =
                   -- Cap takes part in the seq GC.
                   ModeStart | parNThreads == 1 ->
                     dGC { gcMode = ModeGHC gen
-                        , gcGenStat = IM.insert gen
-                                        genGC{ gcSeq = gcSeq genGC + 1 }
-                                        gcGenStat
+                        , gcGenStat = if capKey == cap
+                                      then IM.insert gen
+                                             genGC{ gcSeq = gcSeq genGC + 1 }
+                                             gcGenStat
+                                      else gcGenStat
                         }
                   -- Cap takes part in the par GC.
                   ModeStart ->
                     assert (parNThreads > 1) $
                     dGC { gcMode = ModeGHC gen
-                        , gcGenStat = IM.insert gen
-                                        genGC{ gcPar = gcPar genGC + 1 }
-                                        gcGenStat
+                        , gcGenStat = if capKey == cap
+                                      then IM.insert gen
+                                             genGC{ gcPar = gcPar genGC + 1 }
+                                             gcGenStat
+                                      else gcGenStat
                         }
                   -- Cap not in the GC, leave it alone.
                   ModeEnd -> dGC
@@ -256,9 +259,7 @@ scanEvents !summaryData (CapEvent mcap ev) =
                 duration = time - gcStartTime capGC
                 timeGC gen =
                   let genGC =
-                        IM.findWithDefault
-                          (error "scanEvents: GCStatsGHC failed to init gen")
-                          gen (gcGenStat capGC)
+                        IM.findWithDefault emptyGenStat gen (gcGenStat capGC)
                       newGenGC =
                         genGC { gcElapsed = gcElapsed genGC + duration
                               , gcMaxPause = max (gcMaxPause genGC) duration
@@ -331,10 +332,10 @@ gcLines SummaryData{dGCTable} =
             gcAvgPauseS
               | gcColls == 0 = 0
               | otherwise = gcElapsedS / fromIntegral gcColls
-        in printf "  %s     %5d colls, %5d par      %5.2fs          %3.4fs    %3.4fs" header gcColls gcPar gcElapsedS gcAvgPauseS gcMaxPauseS
+        in printf "  %s     %5d colls, %5d par      %5.2fs         %3.4fs    %3.4fs" header gcColls gcPar gcElapsedS gcAvgPauseS gcMaxPauseS
   in (timeToSecondsDbl $ gcElapsed (gcGather 0),  -- TODO
       ["                                    "
-       ++ "Tot elapsed time   Avg pause  Max pause"] ++
+       ++ "Tot elapsed time  Avg pause  Max pause"] ++
       map gcLine [0..1] ++  -- TODO: take '1' from SummaryData
       [""])
 
