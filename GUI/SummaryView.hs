@@ -111,12 +111,12 @@ data RtsSpark = RtsSpark
  , sparkConverted, sparkFizzled, sparkGCd :: !Timestamp
  }
 
-data GcMode = ModePar | ModeSeq | ModeInitial | ModeEnded
+data GcMode = ModeInit | ModeStart | ModeGHC | ModeEnd | ModeUnknown
+  deriving Eq
 
 data RtsGC = RtsGC
   { gcMode      :: !GcMode
-  , gcLastEvent :: !EventInfo
-  , gcLastStart :: !Timestamp
+  , gcStartTime :: !Timestamp
   , gcSeq       :: !Int
   , gcPar       :: !Int
   , gcElapsed   :: !Timestamp
@@ -142,13 +142,12 @@ emptySummaryData = SummaryData
 
 defaultGC :: Timestamp -> RtsGC
 defaultGC time = RtsGC
-  { gcMode = ModeInitial
-  , gcLastEvent = EndGC
-  , gcLastStart = time
-  , gcSeq = 0
-  , gcPar = 0
-  , gcElapsed = 0
-  , gcMaxPause = 0
+  { gcMode      = ModeInit
+  , gcStartTime = time
+  , gcSeq       = 0
+  , gcPar       = 0
+  , gcElapsed   = 0
+  , gcMaxPause  = 0
   }
 
 scanEvents :: SummaryData -> CapEvent -> SummaryData
@@ -174,12 +173,7 @@ scanEvents !summaryData (CapEvent mcap ev) =
       alterMax _ jk = jk
       -- Scan events, updating summary data.
       scan cap !sd@SummaryData{..} Event{time, spec} =
-        let defGC@RtsGC{..} =
-              IM.findWithDefault (defaultGC time) cap dGCTable
-            _lastGcEnded RtsGC{gcLastEvent} =
-              case gcLastEvent of
-                EndGC -> True
-                _     -> False
+        let capGC = IM.findWithDefault (defaultGC time) cap dGCTable
         in case spec of
           -- TODO: check EventBlock elsewhere; define {map,fold}EventBlock
           EventBlock{cap = bcap, block_events} ->
@@ -187,64 +181,70 @@ scanEvents !summaryData (CapEvent mcap ev) =
           HeapAllocated{allocBytes} ->
             sd { dallocTable =
                    IM.alter (alterCounter allocBytes) cap dallocTable }
-          GCStatsGHC{copied, slop, frag} ->
-            sd { dcopied = alterIncrement copied dcopied
-               , dmaxSlop = alterMax slop dmaxSlop
-               , dmaxFrag = alterMax frag dmaxFrag  -- TODO
-               }
           HeapLive{liveBytes} ->
             sd { dmaxResidency = alterMax liveBytes dmaxResidency}
           HeapSize{sizeBytes} ->
             sd { dmaxMemory = alterMax sizeBytes dmaxMemory}
-          RequestSeqGC ->
-            -- All the other caps must stop, hence the assertion:
-            assert (L.all _lastGcEnded $ IM.elems dGCTable) $
-            sd { dGCTable =
-                   IM.insert cap (defGC { gcMode = ModeSeq }) dGCTable }
-          RequestParGC ->
-            sd { dGCTable =
-                   IM.map (\ dGC -> dGC { gcMode = ModePar }) dGCTable }
           StartGC ->
-            assert (_lastGcEnded defGC) $
-            let newGC = defGC { gcLastEvent = StartGC
-                              , gcLastStart = time
+            assert (gcMode capGC `elem` [ModeInit, ModeEnd, ModeUnknown]) $
+            let newGC = capGC { gcMode = ModeStart
+                              , gcStartTime = time
                               }
             -- TODO: Index with generations, not caps.
             in sd { dGCTable = IM.insert cap newGC dGCTable }
+          GCStatsGHC{..} ->
+            -- All caps must be stopped. Those that take part in the GC
+            -- are in ModeInit or ModeStart, those that do not
+            -- are in ModeInit or ModeEnd or ModeUnknown.
+            assert (L.all ((/= ModeGHC) . gcMode) (IM.elems dGCTable)) $
+            sd { dcopied  = alterIncrement copied dcopied
+               , dmaxSlop = alterMax slop dmaxSlop
+               , dmaxFrag = alterMax frag dmaxFrag  -- TODO
+               , dGCTable = IM.map setParSeq dGCTable
+               }
+             where
+              someInit = L.any ((== ModeInit) . gcMode) (IM.elems dGCTable)
+              setParSeq dGC
+                -- If even any cap could possibly have started GC before
+                -- the start of the interval, skip the GC.
+                -- TODO: we could be smarter and defer the decision to EndGC,
+                -- when we can deduce if the suspect caps take part in GC
+                -- or not at all.
+                | someInit = dGC { gcMode = ModeUnknown }
+                | otherwise = case gcMode dGC of
+                  -- Cap takes part in the seq GC.
+                  ModeStart | parNThreads == 1 ->
+                    dGC { gcMode = ModeGHC
+                        , gcSeq = gcSeq dGC + 1
+                        }
+                  -- Cap takes part in the par GC.
+                  ModeStart ->
+                    assert (parNThreads > 1) $
+                    dGC { gcMode = ModeGHC
+                        , gcPar = gcPar dGC + 1
+                        }
+                  -- Cap not in the GC, leave it alone.
+                  ModeEnd -> dGC
+                  -- Cap not in the GC, clear its mode.
+                  ModeUnknown -> dGC { gcMode = ModeEnd }
+                  -- Impossible.
+                  ModeInit -> error $ "scanEvents: ModeInit"
+                  ModeGHC  -> error $ "scanEvents: ModeGHC"
           EndGC ->
-            let duration = time - gcLastStart
-                endedGC = defGC { gcMode = ModeEnded
-                                , gcLastEvent = EndGC
-                                }
-                timeGC = endedGC { gcElapsed = gcElapsed + duration
-                                 , gcMaxPause = max gcMaxPause duration
+            assert (gcMode capGC `notElem` [ModeStart, ModeEnd]) $
+            let duration = time - gcStartTime capGC
+                endedGC = capGC { gcMode = ModeEnd }
+                timeGC = endedGC { gcElapsed = gcElapsed capGC + duration
+                                 , gcMaxPause = max (gcMaxPause capGC) duration
                                  }
-                -- Par/seq GC counts are incremented here, not under StartGC,
-                -- to work around RequestParGC sometimes being issued
-                -- _after_ corresponding StartGC.
-                collsGC = case gcMode of
-                  ModeSeq -> timeGC { gcSeq = gcSeq + 1 }
-                  ModePar -> timeGC { gcPar = gcPar + 1 }
-                  -- We don't know if the current GC, requested before
-                  -- the start of the selected interval, is par or seq,
-                  -- so we skip the GC.
-                  ModeInitial -> endedGC
-                  -- Rarely there is no Request*GC between two occurences
-                  -- of EndGC, e.g., when EndGC comes too late,
-                  -- after Request*GC for the next GC. We skip such GCs.
-                  -- TODO: validate eventlogs, checking that each RequestParGC
-                  -- is matched by exactly one StartGC and EndGC.
-                  -- Then use here the work of the finite machine that does
-                  -- the matching and so correctly register stats of the GC.
-                  ModeEnded -> endedGC
-            in case gcLastEvent of
-              StartGC -> sd { dGCTable = IM.insert cap collsGC dGCTable }
-              -- We don't know the exact timing of this GC started before
-              -- the selected interval, so we skip it.
-              -- We don't know if StartGC or RequestParGC/RequestSeqGC
-              -- gets issued first,so we have to check both gcMode
-              -- above and gcLastEvent here to correctly skip the GC.
-              _       -> sd { dGCTable = IM.insert cap endedGC dGCTable }
+            in case gcMode capGC of
+                 -- We don't know the exact timing of this GC started before
+                 -- the selected interval, so we skip it and clear its mode.
+                 ModeInit -> sd { dGCTable = IM.insert cap endedGC dGCTable }
+                 ModeUnknown -> sd { dGCTable = IM.insert cap endedGC dGCTable}
+                 -- All is known, so we update the times.
+                 ModeGHC -> sd { dGCTable = IM.insert cap timeGC dGCTable }
+                 _ -> error "scanEvents: impossible gcMode"
           SparkCounters crt dud ovf cnv fiz gcd _rem ->
             -- We are guranteed the first spark counters event has all zeroes,
             -- do we don't need to rig the counters for maximal interval.
@@ -291,7 +291,7 @@ gcLines SummaryData{dGCTable} =
       sumGCCounters l =
         let sumPr proj = L.sum $ L.map proj l
         in RtsGC
-             ModePar EndGC 0 (sumPr gcSeq) (sumPr gcPar) (sumPr gcElapsed)
+             ModeInit 0 (sumPr gcSeq) (sumPr gcPar) (sumPr gcElapsed)
              (L.maximum $ 0 : map gcMaxPause l)
       displayGCCounter :: String -> RtsGC -> String
       displayGCCounter header RtsGC{..} =
@@ -339,12 +339,11 @@ summaryViewProcessEvents minterval (Just events) =
         then -- Intervals beginning at time 0 are a special case,
              -- because morally the first event should have value 0,
              -- but it may be absent, so we start with 0.
-             emptySummaryData { dallocTable =
-                                   -- a hack: we assume no more than 999 caps
-                                   IM.fromDistinctAscList $
-                                     zip [0..999] $ repeat (0, 0)
-                              , dcopied = Just 0
-                              }
+             emptySummaryData
+               { dallocTable = -- a hack: we assume no more than 999 caps
+                   IM.fromDistinctAscList $ zip [0..999] $ repeat (0, 0)
+               , dcopied = Just 0
+               }
         else emptySummaryData
       eventBlockEnd e | EventBlock{ end_time=t } <- spec $ ce_event e = t
       eventBlockEnd e = time $ ce_event e
