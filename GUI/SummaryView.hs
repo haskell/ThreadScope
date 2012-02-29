@@ -327,15 +327,15 @@ gcLines SummaryData{..} =
       gcSum gen l =
         let l_genGC = map (IM.findWithDefault emptyGenStat gen) l
             sumPr proj = sum $ map proj l_genGC
-            maxPr proj = L.maximum $ map proj l_genGC
+            _maxPr proj = L.maximum $ map proj l_genGC
             -- EndGC is emitted too late, so we try to compensate
             -- by choosing the cap on which it appears soonest.
-            minPr proj = L.minimum $ filter (> 0) $ map proj l_genGC
+            _minPr proj = L.minimum $ filter (> 0) $ map proj l_genGC
             -- This would be most balanced, if event times were accurate.
-            _avgPr proj = let vs = filter (> 0) $ map proj l_genGC
+            avgPr proj = let vs = filter (> 0) $ map proj l_genGC
                           in sum vs `div` fromIntegral (length vs)
         in GenStat (sumPr gcSeq) (sumPr gcPar)
-                   (minPr gcElapsed) (maxPr gcMaxPause)
+                   (avgPr gcElapsed) (avgPr gcMaxPause)
       displayGC :: (Gen, GenStat) -> String
       displayGC (gen, GenStat{..}) =
         let gcColls = gcSeq + gcPar
