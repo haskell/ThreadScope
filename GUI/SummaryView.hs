@@ -87,25 +87,27 @@ genericSetEvents processEvents SummaryView{..} mev = do
   writeIORef mintervalIORef Nothing  -- the old interval may make no sense
   widgetQueueDraw gtkLayout
 
--- TODO: some of these are unused yet.
+-- | Data collected and computed gradually while events are scanned.
 data SummaryData = SummaryData
-  { dallocTable    :: !(IM.IntMap (Word64, Word64))
-  , dcopied        :: Maybe Word64
-  , dmaxResidency  :: Maybe Word64
-  , dmaxSlop       :: Maybe Word64
-  , dmaxMemory     :: Maybe Word64
-  , dmaxFrag       :: Maybe Word64
-  , dGCTable       :: !(IM.IntMap RtsGC)
-  , dparMaxCopied  :: Maybe Word64
-  , dparTotCopied  :: Maybe Word64
+  { dallocTable     :: !(IM.IntMap (Word64, Word64))
+  , dcopied         :: Maybe Word64
+  , dmaxResidency   :: Maybe Word64
+  , dmaxSlop        :: Maybe Word64
+  , dmaxMemory      :: Maybe Word64
+  , dmaxFrag        :: Maybe Word64
+  , dGCTable        :: !(IM.IntMap RtsGC)
+  , dparMaxCopied   :: Maybe Word64
+  , dparTotCopied   :: Maybe Word64
   , dmaxParNThreads :: Maybe Int
---, dtaskTable     -- of questionable usefulness, hard to get
-  , dsparkTable    :: !(IM.IntMap (RtsSpark, RtsSpark))
---, dInitExitT     -- naturally excluded from eventlog
-  , dMutTime       :: Maybe Double
-  , dGCTime        :: Maybe Double
-  , dtotalTime     :: Maybe Double
-  , dproductivity  :: Maybe Double
+--, dtaskTable      -- of questionable usefulness, hard to get
+  , dsparkTable     :: !(IM.IntMap (RtsSpark, RtsSpark))
+--, dInitExitT      -- TODO. At least init time can be included in the total
+                    -- time registered in the eventlog. Can we measure this
+                    -- as the time between some initial events?
+--, dGCTime         -- Is better computed after all events are scanned,
+                    -- e.g., because the same info can be used to calculate
+                    -- per-cap GCTime and other per-cap stats.
+--, dtotalTime      -- TODO: can we measure this excludint INIT or EXIT times?
   }
 
 data RtsSpark = RtsSpark
@@ -144,10 +146,6 @@ emptySummaryData = SummaryData
   , dparTotCopied  = Nothing
   , dmaxParNThreads = Nothing
   , dsparkTable    = IM.empty
-  , dMutTime       = Nothing
-  , dGCTime        = Nothing
-  , dtotalTime     = Nothing
-  , dproductivity  = Nothing
   }
 
 defaultGC :: Timestamp -> RtsGC
