@@ -96,7 +96,9 @@ data SummaryData = SummaryData
   , dmaxMemory     :: Maybe Word64
   , dmaxFrag       :: Maybe Word64
   , dGCTable       :: !(IM.IntMap RtsGC)
-  , dparBalance    :: Maybe Double
+  , dparMaxCopied  :: Maybe Word64
+  , dparTotCopied  :: Maybe Word64
+  , dmaxParNThreads :: Maybe Int
 --, dtaskTable     -- of questionable usefulness, hard to get
   , dsparkTable    :: !(IM.IntMap (RtsSpark, RtsSpark))
 --, dInitExitT     -- naturally excluded from eventlog
@@ -138,7 +140,9 @@ emptySummaryData = SummaryData
   , dmaxMemory     = Nothing
   , dmaxFrag       = Nothing
   , dGCTable       = IM.empty
-  , dparBalance    = Nothing
+  , dparMaxCopied  = Nothing
+  , dparTotCopied  = Nothing
+  , dmaxParNThreads = Nothing
   , dsparkTable    = IM.empty
   , dMutTime       = Nothing
   , dGCTime        = Nothing
@@ -212,6 +216,9 @@ scanEvents !summaryData (CapEvent mcap ev) =
                , dmaxSlop = alterMax slop dmaxSlop  -- max over all caps
                , dmaxFrag = alterMax frag dmaxFrag  --TODO -- max over all caps
                , dGCTable = IM.mapWithKey setParSeq dGCTable
+               , dparMaxCopied = alterIncrement parMaxCopied dparMaxCopied
+               , dparTotCopied = alterIncrement parTotCopied dparTotCopied
+               , dmaxParNThreads = alterMax parNThreads dmaxParNThreads
                }
              where
               notModeGHC ModeGHC{} = False
@@ -313,7 +320,7 @@ timeToSecondsDbl t = fromIntegral t / tIME_RESOLUTION
  where tIME_RESOLUTION = 1000000
 
 gcLines :: SummaryData -> (Double, [String])
-gcLines SummaryData{dGCTable} =
+gcLines SummaryData{..} =
   let gens = [0..1]  -- TODO: take it from SummaryData instead of hardwiring
       gathered = map gcGather gens
       gcGather :: Gen -> GenStat
@@ -340,11 +347,20 @@ gcLines SummaryData{dGCTable} =
               | gcColls == 0 = 0
               | otherwise = gcElapsedS / fromIntegral gcColls
         in printf "  Gen  %d     %5d colls, %5d par      %5.2fs         %3.4fs    %3.4fs" gen gcColls gcPar gcElapsedS gcAvgPauseS gcMaxPauseS
-  in (timeToSecondsDbl $ sum $ map gcElapsed gathered,
-      ["                                    "
+      nThreads = maybe 1 fromIntegral dmaxParNThreads :: Double
+      balFigure = 100 * ((maybe 0 fromIntegral dparTotCopied
+                          / maybe 1 fromIntegral dparMaxCopied)
+                         - 1)
+                  / (nThreads - 1)
+      balText | nThreads < 2 = []
+              | otherwise    = ["", printf "    Parallel GC work balance: %.2f%% (serial 0%%, perfect 100%%)" balFigure]
+  in ( timeToSecondsDbl $ sum $ map gcElapsed gathered
+     , ["                                    "
        ++ "Tot elapsed time  Avg pause  Max pause"] ++
-      map displayGC (zip [0..] gathered) ++
-      [""])
+       map displayGC (zip [0..] gathered) ++
+       balText ++
+       [""]
+     )
 
 sparkLines :: SummaryData -> [String]
 sparkLines SummaryData{dsparkTable} =
