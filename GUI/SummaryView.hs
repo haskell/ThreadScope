@@ -126,9 +126,16 @@ data RtsGC = RtsGC
   , gcGenStat   :: !(IM.IntMap GenStat)
   }
 
+-- Index of the @gcGenStat@ map at which we store the sum of stats over all
+-- generations, or the single set of stats for non-genenerational GC models.
+gcGenTot :: Int
+gcGenTot = -1
+
 data GenStat = GenStat
-  { gcSeq      :: !Int
-  , gcPar      :: !Int
+  { -- Sum over all seqential and pararell GC invocations.
+    gcAll      :: !Int
+  , -- Only parallel GCs. For GC models without stop-the-world par, always 0.
+    gcPar      :: !Int
   , gcElapsed  :: !Timestamp
   , gcMaxPause :: !Timestamp
   }
@@ -157,7 +164,7 @@ defaultGC time = RtsGC
 
 emptyGenStat :: GenStat
 emptyGenStat = GenStat
-  { gcSeq      = 0
+  { gcAll      = 0
   , gcPar      = 0
   , gcElapsed  = 0
   , gcMaxPause = 0
@@ -222,42 +229,54 @@ scanEvents !summaryData (CapEvent mcap ev) =
               notModeGHC ModeGHC{} = False
               notModeGHC _         = True
               someInit = L.any ((== ModeInit) . gcMode) (IM.elems dGCTable)
-              setParSeq capKey dGC@RtsGC{gcGenStat} | someInit =
+              setParSeq capKey dGC@RtsGC{gcGenStat}
+                | someInit =
                 -- If even any cap could possibly have started GC before
                 -- the start of the interval, skip the GC.
                 -- TODO: we could be smarter and defer the decision to EndGC,
                 -- when we can deduce if the suspect caps take part in GC
                 -- or not at all.
                 dGC { gcMode = ModeUnknown }
-                                             | otherwise =
+                | otherwise =
                 let genGC = IM.findWithDefault emptyGenStat gen gcGenStat
+                    totGC = IM.findWithDefault emptyGenStat gcGenTot gcGenStat
                 in case gcMode dGC of
                   -- Cap takes part in the seq GC.
                   ModeStart | parNThreads == 1 ->
                     dGC { gcMode = ModeGHC gen
-                        , gcGenStat = if capKey == cap
-                                      then IM.insert gen
-                                             genGC{ gcSeq = gcSeq genGC + 1 }
-                                             gcGenStat
-                                      else gcGenStat
+                        , gcGenStat =
+                          if capKey == cap
+                          then IM.insert gen
+                                 genGC{ gcAll = gcAll genGC + 1 }
+                                 (IM.insert gcGenTot
+                                   totGC{ gcAll = gcAll totGC + 1 }
+                                   gcGenStat)
+                          else gcGenStat
                         }
                   -- Cap takes part in the par GC.
                   ModeStart ->
                     assert (parNThreads > 1) $
                     dGC { gcMode = ModeGHC gen
-                        , gcGenStat = if capKey == cap
-                                      then IM.insert gen
-                                             genGC{ gcPar = gcPar genGC + 1 }
-                                             gcGenStat
-                                      else gcGenStat
+                        , gcGenStat =
+                          if capKey == cap
+                          then IM.insert gen
+                                 genGC{ gcAll = gcAll genGC + 1
+                                      , gcPar = gcPar genGC + 1
+                                      }
+                                 (IM.insert gcGenTot
+                                   totGC{ gcAll = gcAll totGC + 1
+                                        , gcPar = gcPar totGC + 1
+                                        }
+                                   gcGenStat)
+                          else gcGenStat
                         }
                   -- Cap not in the GC, leave it alone.
                   ModeEnd -> dGC
                   -- Cap not in the GC, clear its mode.
                   ModeUnknown -> dGC { gcMode = ModeEnd }
                   -- Impossible.
-                  ModeInit  -> error $ "scanEvents: ModeInit"
-                  ModeGHC{} -> error $ "scanEvents: ModeGHC"
+                  ModeInit  -> error "scanEvents: ModeInit"
+                  ModeGHC{} -> error "scanEvents: ModeGHC"
           EndGC ->
             assert (gcMode capGC `notElem` [ModeStart, ModeEnd]) $
             let endedGC = capGC { gcMode = ModeEnd }
@@ -269,8 +288,17 @@ scanEvents !summaryData (CapEvent mcap ev) =
                         genGC { gcElapsed = gcElapsed genGC + duration
                               , gcMaxPause = max (gcMaxPause genGC) duration
                               }
+                      totGC =
+                        IM.findWithDefault emptyGenStat gcGenTot
+                                           (gcGenStat capGC)
+                      newTotGC =
+                        totGC { gcElapsed = gcElapsed totGC + duration
+                              , gcMaxPause = max (gcMaxPause totGC) duration
+                              }
                   in endedGC { gcGenStat =
-                                  IM.insert gen newGenGC (gcGenStat capGC) }
+                                  IM.insert gen newGenGC
+                                    (IM.insert gcGenTot newTotGC
+                                               (gcGenStat capGC)) }
             in case gcMode capGC of
                  -- We don't know the exact timing of this GC started before
                  -- the selected interval, so we skip it and clear its mode.
@@ -323,6 +351,10 @@ gcLines SummaryData{..} =
       gathered = map gcGather gens
       gcGather :: Gen -> GenStat
       gcGather gen = gcSum gen $ map gcGenStat $ IM.elems dGCTable
+      -- TODO: Consider per-HEC display of GC stats and then use
+      -- the values summed over all generations at key gcGenTot.
+      -- Also, if there is no GC_STATS_GHC event, we don't have generations
+      -- and then let's use gcGenTot, which depends only on GC_GLOBAL_SYNC.
       gcSum :: Gen -> [IM.IntMap GenStat] -> GenStat
       gcSum gen l =
         let l_genGC = map (IM.findWithDefault emptyGenStat gen) l
@@ -334,17 +366,16 @@ gcLines SummaryData{..} =
             -- This would be most balanced, if event times were accurate.
             avgPr proj = let vs = filter (> 0) $ map proj l_genGC
                           in sum vs `div` fromIntegral (length vs)
-        in GenStat (sumPr gcSeq) (sumPr gcPar)
+        in GenStat (sumPr gcAll) (sumPr gcPar)
                    (avgPr gcElapsed) (avgPr gcMaxPause)
       displayGC :: (Gen, GenStat) -> String
       displayGC (gen, GenStat{..}) =
-        let gcColls = gcSeq + gcPar
-            gcElapsedS = timeToSecondsDbl gcElapsed
+        let gcElapsedS = timeToSecondsDbl gcElapsed
             gcMaxPauseS = timeToSecondsDbl gcMaxPause
             gcAvgPauseS
-              | gcColls == 0 = 0
-              | otherwise = gcElapsedS / fromIntegral gcColls
-        in printf "  Gen  %d     %5d colls, %5d par      %5.2fs         %3.4fs    %3.4fs" gen gcColls gcPar gcElapsedS gcAvgPauseS gcMaxPauseS
+              | gcAll == 0 = 0
+              | otherwise = gcElapsedS / fromIntegral gcAll
+        in printf "  Gen  %d     %5d colls, %5d par      %5.2fs         %3.4fs    %3.4fs" gen gcAll gcPar gcElapsedS gcAvgPauseS gcMaxPauseS
       nThreads = maybe 1 fromIntegral dmaxParNThreads :: Double
       balFigure = 100 * ((maybe 0 fromIntegral dparTotCopied
                           / maybe 1 fromIntegral dparMaxCopied)
