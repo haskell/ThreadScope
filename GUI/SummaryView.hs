@@ -89,18 +89,18 @@ genericSetEvents processEvents SummaryView{..} mev = do
 
 -- | Data collected and computed gradually while events are scanned.
 data SummaryData = SummaryData
-  { dallocTable     :: !(IM.IntMap (Word64, Word64))
+  { dallocTable     :: !(IM.IntMap (Word64, Word64))  -- indexed by caps
   , dcopied         :: Maybe Word64
   , dmaxResidency   :: Maybe Word64
   , dmaxSlop        :: Maybe Word64
   , dmaxMemory      :: Maybe Word64
   , dmaxFrag        :: Maybe Word64
-  , dGCTable        :: !(IM.IntMap RtsGC)
+  , dGCTable        :: !(IM.IntMap RtsGC)  -- indexed by caps
   , dparMaxCopied   :: Maybe Word64
   , dparTotCopied   :: Maybe Word64
   , dmaxParNThreads :: Maybe Int
 --, dtaskTable      -- of questionable usefulness, hard to get
-  , dsparkTable     :: !(IM.IntMap (RtsSpark, RtsSpark))
+  , dsparkTable     :: !(IM.IntMap (RtsSpark, RtsSpark))  -- indexed by caps
 --, dInitExitT      -- TODO. At least init time can be included in the total
                     -- time registered in the eventlog. Can we measure this
                     -- as the time between some initial events?
@@ -117,13 +117,14 @@ data RtsSpark = RtsSpark
 
 type Gen = Int
 
-data GcMode = ModeInit | ModeStart | ModeGHC Gen | ModeEnd | ModeUnknown
+data GcMode =
+  ModeInit | ModeStart | ModeSync | ModeGHC Gen | ModeEnd | ModeIdle
   deriving Eq
 
 data RtsGC = RtsGC
   { gcMode      :: !GcMode
   , gcStartTime :: !Timestamp
-  , gcGenStat   :: !(IM.IntMap GenStat)
+  , gcGenStat   :: !(IM.IntMap GenStat)  -- indexed by generations
   }
 
 -- Index of the @gcGenStat@ map at which we store the sum of stats over all
@@ -206,17 +207,66 @@ scanEvents !summaryData (CapEvent mcap ev) =
           HeapSize{sizeBytes} ->
             sd { dmaxMemory = alterMax sizeBytes dmaxMemory}
           StartGC ->
-            assert (gcMode capGC `elem` [ModeInit, ModeEnd, ModeUnknown]) $
+            assert (gcMode capGC `elem` [ModeInit, ModeEnd, ModeIdle]) $
             let newGC = capGC { gcMode = ModeStart
                               , gcStartTime = time
                               }
-            -- TODO: Index with generations, not caps.
+            -- TODO: Index with generations, not caps?
             in sd { dGCTable = IM.insert cap newGC dGCTable }
-          GCStatsGHC{..} ->
+          GlobalSyncGC ->
             -- All caps must be stopped. Those that take part in the GC
             -- are in ModeInit or ModeStart, those that do not
-            -- are in ModeInit or ModeEnd or ModeUnknown.
-            assert (L.all (notModeGHC . gcMode) (IM.elems dGCTable)) $
+            -- are in ModeInit, ModeEnd or ModeIdle.
+            assert (L.all (notModeGHCEtc . gcMode) (IM.elems dGCTable)) $
+            sd { dGCTable = IM.mapWithKey setSync dGCTable }
+             where
+              notModeGHCEtc ModeGHC{} = False
+              notModeGHCEtc ModeSync  = False
+              notModeGHCEtc _         = True
+              someInit = L.any ((== ModeInit) . gcMode) (IM.elems dGCTable)
+              setSync capKey dGC@RtsGC{gcGenStat}
+                | someInit =
+                -- If even one cap could possibly have started GC before
+                -- the start of the selected interval, skip the GC on all caps.
+                -- We don't verify the overwritten modes in this case.
+                -- TODO: we could be smarter and defer the decision to EndGC,
+                -- when we can deduce if the suspect caps take part in GC
+                -- or not at all.
+                dGC { gcMode = ModeInit }
+                | otherwise =
+                let totGC = IM.findWithDefault emptyGenStat gcGenTot gcGenStat
+                in case gcMode dGC of
+                  -- Cap takes part in the GC (not known if seq or par).
+                  -- Here is the moment where all caps taking place in the GC
+                  -- are identified and we can aggregate all their data
+                  -- at once (currently we just increment a counter for each).
+                  -- The EndGC events can come much later for some caps and at
+                  -- that time other caps are already inside their new GC.
+                  ModeStart ->
+                    dGC { gcMode = ModeSync
+                        , gcGenStat =
+                            if capKey == cap
+                            then IM.insert gcGenTot
+                                   totGC{ gcAll = gcAll totGC + 1 }
+                                   gcGenStat
+                            else gcGenStat
+                        }
+                  -- Cap is not in the GC. Mark it as idle to complete
+                  -- the identification of caps that take part
+                  -- in the current GC. Without overwritin the mode,
+                  -- the cap could be processed later on as if
+                  -- it took part in the GC, giving wrong results.
+                  ModeEnd  -> dGC { gcMode = ModeIdle }
+                  ModeIdle -> dGC
+                  -- Impossible.
+                  ModeInit  -> error "scanEvents: GlobalSyncGC ModeInit"
+                  ModeSync  -> error "scanEvents: GlobalSyncGC ModeSync"
+                  ModeGHC{} -> error "scanEvents: GlobalSyncGC ModeGHC"
+          GCStatsGHC{..} ->
+            -- All caps must be stopped. Those that take part in the GC
+            -- are in ModeInit or ModeSync, those that do not
+            -- are in ModeInit or ModeIdle.
+            assert (L.all (notModeStartEtc . gcMode) (IM.elems dGCTable)) $
             sd { dcopied  = alterIncrement copied dcopied  -- sum over caps
                , dmaxSlop = alterMax slop dmaxSlop  -- max over all caps
                , dmaxFrag = alterMax frag dmaxFrag  --TODO -- max over all caps
@@ -226,35 +276,33 @@ scanEvents !summaryData (CapEvent mcap ev) =
                , dmaxParNThreads = alterMax parNThreads dmaxParNThreads
                }
              where
-              notModeGHC ModeGHC{} = False
-              notModeGHC _         = True
+              notModeStartEtc ModeStart = False
+              notModeStartEtc ModeGHC{} = False
+              notModeStartEtc ModeEnd   = False
+              notModeStartEtc _         = True
               someInit = L.any ((== ModeInit) . gcMode) (IM.elems dGCTable)
               setParSeq capKey dGC@RtsGC{gcGenStat}
                 | someInit =
-                -- If even any cap could possibly have started GC before
-                -- the start of the interval, skip the GC.
-                -- TODO: we could be smarter and defer the decision to EndGC,
-                -- when we can deduce if the suspect caps take part in GC
-                -- or not at all.
-                dGC { gcMode = ModeUnknown }
+                -- Just starting the selected interval, so skip the GC.
+                dGC
                 | otherwise =
                 let genGC = IM.findWithDefault emptyGenStat gen gcGenStat
                     totGC = IM.findWithDefault emptyGenStat gcGenTot gcGenStat
                 in case gcMode dGC of
-                  -- Cap takes part in the seq GC.
-                  ModeStart | parNThreads == 1 ->
+                  -- Cap takes part in seq GC.
+                  ModeSync | parNThreads == 1 ->
                     dGC { gcMode = ModeGHC gen
                         , gcGenStat =
+                          -- Already inserted into gcGenTot in GlobalSyncGC,
+                          -- so only inserting into gen.
                           if capKey == cap
                           then IM.insert gen
                                  genGC{ gcAll = gcAll genGC + 1 }
-                                 (IM.insert gcGenTot
-                                   totGC{ gcAll = gcAll totGC + 1 }
-                                   gcGenStat)
+                                 gcGenStat
                           else gcGenStat
                         }
-                  -- Cap takes part in the par GC.
-                  ModeStart ->
+                  -- Cap takes part in par GC.
+                  ModeSync ->
                     assert (parNThreads > 1) $
                     dGC { gcMode = ModeGHC gen
                         , gcGenStat =
@@ -264,23 +312,32 @@ scanEvents !summaryData (CapEvent mcap ev) =
                                       , gcPar = gcPar genGC + 1
                                       }
                                  (IM.insert gcGenTot
-                                   totGC{ gcAll = gcAll totGC + 1
-                                        , gcPar = gcPar totGC + 1
-                                        }
+                                   -- Already incremented gcAll in SyncGC.
+                                   totGC{ gcPar = gcPar totGC + 1 }
                                    gcGenStat)
                           else gcGenStat
                         }
-                  -- Cap not in the GC, leave it alone.
-                  ModeEnd -> dGC
-                  -- Cap not in the GC, clear its mode.
-                  ModeUnknown -> dGC { gcMode = ModeEnd }
+                  -- Cap not in the current GC, leave it alone.
+                  ModeIdle -> dGC
                   -- Impossible.
-                  ModeInit  -> error "scanEvents: ModeInit"
-                  ModeGHC{} -> error "scanEvents: ModeGHC"
+                  ModeInit  -> error "scanEvents: GCStatsGHC ModeInit"
+                  ModeStart -> error "scanEvents: GCStatsGHC ModeStart"
+                  ModeGHC{} -> error "scanEvents: GCStatsGHC ModeGHC"
+                  ModeEnd   -> error "scanEvents: GCStatsGHC ModeEnd"
           EndGC ->
-            assert (gcMode capGC `notElem` [ModeStart, ModeEnd]) $
+            assert (gcMode capGC `notElem` [ModeStart, ModeEnd, ModeIdle]) $
             let endedGC = capGC { gcMode = ModeEnd }
                 duration = time - gcStartTime capGC
+                timeGenTot =
+                  let totGC =
+                        IM.findWithDefault emptyGenStat gcGenTot
+                                           (gcGenStat capGC)
+                      newTotGC =
+                        totGC { gcElapsed = gcElapsed totGC + duration
+                              , gcMaxPause = max (gcMaxPause totGC) duration
+                              }
+                  in endedGC { gcGenStat = IM.insert gcGenTot newTotGC
+                                             (gcGenStat capGC) }
                 timeGC gen =
                   let genGC =
                         IM.findWithDefault emptyGenStat gen (gcGenStat capGC)
@@ -288,26 +345,19 @@ scanEvents !summaryData (CapEvent mcap ev) =
                         genGC { gcElapsed = gcElapsed genGC + duration
                               , gcMaxPause = max (gcMaxPause genGC) duration
                               }
-                      totGC =
-                        IM.findWithDefault emptyGenStat gcGenTot
-                                           (gcGenStat capGC)
-                      newTotGC =
-                        totGC { gcElapsed = gcElapsed totGC + duration
-                              , gcMaxPause = max (gcMaxPause totGC) duration
-                              }
-                  in endedGC { gcGenStat =
-                                  IM.insert gen newGenGC
-                                    (IM.insert gcGenTot newTotGC
-                                               (gcGenStat capGC)) }
+                  in timeGenTot { gcGenStat = IM.insert gen newGenGC
+                                             (gcGenStat capGC) }
             in case gcMode capGC of
                  -- We don't know the exact timing of this GC started before
                  -- the selected interval, so we skip it and clear its mode.
                  ModeInit -> sd { dGCTable = IM.insert cap endedGC dGCTable }
-                 ModeUnknown -> sd { dGCTable = IM.insert cap endedGC dGCTable}
+                 -- There is no GCStatsGHC for this GC. Cope without.
+                 ModeSync ->
+                   sd { dGCTable = IM.insert cap timeGenTot dGCTable }
                  -- All is known, so we update the times.
                  ModeGHC gen ->
                    sd { dGCTable = IM.insert cap (timeGC gen) dGCTable }
-                 _ -> error "scanEvents: impossible gcMode"
+                 _ -> error "scanEvents: ModeEnd (impossible gcMode)"
           SparkCounters crt dud ovf cnv fiz gcd _rem ->
             -- We are guranteed the first spark counters event has all zeroes,
             -- do we don't need to rig the counters for maximal interval.
