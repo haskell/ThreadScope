@@ -96,7 +96,7 @@ data SummaryData = SummaryData
   , dmaxMemory      :: Maybe Word64
   , dmaxFrag        :: Maybe Word64
   , dGCTable        :: !(IM.IntMap RtsGC)  -- indexed by caps
-  -- Here we store the official +RTS -s timings of GCs, 
+  -- Here we store the official +RTS -s timings of GCs,
   -- that is times aggregated from the main caps of all GCs.
   -- For now only gcElapsed and gcMaxPause are needed, so the rest
   -- of the fields stays at default values.
@@ -405,10 +405,13 @@ memLines SummaryData{..} =
   [""]
 
 timeToSecondsDbl :: Integral a => a -> Double
-timeToSecondsDbl t = fromIntegral t / tIME_RESOLUTION
+timeToSecondsDbl t = timeToSeconds $ fromIntegral t
+
+timeToSeconds :: Double -> Double
+timeToSeconds t = t / tIME_RESOLUTION
  where tIME_RESOLUTION = 1000000
 
-gcLines :: SummaryData -> (Double, [String])
+gcLines :: SummaryData -> (Timestamp, [String])
 gcLines SummaryData{..} =
   let gens = [0..1]  -- TODO: take it from SummaryData instead of hardwiring
       gathered = map gcGather gens
@@ -437,16 +440,16 @@ gcLines SummaryData{..} =
             gcMaxPauseS = timeToSecondsDbl gcMaxPause
             gcAvgPauseS
               | gcAll == 0 = 0
-              | otherwise = gcElapsedS / fromIntegral gcAll
+              | otherwise = timeToSeconds $
+                              fromIntegral gcElapsed / fromIntegral gcAll
         in printf "  Gen  %d     %5d colls, %5d par      %5.2fs         %3.4fs    %3.4fs" gen gcAll gcPar gcElapsedS gcAvgPauseS gcMaxPauseS
       nThreads = maybe 1 fromIntegral dmaxParNThreads :: Double
-      balFigure = 100 * ((maybe 0 fromIntegral dparTotCopied
-                          / maybe 1 fromIntegral dparMaxCopied)
-                         - 1)
-                  / (nThreads - 1)
       balText | nThreads < 2 = []
               | otherwise    = ["", printf "    Parallel GC work balance: %.2f%% (serial 0%%, perfect 100%%)" balFigure]
-  in ( timeToSecondsDbl $ sum $ map gcElapsed gathered
+      balFigure = 100 * ((maybe 0 fromIntegral dparTotCopied
+                          / maybe 1 fromIntegral dparMaxCopied) - 1)
+                  / (nThreads - 1)
+  in ( sum $ map gcElapsed gathered
      , ["                                    "
        ++ "Tot elapsed time  Avg pause  Max pause"] ++
        map displayGC (zip [0..] gathered) ++
@@ -501,21 +504,29 @@ summaryViewProcessEvents minterval (Just events) =
         | time < istart || time > iend = summaryData
       f summaryData ev = scanEvents summaryData ev
       sd@SummaryData{..} = L.foldl' f start $ elems $ events
-      totalElapsed = timeToSecondsDbl $ iend - istart
+      totalElapsed = iend - istart
       (gcTotalElapsed, gcLines_sd) = gcLines sd
       mutElapsed = totalElapsed - gcTotalElapsed
       totalAllocated =
         fromIntegral $ L.sum $ L.map (uncurry (-)) $ IM.elems dallocTable
-      allocRate = ppWithCommas $ truncate $ totalAllocated / mutElapsed
+      allocRate =
+        ppWithCommas $
+          truncate $ if mutElapsed == 0
+                     then 0
+                     else fromIntegral (truncate totalAllocated)
+                          / timeToSecondsDbl mutElapsed
       timeLines =
-        [ printf "  MUT     time  %6.2fs elapsed" mutElapsed
-        , printf "  GC      time  %6.2fs elapsed" gcTotalElapsed
-        , printf "  Total   time  %6.2fs elapsed" totalElapsed
+        [ printf "  MUT     time  %6.2fs elapsed"
+          $ timeToSecondsDbl mutElapsed
+        , printf "  GC      time  %6.2fs elapsed"
+          $ timeToSecondsDbl gcTotalElapsed
+        , printf "  Total   time  %6.2fs elapsed"
+          $ timeToSecondsDbl totalElapsed
         , ""
         , printf "  Alloc rate    %s bytes per elapsed MUT second" allocRate
         , ""
         , printf "  Productivity %.1f%% of MUT elapsed vs total elapsed" $
-            mutElapsed * 100 / totalElapsed
+            timeToSecondsDbl mutElapsed * 100 / timeToSecondsDbl totalElapsed
         ]
       info = unlines $ memLines sd ++ gcLines_sd ++ sparkLines sd ++ timeLines
   in (info, Just events)
