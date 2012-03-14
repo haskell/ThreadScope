@@ -348,28 +348,33 @@ scanEvents !summaryData (CapEvent mcap ev) =
                   in gstat { gcGenStat = IM.insert gen newGenGC
                                              (gcGenStat gstat) }
                 timeGenTot = timeGC gcGenTot endedGC
-                updateMainCap mainCap _          sdi | mainCap /= cap = sdi
-                updateMainCap _       currentGen sdi =
+                updateMainCap mainCap _          dgm | mainCap /= cap = dgm
+                updateMainCap _       currentGen dgm =
                   -- We are at the EndGC event of the main cap of current GC.
                   -- The timings from this cap are the only that +RTS -s uses.
-                  -- Let's record them in the dGCMain field to able
+                  -- We will record them in the dGCMain field to be able
                   -- to display a look-alike of +RTS -s.
-                  let dgm = fromMaybe (defaultGC time) dGCMain
-                  in sdi { dGCMain = Just $ timeGC currentGen dgm }
+                  timeGC currentGen dgm
             in case gcMode capGC of
                  -- We don't know the exact timing of this GC started before
                  -- the selected interval, so we skip it and clear its mode.
-                 ModeInit -> sd {dGCTable = IM.insert cap endedGC dGCTable}
+                 ModeInit -> sd { dGCTable = IM.insert cap endedGC dGCTable }
                  -- There is no GCStatsGHC for this GC. Cope without.
                  ModeSync mainCap ->
-                   let sdMain = updateMainCap mainCap gcGenTot sd
-                   in sdMain {dGCTable = IM.insert cap timeGenTot dGCTable}
+                   let dgm = fromMaybe (defaultGC time) dGCMain
+                       mainGenTot = updateMainCap mainCap gcGenTot dgm
+                   in sd { dGCTable = IM.insert cap timeGenTot dGCTable
+                         , dGCMain = Just mainGenTot
+                         }
                  -- All is known, so we update the times.
                  ModeGHC mainCap gen ->
-                   let timeGenCurrent = timeGC gen timeGenTot
-                       sdMain = updateMainCap mainCap gen $
-                                  updateMainCap mainCap gcGenTot sd
-                   in sdMain {dGCTable = IM.insert cap timeGenCurrent dGCTable}
+                   let newTime = timeGC gen timeGenTot
+                       dgm = fromMaybe (defaultGC time) dGCMain
+                       mainGenTot = updateMainCap mainCap gcGenTot dgm
+                       newMain = updateMainCap mainCap gen mainGenTot
+                   in sd { dGCTable = IM.insert cap newTime dGCTable
+                         , dGCMain = Just newMain
+                         }
                  _ -> error "scanEvents: ModeEnd (impossible gcMode)"
           SparkCounters crt dud ovf cnv fiz gcd _rem ->
             -- We are guranteed the first spark counters event has all zeroes,
@@ -393,16 +398,25 @@ printW s (Just w) = [printf s $ ppWithCommas w]
 
 memLines :: SummaryData -> [String]
 memLines SummaryData{..} =
-  printW "%16s bytes allocated in the heap"
-    (Just $ L.sum $ L.map (uncurry (-)) $ IM.elems dallocTable) ++
-  printW "%16s bytes copied during GC" dcopied ++
-  printW "%16s bytes maximum residency" dmaxResidency ++
-  printW "%16s bytes maximum slop" dmaxSlop ++
-  printf ("%16d MB total memory in use "
-          ++ printf "(%d MB lost due to fragmentation)"
-                (fromMaybe 0 dmaxFrag `div` (1024 * 1024)))
-         (fromMaybe 0 dmaxMemory `div` (1024 * 1024)) :
-  [""]
+  let -- Special case, because it's initialized to @Just 0@ for full interval.
+      cpied = if dcopied == Just 0
+              then []
+              else printW "%16s bytes copied during GC" dcopied
+      fragged = case dmaxFrag of
+        Nothing -> ""
+        Just fr -> printf " (%d MB lost due to fragmentation)"
+                          (fr `div` (1024 * 1024))
+      totMem = case dmaxMemory of
+        Nothing -> ""
+        Just tm -> printf ("%16d MB total memory in use" ++ fragged)
+                          (tm`div` (1024 * 1024))
+  in printW "%16s bytes allocated in the heap"
+       (Just $ L.sum $ L.map (uncurry (-)) $ IM.elems dallocTable) ++
+     cpied ++
+     printW "%16s bytes maximum residency" dmaxResidency ++
+     printW "%16s bytes maximum slop" dmaxSlop ++
+     totMem :
+     [""]
 
 timeToSecondsDbl :: Integral a => a -> Double
 timeToSecondsDbl t = timeToSeconds $ fromIntegral t
@@ -413,14 +427,13 @@ timeToSeconds t = t / tIME_RESOLUTION
 
 gcLines :: SummaryData -> (Timestamp, [String])
 gcLines SummaryData{..} =
-  let gens = [0..1]  -- TODO: take it from SummaryData instead of hardwiring
+  let -- TODO: take the number of generations from SummaryData.
+      gens = [0..1] ++ [gcGenTot]
       gathered = map gcGather gens
       gcGather :: Gen -> GenStat
       gcGather gen = gcSum gen $ map gcGenStat $ IM.elems dGCTable
       -- TODO: Consider per-HEC display of GC stats and then use
-      -- the values summed over all generations at key gcGenTot.
-      -- Also, if there is no GC_STATS_GHC event, we don't have generations
-      -- and then let's use gcGenTot, which depends only on GC_GLOBAL_SYNC.
+      -- the values summed over all generations at key gcGenTot at each cap.
       mainStat = gcGenStat $ fromMaybe (defaultGC 0) dGCMain
       gcSum :: Gen -> [IM.IntMap GenStat] -> GenStat
       gcSum gen l =
@@ -428,9 +441,13 @@ gcLines SummaryData{..} =
             sumPr proj = sum $ map proj l_genGC
             _maxPr proj = L.maximum $ map proj l_genGC
             _minPr proj = L.minimum $ filter (> 0) $ map proj l_genGC
-            -- This would be the most balanced, if event times were accurate.
+            -- This would be the most balanced way of aggregating gcElapsed,
+            -- if only the event times were accurate.
             _avgPr proj = let vs = filter (> 0) $ map proj l_genGC
                           in sum vs `div` fromIntegral (length vs)
+            -- But since the times include scheduling noise,
+            -- we only use the times from the main cap for each GC
+            -- and so get readings almost identical to +RTS -s.
             mainGen = IM.findWithDefault emptyGenStat gen mainStat
         in GenStat (sumPr gcAll) (sumPr gcPar)
                    (gcElapsed mainGen) (gcMaxPause mainGen)
@@ -442,17 +459,27 @@ gcLines SummaryData{..} =
               | gcAll == 0 = 0
               | otherwise = timeToSeconds $
                               fromIntegral gcElapsed / fromIntegral gcAll
-        in printf "  Gen  %d     %5d colls, %5d par      %5.2fs         %3.4fs    %3.4fs" gen gcAll gcPar gcElapsedS gcAvgPauseS gcMaxPauseS
+            -- If there is no GC_STATS_GHC event (there's GC_GLOBAL_SYNC only),
+            -- gcGenTot is the only generation index available and it lets us
+            -- display some useful information even then. Otherwise,
+            -- it holds the sum of the GC data for all generations.
+            genText | gen == gcGenTot = "GC Total  "
+                    | otherwise       = "Gen  " ++ take 5 (show gen ++ repeat ' ')
+        in printf "  %s %5d colls, %5d par      %5.2fs         %3.4fs    %3.4fs" genText gcAll gcPar gcElapsedS gcAvgPauseS gcMaxPauseS
       nThreads = maybe 1 fromIntegral dmaxParNThreads :: Double
       balText | nThreads < 2 = []
               | otherwise    = ["", printf "    Parallel GC work balance: %.2f%% (serial 0%%, perfect 100%%)" balFigure]
       balFigure = 100 * ((maybe 0 fromIntegral dparTotCopied
                           / maybe 1 fromIntegral dparMaxCopied) - 1)
                   / (nThreads - 1)
-  in ( sum $ map gcElapsed gathered
+  in ( gcElapsed $ last gathered
      , ["                                    "
        ++ "Tot elapsed time  Avg pause  Max pause"] ++
-       map displayGC (zip [0..] gathered) ++
+       -- Without GC_STATS_GHC, we show zeroed gen rows, instead of just
+       -- the total, to indicate the number of generations and lack of data.
+       -- If a GC with no generations is used, then the absense of a row
+       -- for each generation would make sense.
+       map displayGC (zip gens gathered) ++
        balText ++
        [""]
      )
@@ -476,7 +503,7 @@ sparkLines SummaryData{dsparkTable} =
       displaySparkCounter header RtsSpark{..} =
         printf "  %s: %7d (%7d converted, %7d overflowed, %7d dud, %7d GC'd, %7d fizzled)" header (sparkCreated + sparkDud + sparkOverflowed) sparkConverted sparkOverflowed sparkDud sparkGCd sparkFizzled
   in IM.elems (IM.mapWithKey sparkLine dsparkDiff) ++
-     [displaySparkCounter "SPARKS TOTAL" sparkSum] ++
+     [displaySparkCounter "SPARKS Total" sparkSum] ++
      [""]
 
 summaryViewProcessEvents :: Maybe Interval -> Maybe (Array Int CapEvent)
@@ -525,7 +552,7 @@ summaryViewProcessEvents minterval (Just events) =
         , ""
         , printf "  Alloc rate    %s bytes per elapsed MUT second" allocRate
         , ""
-        , printf "  Productivity %.1f%% of MUT elapsed vs total elapsed" $
+        , printf "  Productivity %.1f%% of MUT elapsed vs Total elapsed" $
             timeToSecondsDbl mutElapsed * 100 / timeToSecondsDbl totalElapsed
         ]
       info = unlines $ memLines sd ++ gcLines_sd ++ sparkLines sd ++ timeLines
