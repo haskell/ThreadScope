@@ -94,7 +94,7 @@ data SummaryData = SummaryData
   , dmaxResidency   :: Maybe Word64
   , dmaxSlop        :: Maybe Word64
   , dmaxMemory      :: Maybe Word64
-  , dmaxFrag        :: Maybe Word64
+--, dmaxFrag        :: Maybe Word64  -- not important enough
   , dGCTable        :: !(IM.IntMap RtsGC)  -- indexed by caps
   -- Here we store the official +RTS -s timings of GCs,
   -- that is times aggregated from the main caps of all GCs.
@@ -155,7 +155,6 @@ emptySummaryData = SummaryData
   , dmaxResidency  = Nothing
   , dmaxSlop       = Nothing
   , dmaxMemory     = Nothing
-  , dmaxFrag       = Nothing
   , dGCTable       = IM.empty
   , dGCMain        = Nothing
   , dparMaxCopied  = Nothing
@@ -277,7 +276,6 @@ scanEvents !summaryData (CapEvent mcap ev) =
             assert (L.all (notModeStartEtc . gcMode) (IM.elems dGCTable)) $
             sd { dcopied  = alterIncrement copied dcopied  -- sum over caps
                , dmaxSlop = alterMax slop dmaxSlop  -- max over all caps
-               , dmaxFrag = alterMax frag dmaxFrag  --TODO -- max over all caps
                , dGCTable = IM.mapWithKey setParSeq dGCTable
                , dparMaxCopied = alterIncrement parMaxCopied dparMaxCopied
                , dparTotCopied = alterIncrement parTotCopied dparTotCopied
@@ -402,13 +400,13 @@ memLines SummaryData{..} =
       cpied = if dcopied == Just 0
               then []
               else printW "%16s bytes copied during GC" dcopied
-      fragged = case dmaxFrag of
-        Nothing -> ""
-        Just fr -> printf " (%d MB lost due to fragmentation)"
-                          (fr `div` (1024 * 1024))
+--    fragged = case dmaxFrag of
+--      Nothing -> ""
+--      Just fr -> printf " (%d MB lost due to fragmentation)"
+--                        (fr `div` (1024 * 1024))
       totMem = case dmaxMemory of
         Nothing -> ""
-        Just tm -> printf ("%16d MB total memory in use" ++ fragged)
+        Just tm -> printf "%16d MB total memory in use"  -- ++ fragged)
                           (tm`div` (1024 * 1024))
   in printW "%16s bytes allocated in the heap"
        (Just $ L.sum $ L.map (uncurry (-)) $ IM.elems dallocTable) ++
