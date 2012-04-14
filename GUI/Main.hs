@@ -227,7 +227,12 @@ eventLoop uienv@UIEnv{..} eventlogState = do
 
 --    dispatch EventClearState _
 
-    dispatch (EventSetState hecs mfilename name nevents timespan) _ = do
+    dispatch (EventSetState hecs mfilename name nevents timespan) _ =
+
+     -- We have to draw this ASAP, before the user manages to move
+     -- the mouse away from the window, or the window is left
+     -- in a partially drawn state.
+     ConcurrencyControl.fullSpeed concCtl $ do
 
       MainWindow.setFileLoaded mainWin (Just name)
       MainWindow.setStatusMessage mainWin $
@@ -423,8 +428,11 @@ eventLoop uienv@UIEnv{..} eventlogState = do
           -- This is a desperate hack to avoid the "segfault on reload" bug
           -- http://trac.haskell.org/ThreadScope/ticket/1
           -- It should be enough to let other threads finish and so avoid
-          -- re-entering gtk C code (see ticket for the dirty details)
-          threadDelay 100000 -- 1/10th of a second
+          -- re-entering gtk C code (see ticket for the dirty details).
+          --
+          -- Unfortunately it halts drawing of the loaded events if the user
+          -- manages to move the mouse away from the window during the delay.
+          --   threadDelay 100000 -- 1/10th of a second
           post (EventSetState hecs mfilename name nevents timespan)
       return ()
 
