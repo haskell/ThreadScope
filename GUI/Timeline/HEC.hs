@@ -251,6 +251,10 @@ drawEvent params@ViewParameters{..} ewidth event =
 
     UserMessage{}   -> renderI userMessageColour
 
+    PerfCounter{}    -> renderI createdConvertedColour
+    PerfTracepoint{} -> renderI shutdownColour
+    PerfName{}       -> return False
+
     RunThread{}  -> return False
     StopThread{} -> return False
     StartGC{}    -> return False

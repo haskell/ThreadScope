@@ -77,6 +77,10 @@ keyData =
      "Indicates a HEC is terminating")
   , ("user message",    KEvent, userMessageColour,
      "Indicates a message generated from Haskell code (via traceEvent)")
+  , ("perf counter",    KEvent, createdConvertedColour,
+     "Indicates an update of a perf counter")
+  , ("perf tracepoint",    KEvent, shutdownColour,
+     "Indicates that a perf tracepoint was reached")
   , ("create spark",    KEventAndGraph, createdConvertedColour,
      "As an event it indicates a use of `par` resulted in a spark being " ++
      "created (and added to the spark pool). In the spark creation " ++
