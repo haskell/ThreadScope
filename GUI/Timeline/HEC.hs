@@ -16,26 +16,29 @@ import Graphics.Rendering.Cairo
 import qualified GHC.RTS.Events as GHC
 import GHC.RTS.Events hiding (Event, GCWork, GCIdle)
 
+import qualified Data.IntMap as IM
+import Data.Maybe
 import Control.Monad
 
-renderHEC :: ViewParameters
-          -> Timestamp -> Timestamp -> (DurationTree,EventTree)
+renderHEC :: ViewParameters -> Timestamp -> Timestamp
+          -> IM.IntMap String -> (DurationTree,EventTree)
           -> Render ()
-renderHEC params@ViewParameters{..} start end (dtree,etree) = do
+renderHEC params@ViewParameters{..} start end perfNames (dtree,etree) = do
   renderDurations params start end dtree
   when (scaleValue < detailThreshold) $
      case etree of
        EventTree ltime etime tree -> do
-         renderEvents params ltime etime start end (fromIntegral detail) tree
+         renderEvents params ltime etime start end (fromIntegral detail)
+           perfNames tree
          return ()
 
 renderInstantHEC :: ViewParameters -> Timestamp -> Timestamp
-                 -> EventTree
+                 -> IM.IntMap String -> EventTree
                  -> Render ()
 renderInstantHEC params@ViewParameters{..} start end
-                 (EventTree ltime etime tree) = do
+                 perfNames (EventTree ltime etime tree) = do
   let instantDetail = 1
-  renderEvents params ltime etime start end instantDetail tree
+  renderEvents params ltime etime start end instantDetail perfNames tree
   return ()
 
 detailThreshold :: Double
@@ -74,40 +77,45 @@ renderDurations params@ViewParameters{..} !startPos !endPos
 renderEvents :: ViewParameters
              -> Timestamp -- start time of this tree node
              -> Timestamp -- end   time of this tree node
-             -> Timestamp -> Timestamp -> Double -> EventNode
+             -> Timestamp -> Timestamp -> Double
+             -> IM.IntMap String -> EventNode
              -> Render Bool
 
 renderEvents params@ViewParameters{..} !_s !_e !startPos !endPos ewidth
-        (EventTreeLeaf es)
+             perfNames (EventTreeLeaf es)
   = let within = [ e | e <- es, let t = time e, t >= startPos && t < endPos ]
         untilTrue _ [] = return False
         untilTrue f (x : xs) = do
           b <- f x
           if b then return b else untilTrue f xs
-    in untilTrue (drawEvent params ewidth) within
+    in untilTrue (drawEvent params ewidth perfNames) within
 
 renderEvents params@ViewParameters{..} !_s !_e !startPos !endPos ewidth
-        (EventTreeOne ev)
-  | t >= startPos && t < endPos = drawEvent params ewidth ev
+        perfNames (EventTreeOne ev)
+  | t >= startPos && t < endPos = drawEvent params ewidth perfNames ev
   | otherwise = return False
   where t = time ev
 
 renderEvents params@ViewParameters{..} !s !e !startPos !endPos ewidth
-        (EventSplit splitTime lhs rhs)
+        perfNames (EventSplit splitTime lhs rhs)
   | startPos < splitTime && endPos >= splitTime &&
         (fromIntegral (e - s) / scaleValue) <= ewidth
-  = do drawnLhs <- renderEvents params s splitTime startPos endPos ewidth lhs
+  = do drawnLhs <-
+           renderEvents params s splitTime startPos endPos ewidth perfNames lhs
        if not drawnLhs
-         then      renderEvents params splitTime e startPos endPos ewidth rhs
+         then
+           renderEvents params splitTime e startPos endPos ewidth perfNames rhs
          else return True
   | otherwise
   = do drawnLhs <-
          if startPos < splitTime
-         then renderEvents params s splitTime startPos endPos ewidth lhs
+         then
+           renderEvents params s splitTime startPos endPos ewidth perfNames lhs
          else return False
        drawnRhs <-
          if endPos >= splitTime
-         then renderEvents params splitTime e startPos endPos ewidth rhs
+         then
+           renderEvents params splitTime e startPos endPos ewidth perfNames rhs
          else return False
        return $ drawnLhs || drawnRhs
 
@@ -230,9 +238,10 @@ labelAt labelsMode t str
        showText str
        restore
 
-drawEvent :: ViewParameters -> Double -> GHC.Event -> Render Bool
-drawEvent params@ViewParameters{..} ewidth event =
-  let renderI = renderInstantEvent params event ewidth
+drawEvent :: ViewParameters -> Double -> IM.IntMap String -> GHC.Event
+          -> Render Bool
+drawEvent params@ViewParameters{..} ewidth perfNames event =
+  let renderI = renderInstantEvent params perfNames event ewidth
   in case spec event of
     CreateThread{}  -> renderI createThreadColour
     RequestSeqGC{}  -> renderI seqGCReqColour
@@ -261,14 +270,22 @@ drawEvent params@ViewParameters{..} ewidth event =
 
     _ -> return False
 
-renderInstantEvent :: ViewParameters -> GHC.Event -> Double -> Color
+renderInstantEvent :: ViewParameters -> IM.IntMap String -> GHC.Event
+                   -> Double -> Color
                    -> Render Bool
-renderInstantEvent ViewParameters{..} event ewidth color = do
+renderInstantEvent ViewParameters{..} perfNames event ewidth color = do
   setSourceRGBAhex color 1.0
   setLineWidth (ewidth * scaleValue)
   let t = time event
   draw_line (t, hecBarOff-4) (t, hecBarOff+hecBarHeight+4)
-  labelAt labelsMode t $ showEventInfo (spec event)
+  let numToLabel PerfCounter{perfNum, count} =
+        fmap (++ ": " ++ show count) $
+          IM.lookup (fromIntegral perfNum) perfNames
+      numToLabel PerfTracepoint{perfNum} =
+        fmap ("tracepoint: " ++) $ IM.lookup (fromIntegral perfNum) perfNames
+      numToLabel _ = Nothing
+      showLabel espec = fromMaybe (showEventInfo espec) (numToLabel espec)
+  labelAt labelsMode t $ showLabel (spec event)
   return True
 
 -------------------------------------------------------------------------------

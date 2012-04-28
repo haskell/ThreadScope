@@ -32,7 +32,8 @@ data HECs = HECs {
        minXHistogram    :: Int,
        maxXHistogram    :: Int,
        maxYHistogram    :: Timestamp,
-       durHistogram     :: [(Timestamp, Int, Timestamp)]
+       durHistogram     :: [(Timestamp, Int, Timestamp)],
+       perfNames        :: IM.IntMap String
      }
 
 -----------------------------------------------------------------------------

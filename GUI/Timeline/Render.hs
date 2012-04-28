@@ -211,10 +211,12 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) = do
           case trace of
              TraceHEC c ->
                let (dtree, etree, _) = hecTrees hecs !! c
-               in renderHEC params startPos endPos (dtree, etree)
+               in renderHEC params startPos endPos
+                    (perfNames hecs) (dtree, etree)
              TraceInstantHEC c ->
                let (_, etree, _) = hecTrees hecs !! c
-               in renderInstantHEC params startPos endPos etree
+               in renderInstantHEC params startPos endPos
+                    (perfNames hecs) etree
              TraceCreationHEC c ->
                renderSparkCreation params slice start end (prof !! c)
              TraceConversionHEC c ->

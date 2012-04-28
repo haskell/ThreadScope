@@ -20,6 +20,7 @@ import Data.Array
 import qualified Data.List as L
 import Data.Map (Map)
 import qualified Data.Map as M
+import qualified Data.IntMap as IM
 import Data.Set (Set)
 import Data.Maybe (catMaybes)
 import Text.Printf
@@ -194,16 +195,26 @@ buildEventLog progress from =
       -- round up to multiples of 10ms
       maxYHistogram = 10000 * ceiling (fromIntegral maxY / 10000)
 
+      getPerfNames nmap ev =
+        case spec ev of
+          EventBlock{block_events} ->
+            L.foldl' getPerfNames nmap block_events
+          PerfName{perfNum, name} ->
+            IM.insert (fromIntegral perfNum) name nmap
+          _ -> nmap
+      perfNames = L.foldl' getPerfNames IM.empty eventsBy
+
       hecs = HECs {
                hecCount         = hec_count,
                hecTrees         = trees,
                hecEventArray    = event_arr,
                hecLastEventTime = lastTx,
-               maxSparkPool     = maxSparkPool,
-               minXHistogram    = minXHistogram,
-               maxXHistogram    = maxXHistogram,
-               maxYHistogram    = maxYHistogram,
-               durHistogram     = durHistogram
+               maxSparkPool,
+               minXHistogram,
+               maxXHistogram,
+               maxYHistogram,
+               durHistogram,
+               perfNames
             }
 
       treeProgress :: Int -> (DurationTree, EventTree, SparkTree) -> IO ()
