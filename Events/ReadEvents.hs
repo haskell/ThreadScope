@@ -10,7 +10,6 @@ import Events.EventDuration
 import qualified GUI.ProgressView as ProgressView
 import GUI.ProgressView (ProgressView)
 
-import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events hiding (Event)
 
 import GHC.RTS.Events.Analysis
@@ -22,14 +21,17 @@ import Data.Map (Map)
 import qualified Data.Map as M
 import qualified Data.IntMap as IM
 import Data.Set (Set)
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, fromMaybe)
 import Text.Printf
 import System.FilePath
 import Control.Monad
 import Control.Exception
 import qualified Control.DeepSeq as DeepSeq
+import Data.Function
 
 -------------------------------------------------------------------------------
+-- import qualified GHC.RTS.Events as GHCEvents
+--
 -- The GHC.RTS.Events library returns the profile information
 -- in a data-streucture which contains a list data structure
 -- representing the events i.e. [GHCEvents.Event]
@@ -47,13 +49,14 @@ import qualified Control.DeepSeq as DeepSeq
 
 -------------------------------------------------------------------------------
 
-rawEventsToHECs :: [(Maybe Int, [GHCEvents.Event])] -> Timestamp
+rawEventsToHECs :: [CapEvent] -> Timestamp
                 -> [(Double, (DurationTree, EventTree, SparkTree))]
-rawEventsToHECs eventList endTime
-  = map (toTree . flip lookup heclists)
-      [0 .. maximum (minBound : map fst heclists)]
+rawEventsToHECs evs endTime
+  = map (\ cap -> toTree $ L.find ((Just cap ==) . ce_cap . head) heclists)
+      [0 .. maximum (0 : map (fromMaybe 0 . ce_cap) evs)]
   where
-    heclists = [ (h, events) | (Just h, events) <- eventList ]
+    heclists =
+      L.groupBy ((==) `on` ce_cap) $ L.sortBy (compare `on` ce_cap) evs
 
     toTree Nothing    = (0, (DurationTreeEmpty,
                              EventTree 0 0 (EventTreeLeaf []),
@@ -63,7 +66,8 @@ rawEventsToHECs eventList endTime
        (mkDurationTree (eventsToDurations nondiscrete) endTime,
         mkEventTree discrete endTime,
         mkSparkTree sparkD endTime))
-       where (discrete, nondiscrete) = L.partition isDiscreteEvent evs
+       where es = map ce_event evs
+             (discrete, nondiscrete) = L.partition isDiscreteEvent es
              (maxSparkPool, sparkD)  = eventsToSparkDurations nondiscrete
 
 -------------------------------------------------------------------------------
@@ -125,13 +129,13 @@ buildEventLog progress from =
       -- 1, to avoid graph scale 0 and division by 0 later on
       lastTx = maximum (1 : map eventBlockEnd eventsBy)
 
-      groups = groupEvents eventsBy
-      maxTrees = rawEventsToHECs groups lastTx
+      -- sort the events by time and put them in an array
+      sorted = sortEvents eventsBy
+      maxTrees = rawEventsToHECs sorted lastTx
       maxSparkPool = maximum (0 : map fst maxTrees)
       trees = map snd maxTrees
 
-      -- sort the events by time and put them in an array
-      sorted    = sortGroups groups
+      -- put events in an array
       n_events  = length sorted
       event_arr = listArray (0, n_events-1) sorted
       hec_count = length trees
