@@ -103,7 +103,7 @@ like the line:  ___/----, but keep min/max for ___/\___
 - make sure the user understands that the _areas_ are proportional
 to the total number and curve points to rates and that the green area
 in spark creation and the total area in spark conversion are equal;
-perhaps tell so in the help tab or makr it in the timeline text summary tab
+perhaps tell so in the help tab or in the timeline text summary tab
 
 - the same aggregate style for the activity graph, to see min/max
 (the green area does convey the total runtime, so perhaps mark min
@@ -141,7 +141,9 @@ at the ends, but somehow this does not show (perhaps one is not enough)
   - save
   - measure the time between two markers
 
-- search for events in the event window
+- search for events in the event window, also filter events using regexps;
+alternatively, adding more categories of events to the RTS could help
+so that the user can enable only the needed events
 
 - indicate when one thread wakes up another thread, or a thread is migrated;
 perhaps draw lines/arrows between the events?
@@ -335,7 +337,9 @@ and when you zoom it, the interval changes in the upper pane
 (but histogram should not be among those traces, because it does not scroll,
 does not have the time X axis, and generally does not fit and is confusing)
 
-- perhaps use the tab with traces to guide what is exported to PDF/PNG
+- perhaps use the tab with traces to guide what is exported to PDF/PNG;
+also, since histogram is not among the traces, use some other UI element
+to specify in the histogram should be shown (currently disabled permanently)
 
 - events in the info pane should be searchable, and possibly numbered
 
@@ -376,6 +380,41 @@ how many sparks of each kind in that time, etc.
 
 - perhaps add events for memory allocation and memory reclaimed through GC to make per-interval +RTS -s possible, at least mark them as feature requests for ghc-events on Trac; also add other events required by +RTS -s; the wiki page is http://trac.haskell.org/ThreadScope/wiki/RTSsummaryEvents
 
-- add finite machines for the GC and other events (after new events are added andold extended) and use validation profiles to count some of the summary data that is calculated by hand right now
+- add finite machines for the GC and other events (after new events are added and/or extended) and use validation profiles to count some of the summary data that is calculated by hand right now
 
 - another possibility to visualize sparks when there are not many of them would be to show an activity graph purely for spark evaluation, ie only counting those threads that are doing spark evaluation
+
+- a button to snap scale to a power of 10, that'd solve:
+ I need a way to show two different eventlog files with the same time
+ scale. The attached picture was generated from two different files, but I
+ couldn't find a way to make the time scale consistent. I expect this is
+ because the 'zoom' button scales the plot based on the total length of the
+ eventlog file, instead of using a fixed pixels/second ratio, which it what I
+ really need.
+Alternatively, have dialog to set the time scale specifically,
+as in an electronic oscilloscope, but in our case, with zoom levels
+that multiply/divide the scale by 2, detailed settings are rather irrelevant.
+
+- another idea illustrated by an electronic oscilloscope: folding a graph
+at all occurrences of an event and showing the overlaid plot
+ Given a regex named "compute iteration N start", find all instances of
+ of this event within a user-defined time interval, and overlay the plots on
+ top of each other. Ideally, each plot would be drawn partially transparent,
+ so the color would be brighter when most instances were active at the same
+ time since the event start. Alternatively, could could just average all the
+ instances.
+ I want to see if different iterations behave similarly.
+ On an electronic oscilloscope this would be done the
+ "trigger" setting. On an oscilloscope the beam traces from left to
+ right on the display. When it runs off the right-hand-side it waits
+ for a particular event in the signal before it starts tracing again.
+ For a continuous signal the event would be that signal reaching a
+ given threshold -- and the trigger knob on the bottom right-hand-side
+ sets this threshold. Due to persistence-of-vision, you'd see many
+ separate traces overlaid on the display. For ThreadScope the trigger
+ should be a particular event selected with a regex.
+
+- show a histogram of the time difference between non-overlapping event pairs.
+ Specifically, If I have events named "image filter iteration N start" and
+ "image filter iteration N end" I want a histogram of how long those
+ iterations took.

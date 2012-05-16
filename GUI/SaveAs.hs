@@ -14,11 +14,11 @@ import Graphics.Rendering.Cairo
 saveAs :: HECs -> ViewParameters -> Double -> DrawingArea
        -> (Int, Int, Render ())
 saveAs hecs params' @ViewParameters{xScaleAreaHeight, width,
-                                    height = oldHeight, histogramHeight}
+                                    height = oldHeight {-, histogramHeight-}}
        yScaleAreaWidth yScaleArea =
-  let histTotalHeight = histogramHeight + histXScaleHeight
+  let histTotalHeight = histXScaleHeight -- + histogramHeight
       params@ViewParameters{height} =
-        params'{ viewTraces = viewTraces params' ++ [TraceHistogram]
+        params'{ viewTraces = viewTraces params' -- ++ [TraceHistogram]
                , height = oldHeight + histTotalHeight + tracePad
                }
       w = ceiling yScaleAreaWidth + width
