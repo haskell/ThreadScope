@@ -333,7 +333,7 @@ scanEvents !summaryData (CapEvent mcap ev) =
                   ModeGHC{} -> error "scanEvents: GCStatsGHC ModeGHC"
                   ModeEnd   -> error "scanEvents: GCStatsGHC ModeEnd"
           EndGC ->
-            assert (gcMode capGC `notElem` [ModeStart, ModeEnd, ModeIdle]) $
+            assert (gcMode capGC `notElem` [ModeEnd, ModeIdle]) $
             let endedGC = capGC { gcMode = ModeEnd }
                 duration = time - gcStartTime capGC
                 timeGC gen gstat =
@@ -357,7 +357,11 @@ scanEvents !summaryData (CapEvent mcap ev) =
                  -- We don't know the exact timing of this GC started before
                  -- the selected interval, so we skip it and clear its mode.
                  ModeInit -> sd { dGCTable = IM.insert cap endedGC dGCTable }
-                 -- There is no GCStatsGHC for this GC. Cope without.
+                 -- There is no GlobalSyncGC nor GCStatsGHC for this GC.
+                 -- Consequently, we can't determine the main cap,
+                 -- so skip it and and clear its mode.
+                 ModeStart -> sd { dGCTable = IM.insert cap endedGC dGCTable }
+                 -- There is no GCStatsGHC for this GC. Gather partial data.
                  ModeSync mainCap ->
                    let dgm = fromMaybe (defaultGC time) dGCMain
                        mainGenTot = updateMainCap mainCap gcGenTot dgm
@@ -373,7 +377,8 @@ scanEvents !summaryData (CapEvent mcap ev) =
                    in sd { dGCTable = IM.insert cap newTime dGCTable
                          , dGCMain = Just newMain
                          }
-                 _ -> error "scanEvents: ModeEnd (impossible gcMode)"
+                 ModeEnd   -> error "scanEvents: EndGC ModeEnd"
+                 ModeIdle  -> error "scanEvents: EndGC ModeIdle"
           SparkCounters crt dud ovf cnv fiz gcd _rem ->
             -- We are guranteed the first spark counters event has all zeroes,
             -- do we don't need to rig the counters for maximal interval.
