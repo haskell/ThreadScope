@@ -10,10 +10,11 @@ import Events.EventDuration
 import qualified GUI.ProgressView as ProgressView
 import GUI.ProgressView (ProgressView)
 
-import GHC.RTS.Events hiding (Event)
+import GHC.RTS.Events -- hiding (Event)
 
 import GHC.RTS.Events.Analysis
 import GHC.RTS.Events.Analysis.SparkThread
+import GHC.RTS.Events.Analysis.Capability
 
 import Data.Array
 import qualified Data.List as L
@@ -28,6 +29,7 @@ import Control.Monad
 import Control.Exception
 import qualified Control.DeepSeq as DeepSeq
 import Data.Function
+import Data.Either
 
 -------------------------------------------------------------------------------
 -- import qualified GHC.RTS.Events as GHCEvents
@@ -129,8 +131,19 @@ buildEventLog progress from =
       -- 1, to avoid graph scale 0 and division by 0 later on
       lastTx = maximum (1 : map eventBlockEnd eventsBy)
 
-      -- sort the events by time and put them in an array
-      sorted = sortEvents eventsBy
+      steps :: [CapEvent] -> [(Map KernelThreadId Int, CapEvent)]
+      steps evs =
+        zip (map fst $ rights $ validates capabilityTaskOSMachine evs) evs
+      addC :: (Map KernelThreadId Int, CapEvent) -> CapEvent
+      addC (state, ev@CapEvent{ce_event=Event{spec=PerfTracepoint{tid}}}) =
+        case M.lookup tid state of
+          Nothing -> ev  -- unknown task's OS thread
+          ce_cap  -> ev {ce_cap}
+      addC (_, ev) = ev
+      addCaps evs = map addC (steps evs)
+
+      -- sort the events by time, add extra caps and put them in an array
+      sorted = addCaps $ sortEvents eventsBy
       maxTrees = rawEventsToHECs sorted lastTx
       maxSparkPool = maximum (0 : map fst maxTrees)
       trees = map snd maxTrees
