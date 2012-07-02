@@ -278,8 +278,10 @@ renderInstantEvent ViewParameters{..} perfNames event ewidth color = do
   setLineWidth (ewidth * scaleValue)
   let t = time event
   draw_line (t, hecBarOff-4) (t, hecBarOff+hecBarHeight+4)
-  let numToLabel PerfCounter{perfNum, count} =
-        fmap (++ ": " ++ show count) $
+  let numToLabel PerfCounter{perfNum, period} | period == 0 =
+        IM.lookup (fromIntegral perfNum) perfNames
+      numToLabel PerfCounter{perfNum, period} =
+        fmap (++ " <" ++ show (period + 1) ++ " times>") $
           IM.lookup (fromIntegral perfNum) perfNames
       numToLabel PerfTracepoint{perfNum} =
         fmap ("tracepoint: " ++) $ IM.lookup (fromIntegral perfNum) perfNames

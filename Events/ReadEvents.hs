@@ -139,6 +139,10 @@ buildEventLog progress from =
         case M.lookup tid state of
           Nothing -> ev  -- unknown task's OS thread
           ce_cap  -> ev {ce_cap}
+      addC (state, ev@CapEvent{ce_event=Event{spec=PerfCounter{tid}}}) =
+        case M.lookup tid state of
+          Nothing -> ev  -- unknown task's OS thread
+          ce_cap  -> ev {ce_cap}
       addC (_, ev) = ev
       addCaps evs = map addC (steps evs)
 
