@@ -418,3 +418,6 @@ at all occurrences of an event and showing the overlaid plot
  Specifically, If I have events named "image filter iteration N start" and
  "image filter iteration N end" I want a histogram of how long those
  iterations took.
+
+- highlight the HEC of the current event selected in the Raw Events view
+(in the timeline)
