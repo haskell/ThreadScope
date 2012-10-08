@@ -131,6 +131,14 @@ buildEventLog progress from =
       -- 1, to avoid graph scale 0 and division by 0 later on
       lastTx = maximum (1 : map eventBlockEnd eventsBy)
 
+      -- Add caps to perf events, using the OS thread numbers
+      -- obtained from task validation data.
+      -- Only the perf events with a cap are displayed in the timeline.
+      -- TODO: it may make sense to move this code to ghc-events
+      -- and run after to-eventlog and ghc-events merge, but it requires
+      -- one more step in the 'perf to TS' workflow and is a bit slower
+      -- (yet another event sorting and loading eventlog chunks
+      -- into the CPU cache).
       steps :: [CapEvent] -> [(Map KernelThreadId Int, CapEvent)]
       steps evs =
         zip (map fst $ rights $ validates capabilityTaskOSMachine evs) evs
@@ -246,13 +254,13 @@ buildEventLog progress from =
          evaluate tree1
          evaluate (eventTreeMaxDepth tree2)
          evaluate (sparkTreeMaxDepth tree3)
-         when (length trees == 1 || hec == 1)  -- eval only with 2nd HEC
+         when (hec_count == 1 || hec == 1)  -- eval only with 2nd HEC
            (return $! DeepSeq.rnf durHistogram)
 
     zipWithM_ treeProgress [0..] trees
     ProgressView.setProgress progress hec_count hec_count
 
-    --TODO: fully evaluate HECs before returning because othewise the last
+    -- TODO: fully evaluate HECs before returning because otherwise the last
     -- bit of work gets done after the progress window has been closed.
 
     return (hecs, name, n_events, fromIntegral lastTx / 1000000)

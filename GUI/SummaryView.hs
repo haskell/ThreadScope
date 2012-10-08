@@ -112,7 +112,7 @@ data SummaryData = SummaryData
 --, dGCTime         -- Is better computed after all events are scanned,
                     -- e.g., because the same info can be used to calculate
                     -- per-cap GCTime and other per-cap stats.
---, dtotalTime      -- TODO: can we measure this excludint INIT or EXIT times?
+--, dtotalTime      -- TODO: can we measure this excluding INIT or EXIT times?
   }
 
 data RtsSpark = RtsSpark

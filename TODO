@@ -39,18 +39,18 @@ BUGS:
 - sometimes 2 labels are written on top of each other even at max zoom,
   e.g. "thread 3 yielding" and "thread 3 is runnable"
 
+- some sequence of enabling/disabling labels and traces leave the timeline
+too short to display all traces; refreshing fixed this
+
 - may be a feature: filling graphs with colours is from line 1 upwards,
   not line 0, so lines at level 0 seem under the filled area, not level with it
 
 - a few levels of zoom in and then zoom out sometimes results in only
-  a right fragment of the timeline shown, no indication in the scrollbar
+  the rightmost fragment of the timeline shown, no indication in the scrollbar
   that scroll is possible, but scrolling indeed fixes the view
 
 - ticking the trace boxes off sometimes shows a black rectangle in place
   of the switched off graph
-
-- for small screens with many HECs, make it possible to zoom the canvas
-vertically (perhaps via M-mouse wheel?)
 
 
 OTHER:
@@ -130,10 +130,11 @@ at the ends, but somehow this does not show (perhaps one is not enough)
 
 - perhaps enlarge the main timeline canvas to the right to the nearest tick
 
-- perhaps draw the labels vertically and reduce the size of the Y axis area
+- perhaps draw the trace labels vertically and reduce the size
+of the Y axis area
 
 - click and drag the view (or the selected interval,
-  perhaps shift-click or control-click when starting to drag))
+  perhaps shift-click or control-click when starting to drag)
 
 - draw the detailed view in the background
 
@@ -201,7 +202,8 @@ into account only the visible and smoothed part of the graphs
 
 - overlay ETW events
 
-- integrate strace events in the event view on Linux
+- integrate strace events in the event view on Linux (note that
+linux perf events are already available in TS)
 
 - colour threads differently
 
@@ -421,3 +423,6 @@ at all occurrences of an event and showing the overlaid plot
 
 - highlight the HEC of the current event selected in the Raw Events view
 (in the timeline)
+
+- for small screens with many HECs, make it possible to zoom the canvas
+vertically (perhaps via M-mouse wheel?)
