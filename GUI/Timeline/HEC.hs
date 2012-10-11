@@ -45,7 +45,7 @@ detailThreshold :: Double
 detailThreshold = 3
 
 -------------------------------------------------------------------------------
--- hecView draws the trace for a single HEC
+-- draws the trace for a single HEC
 
 renderDurations :: ViewParameters
                 -> Timestamp -> Timestamp -> DurationTree
@@ -62,11 +62,11 @@ renderDurations params@ViewParameters{..} !startPos !endPos
   | startPos < splitTime && endPos >= splitTime &&
           (fromIntegral (e - s) / scaleValue) <= fromIntegral detail
   = -- View spans both left and right sub-tree.
-    -- trace (printf "hecView (average): start:%d end:%d s:%d e:%d" startPos endPos s e) $
+    -- trace (printf "renderDurations (average): start:%d end:%d s:%d e:%d" startPos endPos s e) $
     drawAverageDuration params s e runAv gcAv
 
   | otherwise
-  = -- trace (printf "hecView: start:%d end:%d s:%d e:%d" startPos endPos s e) $
+  = -- trace (printf "renderDurations: start:%d end:%d s:%d e:%d" startPos endPos s e) $
     do when (startPos < splitTime) $
          renderDurations params startPos endPos lhs
        when (endPos >= splitTime) $
