@@ -16,9 +16,9 @@ License-file:        LICENSE
 Copyright:           2009-2010 Satnam Singh,
                      2009-2011 Simon Marlow,
                      2009 Donnie Jones,
-                     2011 Duncan Coutts,
-                     2011 Mikolaj Konarski
-                     2011 Nicolas Wu
+                     2011-2012 Duncan Coutts,
+                     2011-2012 Mikolaj Konarski,
+                     2011 Nicolas Wu,
                      2011 Eric Kow
 Author:              Satnam Singh <s.singh@ieee.org>,
                      Simon Marlow <marlowsd@gmail.com>,
