@@ -248,16 +248,12 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       timelineWindowSetHECs timelineWin (Just hecs)
       timelineWindowSetTraces timelineWin traces'
 
-      -- TODO: disabled for now, until it's configurable (see the TODO file)
-      -- We set user 'traceEvent' messages as initial bookmarks.
-      -- This is somewhat of an experiment. If users use lots of trace events
-      -- then it will not be appropriate and we'll want a separate 'traceMark'.
-      --let usrMsgs = extractUserMessages hecs
-      --sequence_ [ bookmarkViewAdd bookmarkView ts label
-      --          | (ts, label) <- usrMsgs ]
-      -- timelineWindowSetBookmarks timelineWin (map fst usrMsgs)
+      -- We set user 'traceMarker' events as initial bookmarks.
+      let usrMarkers = extractUserMarkers hecs
       bookmarkViewClear bookmarkView
-      timelineWindowSetBookmarks timelineWin []
+      sequence_ [ bookmarkViewAdd bookmarkView ts label
+                | (ts, label) <- usrMarkers ]
+      timelineWindowSetBookmarks timelineWin (map fst usrMarkers)
 
       if nevents == 0
         then continueWith NoEventlogLoaded

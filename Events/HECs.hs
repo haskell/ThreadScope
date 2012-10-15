@@ -7,7 +7,7 @@ module Events.HECs (
 
     eventIndexToTimestamp,
     timestampToEventIndex,
-    extractUserMessages,
+    extractUserMarkers,
     histogram,
     histogramCounts,
   ) where
@@ -56,10 +56,10 @@ timestampToEventIndex HECs{hecEventArray=arr} ts =
         mid  = l + (r - l) `quot` 2
         tmid = time (ce_event (arr!mid))
 
-extractUserMessages :: HECs -> [(Timestamp, String)]
-extractUserMessages hecs =
-  [ (ts, msg)
-  | CapEvent _ (Event ts (UserMessage msg)) <- elems (hecEventArray hecs) ]
+extractUserMarkers :: HECs -> [(Timestamp, String)]
+extractUserMarkers hecs =
+  [ (ts, mark)
+  | CapEvent _ (Event ts (UserMarker mark)) <- elems (hecEventArray hecs) ]
 
 -- | Sum durations in the same buckets to form a histogram.
 histogram :: [(Int, Timestamp)] -> [(Int, Timestamp)]
