@@ -61,12 +61,15 @@ drawVRulers :: Double -> Double -> Double -> Double
 drawVRulers tickWidthInPixels scaleValue pos incr endPos height i =
   if floor pos <= endPos then do
     when (atMajorTick || atMidTick || tickWidthInPixels > 70) $ do
-      draw_line (round pos, 0) (round pos, height)
+      draw_line (veryRoundedPos, 0) (veryRoundedPos, height)
     drawVRulers
       tickWidthInPixels scaleValue (pos + incr) incr endPos height (i + 1)
   else
     return ()
   where
+    -- Hack to sync with drawXTicks.
+    veryRoundedPos = round $
+      scaleValue * fromIntegral (floor (fromIntegral (round pos) / scaleValue))
     atMidTick = i `mod` 5 == 0
     atMajorTick = i `mod` 10 == 0
 
