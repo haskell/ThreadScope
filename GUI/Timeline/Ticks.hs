@@ -91,19 +91,22 @@ renderXScale :: Double -> Double -> Timestamp -> Int
 renderXScale scaleValue hadjValue lastTx width off xScaleMode = do
   let scale_width = fromIntegral width * scaleValue
       startPos :: Timestamp
-      startPos = truncate hadjValue
+      startPos = floor hadjValue
+      startLine :: Timestamp
+      startLine = floor $ hadjValue / scaleValue
       endPos :: Timestamp
       endPos = ceiling $ min (hadjValue + scale_width) (fromIntegral lastTx)
+      endLine :: Timestamp
+      endLine = ceiling $ min (hadjValue + scale_width) (fromIntegral lastTx)
+                          / scaleValue
   save
-  scale (1/scaleValue) 1.0
-  translate (-hadjValue) 0
+  translate (- fromIntegral startLine) 0
   selectFontFace "sans serif" FontSlantNormal FontWeightNormal
   setFontSize 12
   setSourceRGBAhex black 1.0
 -- setLineCap LineCapRound -- TODO: breaks rendering currently (see BrokenX.png)
-  setLineWidth 1.0  -- TODO: it's not really 1 pixel, due to the scale
-  -- TODO: snap to pixels, currently looks semi-transparent
-  draw_line (startPos, off 16) (endPos, off 16)
+  setLineWidth 1.0
+  draw_line (startLine, off 16) (endLine, off 16)
   let tFor100Pixels = truncate (100 * scaleValue)
       snappedTickDuration :: Timestamp
       snappedTickDuration =
@@ -113,7 +116,6 @@ renderXScale scaleValue hadjValue lastTx width off xScaleMode = do
       tickWidthInPixels = fromIntegral snappedTickDuration / scaleValue
       firstTick :: Timestamp
       firstTick = snappedTickDuration * (startPos `div` snappedTickDuration)
-  setLineWidth scaleValue  -- TODO: should be 0.5 pixels (when we rewrite stuff)
   case xScaleMode of
     XScaleTime ->
       drawXTicks tickWidthInPixels scaleValue (fromIntegral firstTick)
@@ -129,19 +131,16 @@ drawXTicks :: Double -> Double -> Double -> Double -> Timestamp
            -> Render ()
 drawXTicks tickWidthInPixels scaleValue pos incr endPos off xScaleMode i =
   if floor pos <= endPos then do
-    -- TODO: snap to pixels, currently looks semi-transparent
     when (pos /= 0 || xScaleMode == XScaleTime) $
-      draw_line (x1, off 16) (x1, off (16 - tickLength))
+      draw_line (floor $ fromIntegral x1 / scaleValue, off 16)
+                (floor $ fromIntegral x1 / scaleValue, off (16 - tickLength))
     when (atMajorTick || atMidTick || tickWidthInPixels > 70) $ do
       tExtent <- textExtents tickTimeText
       let tExtentWidth = textExtentsWidth tExtent
-      move_to textPos
-      m <- getMatrix
-      identityMatrix
+      move_to (floor $ fromIntegral textPosX / scaleValue, textPosY)
       when (floor (pos + incr) <= endPos
             && (tExtentWidth + tExtentWidth / 3 < width || atMajorTick)) $
         showText tickTimeText
-      setMatrix m
     drawXTicks
       tickWidthInPixels scaleValue (pos + incr) incr endPos off xScaleMode (i+1)
   else
@@ -149,7 +148,7 @@ drawXTicks tickWidthInPixels scaleValue pos incr endPos off xScaleMode i =
   where
     atMidTick = xScaleMode == XScaleTime && i `mod` 5 == 0
     atMajorTick = xScaleMode == XScaleTime && i `mod` 10 == 0
-    textPos =
+    (textPosX, textPosY) =
       if xScaleMode == XScaleTime
       then (x1 + ceiling (scaleValue * 3), off (-3))
       else (x1 + ceiling (scaleValue * 2), tickLength + 13)
@@ -157,7 +156,7 @@ drawXTicks tickWidthInPixels scaleValue pos incr endPos off xScaleMode i =
                | atMidTick = 10
                | otherwise = if xScaleMode == XScaleTime then 6 else 8
     posTime = case xScaleMode of
-                XScaleTime ->  round pos
+                XScaleTime -> round pos
                 XScaleLog minX _ -> round $ 2 ** (minX + pos / incr)
     tickTimeText = showMultiTime posTime
     width = if atMidTick then 5 * tickWidthInPixels
