@@ -7,103 +7,457 @@ module GUI.SummaryView (
 
 import GHC.RTS.Events
 
-import GUI.Timeline.Render.Constants
 import GUI.Types
 
 import Graphics.UI.Gtk
-import Graphics.Rendering.Cairo
 
 import Data.Array
 import Data.IORef
 import Data.Maybe
 import Data.Word (Word64)
-import qualified Data.List as L
+import Data.List as L
 import qualified Data.IntMap as IM
 import Control.Exception (assert)
 import Text.Printf
 
 ------------------------------------------------------------------------------
 
-data SummaryView = SummaryView
-  { gtkLayout      :: !Layout
-  , defaultInfoRef :: !(IORef String)  -- ^ info for interval Nothing, speedup
-  , meventsRef     :: !(IORef (Maybe (Array Int CapEvent)))
-  , mintervalIORef :: !(IORef (Maybe Interval))
+type Events = Array Int CapEvent
+
+data SummaryView = SummaryView {
+
+    -- we cache the stats for the whole interval
+    cacheEventsStats      :: !(IORef (Maybe (Events, SummaryStats)))
+
+    -- widgets for time stuff
+  , labelTimeTotal        :: Label
+  , labelTimeMutator      :: Label
+  , labelTimeGC           :: Label
+  , labelTimeProductivity :: Label
+
+    -- widgets for heap stuff
+  , labelHeapMaxSize      :: Label
+  , labelHeapMaxResidency :: Label
+  , labelHeapAllocTotal   :: Label
+  , labelHeapAllocRate    :: Label
+  , labelHeapMaxSlop      :: Label
+
+    -- widgets for GC stuff
+  , labelGcCopied         :: Label
+  , labelGcParWorkBalance :: Label
+  , storeGcStats          :: ListStore GcStatsEntry
+
+    -- widgets for sparks stuff
+  , storeSparkStats       :: ListStore (Cap, SparkCounts)
   }
 
 ------------------------------------------------------------------------------
 
 summaryViewNew :: Builder -> IO SummaryView
 summaryViewNew builder = do
-  defaultInfoRef <- newIORef ""
-  meventsRef <- newIORef Nothing
-  mintervalIORef <- newIORef Nothing
-  let getWidget cast = builderGetObject builder cast
-  gtkLayout  <- getWidget castToLayout "eventsLayoutSummary"
-  let infoView = SummaryView{..}
-  -- Drawing
-  on gtkLayout exposeEvent $ liftIO $ do
-    defaultInfo <- readIORef defaultInfoRef
-    mevents <- readIORef meventsRef
-    minterval <- readIORef mintervalIORef
-    drawSummary gtkLayout defaultInfo mevents minterval
-    return True
-  return infoView
+    cacheEventsStats <- newIORef Nothing
+
+    let getWidget cast = builderGetObject builder cast
+
+    labelTimeTotal        <- getWidget castToLabel "labelTimeTotal"
+    labelTimeMutator      <- getWidget castToLabel "labelTimeMutator"
+    labelTimeGC           <- getWidget castToLabel "labelTimeGC"
+    labelTimeProductivity <- getWidget castToLabel "labelTimeProductivity"
+
+    labelHeapMaxSize      <- getWidget castToLabel "labelHeapMaxSize"
+    labelHeapMaxResidency <- getWidget castToLabel "labelHeapMaxResidency"
+    labelHeapAllocTotal   <- getWidget castToLabel "labelHeapAllocTotal"
+    labelHeapAllocRate    <- getWidget castToLabel "labelHeapAllocRate"
+    labelHeapMaxSlop      <- getWidget castToLabel "labelHeapMaxSlop"
+
+    labelGcCopied         <- getWidget castToLabel "labelGcCopied"
+    labelGcParWorkBalance <- getWidget castToLabel "labelGcParWorkBalance"
+    storeGcStats          <- listStoreNew []
+
+    storeSparkStats       <- listStoreNew []
+
+    let summaryView = SummaryView{..}
+
+    treeviewGcStats <- getWidget castToTreeView "treeviewGcStats"
+    treeViewSetModel treeviewGcStats storeGcStats
+    let addGcColumn = addColumn treeviewGcStats storeGcStats
+    addGcColumn "Generation" $ \(GcStatsEntry gen _ _ _ _ _) ->
+      [ cellText := if gen == -1 then "GC Total" else "Gen " ++ show gen ]
+    addGcColumn "Collections"     $ \(GcStatsEntry _ colls _ _ _ _) ->
+      [ cellText := show colls ]
+    addGcColumn "Par collections" $ \(GcStatsEntry _ _ pcolls _ _ _) ->
+      [ cellText := show pcolls ]
+    addGcColumn "Elapsed time"    $ \(GcStatsEntry _ _ _ time _ _) -> 
+      [ cellText := printf "%5.2fs" (timeToSecondsDbl time) ]
+    addGcColumn "Avg pause"       $ \(GcStatsEntry _ _ _ _ avgpause _) -> 
+      [ cellText := printf "%3.4fs" avgpause ]
+    addGcColumn "Max pause"       $ \(GcStatsEntry _ _ _ _ _ maxpause) ->
+      [ cellText := printf "%3.4fs" maxpause ]
+
+    treeviewSparkStats <- getWidget castToTreeView "treeviewSparkStats"
+    treeViewSetModel treeviewSparkStats storeSparkStats
+    let addSparksColumn = addColumn treeviewSparkStats storeSparkStats
+    addSparksColumn "HEC" $ \(hec, _) ->
+      [ cellText := if hec == -1 then "Total" else "HEC " ++ show hec ]
+    addSparksColumn "Total" $ \(_, SparkCounts total _ _ _ _ _) ->
+      [ cellText := show total ]
+    addSparksColumn "Converted" $ \(_, SparkCounts _ conv _ _ _ _) ->
+      [ cellText := show conv ]
+    addSparksColumn "Overflowed" $ \(_, SparkCounts _ _ ovf _ _ _) ->
+      [ cellText := show ovf ]
+    addSparksColumn "Dud" $ \(_, SparkCounts _ _ _ dud _ _) ->
+      [ cellText := show dud ]
+    addSparksColumn "GC'd" $ \(_, SparkCounts _ _ _ _ gc _) ->
+      [ cellText := show gc ]
+    addSparksColumn "Fizzled" $ \(_, SparkCounts _ _ _ _ _ fiz) ->
+      [ cellText := show fiz ]
+
+    return summaryView
+
+  where
+    addColumn view store title mkAttrs = do
+      col  <- treeViewColumnNew
+      cell <- cellRendererTextNew
+      treeViewColumnSetTitle col title
+      treeViewColumnPackStart col cell False
+      treeViewAppendColumn view col
+      cellLayoutSetAttributes col cell store mkAttrs
+
 
 ------------------------------------------------------------------------------
 
-drawSummary :: Layout -> String -> Maybe (Array Int CapEvent)
-            -> Maybe Interval -> IO ()
-drawSummary gtkLayout defaultInfo mevents minterval = do
-  let info = case minterval of
-        Nothing -> defaultInfo  -- speedup
-        _       -> fst (summaryViewProcessEvents minterval mevents)
-  win <- layoutGetDrawWindow gtkLayout
-  pangoCtx <- widgetGetPangoContext gtkLayout
-  layout <- layoutText pangoCtx info
-  layoutSetAttributes layout [AttrFamily minBound maxBound "monospace"]
-  (_, Rectangle _ _ width height) <- layoutGetPixelExtents layout
-  layoutSetSize gtkLayout (width + 30) (height + 10)
-  renderWithDrawable win $ do
-    moveTo (fromIntegral ox / 2) (fromIntegral ox / 3)
-    showLayout layout
+summaryViewSetEvents :: SummaryView -> Maybe (Array Int CapEvent) -> IO ()
+summaryViewSetEvents SummaryView{cacheEventsStats} Nothing = do
+    writeIORef cacheEventsStats Nothing
+    -- TODO: also reset all the widgets to empty
 
-------------------------------------------------------------------------------
+summaryViewSetEvents view@SummaryView{cacheEventsStats} (Just events) = do
+    let stats = summaryStats events Nothing
+    writeIORef cacheEventsStats (Just (events, stats))
+    setSummaryStats view stats
 
 summaryViewSetInterval :: SummaryView -> Maybe Interval -> IO ()
-summaryViewSetInterval SummaryView{gtkLayout, mintervalIORef} minterval = do
-  writeIORef mintervalIORef minterval
-  widgetQueueDraw gtkLayout
+summaryViewSetInterval view@SummaryView{cacheEventsStats} Nothing = do
+    Just (_, stats) <- readIORef cacheEventsStats
+    setSummaryStats view stats
+
+summaryViewSetInterval view@SummaryView{cacheEventsStats} (Just interval) = do
+    Just (events, _) <- readIORef cacheEventsStats
+    let stats = summaryStats events (Just interval)
+    setSummaryStats view stats
 
 ------------------------------------------------------------------------------
 
-genericSetEvents :: (Maybe (Array Int CapEvent)
-                     -> (String, Maybe (Array Int CapEvent)))
-                 -> SummaryView -> Maybe (Array Int CapEvent) -> IO ()
-genericSetEvents processEvents SummaryView{..} mev = do
-  let (defaultInfo, mevents) = processEvents mev
-  writeIORef defaultInfoRef defaultInfo
-  writeIORef meventsRef mevents
-  writeIORef mintervalIORef Nothing  -- the old interval may make no sense
-  widgetQueueDraw gtkLayout
+setSummaryStats :: SummaryView -> SummaryStats -> IO ()
+setSummaryStats view SummaryStats{..} = do
+    setTimeStats  view summTimeStats
+    setHeapStats  view summHeapStats
+    setGcStats    view summHeapStats summGcStats
+    setSparkStats view summSparkStats
+
+setTimeStats :: SummaryView -> TimeStats -> IO ()
+setTimeStats SummaryView{..} TimeStats{..} =
+  mapM_ (\(label, text) -> set label [ labelText := text ])
+    [ (labelTimeTotal       , printf "%6.2fs" (timeToSecondsDbl timeTotal))
+    , (labelTimeMutator     , printf "%6.2fs" (timeToSecondsDbl timeMutator))
+    , (labelTimeGC          , printf "%6.2fs" (timeToSecondsDbl timeGC))
+    , (labelTimeProductivity, printf "%.1f%% of mutator vs total" (timeProductivity * 100))
+    ]
+
+setHeapStats :: SummaryView -> HeapStats -> IO ()
+setHeapStats SummaryView{..} HeapStats{..} =
+  mapM_ (\(label, text) -> set label [ labelText := text ])
+    [ (labelHeapMaxSize     , maybe "N/A" (printf "%16d Mb" . (`div` (1024*1024))) heapMaxSize)
+    , (labelHeapMaxResidency, maybe "N/A" (printf "%16d bytes") heapMaxResidency)
+    , (labelHeapAllocTotal  , maybe "N/A" (printf "%16d bytes") heapTotalAlloc)
+    , (labelHeapAllocRate   , maybe "N/A" (printf "%16d bytes per second (of mutator time)") heapAllocRate)
+    , (labelHeapMaxSlop     , maybe "N/A" (printf "%16d") heapMaxSlop)
+    ]
+
+setGcStats :: SummaryView -> HeapStats -> GcStats -> IO ()
+setGcStats SummaryView{..} HeapStats{heapCopiedDuringGc} GcStats{..} = do
+  set labelGcCopied         [ labelText := maybe "N/A" (printf "%16d bytes") heapCopiedDuringGc ]
+  set labelGcParWorkBalance [ labelText := printf "%.2f%% (serial 0%%, perfect 100%%)" gcParWorkBalance ]
+  listStoreClear storeGcStats
+  mapM_ (listStoreAppend storeGcStats) (gcTotalStats:gcGenStats)
+
+setSparkStats :: SummaryView -> SparkStats -> IO ()
+setSparkStats SummaryView{..} SparkStats{..} = do
+  listStoreClear storeSparkStats
+  mapM_ (listStoreAppend storeSparkStats) ((-1,totalSparkStats):capSparkStats)
+
+ppWithCommas :: Word64 -> String
+ppWithCommas =
+  let spl [] = []
+      spl l  = let (c3, cs) = L.splitAt 3 l
+               in c3 : spl cs
+  in L.reverse . L.intercalate "," . spl . L.reverse . show
+
+------------------------------------------------------------------------------
+-- Calculating the stats we want to display
+--
+
+data SummaryStats = SummaryStats {
+       summTimeStats  :: TimeStats,
+       summHeapStats  :: HeapStats,
+       summGcStats    :: GcStats,
+       summSparkStats :: SparkStats
+     }
+
+data TimeStats = TimeStats {
+       timeTotal        :: !Word64, -- we really should have a better type for elapsed time
+       timeGC           :: !Word64,
+       timeMutator      :: !Word64,
+       timeProductivity :: !Double
+     }
+
+data HeapStats = HeapStats {
+       heapMaxSize        :: Maybe Word64,
+       heapMaxResidency   :: Maybe Word64,
+       heapMaxSlop        :: Maybe Word64,
+       heapTotalAlloc     :: Maybe Word64,
+       heapAllocRate      :: Maybe Word64,
+       heapCopiedDuringGc :: Maybe Word64
+     }
+
+data GcStats = GcStats {
+       gcNumThreads     :: !Int,
+       gcParWorkBalance :: !Double,
+       gcGenStats       :: [GcStatsEntry],
+       gcTotalStats     :: !GcStatsEntry
+     }
+data GcStatsEntry = GcStatsEntry !Int !Int !Int !Word64 !Double !Double
+
+data SparkStats = SparkStats {
+       capSparkStats   :: [(Cap, SparkCounts)],
+       totalSparkStats :: !SparkCounts
+     }
+data SparkCounts = SparkCounts !Word64 !Word64 !Word64 !Word64 !Word64 !Word64
+
+
+-- | Take the events, and optionally some sub-range, and generate the summary
+-- stats for that range.
+--
+-- We take a two-step approach:
+--  * a single pass over the events, accumulating into an intermediate
+--    'StatsAccum' record,
+--  * then look at that 'StatsAccum' record and construct the various final
+--    stats that we want to present.
+--
+summaryStats :: Array Int CapEvent -> Maybe Interval -> SummaryStats
+summaryStats events minterval =
+    SummaryStats {
+       summHeapStats  = hs,
+       summGcStats    = gs,
+       summSparkStats = ss,
+       summTimeStats  = ts
+     }
+  where
+    !statsAccum = accumStats events minterval
+
+    gs = gcStats    statsAccum
+    ss = sparkStats statsAccum
+    ts = timeStats  events minterval gs
+    hs = heapStats  statsAccum ts
+
+
+-- | Linearly accumulate the stats from the events array,
+-- either the full thing or some sub-range.
+accumStats :: Array Int CapEvent -> Maybe Interval -> StatsAccum
+accumStats events minterval =
+    foldl' accumEvent start [ events ! i | i <- range eventsRange ]
+  where
+    eventsRange = selectEventRange events minterval
+
+    -- If we're starting from time zero then we know many of the stats
+    -- also start at from, where as from other points it's just unknown
+    start | fst eventsRange == 0 = zeroStatsAccum
+          | otherwise            = emptyStatsAccum
+
+-- | Given the event array and a time interval, return the range of array
+-- indicies containing that interval. The Nothing interval means to select
+-- the whole array range.
+--
+selectEventRange :: Array Int CapEvent -> Maybe Interval -> (Int, Int)
+selectEventRange arr Nothing             = bounds arr
+selectEventRange arr (Just (start, end)) = (lbound, ubound)    
+  where
+    !lbound = either snd id $ findArrayRange cmp arr start
+    !ubound = either fst id $ findArrayRange cmp arr end
+    cmp ts (CapEvent _ (Event ts' _)) = compare ts ts'
+
+    findArrayRange :: (key -> val -> Ordering)
+                   -> Array Int val -> key -> Either (Int,Int) Int
+    findArrayRange cmp arr key =
+        binarySearch a0 b0 key
+      where
+        (a0,b0) = bounds arr
+
+        binarySearch a b key
+          | a > b     = Left (b,a)
+          | otherwise = case cmp key (arr ! mid) of
+              LT -> binarySearch a (mid-1) key
+              EQ -> Right mid
+              GT -> binarySearch (mid+1) b key
+          where mid = (a + b) `div` 2
+
+------------------------------------------------------------------------------
+-- Final step where we convert from StatsAccum to various presentation forms
+
+timeStats :: Array Int CapEvent -> Maybe Interval -> GcStats -> TimeStats
+timeStats events minterval
+          GcStats { gcTotalStats = GcStatsEntry _ _ _ timeGC _ _ } =
+    TimeStats {..}
+  where
+    timeTotal        = intervalEnd - intervalStart
+    timeMutator      = timeTotal   - timeGC
+    timeProductivity = timeToSecondsDbl timeMutator
+                     / timeToSecondsDbl timeTotal
+
+    (intervalStart, intervalEnd) =
+      case minterval of
+        Just (s,e) -> (s, e)
+        Nothing    -> (0 {- FIXME timeOf (events ! lb)-}, timeOf (events ! ub))
+          where
+            (lb,ub) = bounds events
+            timeOf (CapEvent _ (Event t _)) = t
+
+
+heapStats :: StatsAccum -> TimeStats -> HeapStats
+heapStats StatsAccum{..} TimeStats{timeMutator} =
+    HeapStats {
+      heapMaxSize        = dmaxMemory,
+      heapMaxResidency   = dmaxResidency,
+      heapMaxSlop        = dmaxSlop,
+      heapTotalAlloc     = if totalAlloc == 0
+                             then Nothing
+                             else Just totalAlloc,
+      heapAllocRate      = if timeMutator == 0
+                              then Nothing
+                              else Just $ truncate (fromIntegral totalAlloc / timeToSecondsDbl timeMutator),
+      heapCopiedDuringGc = if dcopied == Just 0
+                              then Nothing
+                              else dcopied
+    }
+  where
+    totalAlloc = sum [ end - start
+                     | (end,start) <- IM.elems dallocTable ]
+
+
+gcStats :: StatsAccum -> GcStats
+gcStats StatsAccum{..} =
+    GcStats {
+      gcNumThreads     = nThreads,
+      gcParWorkBalance = 100 * ((maybe 0 fromIntegral dparTotCopied
+                               / maybe 1 fromIntegral dparMaxCopied) - 1)
+                             / (fromIntegral nThreads - 1),
+      gcGenStats       = [ mkGcStatsEntry gen (gcGather gen)
+                         | gen <- gens ],
+      gcTotalStats     = mkGcStatsEntry gcGenTot (gcGather gcGenTot)
+    }
+  where
+    nThreads = fromMaybe 1 dmaxParNThreads
+
+    gens = [0..maxGeneration]
+      where
+        maxGeneration = maximum [ maxGen
+                                | RtsGC { gcGenStat } <- IM.elems dGCTable
+                                , let (maxGen, _) = IM.findMax gcGenStat ]
+
+    gcGather :: Gen -> GenStat
+    gcGather gen = gcSum gen $ map gcGenStat $ IM.elems dGCTable
+    -- TODO: Consider per-HEC display of GC stats and then use
+    -- the values summed over all generations at key gcGenTot at each cap.
+
+    gcSum :: Gen -> [IM.IntMap GenStat] -> GenStat
+    gcSum gen l =
+        GenStat (sumPr gcAll) (sumPr gcPar)
+                (gcElapsed mainGen) (gcMaxPause mainGen)
+      where
+        l_genGC = map (IM.findWithDefault emptyGenStat gen) l
+        sumPr proj = sum $ map proj l_genGC
+        _maxPr proj = L.maximum $ map proj l_genGC
+        _minPr proj = L.minimum $ filter (> 0) $ map proj l_genGC
+        -- This would be the most balanced way of aggregating gcElapsed,
+        -- if only the event times were accurate.
+        _avgPr proj = let vs = filter (> 0) $ map proj l_genGC
+                      in sum vs `div` fromIntegral (length vs)
+        -- But since the times include scheduling noise,
+        -- we only use the times from the main cap for each GC
+        -- and so get readings almost identical to +RTS -s.
+        mainGen = IM.findWithDefault emptyGenStat gen mainStat
+
+    mainStat = gcGenStat (fromMaybe (defaultGC 0) dGCMain)
+
+    mkGcStatsEntry :: Gen -> GenStat -> GcStatsEntry
+    mkGcStatsEntry gen GenStat{..} =
+        GcStatsEntry gen gcAll gcPar gcElapsedS gcAvgPauseS gcMaxPauseS
+      where
+        gcElapsedS  = gcElapsed
+        gcMaxPauseS = timeToSecondsDbl gcMaxPause
+        gcAvgPauseS
+          | gcAll == 0 = 0
+          | otherwise  = timeToSeconds $
+                           fromIntegral gcElapsed / fromIntegral gcAll
+
+
+sparkStats :: StatsAccum -> SparkStats
+sparkStats StatsAccum{dsparkTable} =
+    SparkStats {
+      capSparkStats =
+        [ (cap, mkSparkStats sparkCounts)
+        | (cap, sparkCounts) <- capsSparkCounts ],
+
+      totalSparkStats =
+        mkSparkStats $
+        foldl' (binopSparks (+)) zeroSparks
+          [ sparkCounts | (_cap, sparkCounts) <- capsSparkCounts ]
+    }
+  where
+    capsSparkCounts =
+      [ (cap,  sparkCounts)
+      | (cap, (countsEnd, countsStart)) <- IM.assocs dsparkTable
+      , let sparkCounts = binopSparks (-) countsEnd countsStart ]
+
+    mkSparkStats RtsSpark {sparkCreated, sparkDud, sparkOverflowed,
+                           sparkConverted, sparkFizzled, sparkGCd} =
+      -- in our final presentation we show the total created,
+      -- and the breakdown of that into outcomes:
+      SparkCounts (sparkCreated + sparkDud + sparkOverflowed)
+                  sparkConverted sparkOverflowed
+                  sparkDud sparkGCd sparkFizzled
+
+
+------------------------------------------------------------------------------
+
+timeToSecondsDbl :: Integral a => a -> Double
+timeToSecondsDbl t = timeToSeconds $ fromIntegral t
+
+timeToSeconds :: Double -> Double
+timeToSeconds t = t / tIME_RESOLUTION
+ where tIME_RESOLUTION = 1000000
+
+------------------------------------------------------------------------------
+-- The single-pass stats accumulation stuff
+--
 
 -- | Data collected and computed gradually while events are scanned.
-data SummaryData = SummaryData
+data StatsAccum = StatsAccum
   { dallocTable     :: !(IM.IntMap (Word64, Word64))  -- indexed by caps
-  , dcopied         :: Maybe Word64
-  , dmaxResidency   :: Maybe Word64
-  , dmaxSlop        :: Maybe Word64
-  , dmaxMemory      :: Maybe Word64
+  , dcopied         :: !(Maybe Word64)
+  , dmaxResidency   :: !(Maybe Word64)
+  , dmaxSlop        :: !(Maybe Word64)
+  , dmaxMemory      :: !(Maybe Word64)
 --, dmaxFrag        :: Maybe Word64  -- not important enough
   , dGCTable        :: !(IM.IntMap RtsGC)  -- indexed by caps
   -- Here we store the official +RTS -s timings of GCs,
   -- that is times aggregated from the main caps of all GCs.
   -- For now only gcElapsed and gcMaxPause are needed, so the rest
   -- of the fields stays at default values.
-  , dGCMain         :: Maybe RtsGC
-  , dparMaxCopied   :: Maybe Word64
-  , dparTotCopied   :: Maybe Word64
-  , dmaxParNThreads :: Maybe Int
+  , dGCMain         :: !(Maybe RtsGC)
+  , dparMaxCopied   :: !(Maybe Word64)
+  , dparTotCopied   :: !(Maybe Word64)
+  , dmaxParNThreads :: !(Maybe Int)
 --, dtaskTable      -- of questionable usefulness, hard to get
   , dsparkTable     :: !(IM.IntMap (RtsSpark, RtsSpark))  -- indexed by caps
 --, dInitExitT      -- TODO. At least init time can be included in the total
@@ -117,8 +471,17 @@ data SummaryData = SummaryData
 
 data RtsSpark = RtsSpark
  { sparkCreated, sparkDud, sparkOverflowed
- , sparkConverted, sparkFizzled, sparkGCd :: !Timestamp
+ , sparkConverted, sparkFizzled, sparkGCd :: !Word64
  }
+
+zeroSparks :: RtsSpark
+zeroSparks = RtsSpark 0 0 0 0 0 0
+
+binopSparks :: (Word64 -> Word64 -> Word64) -> RtsSpark -> RtsSpark -> RtsSpark
+binopSparks op (RtsSpark crt1 dud1 ovf1 cnv1 fiz1 gcd1)
+               (RtsSpark crt2 dud2 ovf2 cnv2 fiz2 gcd2) =
+      RtsSpark (crt1 `op` crt2) (dud1 `op` dud2) (ovf1 `op` ovf2)
+               (cnv1 `op` cnv2) (fiz1 `op` fiz2) (gcd1 `op` gcd2)
 
 type Gen = Int
 
@@ -148,19 +511,32 @@ data GenStat = GenStat
   , gcMaxPause :: !Timestamp
   }
 
-emptySummaryData :: SummaryData
-emptySummaryData = SummaryData
-  { dallocTable    = IM.empty
-  , dcopied        = Nothing
-  , dmaxResidency  = Nothing
-  , dmaxSlop       = Nothing
-  , dmaxMemory     = Nothing
-  , dGCTable       = IM.empty
-  , dGCMain        = Nothing
-  , dparMaxCopied  = Nothing
-  , dparTotCopied  = Nothing
+emptyStatsAccum :: StatsAccum
+emptyStatsAccum = StatsAccum
+  { dallocTable     = IM.empty
+  , dcopied         = Nothing
+  , dmaxResidency   = Nothing
+  , dmaxSlop        = Nothing
+  , dmaxMemory      = Nothing
+  , dGCTable        = IM.empty
+  , dGCMain         = Nothing
+  , dparMaxCopied   = Nothing
+  , dparTotCopied   = Nothing
   , dmaxParNThreads = Nothing
-  , dsparkTable    = IM.empty
+  , dsparkTable     = IM.empty
+  }
+
+-- | At the beginning of a program run, we know for sure several of the
+-- stats start at zero:
+zeroStatsAccum :: StatsAccum
+zeroStatsAccum = emptyStatsAccum {
+    dcopied       = Just 0,
+    dmaxResidency = Just 0,
+    dmaxSlop      = Just 0,
+    dmaxMemory    = Just 0,
+    dallocTable   = -- a hack: we assume no more than 999 caps
+                    IM.fromDistinctAscList $ zip [0..999] $ repeat (0, 0)
+                    -- FIXME: but also, we should have a way to init to 0 for all caps.
   }
 
 defaultGC :: Timestamp -> RtsGC
@@ -178,8 +554,8 @@ emptyGenStat = GenStat
   , gcMaxPause = 0
   }
 
-scanEvents :: SummaryData -> CapEvent -> SummaryData
-scanEvents !summaryData (CapEvent mcap ev) =
+accumEvent :: StatsAccum -> CapEvent -> StatsAccum
+accumEvent !statsAccum (CapEvent mcap ev) =
   let -- For events that contain a counter with a running sum.
       -- Eventually we'll subtract the last found
       -- event from the first. Intervals beginning at time 0
@@ -200,7 +576,7 @@ scanEvents !summaryData (CapEvent mcap ev) =
       alterMax n (Just k) | n > k = Just n
       alterMax _ jk = jk
       -- Scan events, updating summary data.
-      scan cap !sd@SummaryData{..} Event{time, spec} =
+      scan cap !sd@StatsAccum{..} Event{time, spec} =
         let capGC = IM.findWithDefault (defaultGC time) cap dGCTable
         in case spec of
           -- TODO: check EventBlock elsewhere; define {map,fold}EventBlock
@@ -386,180 +762,5 @@ scanEvents !summaryData (CapEvent mcap ev) =
             in sd { dsparkTable =
                       IM.alter (alterCounter current) cap dsparkTable }
           _ -> sd
-    in scan (fromJust mcap) summaryData ev
+    in scan (fromJust mcap) statsAccum ev
 
-ppWithCommas :: Word64 -> String
-ppWithCommas =
-  let spl [] = []
-      spl l  = let (c3, cs) = L.splitAt 3 l
-               in c3 : spl cs
-  in L.reverse . L.intercalate "," . spl . L.reverse . show
-
-printW :: String -> Maybe Word64 -> [String]
-printW _ Nothing = []
-printW s (Just w) = [printf s $ ppWithCommas w]
-
-memLines :: SummaryData -> [String]
-memLines SummaryData{..} =
-  let -- Special case, because it's initialized to @Just 0@ for full interval.
-      cpied = if dcopied == Just 0
-              then []
-              else printW "%16s bytes copied during GC" dcopied
---    fragged = case dmaxFrag of
---      Nothing -> ""
---      Just fr -> printf " (%d MB lost due to fragmentation)"
---                        (fr `div` (1024 * 1024))
-      totMem = case dmaxMemory of
-        Nothing -> ""
-        Just tm -> printf "%16d MB total memory in use"  -- ++ fragged)
-                          (tm`div` (1024 * 1024))
-  in printW "%16s bytes allocated in the heap"
-       (Just $ L.sum $ L.map (uncurry (-)) $ IM.elems dallocTable) ++
-     cpied ++
-     printW "%16s bytes maximum residency" dmaxResidency ++
-     printW "%16s bytes maximum slop" dmaxSlop ++
-     totMem :
-     [""]
-
-timeToSecondsDbl :: Integral a => a -> Double
-timeToSecondsDbl t = timeToSeconds $ fromIntegral t
-
-timeToSeconds :: Double -> Double
-timeToSeconds t = t / tIME_RESOLUTION
- where tIME_RESOLUTION = 1000000
-
-gcLines :: SummaryData -> (Timestamp, [String])
-gcLines SummaryData{..} =
-  let -- TODO: take the number of generations from SummaryData.
-      gens = [0..1] ++ [gcGenTot]
-      gathered = map gcGather gens
-      gcGather :: Gen -> GenStat
-      gcGather gen = gcSum gen $ map gcGenStat $ IM.elems dGCTable
-      -- TODO: Consider per-HEC display of GC stats and then use
-      -- the values summed over all generations at key gcGenTot at each cap.
-      mainStat = gcGenStat $ fromMaybe (defaultGC 0) dGCMain
-      gcSum :: Gen -> [IM.IntMap GenStat] -> GenStat
-      gcSum gen l =
-        let l_genGC = map (IM.findWithDefault emptyGenStat gen) l
-            sumPr proj = sum $ map proj l_genGC
-            _maxPr proj = L.maximum $ map proj l_genGC
-            _minPr proj = L.minimum $ filter (> 0) $ map proj l_genGC
-            -- This would be the most balanced way of aggregating gcElapsed,
-            -- if only the event times were accurate.
-            _avgPr proj = let vs = filter (> 0) $ map proj l_genGC
-                          in sum vs `div` fromIntegral (length vs)
-            -- But since the times include scheduling noise,
-            -- we only use the times from the main cap for each GC
-            -- and so get readings almost identical to +RTS -s.
-            mainGen = IM.findWithDefault emptyGenStat gen mainStat
-        in GenStat (sumPr gcAll) (sumPr gcPar)
-                   (gcElapsed mainGen) (gcMaxPause mainGen)
-      displayGC :: (Gen, GenStat) -> String
-      displayGC (gen, GenStat{..}) =
-        let gcElapsedS = timeToSecondsDbl gcElapsed
-            gcMaxPauseS = timeToSecondsDbl gcMaxPause
-            gcAvgPauseS
-              | gcAll == 0 = 0
-              | otherwise = timeToSeconds $
-                              fromIntegral gcElapsed / fromIntegral gcAll
-            -- If there is no GC_STATS_GHC event (there's GC_GLOBAL_SYNC only),
-            -- gcGenTot is the only generation index available and it lets us
-            -- display some useful information even then. Otherwise,
-            -- it holds the sum of the GC data for all generations.
-            genText | gen == gcGenTot = "GC Total  "
-                    | otherwise       = "Gen  " ++ take 5 (show gen ++ repeat ' ')
-        in printf "  %s %5d colls, %5d par      %5.2fs         %3.4fs    %3.4fs" genText gcAll gcPar gcElapsedS gcAvgPauseS gcMaxPauseS
-      nThreads = maybe 1 fromIntegral dmaxParNThreads :: Double
-      balText | nThreads < 2 = []
-              | otherwise    = ["", printf "    Parallel GC work balance: %.2f%% (serial 0%%, perfect 100%%)" balFigure]
-      balFigure = 100 * ((maybe 0 fromIntegral dparTotCopied
-                          / maybe 1 fromIntegral dparMaxCopied) - 1)
-                  / (nThreads - 1)
-  in ( gcElapsed $ last gathered
-     , ["                                    "
-       ++ "Tot elapsed time  Avg pause  Max pause"] ++
-       -- Without GC_STATS_GHC, we show zeroed gen rows, instead of just
-       -- the total, to indicate the number of generations and lack of data.
-       -- If a GC with no generations is used, then the absense of a row
-       -- for each generation would make sense.
-       map displayGC (zip gens gathered) ++
-       balText ++
-       [""]
-     )
-
-sparkLines :: SummaryData -> [String]
-sparkLines SummaryData{dsparkTable} =
-  let diffSparks (RtsSpark crt1 dud1 ovf1 cnv1 fiz1 gcd1,
-                  RtsSpark crt2 dud2 ovf2 cnv2 fiz2 gcd2) =
-        RtsSpark (crt1 - crt2) (dud1 - dud2) (ovf1 - ovf2)
-                 (cnv1 - cnv2) (fiz1 - fiz2) (gcd1 - gcd2)
-      dsparkDiff = IM.map diffSparks dsparkTable
-      sparkLine :: Cap -> RtsSpark -> String
-      sparkLine k = displaySparkCounter (printf "SPARKS HEC %d" k)
-      sparkSum = sumSparkCounters $ IM.elems dsparkDiff
-      sumSparkCounters l =
-        let sumPr proj = L.sum $ L.map proj l
-        in RtsSpark
-             (sumPr sparkCreated) (sumPr sparkDud) (sumPr sparkOverflowed)
-             (sumPr sparkConverted) (sumPr sparkFizzled) (sumPr sparkGCd)
-      displaySparkCounter :: String -> RtsSpark -> String
-      displaySparkCounter header RtsSpark{..} =
-        printf "  %s: %7d (%7d converted, %7d overflowed, %7d dud, %7d GC'd, %7d fizzled)" header (sparkCreated + sparkDud + sparkOverflowed) sparkConverted sparkOverflowed sparkDud sparkGCd sparkFizzled
-  in IM.elems (IM.mapWithKey sparkLine dsparkDiff) ++
-     [displaySparkCounter "SPARKS Total" sparkSum] ++
-     [""]
-
-summaryViewProcessEvents :: Maybe Interval -> Maybe (Array Int CapEvent)
-                         -> (String, Maybe (Array Int CapEvent))
-summaryViewProcessEvents _ Nothing = ("", Nothing)
-summaryViewProcessEvents minterval (Just events) =
-  let start =
-        if istart == 0
-        then -- Intervals beginning at time 0 are a special case,
-             -- because morally the first event should have value 0,
-             -- but it may be absent, so we start with 0.
-             emptySummaryData
-               { dallocTable = -- a hack: we assume no more than 999 caps
-                   IM.fromDistinctAscList $ zip [0..999] $ repeat (0, 0)
-               , dcopied = Just 0
-               }
-        else emptySummaryData
-      eventBlockEnd e | EventBlock{ end_time=t } <- spec $ ce_event e = t
-      eventBlockEnd e = time $ ce_event e
-      -- Warning: stack overflow when done like in ReadEvents.hs:
-      fx acc e = max acc (eventBlockEnd e)
-      lastTx = L.foldl' fx 1 (elems $ events)
-      (istart, iend) = fromMaybe (0, lastTx) minterval
-      f summaryData CapEvent{ce_event=Event{time}}
-        | time < istart || time > iend = summaryData
-      f summaryData ev = scanEvents summaryData ev
-      sd@SummaryData{..} = L.foldl' f start $ elems $ events
-      totalElapsed = iend - istart
-      (gcTotalElapsed, gcLines_sd) = gcLines sd
-      mutElapsed = totalElapsed - gcTotalElapsed
-      totalAllocated =
-        fromIntegral $ L.sum $ L.map (uncurry (-)) $ IM.elems dallocTable
-      allocRate =
-        ppWithCommas $
-          truncate $ if mutElapsed == 0
-                     then 0
-                     else fromIntegral (truncate totalAllocated)
-                          / timeToSecondsDbl mutElapsed
-      timeLines =
-        [ printf "  MUT     time  %6.2fs elapsed"
-          $ timeToSecondsDbl mutElapsed
-        , printf "  GC      time  %6.2fs elapsed"
-          $ timeToSecondsDbl gcTotalElapsed
-        , printf "  Total   time  %6.2fs elapsed"
-          $ timeToSecondsDbl totalElapsed
-        , ""
-        , printf "  Alloc rate    %s bytes per elapsed MUT second" allocRate
-        , ""
-        , printf "  Productivity %.1f%% of MUT elapsed vs Total elapsed" $
-            timeToSecondsDbl mutElapsed * 100 / timeToSecondsDbl totalElapsed
-        ]
-      info = unlines $ memLines sd ++ gcLines_sd ++ sparkLines sd ++ timeLines
-  in (info, Just events)
-
-summaryViewSetEvents :: SummaryView -> Maybe (Array Int CapEvent) -> IO ()
-summaryViewSetEvents = genericSetEvents (summaryViewProcessEvents Nothing)
