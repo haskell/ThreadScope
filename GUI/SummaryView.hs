@@ -375,8 +375,9 @@ gcStats StatsAccum{..} =
   where
     nThreads = fromMaybe 1 dmaxParNThreads
 
-    gens = [0..maxGeneration]
+    gens = [0..1]
       where
+        --TODO:
         maxGeneration = maximum [ maxGen
                                 | RtsGC { gcGenStat } <- IM.elems dGCTable
                                 , let (maxGen, _) = IM.findMax gcGenStat ]
