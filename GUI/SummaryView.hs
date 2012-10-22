@@ -18,6 +18,7 @@ import Data.Word (Word64)
 import Data.List as L
 import qualified Data.IntMap as IM
 import Control.Exception (assert)
+import Numeric (showFFloat)
 import Text.Printf
 
 ------------------------------------------------------------------------------
@@ -136,6 +137,7 @@ summaryViewSetEvents view@SummaryView{cacheEventsStats} (Just events) = do
     writeIORef cacheEventsStats (Just (events, stats))
     setSummaryStats view stats
 
+
 summaryViewSetInterval :: SummaryView -> Maybe Interval -> IO ()
 summaryViewSetInterval view@SummaryView{cacheEventsStats} Nothing = do
     Just (_, stats) <- readIORef cacheEventsStats
@@ -158,25 +160,25 @@ setSummaryStats view SummaryStats{..} = do
 setTimeStats :: SummaryView -> TimeStats -> IO ()
 setTimeStats SummaryView{..} TimeStats{..} =
   mapM_ (\(label, text) -> set label [ labelText := text ])
-    [ (labelTimeTotal       , printf "%6.2fs" (timeToSecondsDbl timeTotal))
-    , (labelTimeMutator     , printf "%6.2fs" (timeToSecondsDbl timeMutator))
-    , (labelTimeGC          , printf "%6.2fs" (timeToSecondsDbl timeGC))
-    , (labelTimeProductivity, printf "%.1f%% of mutator vs total" (timeProductivity * 100))
+    [ (labelTimeTotal       , showFFloat (Just 2) (timeToSecondsDbl timeTotal) "s")
+    , (labelTimeMutator     , showFFloat (Just 2) (timeToSecondsDbl timeMutator) "s")
+    , (labelTimeGC          , showFFloat (Just 2) (timeToSecondsDbl timeGC) "s")
+    , (labelTimeProductivity, showFFloat (Just 1) (timeProductivity * 100) "% of mutator vs total")
     ]
 
 setHeapStats :: SummaryView -> HeapStats -> IO ()
 setHeapStats SummaryView{..} HeapStats{..} =
   mapM_ (\(label, text) -> set label [ labelText := text ])
-    [ (labelHeapMaxSize     , maybe "N/A" (printf "%16d Mb" . (`div` (1024*1024))) heapMaxSize)
-    , (labelHeapMaxResidency, maybe "N/A" (printf "%16d bytes") heapMaxResidency)
-    , (labelHeapAllocTotal  , maybe "N/A" (printf "%16d bytes") heapTotalAlloc)
-    , (labelHeapAllocRate   , maybe "N/A" (printf "%16d bytes per second (of mutator time)") heapAllocRate)
-    , (labelHeapMaxSlop     , maybe "N/A" (printf "%16d") heapMaxSlop)
+    [ (labelHeapMaxSize     , maybe "N/A" showBytes heapMaxSize)
+    , (labelHeapMaxResidency, maybe "N/A" showBytes heapMaxResidency)
+    , (labelHeapAllocTotal  , maybe "N/A" showBytes heapTotalAlloc)
+    , (labelHeapAllocRate   , maybe "N/A" (\x -> showBytes x ++" per second (of mutator time)") heapAllocRate)
+    , (labelHeapMaxSlop     , maybe "N/A" showBytes heapMaxSlop)
     ]
 
 setGcStats :: SummaryView -> HeapStats -> GcStats -> IO ()
 setGcStats SummaryView{..} HeapStats{heapCopiedDuringGc} GcStats{..} = do
-  set labelGcCopied         [ labelText := maybe "N/A" (printf "%16d bytes") heapCopiedDuringGc ]
+  set labelGcCopied         [ labelText := maybe "N/A" showBytes heapCopiedDuringGc ]
   set labelGcParWorkBalance [ labelText := printf "%.2f%% (serial 0%%, perfect 100%%)" gcParWorkBalance ]
   listStoreClear storeGcStats
   mapM_ (listStoreAppend storeGcStats) (gcTotalStats:gcGenStats)
@@ -185,6 +187,21 @@ setSparkStats :: SummaryView -> SparkStats -> IO ()
 setSparkStats SummaryView{..} SparkStats{..} = do
   listStoreClear storeSparkStats
   mapM_ (listStoreAppend storeSparkStats) ((-1,totalSparkStats):capSparkStats)
+
+showBytes :: Word64 -> String
+showBytes x
+  | x >= tib  = showUnit x tib ++ " TiB  (" ++ ppWithCommas x ++ " bytes)"
+  | x >= gib  = showUnit x gib ++ " GiB  (" ++ ppWithCommas x ++ " bytes)"
+  | x >= mib  = showUnit x mib ++ " MiB  (" ++ ppWithCommas x ++ " bytes)"
+  | x >= kib  = showUnit x kib ++ " KiB  (" ++ ppWithCommas x ++ " bytes)"
+  | otherwise = show x ++ " bytes"
+  where
+    tib = 2^40
+    gib = 2^30
+    mib = 2^20
+    kib = 2^10
+
+    showUnit n u = showFFloat (Just 1) (fromIntegral n / fromIntegral u) ""
 
 ppWithCommas :: Word64 -> String
 ppWithCommas =
