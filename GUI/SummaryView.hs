@@ -216,7 +216,10 @@ setHeapStats SummaryView{..} HeapStats{..} = do
 
 setGcStats :: SummaryView -> HeapStats -> GcStats -> IO ()
 setGcStats SummaryView{..} HeapStats{heapCopiedDuringGc} GcStats{..} = do
-  set labelGcParWorkBalance [ labelText := printf "%.2f%% (serial 0%%, perfect 100%%)" gcParWorkBalance ]
+  let balText = maybe "N/A"
+                      (printf "%.2f%% (serial 0%%, perfect 100%%)")
+                      gcParWorkBalance
+  set labelGcParWorkBalance [ labelText := balText ]
   listStoreClear storeGcStats
   mapM_ (listStoreAppend storeGcStats) (gcTotalStats:gcGenStats)
 
@@ -339,7 +342,7 @@ data HeapStats = HeapStats {
 
 data GcStats = GcStats {
        gcNumThreads     :: !Int,
-       gcParWorkBalance :: !Double,
+       gcParWorkBalance :: !(Maybe Double),
        gcGenStats       :: [GcStatsEntry],
        gcTotalStats     :: !GcStatsEntry
      }
@@ -465,15 +468,21 @@ gcStats :: StatsAccum -> GcStats
 gcStats StatsAccum{..} =
     GcStats {
       gcNumThreads     = nThreads,
-      gcParWorkBalance = 100 * ((maybe 0 fromIntegral dparTotCopied
-                               / maybe 1 fromIntegral dparMaxCopied) - 1)
-                             / (fromIntegral nThreads - 1),
+      gcParWorkBalance,
       gcGenStats       = [ mkGcStatsEntry gen (gcGather gen)
                          | gen <- gens ],
       gcTotalStats     = mkGcStatsEntry gcGenTot (gcGather gcGenTot)
     }
   where
     nThreads = fromMaybe 1 dmaxParNThreads
+
+    gcParWorkBalance | nThreads <= 1
+                       || fromMaybe 0 dparMaxCopied <= 0 = Nothing
+                     | otherwise =
+      Just $
+        100 * ((maybe 0 fromIntegral dparTotCopied
+                / maybe 0 fromIntegral dparMaxCopied) - 1)
+              / (fromIntegral nThreads - 1)
 
     gens = [0..maxGeneration]
       where
