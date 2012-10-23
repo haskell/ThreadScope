@@ -28,7 +28,6 @@ import GUI.Dialogs
 import Events.ReadEvents
 import GUI.EventsView
 import GUI.SummaryView
-import qualified GUI.SummaryViewOld as Old
 import GUI.StartupInfoView
 import GUI.Histogram
 import GUI.Timeline
@@ -48,7 +47,6 @@ data UIEnv = UIEnv {
        eventsView    :: EventsView,
        startupView   :: StartupInfoView,
        summaryView   :: SummaryView,
-       summaryViewOld:: Old.SummaryView,
        histogramView :: HistogramView,
        timelineWin   :: TimelineView,
        traceView     :: TraceView,
@@ -157,7 +155,6 @@ constructUI = failOnGError $ do
 
   startupView <- startupInfoViewNew builder
   summaryView <- summaryViewNew builder
-  summaryViewOld <- Old.summaryViewNew builder
 
   histogramView <- histogramViewNew builder
 
@@ -245,7 +242,6 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       eventsViewSetEvents eventsView mevents
       startupInfoViewSetEvents startupView mevents
       summaryViewSetEvents summaryView mevents
-      Old.summaryViewSetEvents summaryViewOld mevents
       histogramViewSetHECs histogramView (Just hecs)
       traceViewSetHECs traceView hecs
       traces' <- traceViewGetTraces traceView
@@ -368,7 +364,6 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       eventsViewSetCursor eventsView cursorPos' Nothing
       histogramViewSetInterval histogramView Nothing
       summaryViewSetInterval summaryView Nothing
-      Old.summaryViewSetInterval summaryViewOld Nothing
       continueWith eventlogState {
         selection = selection',
         cursorPos = cursorPos'
@@ -382,7 +377,6 @@ eventLoop uienv@UIEnv{..} eventlogState = do
       eventsViewSetCursor eventsView cursorPos' mrange
       histogramViewSetInterval histogramView (Just (start, end))
       summaryViewSetInterval summaryView (Just (start, end))
-      Old.summaryViewSetInterval summaryViewOld (Just (start, end))
       continueWith eventlogState {
         selection = selection',
         cursorPos = cursorPos'
