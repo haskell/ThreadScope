@@ -367,8 +367,6 @@ some random user feedback on the "lots of events" use case of traceEvents:
 3. it would be great to be able to visually distinguish different "messages"
 4. it would be nice if drawing wouldn't slow down significantly even for a relatively small number of events (i.e., 100 is noticeable slowdown already)
 
-- perhaps re-add and make optional the feature of bookmarks from trace events for the use case where one actually wants the bookmarks for jumping, etc.
-
 - make TS useful for par-monad: generate and visualize user code / libs events, make the same kind of granularity histogram as for sparks, etc.
 
 - make TS useful for concurrent code: forkIO concurrency events, properly implement the event merging for the cluster use case
@@ -376,11 +374,6 @@ some random user feedback on the "lots of events" use case of traceEvents:
 - make TS useful for sequential code, in addition to showing the GC pattern
 
 - make TS useful for the cloud haskell use cases
-
-- info panel with the info that ghc +RTS -s shows, but for the selected interval;
-how many sparks of each kind in that time, etc.
-
-- perhaps add events for memory allocation and memory reclaimed through GC to make per-interval +RTS -s possible, at least mark them as feature requests for ghc-events on Trac; also add other events required by +RTS -s; the wiki page is http://trac.haskell.org/ThreadScope/wiki/RTSsummaryEvents
 
 - add finite machines for the GC and other events (after new events are added and/or extended) and use validation profiles to count some of the summary data that is calculated by hand right now
 
