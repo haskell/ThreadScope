@@ -178,7 +178,7 @@ setSummaryStats view SummaryStats{..} hasHeapEvents = do
     if hasHeapEvents
       then do setHeapStatsAvailable view True
               setHeapStats  view summHeapStats
-              setGcStats    view summHeapStats summGcStats
+              setGcStats    view summGcStats
       else    setHeapStatsAvailable view False
     setSparkStats view summSparkStats
 
@@ -214,8 +214,8 @@ setHeapStats SummaryView{..} HeapStats{..} = do
             , (long, long'),   (longunit, longunit') ]
 
 
-setGcStats :: SummaryView -> HeapStats -> GcStats -> IO ()
-setGcStats SummaryView{..} HeapStats{heapCopiedDuringGc} GcStats{..} = do
+setGcStats :: SummaryView -> GcStats -> IO ()
+setGcStats SummaryView{..} GcStats{..} = do
   let balText = maybe "N/A"
                       (printf "%.2f%% (serial 0%%, perfect 100%%)")
                       gcParWorkBalance
@@ -278,7 +278,7 @@ setSummaryStatsEmpty SummaryView{..} = do
   listStoreClear storeSparkStats
 
 setHeapStatsAvailable :: SummaryView -> Bool -> IO ()
-setHeapStatsAvailable view@SummaryView{..} available
+setHeapStatsAvailable SummaryView{..} available
   | available = do
       forM_ unavailableWidgets $ \widget ->
         set widget [ widgetTooltipText := Nothing, widgetSensitive := True ]
@@ -439,7 +439,7 @@ timeStats events minterval
         Just (s,e) -> (s, e)
         Nothing    -> (0 {- FIXME timeOf (events ! lb)-}, timeOf (events ! ub))
           where
-            (lb,ub) = bounds events
+            (_lb, ub) = bounds events
             timeOf (CapEvent _ (Event t _)) = t
 
 
