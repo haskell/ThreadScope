@@ -103,9 +103,9 @@ summaryViewNew builder = do
       [ cellText := show colls ]
     addGcColumn "Par collections" $ \(GcStatsEntry _ _ pcolls _ _ _) ->
       [ cellText := show pcolls ]
-    addGcColumn "Elapsed time"    $ \(GcStatsEntry _ _ _ time _ _) -> 
+    addGcColumn "Elapsed time"    $ \(GcStatsEntry _ _ _ time _ _) ->
       [ cellText := printf "%5.2fs" (timeToSecondsDbl time) ]
-    addGcColumn "Avg pause"       $ \(GcStatsEntry _ _ _ _ avgpause _) -> 
+    addGcColumn "Avg pause"       $ \(GcStatsEntry _ _ _ _ avgpause _) ->
       [ cellText := printf "%3.4fs" avgpause ]
     addGcColumn "Max pause"       $ \(GcStatsEntry _ _ _ _ _ maxpause) ->
       [ cellText := printf "%3.4fs" maxpause ]
@@ -301,7 +301,7 @@ setHeapStatsAvailable view@SummaryView{..} available
     unavailableLabels =
       [ labelTimeMutator, labelTimeGC
       , labelTimeProductivity, labelGcParWorkBalance
-      , case labelGcCopied of (w,_,_,_) -> w ] ++      
+      , case labelGcCopied of (w,_,_,_) -> w ] ++
       [ c | (_,_,c,_) <- [ labelHeapMaxSize, labelHeapMaxResidency
                          , labelHeapAllocTotal, labelHeapAllocRate
                          , labelHeapMaxSlop ] ]
@@ -397,7 +397,7 @@ accumStats events minterval =
 --
 selectEventRange :: Array Int CapEvent -> Maybe Interval -> (Int, Int)
 selectEventRange arr Nothing             = bounds arr
-selectEventRange arr (Just (start, end)) = (lbound, ubound)    
+selectEventRange arr (Just (start, end)) = (lbound, ubound)
   where
     !lbound = either snd id $ findArrayRange cmp arr start
     !ubound = either fst id $ findArrayRange cmp arr end
@@ -475,12 +475,15 @@ gcStats StatsAccum{..} =
   where
     nThreads = fromMaybe 1 dmaxParNThreads
 
-    gens = [0..1]
+    gens = [0..maxGeneration]
       where
-        --TODO:
-        maxGeneration = maximum [ maxGen
-                                | RtsGC { gcGenStat } <- IM.elems dGCTable
-                                , let (maxGen, _) = IM.findMax gcGenStat ]
+        -- Does not work for generationless GCs, but works reasonably
+        -- for > 2 gens and perfectly for 2 gens.
+        maxGeneration = maximum $ 1
+                                : [ maxGen
+                                  | RtsGC { gcGenStat } <- IM.elems dGCTable
+                                  , not (IM.null gcGenStat)
+                                  , let (maxGen, _) = IM.findMax gcGenStat ]
 
     gcGather :: Gen -> GenStat
     gcGather gen = gcSum gen $ map gcGenStat $ IM.elems dGCTable
@@ -881,4 +884,3 @@ accumEvent !statsAccum (CapEvent mcap ev) =
                       IM.alter (alterCounter current) cap dsparkTable }
           _ -> sd
     in scan (fromJust mcap) statsAccum ev
-
