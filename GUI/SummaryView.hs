@@ -437,7 +437,7 @@ timeStats events minterval
     (intervalStart, intervalEnd) =
       case minterval of
         Just (s,e) -> (s, e)
-        Nothing    -> (0 {- FIXME timeOf (events ! lb)-}, timeOf (events ! ub))
+        Nothing    -> (0, timeOf (events ! ub))
           where
             (_lb, ub) = bounds events
             timeOf (CapEvent _ (Event t _)) = t
