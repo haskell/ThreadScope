@@ -17,6 +17,7 @@ import Data.Maybe
 import Data.Word (Word64)
 import Data.List as L
 import qualified Data.IntMap as IM
+import Control.Monad
 import Control.Exception (assert)
 import Numeric (showFFloat)
 import Text.Printf
@@ -28,7 +29,7 @@ type Events = Array Int CapEvent
 data SummaryView = SummaryView {
 
     -- we cache the stats for the whole interval
-    cacheEventsStats      :: !(IORef (Maybe (Events, SummaryStats)))
+    cacheEventsStats      :: !(IORef (Maybe (Events, SummaryStats, Bool)))
 
     -- widgets for time stuff
   , labelTimeTotal        :: Label
@@ -37,16 +38,18 @@ data SummaryView = SummaryView {
   , labelTimeProductivity :: Label
 
     -- widgets for heap stuff
-  , labelHeapMaxSize      :: Label
-  , labelHeapMaxResidency :: Label
-  , labelHeapAllocTotal   :: Label
-  , labelHeapAllocRate    :: Label
-  , labelHeapMaxSlop      :: Label
+  , labelHeapMaxSize
+  , labelHeapMaxResidency
+  , labelHeapAllocTotal
+  , labelHeapAllocRate
+  , labelHeapMaxSlop      :: (Label, Label, Label, Label)
+  , tableHeap             :: Widget
 
     -- widgets for GC stuff
-  , labelGcCopied         :: Label
+  , labelGcCopied         :: (Label, Label, Label, Label)
   , labelGcParWorkBalance :: Label
   , storeGcStats          :: ListStore GcStatsEntry
+  , tableGc               :: Widget
 
     -- widgets for sparks stuff
   , storeSparkStats       :: ListStore (Cap, SparkCounts)
@@ -59,21 +62,33 @@ summaryViewNew builder = do
     cacheEventsStats <- newIORef Nothing
 
     let getWidget cast = builderGetObject builder cast
+        getLabel       = getWidget castToLabel
+        getHeapLabels w1 w2 w3 w4 = liftM4 (,,,) (getLabel w1) (getLabel w2)
+                                                 (getLabel w3) (getLabel w4)
 
     labelTimeTotal        <- getWidget castToLabel "labelTimeTotal"
     labelTimeMutator      <- getWidget castToLabel "labelTimeMutator"
     labelTimeGC           <- getWidget castToLabel "labelTimeGC"
     labelTimeProductivity <- getWidget castToLabel "labelTimeProductivity"
 
-    labelHeapMaxSize      <- getWidget castToLabel "labelHeapMaxSize"
-    labelHeapMaxResidency <- getWidget castToLabel "labelHeapMaxResidency"
-    labelHeapAllocTotal   <- getWidget castToLabel "labelHeapAllocTotal"
-    labelHeapAllocRate    <- getWidget castToLabel "labelHeapAllocRate"
-    labelHeapMaxSlop      <- getWidget castToLabel "labelHeapMaxSlop"
 
-    labelGcCopied         <- getWidget castToLabel "labelGcCopied"
+    labelHeapMaxSize      <- getHeapLabels "labelHeapMaxSize"           "labelHeapMaxSizeUnit"
+                                           "labelHeapMaxSizeBytes"      "labelHeapMaxSizeUnit1"
+    labelHeapMaxResidency <- getHeapLabels "labelHeapMaxResidency"      "labelHeapMaxResidencyUnit"
+                                           "labelHeapMaxResidencyBytes" "labelHeapMaxResidencyUnit1"
+    labelHeapAllocTotal   <- getHeapLabels "labelHeapAllocTotal"        "labelHeapAllocTotalUnit"
+                                           "labelHeapAllocTotalBytes"   "labelHeapAllocTotalUnit1"
+    labelHeapAllocRate    <- getHeapLabels "labelHeapAllocRate"         "labelHeapAllocRateUnit"
+                                           "labelHeapAllocRateBytes"    "labelHeapAllocRateUnit1"
+    labelHeapMaxSlop      <- getHeapLabels "labelHeapMaxSlop"           "labelHeapMaxSlopUnit"
+                                           "labelHeapMaxSlopBytes"      "labelHeapMaxSlopUnit1"
+    tableHeap             <- getWidget castToWidget "tableHeap"
+
+    labelGcCopied         <- getHeapLabels "labelGcCopied"      "labelGcCopiedUnit"
+                                           "labelGcCopiedBytes" "labelGcCopiedUnit1"
     labelGcParWorkBalance <- getWidget castToLabel "labelGcParWorkBalance"
     storeGcStats          <- listStoreNew []
+    tableGc               <- getWidget castToWidget "tableGC"
 
     storeSparkStats       <- listStoreNew []
 
@@ -128,33 +143,43 @@ summaryViewNew builder = do
 ------------------------------------------------------------------------------
 
 summaryViewSetEvents :: SummaryView -> Maybe (Array Int CapEvent) -> IO ()
-summaryViewSetEvents SummaryView{cacheEventsStats} Nothing = do
+summaryViewSetEvents view@SummaryView{cacheEventsStats} Nothing = do
     writeIORef cacheEventsStats Nothing
-    -- TODO: also reset all the widgets to empty
+    setSummaryStatsEmpty view
 
 summaryViewSetEvents view@SummaryView{cacheEventsStats} (Just events) = do
     let stats = summaryStats events Nothing
-    writeIORef cacheEventsStats (Just (events, stats))
-    setSummaryStats view stats
+      -- this is an almost certain indicator that there
+      -- are no heap events in the eventlog:
+        hasHeapEvents = heapMaxSize (summHeapStats stats) /= Just 0
+    writeIORef cacheEventsStats (Just (events, stats, hasHeapEvents))
+    setSummaryStats view stats hasHeapEvents
 
 
 summaryViewSetInterval :: SummaryView -> Maybe Interval -> IO ()
 summaryViewSetInterval view@SummaryView{cacheEventsStats} Nothing = do
-    Just (_, stats) <- readIORef cacheEventsStats
-    setSummaryStats view stats
+    cache <- readIORef cacheEventsStats
+    case cache of
+      Nothing                  -> return ()
+      Just (_, stats, hasHeap) -> setSummaryStats view stats hasHeap
 
 summaryViewSetInterval view@SummaryView{cacheEventsStats} (Just interval) = do
-    Just (events, _) <- readIORef cacheEventsStats
-    let stats = summaryStats events (Just interval)
-    setSummaryStats view stats
+    cache <- readIORef cacheEventsStats
+    case cache of
+      Nothing                   -> return ()
+      Just (events, _, hasHeap) -> setSummaryStats view stats hasHeap
+        where stats = summaryStats events (Just interval)
 
 ------------------------------------------------------------------------------
 
-setSummaryStats :: SummaryView -> SummaryStats -> IO ()
-setSummaryStats view SummaryStats{..} = do
+setSummaryStats :: SummaryView -> SummaryStats -> Bool -> IO ()
+setSummaryStats view SummaryStats{..} hasHeapEvents = do
     setTimeStats  view summTimeStats
-    setHeapStats  view summHeapStats
-    setGcStats    view summHeapStats summGcStats
+    if hasHeapEvents
+      then do setHeapStatsAvailable view True
+              setHeapStats  view summHeapStats
+              setGcStats    view summHeapStats summGcStats
+      else    setHeapStatsAvailable view False
     setSparkStats view summSparkStats
 
 setTimeStats :: SummaryView -> TimeStats -> IO ()
@@ -167,18 +192,30 @@ setTimeStats SummaryView{..} TimeStats{..} =
     ]
 
 setHeapStats :: SummaryView -> HeapStats -> IO ()
-setHeapStats SummaryView{..} HeapStats{..} =
-  mapM_ (\(label, text) -> set label [ labelText := text ])
-    [ (labelHeapMaxSize     , maybe "N/A" showBytes heapMaxSize)
-    , (labelHeapMaxResidency, maybe "N/A" showBytes heapMaxResidency)
-    , (labelHeapAllocTotal  , maybe "N/A" showBytes heapTotalAlloc)
-    , (labelHeapAllocRate   , maybe "N/A" (\x -> showBytes x ++" per second (of mutator time)") heapAllocRate)
-    , (labelHeapMaxSlop     , maybe "N/A" showBytes heapMaxSlop)
-    ]
+setHeapStats SummaryView{..} HeapStats{..} = do
+    setHeapStatLabels labelHeapMaxSize      heapMaxSize      "" ""
+    setHeapStatLabels labelHeapMaxResidency heapMaxResidency "" ""
+    setHeapStatLabels labelHeapAllocTotal   heapTotalAlloc   "" ""
+    setHeapStatLabels labelHeapAllocRate    heapAllocRate    "/s" " per second (of mutator time)"
+    setHeapStatLabels labelHeapMaxSlop      heapMaxSlop      "" ""
+    setHeapStatLabels labelGcCopied         heapCopiedDuringGc "" ""
+  where
+    setHeapStatLabels labels stat unitSuffix unitSuffixLong =
+      let texts = case stat of
+            Nothing -> ("N/A", "", "", "")
+            Just b  -> ( formatBytesInUnit b u, formatUnit u ++ unitSuffix
+                       , formatBytes b, "bytes" ++ unitSuffixLong)
+              where u = getByteUnit b
+      in setLabels labels texts
+
+    setLabels (short,shortunit,long,longunit) (short', shortunit', long', longunit') = do
+      mapM_ (\(label, text) -> set label [ labelText := text ])
+            [ (short, short'), (shortunit, shortunit')
+            , (long, long'),   (longunit, longunit') ]
+
 
 setGcStats :: SummaryView -> HeapStats -> GcStats -> IO ()
 setGcStats SummaryView{..} HeapStats{heapCopiedDuringGc} GcStats{..} = do
-  set labelGcCopied         [ labelText := maybe "N/A" showBytes heapCopiedDuringGc ]
   set labelGcParWorkBalance [ labelText := printf "%.2f%% (serial 0%%, perfect 100%%)" gcParWorkBalance ]
   listStoreClear storeGcStats
   mapM_ (listStoreAppend storeGcStats) (gcTotalStats:gcGenStats)
@@ -188,20 +225,34 @@ setSparkStats SummaryView{..} SparkStats{..} = do
   listStoreClear storeSparkStats
   mapM_ (listStoreAppend storeSparkStats) ((-1,totalSparkStats):capSparkStats)
 
-showBytes :: Word64 -> String
-showBytes x
-  | x >= tib  = showUnit x tib ++ " TiB  (" ++ ppWithCommas x ++ " bytes)"
-  | x >= gib  = showUnit x gib ++ " GiB  (" ++ ppWithCommas x ++ " bytes)"
-  | x >= mib  = showUnit x mib ++ " MiB  (" ++ ppWithCommas x ++ " bytes)"
-  | x >= kib  = showUnit x kib ++ " KiB  (" ++ ppWithCommas x ++ " bytes)"
-  | otherwise = show x ++ " bytes"
-  where
-    tib = 2^40
-    gib = 2^30
-    mib = 2^20
-    kib = 2^10
+data ByteUnit = TiB | GiB | MiB | KiB | B deriving Show
 
-    showUnit n u = showFFloat (Just 1) (fromIntegral n / fromIntegral u) ""
+byteUnitVal :: ByteUnit -> Word64
+byteUnitVal TiB = 2^40
+byteUnitVal GiB = 2^30
+byteUnitVal MiB = 2^20
+byteUnitVal KiB = 2^10
+byteUnitVal   B = 1
+
+getByteUnit :: Word64 -> ByteUnit
+getByteUnit b
+  | b >= 2^40 = TiB
+  | b >= 2^30 = GiB
+  | b >= 2^20 = MiB
+  | b >= 2^10 = KiB
+  | otherwise = B
+
+formatBytesInUnit :: Word64 -> ByteUnit -> String
+formatBytesInUnit n u =
+    formatFixed (fromIntegral n / fromIntegral (byteUnitVal u))
+  where
+    formatFixed x = showFFloat (Just 1) x ""
+
+formatUnit :: ByteUnit -> String
+formatUnit = show
+
+formatBytes :: Word64 -> String
+formatBytes b = ppWithCommas b
 
 ppWithCommas :: Word64 -> String
 ppWithCommas =
@@ -209,6 +260,55 @@ ppWithCommas =
       spl l  = let (c3, cs) = L.splitAt 3 l
                in c3 : spl cs
   in L.reverse . L.intercalate "," . spl . L.reverse . show
+
+setSummaryStatsEmpty :: SummaryView -> IO ()
+setSummaryStatsEmpty SummaryView{..} = do
+  mapM_ (\label -> set label [ labelText := "", widgetTooltipText := Nothing ]) $
+    [ labelTimeTotal, labelTimeMutator
+    , labelTimeGC, labelTimeProductivity ] ++
+    [ w
+    | (a,b,c,d) <- [ labelHeapMaxSize, labelHeapMaxResidency
+                   , labelHeapAllocTotal, labelHeapAllocRate
+                   , labelHeapMaxSlop, labelGcCopied ]
+    , w <- [ a,b,c,d] ]
+  listStoreClear storeGcStats
+  listStoreClear storeSparkStats
+
+setHeapStatsAvailable :: SummaryView -> Bool -> IO ()
+setHeapStatsAvailable view@SummaryView{..} available
+  | available = do
+      forM_ unavailableWidgets $ \widget ->
+        set widget [ widgetTooltipText := Nothing, widgetSensitive := True ]
+
+  | otherwise = do
+      forM_ allLabels $ \label -> set label [ labelText := "" ]
+      listStoreClear storeGcStats
+
+      forM_ unavailableLabels  $ \label  ->
+        set label  [ labelText := "(unavailable)" ]
+
+      forM_ unavailableWidgets $ \widget ->
+        set widget [ widgetTooltipText := Just msgInfoUnavailable, widgetSensitive := False ]
+
+  where
+    allLabels =
+      [ labelTimeMutator, labelTimeGC
+      , labelTimeProductivity, labelGcParWorkBalance ] ++
+      [ w | (a,b,c,d) <- [ labelHeapMaxSize, labelHeapMaxResidency
+                         , labelHeapAllocTotal, labelHeapAllocRate
+                         , labelHeapMaxSlop, labelGcCopied ]
+          , w <- [ a,b,c,d] ]
+    unavailableLabels =
+      [ labelTimeMutator, labelTimeGC
+      , labelTimeProductivity, labelGcParWorkBalance
+      , case labelGcCopied of (w,_,_,_) -> w ] ++      
+      [ c | (_,_,c,_) <- [ labelHeapMaxSize, labelHeapMaxResidency
+                         , labelHeapAllocTotal, labelHeapAllocRate
+                         , labelHeapMaxSlop ] ]
+    unavailableWidgets = [ toWidget labelTimeMutator, toWidget labelTimeGC
+                         , toWidget labelTimeProductivity
+                         , tableHeap, tableGc ]
+    msgInfoUnavailable = "This eventlog does not contain heap or GC information."
 
 ------------------------------------------------------------------------------
 -- Calculating the stats we want to display
@@ -349,7 +449,7 @@ heapStats StatsAccum{..} TimeStats{timeMutator} =
       heapTotalAlloc     = if totalAlloc == 0
                              then Nothing
                              else Just totalAlloc,
-      heapAllocRate      = if timeMutator == 0
+      heapAllocRate      = if timeMutator == 0 || totalAlloc == 0
                               then Nothing
                               else Just $ truncate (fromIntegral totalAlloc / timeToSecondsDbl timeMutator),
       heapCopiedDuringGc = if dcopied == Just 0
