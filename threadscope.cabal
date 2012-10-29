@@ -27,7 +27,7 @@ Author:              Satnam Singh <s.singh@ieee.org>,
                      Mikolaj Konarski <mikolaj@well-typed.com>,
                      Nicolas Wu <nick@well-typed.com>,
                      Eric Kow <eric@well-typed.com>
-Maintainer:          Satnam Singh <s.singh@ieee.org>
+Maintainer:          Simon Marlow <marlowsd@gmail.com>
 Homepage:            http://www.haskell.org/haskellwiki/ThreadScope
 Bug-reports:         http://trac.haskell.org/ThreadScope/
 Build-Type:          Simple
