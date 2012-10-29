@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE ForeignFunctionInterface, CPP #-}
 module GUI.GtkExtras where
 
 -- This is all stuff that should be bound in the gtk package but is not yet
@@ -78,11 +78,35 @@ stylePaintLayout style window stateType useText
 
 
 launchProgramForURI :: String -> IO Bool
+#if mingw32_HOST_OS || mingw32_TARGET_OS
+launchProgramForURI uri = do
+    withCString "open" $ \verbPtr ->
+      withCString uri $ \filePtr ->
+        c_ShellExecuteA
+            nullPtr
+            verbPtr
+            filePtr
+            nullPtr
+            nullPtr
+            1       -- SW_SHOWNORMAL
+    return True
+
+foreign import stdcall unsafe "shlobj.h ShellExecuteA"
+    c_ShellExecuteA :: Ptr ()  -- HWND hwnd
+                    -> CString -- LPCTSTR lpOperation
+                    -> CString -- LPCTSTR lpFile
+                    -> CString -- LPCTSTR lpParameters
+                    -> CString -- LPCTSTR lpDirectory
+                    -> CInt    -- INT nShowCmd
+                    -> IO CInt -- HINSTANCE return
+
+#else
 launchProgramForURI uri =
   propagateGError $ \errPtrPtr ->
     withCString uri $ \uriStrPtr -> do
       timestamp <- gtk_get_current_event_time
       liftM toBool $ gtk_show_uri nullPtr uriStrPtr timestamp errPtrPtr
+#endif
 
 -------------------------------------------------------------------------------
 
