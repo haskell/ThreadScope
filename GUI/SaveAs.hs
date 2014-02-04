@@ -9,7 +9,7 @@ import Events.HECs
 
 -- Imports for GTK
 import Graphics.UI.Gtk
-import Graphics.Rendering.Cairo
+import Graphics.Rendering.Cairo hiding (height, width, Region)
 
 saveAs :: HECs -> ViewParameters -> Double -> DrawingArea
        -> (Int, Int, Render ())
