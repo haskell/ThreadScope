@@ -10,6 +10,20 @@ import Events.HECs
 -- Imports for GTK
 import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo
+  ( Render
+  , Operator(..)
+  , Format(..)
+  , rectangle
+  , getOperator
+  , setOperator
+  , fill
+  , translate
+  , liftIO
+  , withPDFSurface
+  , renderWith
+  , withImageSurface
+  , surfaceWriteToPNG
+  )
 
 saveAs :: HECs -> ViewParameters -> Double -> DrawingArea
        -> (Int, Int, Render ())

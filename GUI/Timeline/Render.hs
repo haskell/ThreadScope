@@ -22,6 +22,31 @@ import GUI.Timeline.CairoDrawing
 
 import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo
+  ( Render
+  , Content(..)
+  , Operator(..)
+  , Surface
+  , liftIO
+  , withTargetSurface
+  , createSimilarSurface
+  , renderWith
+  , surfaceFinish
+  , clip
+  , setSourceSurface
+  , setOperator
+  , paint
+  , setLineWidth
+  , moveTo
+  , lineTo
+  , stroke
+  , rectangle
+  , fill
+  , save
+  , scale
+  , translate
+  , restore
+  , setSourceRGBA
+  )
 
 import Data.IORef
 import Control.Monad

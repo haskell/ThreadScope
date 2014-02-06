@@ -34,7 +34,7 @@ import GUI.Timeline.Render.Constants
 import Events.HECs
 
 import Graphics.UI.Gtk
-import Graphics.Rendering.Cairo
+import Graphics.Rendering.Cairo ( liftIO )
 
 import Data.IORef
 import Control.Monad
