@@ -21,7 +21,7 @@ import GUI.ViewerColours
 import GUI.Timeline.CairoDrawing
 
 import Graphics.UI.Gtk
-import Graphics.Rendering.Cairo hiding (height, width, Region)
+import Graphics.Rendering.Cairo
 
 import Data.IORef
 import Control.Monad
