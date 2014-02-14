@@ -92,4 +92,4 @@ Executable threadscope
      ghc-options:  -fno-warn-unused-matches
 
   if !os(windows)
-     build-depends: unix >= 2.3 && < 2.7
+     build-depends: unix >= 2.3 && < 2.8
