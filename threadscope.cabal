@@ -36,7 +36,7 @@ Data-files:          threadscope.ui, threadscope.png
 
 source-repository head
   type:     git
-  location: git@github.com:Mikolaj/ThreadScope.git
+  location: git@github.com:haskell/ThreadScope.git
 
 Executable threadscope
   Main-is:           Main.hs
