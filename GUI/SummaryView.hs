@@ -835,9 +835,38 @@ accumEvent !statsAccum (CapEvent mcap ev) =
                   ModeIdle -> dGC
                   -- Impossible.
                   ModeInit  -> error "scanEvents: GCStatsGHC ModeInit"
-                  ModeStart -> error "scanEvents: GCStatsGHC ModeStart"
                   ModeGHC{} -> error "scanEvents: GCStatsGHC ModeGHC"
-                  ModeEnd   -> error "scanEvents: GCStatsGHC ModeEnd"
+                  -- The last two cases are copied from case @GlobalSyncGC@
+                  -- to work around low-resolution timestamps (#35).
+                  -- Normally, these states would be impossible here, because
+                  -- @GlobalSyncGC@ would already transition away from these
+                  -- states. But if @GlobalSyncGC@ comes too early, the states
+                  -- can appear here. The computed stats are usually only
+                  -- slightly different than if @GlobalSyncGC@ made the state
+                  -- transitions, because the timestamps of @GCStatsGHC@
+                  -- and @GlobalSyncGC@ are normally only slightly different.
+                  --
+                  -- Cap takes part in the GC (not known if seq or par).
+                  -- Here is the moment where all caps taking place in the GC
+                  -- are identified and we can aggregate all their data
+                  -- at once (currently we just increment a counter for each).
+                  -- The EndGC events can come much later for some caps and at
+                  -- that time other caps are already inside their new GC.
+                  ModeStart ->
+                    dGC { gcMode = ModeSync cap
+                        , gcGenStat =
+                            if capKey == cap
+                            then IM.insert gcGenTot
+                                   totGC{ gcAll = gcAll totGC + 1 }
+                                   gcGenStat
+                            else gcGenStat
+                        }
+                  -- Cap is not in the GC. Mark it as idle to complete
+                  -- the identification of caps that take part
+                  -- in the current GC. Without overwritin the mode,
+                  -- the cap could be processed later on as if
+                  -- it took part in the GC, giving wrong results.
+                  ModeEnd  -> dGC { gcMode = ModeIdle }
           EndGC ->
             assert (gcMode capGC `notElem` [ModeEnd, ModeIdle]) $
             let endedGC = capGC { gcMode = ModeEnd }
