@@ -29,7 +29,7 @@ Author:              Satnam Singh <s.singh@ieee.org>,
                      Eric Kow <eric@well-typed.com>
 Maintainer:          Simon Marlow <marlowsd@gmail.com>
 Homepage:            http://www.haskell.org/haskellwiki/ThreadScope
-Bug-reports:         http://trac.haskell.org/ThreadScope/
+Bug-reports:         https://github.com/haskell/ThreadScope/issues
 Build-Type:          Simple
 Cabal-version:       >= 1.6
 Data-files:          threadscope.ui, threadscope.png
