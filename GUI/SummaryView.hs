@@ -11,14 +11,14 @@ import GUI.Types
 
 import Graphics.UI.Gtk
 
+import Control.Exception (assert)
+import Control.Monad
 import Data.Array
+import qualified Data.IntMap as IM
 import Data.IORef
+import Data.List as L
 import Data.Maybe
 import Data.Word (Word64)
-import Data.List as L
-import qualified Data.IntMap as IM
-import Control.Monad
-import Control.Exception (assert)
 import Numeric (showFFloat)
 import Text.Printf
 
@@ -921,4 +921,4 @@ accumEvent !statsAccum (CapEvent mcap ev) =
             in sd { dsparkTable =
                       IM.alter (alterCounter current) cap dsparkTable }
           _ -> sd
-    in scan (fromJust mcap) statsAccum ev
+    in scan (fromMaybe (error "Error: missing cap; use 'ghc-events validate' to verify the eventlog") mcap) statsAccum ev
