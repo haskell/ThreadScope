@@ -253,7 +253,11 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
           in withMouseState whenNoMouse >> return True
     keyName <- eventKeyName
     keyVal <- eventKeyVal
+#if MIN_VERSION_gtk(0,13,0)
     case (T.unpack keyName, keyToChar keyVal, keyVal) of
+#else
+    case (keyName, keyToChar keyVal, keyVal) of
+#endif
       ("Right", _, _)   -> liftNoMouse $ scrollRight timelineState
       ("Left",  _, _)   -> liftNoMouse $ scrollLeft  timelineState
       (_ , Just '+', _) -> liftNoMouse $ timelineZoomIn  timelineWin

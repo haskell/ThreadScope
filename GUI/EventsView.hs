@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module GUI.EventsView (
     EventsView,
     eventsViewNew,
@@ -114,7 +115,11 @@ eventsViewNew builder EventsViewActions{..} = do
           return True
 
     key <- eventKeyName
+#if MIN_VERSION_gtk(0,13,0)
     case T.unpack key of
+#else
+    case key of
+#endif
       "Up"        -> scroll (\_page _end  pos -> pos-1)
       "Down"      -> scroll (\_page _end  pos -> pos+1)
       "Page_Up"   -> scroll (\ page _end  pos -> pos-page)

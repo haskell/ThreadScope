@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module GUI.Timeline.Render (
     renderView,
     renderTraces,
@@ -392,7 +393,11 @@ drawSingleYScale maxSpkValue maxSparkPool maxYHistogram minterval xoffset
     -- Note: the following does not always work, see the HACK in Timeline.hs
     layoutSetAttributes layout [AttrSize minBound maxBound 8,
                                 AttrFamily minBound maxBound
+#if MIN_VERSION_gtk(0,13,0)
                                   (T.pack "sans serif")]
+#else
+                                  "sans serif"]
+#endif
   showLayout layout
   case traceMaxSpark maxSpkValue maxSparkPool maxYHistogram trace of
     Just v  ->
