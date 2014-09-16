@@ -38,6 +38,7 @@ import Graphics.Rendering.Cairo ( liftIO )
 
 import Data.IORef
 import Control.Monad
+import qualified Data.Text as T
 
 -----------------------------------------------------------------------------
 -- The CPUs view
@@ -252,7 +253,7 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
           in withMouseState whenNoMouse >> return True
     keyName <- eventKeyName
     keyVal <- eventKeyVal
-    case (keyName, keyToChar keyVal, keyVal) of
+    case (T.unpack keyName, keyToChar keyVal, keyVal) of
       ("Right", _, _)   -> liftNoMouse $ scrollRight timelineState
       ("Left",  _, _)   -> liftNoMouse $ scrollLeft  timelineState
       (_ , Just '+', _) -> liftNoMouse $ timelineZoomIn  timelineWin

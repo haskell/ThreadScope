@@ -46,6 +46,7 @@ Executable threadscope
                      ghc-events >= 0.4.2,
                      containers >= 0.2 && < 0.6,
                      deepseq >= 1.1,
+                     text,
                      time >= 1.1
   Extensions:        RecordWildCards, NamedFieldPuns, BangPatterns, PatternGuards
   Other-Modules:     Events.HECs,

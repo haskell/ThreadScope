@@ -9,9 +9,9 @@ module GUI.ProgressView (
     startPulse,
   ) where
 
+import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk as Gtk
 import GUI.GtkExtras
-import Graphics.Rendering.Cairo
 
 import qualified Control.Concurrent as Concurrent
 import Control.Exception
@@ -89,7 +89,7 @@ new parent cancelAction = do
       windowSkipTaskbarHint := True
     ]
 
-  progText <- labelNew Nothing
+  progText <- labelNew (Nothing :: Maybe String)
   set progText [
       miscXalign := 0,
       labelUseMarkup := True

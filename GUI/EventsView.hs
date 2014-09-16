@@ -18,6 +18,7 @@ import qualified GUI.GtkExtras as GtkExt
 import Control.Monad.Reader
 import Data.Array
 import Data.IORef
+import qualified Data.Text as T
 import Numeric
 
 -------------------------------------------------------------------------------
@@ -40,9 +41,9 @@ data ViewState = ViewState {
 data EventsState
    = EventsEmpty
    | EventsLoaded {
-       cursorPos  :: !Int,
-       mrange     :: !(Maybe (Int, Int)),
-       eventsArr  :: Array Int CapEvent
+       cursorPos :: !Int,
+       mrange    :: !(Maybe (Int, Int)),
+       eventsArr :: Array Int CapEvent
      }
 
 -------------------------------------------------------------------------------
@@ -113,7 +114,7 @@ eventsViewNew builder EventsViewActions{..} = do
           return True
 
     key <- eventKeyName
-    case key of
+    case T.unpack key of
       "Up"        -> scroll (\_page _end  pos -> pos-1)
       "Down"      -> scroll (\_page _end  pos -> pos+1)
       "Page_Up"   -> scroll (\ page _end  pos -> pos-page)

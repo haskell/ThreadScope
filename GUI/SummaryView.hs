@@ -104,11 +104,11 @@ summaryViewNew builder = do
     addGcColumn "Par collections" $ \(GcStatsEntry _ _ pcolls _ _ _) ->
       [ cellText := show pcolls ]
     addGcColumn "Elapsed time"    $ \(GcStatsEntry _ _ _ time _ _) ->
-      [ cellText := printf "%5.2fs" (timeToSecondsDbl time) ]
+      [ cellText := (printf "%5.2fs" (timeToSecondsDbl time) :: String) ]
     addGcColumn "Avg pause"       $ \(GcStatsEntry _ _ _ _ avgpause _) ->
-      [ cellText := printf "%3.4fs" avgpause ]
+      [ cellText := (printf "%3.4fs" avgpause :: String) ]
     addGcColumn "Max pause"       $ \(GcStatsEntry _ _ _ _ _ maxpause) ->
-      [ cellText := printf "%3.4fs" maxpause ]
+      [ cellText := (printf "%3.4fs" maxpause :: String) ]
 
     treeviewSparkStats <- getWidget castToTreeView "treeviewSparkStats"
     treeViewSetModel treeviewSparkStats storeSparkStats
@@ -266,7 +266,9 @@ ppWithCommas =
 
 setSummaryStatsEmpty :: SummaryView -> IO ()
 setSummaryStatsEmpty SummaryView{..} = do
-  mapM_ (\label -> set label [ labelText := "", widgetTooltipText := Nothing ]) $
+  mapM_ (\label -> set label [ labelText := ""
+                             , widgetTooltipText
+                               := (Nothing :: Maybe String) ]) $
     [ labelTimeTotal, labelTimeMutator
     , labelTimeGC, labelTimeProductivity ] ++
     [ w
@@ -281,7 +283,8 @@ setHeapStatsAvailable :: SummaryView -> Bool -> IO ()
 setHeapStatsAvailable SummaryView{..} available
   | available = do
       forM_ unavailableWidgets $ \widget ->
-        set widget [ widgetTooltipText := Nothing, widgetSensitive := True ]
+        set widget [ widgetTooltipText := (Nothing :: Maybe String)
+                   , widgetSensitive := True ]
 
   | otherwise = do
       forM_ allLabels $ \label -> set label [ labelText := "" ]

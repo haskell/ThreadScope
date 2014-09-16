@@ -1,4 +1,5 @@
-module GUI.Histogram (
+{-# LANGUAGE ScopedTypeVariables #-}
+  module GUI.Histogram (
     HistogramView,
     histogramViewNew,
     histogramViewSetHECs,
@@ -10,16 +11,16 @@ import GUI.Timeline.Render (renderTraces, renderYScaleArea)
 import GUI.Timeline.Render.Constants
 import GUI.Types
 
-import Graphics.UI.Gtk
 import qualified Graphics.Rendering.Cairo as C
+import Graphics.UI.Gtk
 import qualified GUI.GtkExtras as GtkExt
 
 import Data.IORef
 
 data HistogramView =
   HistogramView
-  { hecsIORef :: IORef (Maybe HECs)
-  , mintervalIORef :: IORef (Maybe Interval)
+  { hecsIORef            :: IORef (Maybe HECs)
+  , mintervalIORef       :: IORef (Maybe Interval)
   , histogramDrawingArea :: DrawingArea
   , histogramYScaleArea  :: DrawingArea
   }
@@ -74,8 +75,9 @@ histogramViewNew builder = do
   pangoCtx <- widgetGetPangoContext histogramDrawingArea
   style    <- get histogramDrawingArea widgetStyle
   layout   <- layoutEmpty pangoCtx
-  layoutSetMarkup layout $ "No detailed spark events in this eventlog.\n"
-                        ++ "Re-run with <tt>+RTS -lf</tt> to generate them."
+  (_ :: String) <- layoutSetMarkup layout $
+    "No detailed spark events in this eventlog.\n"
+    ++ "Re-run with <tt>+RTS -lf</tt> to generate them."
 
   -- Program the callback for the capability drawingArea
   on histogramDrawingArea exposeEvent $
