@@ -83,7 +83,7 @@ Executable threadscope
                      GUI.Timeline.Render.Constants,
                      GUI.GtkExtras
 
-  ghc-options:  -Wall -fwarn-tabs
+  ghc-options:  -Wall -fwarn-tabs -rtsopts
                 -fno-warn-type-defaults -fno-warn-name-shadowing
                 -fno-warn-unused-do-bind
                 -- Note: we do not want to use -threaded with gtk2hs.
