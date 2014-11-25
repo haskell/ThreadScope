@@ -21,7 +21,7 @@ import GUI.Types
 import GUI.ViewerColours
 import GUI.Timeline.CairoDrawing
 
-import Graphics.UI.Gtk
+import Graphics.UI.Gtk hiding (rectangle)
 import Graphics.Rendering.Cairo
   ( Render
   , Content(..)
