@@ -769,7 +769,7 @@ accumEvent !statsAccum (CapEvent mcap ev) =
                         }
                   -- Cap is not in the GC. Mark it as idle to complete
                   -- the identification of caps that take part
-                  -- in the current GC. Without overwritin the mode,
+                  -- in the current GC. Without overwriting the mode,
                   -- the cap could be processed later on as if
                   -- it took part in the GC, giving wrong results.
                   ModeEnd  -> dGC { gcMode = ModeIdle }
@@ -777,7 +777,8 @@ accumEvent !statsAccum (CapEvent mcap ev) =
                   -- Impossible.
                   ModeInit   -> error "scanEvents: GlobalSyncGC ModeInit"
                   ModeSync{} -> error "scanEvents: GlobalSyncGC ModeSync"
-                  ModeGHC{}  -> error "scanEvents: GlobalSyncGC ModeGHC"
+                  ModeGHC{}  -> -- error "scanEvents: GlobalSyncGC ModeGHC"
+                                dGC  -- workaround for #46
           GCStatsGHC{..} ->
             -- All caps must be stopped. Those that take part in the GC
             -- are in ModeInit or ModeSync, those that do not
@@ -838,7 +839,8 @@ accumEvent !statsAccum (CapEvent mcap ev) =
                   ModeIdle -> dGC
                   -- Impossible.
                   ModeInit  -> error "scanEvents: GCStatsGHC ModeInit"
-                  ModeGHC{} -> error "scanEvents: GCStatsGHC ModeGHC"
+                  ModeGHC{} -> -- error "scanEvents: GCStatsGHC ModeGHC"
+                               dGC  -- workaround for #46
                   -- The last two cases are copied from case @GlobalSyncGC@
                   -- to work around low-resolution timestamps (#35).
                   -- Normally, these states would be impossible here, because
