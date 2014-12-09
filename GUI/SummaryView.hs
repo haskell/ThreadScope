@@ -687,6 +687,10 @@ emptyGenStat = GenStat
   , gcMaxPause = 0
   }
 
+-- Fail only when assertions are turned on.
+errorAs :: String -> a -> a
+errorAs msg a = assert (error msg) a
+
 accumEvent :: StatsAccum -> CapEvent -> StatsAccum
 accumEvent !statsAccum (CapEvent mcap ev) =
   let -- For events that contain a counter with a running sum.
@@ -775,8 +779,8 @@ accumEvent !statsAccum (CapEvent mcap ev) =
                   ModeEnd  -> dGC { gcMode = ModeIdle }
                   ModeIdle -> dGC
                   -- Impossible.
-                  ModeInit   -> error "scanEvents: GlobalSyncGC ModeInit"
-                  ModeSync{} -> error "scanEvents: GlobalSyncGC ModeSync"
+                  ModeInit   -> errorAs "scanEvents: GlobalSyncGC ModeInit" dGC
+                  ModeSync{} -> errorAs "scanEvents: GlobalSyncGC ModeSync" dGC
                   ModeGHC{}  -> -- error "scanEvents: GlobalSyncGC ModeGHC"
                                 dGC  -- workaround for #46
           GCStatsGHC{..} ->
@@ -838,7 +842,7 @@ accumEvent !statsAccum (CapEvent mcap ev) =
                   -- Cap not in the current GC, leave it alone.
                   ModeIdle -> dGC
                   -- Impossible.
-                  ModeInit  -> error "scanEvents: GCStatsGHC ModeInit"
+                  ModeInit  -> errorAs "scanEvents: GCStatsGHC ModeInit" dGC
                   ModeGHC{} -> -- error "scanEvents: GCStatsGHC ModeGHC"
                                dGC  -- workaround for #46
                   -- The last two cases are copied from case @GlobalSyncGC@
@@ -917,8 +921,9 @@ accumEvent !statsAccum (CapEvent mcap ev) =
                    in sd { dGCTable = IM.insert cap newTime dGCTable
                          , dGCMain = Just newMain
                          }
-                 ModeEnd   -> error "scanEvents: EndGC ModeEnd"
-                 ModeIdle  -> error "scanEvents: EndGC ModeIdle"
+                 ModeEnd   -> errorAs "scanEvents: EndGC ModeEnd" sd
+                 ModeIdle  -> errorAs "scanEvents: EndGC ModeIdle"
+                              $ sd { dGCTable = IM.insert cap endedGC dGCTable }
           SparkCounters crt dud ovf cnv fiz gcd _rem ->
             -- We are guranteed the first spark counters event has all zeroes,
             -- do we don't need to rig the counters for maximal interval.
