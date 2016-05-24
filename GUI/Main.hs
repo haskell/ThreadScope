@@ -21,6 +21,7 @@ import Data.Maybe
 import Paths_threadscope
 
 -- Imports for ThreadScope
+import qualified GUI.App as App
 import qualified GUI.MainWindow as MainWindow
 import GUI.Types
 import Events.HECs hiding (Event)
@@ -444,6 +445,8 @@ eventLoop uienv@UIEnv{..} eventlogState = do
 runGUI :: Maybe (Either FilePath String) -> IO ()
 runGUI initialTrace = do
   Gtk.initGUI
+
+  App.initApp
 
   uiEnv <- constructUI
 
