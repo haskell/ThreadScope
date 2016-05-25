@@ -48,6 +48,9 @@ Executable threadscope
                      deepseq >= 1.1,
                      text,
                      time >= 1.1
+  if os(osx)
+    build-depends:   gtk-mac-integration
+
   Extensions:        RecordWildCards, NamedFieldPuns, BangPatterns, PatternGuards
   Other-Modules:     Events.HECs,
                      Events.EventDuration,
@@ -56,6 +59,7 @@ Executable threadscope
                      Events.SparkStats,
                      Events.SparkTree,
                      Events.TestEvents,
+                     GUI.App,
                      GUI.Main,
                      GUI.MainWindow,
                      GUI.EventsView,
