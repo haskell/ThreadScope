@@ -5,20 +5,20 @@ module GUI.Timeline.HEC (
 
 import GUI.Timeline.Render.Constants
 
-import Events.EventTree
 import Events.EventDuration
-import GUI.Types
+import Events.EventTree
 import GUI.Timeline.CairoDrawing
+import GUI.Types
 import GUI.ViewerColours
 
 import Graphics.Rendering.Cairo
 
+import GHC.RTS.Events hiding (Event, GCIdle, GCWork)
 import qualified GHC.RTS.Events as GHC
-import GHC.RTS.Events hiding (Event, GCWork, GCIdle)
 
+import Control.Monad
 import qualified Data.IntMap as IM
 import Data.Maybe
-import Control.Monad
 
 renderHEC :: ViewParameters -> Timestamp -> Timestamp
           -> IM.IntMap String -> (DurationTree,EventTree)
@@ -83,7 +83,7 @@ renderEvents :: ViewParameters
 
 renderEvents params@ViewParameters{..} !_s !_e !startPos !endPos ewidth
              perfNames (EventTreeLeaf es)
-  = let within = [ e | e <- es, let t = time e, t >= startPos && t < endPos ]
+  = let within = [ e | e <- es, let t = evTime e, t >= startPos && t < endPos ]
         untilTrue _ [] = return False
         untilTrue f (x : xs) = do
           b <- f x
@@ -94,7 +94,7 @@ renderEvents params@ViewParameters{..} !_s !_e !startPos !endPos ewidth
         perfNames (EventTreeOne ev)
   | t >= startPos && t < endPos = drawEvent params ewidth perfNames ev
   | otherwise = return False
-  where t = time ev
+  where t = evTime ev
 
 renderEvents params@ViewParameters{..} !s !e !startPos !endPos ewidth
         perfNames (EventSplit splitTime lhs rhs)
@@ -242,7 +242,7 @@ drawEvent :: ViewParameters -> Double -> IM.IntMap String -> GHC.Event
           -> Render Bool
 drawEvent params@ViewParameters{..} ewidth perfNames event =
   let renderI = renderInstantEvent params perfNames event ewidth
-  in case spec event of
+  in case evSpec event of
     CreateThread{}  -> renderI createThreadColour
     RequestSeqGC{}  -> renderI seqGCReqColour
     RequestParGC{}  -> renderI parGCReqColour
@@ -276,7 +276,7 @@ renderInstantEvent :: ViewParameters -> IM.IntMap String -> GHC.Event
 renderInstantEvent ViewParameters{..} perfNames event ewidth color = do
   setSourceRGBAhex color 1.0
   setLineWidth (ewidth * scaleValue)
-  let t = time event
+  let t = evTime event
   draw_line (t, hecBarOff-4) (t, hecBarOff+hecBarHeight+4)
   let numToLabel PerfCounter{perfNum, period} | period == 0 =
         IM.lookup (fromIntegral perfNum) perfNames
@@ -287,7 +287,7 @@ renderInstantEvent ViewParameters{..} perfNames event ewidth color = do
         fmap ("tracepoint: " ++) $ IM.lookup (fromIntegral perfNum) perfNames
       numToLabel _ = Nothing
       showLabel espec = fromMaybe (showEventInfo espec) (numToLabel espec)
-  labelAt labelsMode t $ showLabel (spec event)
+  labelAt labelsMode t $ showLabel (evSpec event)
   return True
 
 -------------------------------------------------------------------------------

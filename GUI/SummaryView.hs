@@ -24,7 +24,7 @@ import Text.Printf
 
 ------------------------------------------------------------------------------
 
-type Events = Array Int CapEvent
+type Events = Array Int Event
 
 data SummaryView = SummaryView {
 
@@ -142,7 +142,7 @@ summaryViewNew builder = do
 
 ------------------------------------------------------------------------------
 
-summaryViewSetEvents :: SummaryView -> Maybe (Array Int CapEvent) -> IO ()
+summaryViewSetEvents :: SummaryView -> Maybe (Array Int Event) -> IO ()
 summaryViewSetEvents view@SummaryView{cacheEventsStats} Nothing = do
     writeIORef cacheEventsStats Nothing
     setSummaryStatsEmpty view
@@ -367,7 +367,7 @@ data SparkCounts = SparkCounts !Word64 !Word64 !Word64 !Word64 !Word64 !Word64
 --  * then look at that 'StatsAccum' record and construct the various final
 --    stats that we want to present.
 --
-summaryStats :: Array Int CapEvent -> Maybe Interval -> SummaryStats
+summaryStats :: Array Int Event -> Maybe Interval -> SummaryStats
 summaryStats events minterval =
     SummaryStats {
        summHeapStats  = hs,
@@ -386,7 +386,7 @@ summaryStats events minterval =
 
 -- | Linearly accumulate the stats from the events array,
 -- either the full thing or some sub-range.
-accumStats :: Array Int CapEvent -> Maybe Interval -> StatsAccum
+accumStats :: Array Int Event -> Maybe Interval -> StatsAccum
 accumStats events minterval =
     foldl' accumEvent start [ events ! i | i <- range eventsRange ]
   where
@@ -401,13 +401,13 @@ accumStats events minterval =
 -- indicies containing that interval. The Nothing interval means to select
 -- the whole array range.
 --
-selectEventRange :: Array Int CapEvent -> Maybe Interval -> (Int, Int)
+selectEventRange :: Array Int Event -> Maybe Interval -> (Int, Int)
 selectEventRange arr Nothing             = bounds arr
 selectEventRange arr (Just (start, end)) = (lbound, ubound)
   where
     !lbound = either snd id $ findArrayRange cmp arr start
     !ubound = either fst id $ findArrayRange cmp arr end
-    cmp ts (CapEvent _ (Event ts' _)) = compare ts ts'
+    cmp ts (Event ts' _ _) = compare ts ts'
 
     findArrayRange :: (key -> val -> Ordering)
                    -> Array Int val -> key -> Either (Int,Int) Int
@@ -427,7 +427,7 @@ selectEventRange arr (Just (start, end)) = (lbound, ubound)
 ------------------------------------------------------------------------------
 -- Final step where we convert from StatsAccum to various presentation forms
 
-timeStats :: Array Int CapEvent -> Maybe Interval -> GcStats -> TimeStats
+timeStats :: Array Int Event -> Maybe Interval -> GcStats -> TimeStats
 timeStats events minterval
           GcStats { gcTotalStats = GcStatsEntry _ _ _ timeGC _ _ } =
     TimeStats {..}
@@ -440,10 +440,9 @@ timeStats events minterval
     (intervalStart, intervalEnd) =
       case minterval of
         Just (s,e) -> (s, e)
-        Nothing    -> (0, timeOf (events ! ub))
+        Nothing    -> (0, evTime (events ! ub))
           where
             (_lb, ub) = bounds events
-            timeOf (CapEvent _ (Event t _)) = t
 
 
 heapStats :: StatsAccum -> TimeStats -> HeapStats
@@ -691,8 +690,8 @@ emptyGenStat = GenStat
 errorAs :: String -> a -> a
 errorAs msg a = assert (error msg) a
 
-accumEvent :: StatsAccum -> CapEvent -> StatsAccum
-accumEvent !statsAccum (CapEvent mcap ev) =
+accumEvent :: StatsAccum -> Event -> StatsAccum
+accumEvent !statsAccum ev =
   let -- For events that contain a counter with a running sum.
       -- Eventually we'll subtract the last found
       -- event from the first. Intervals beginning at time 0
@@ -713,12 +712,10 @@ accumEvent !statsAccum (CapEvent mcap ev) =
       alterMax n (Just k) | n > k = Just n
       alterMax _ jk = jk
       -- Scan events, updating summary data.
-      scan cap !sd@StatsAccum{..} Event{time, spec} =
-        let capGC = IM.findWithDefault (defaultGC time) cap dGCTable
-        in case spec of
-          -- TODO: check EventBlock elsewhere; define {map,fold}EventBlock
-          EventBlock{cap = bcap, block_events} ->
-            L.foldl' (scan bcap) sd block_events
+      scan !sd@StatsAccum{..} Event{evTime, evSpec, evCap} =
+        let cap = fromMaybe (error "Error: missing cap; use 'ghc-events validate' to verify the eventlog") evCap
+            capGC = IM.findWithDefault (defaultGC evTime) cap dGCTable
+        in case evSpec of
           HeapAllocated{allocBytes} ->
             sd { dallocTable =
                    IM.alter (alterCounter allocBytes) cap dallocTable }
@@ -729,7 +726,7 @@ accumEvent !statsAccum (CapEvent mcap ev) =
           StartGC ->
             assert (gcMode capGC `elem` [ModeInit, ModeEnd, ModeIdle]) $
             let newGC = capGC { gcMode = ModeStart
-                              , gcStartTime = time
+                              , gcStartTime = evTime
                               }
             -- TODO: Index with generations, not caps?
             in sd { dGCTable = IM.insert cap newGC dGCTable }
@@ -879,7 +876,7 @@ accumEvent !statsAccum (CapEvent mcap ev) =
           EndGC ->
             assert (gcMode capGC `notElem` [ModeEnd, ModeIdle]) $
             let endedGC = capGC { gcMode = ModeEnd }
-                duration = time - gcStartTime capGC
+                duration = evTime - gcStartTime capGC
                 timeGC gen gstat =
                   let genGC =
                         IM.findWithDefault emptyGenStat gen (gcGenStat gstat)
@@ -907,7 +904,7 @@ accumEvent !statsAccum (CapEvent mcap ev) =
                  ModeStart -> sd { dGCTable = IM.insert cap endedGC dGCTable }
                  -- There is no GCStatsGHC for this GC. Gather partial data.
                  ModeSync mainCap ->
-                   let dgm = fromMaybe (defaultGC time) dGCMain
+                   let dgm = fromMaybe (defaultGC evTime) dGCMain
                        mainGenTot = updateMainCap mainCap gcGenTot dgm
                    in sd { dGCTable = IM.insert cap timeGenTot dGCTable
                          , dGCMain = Just mainGenTot
@@ -915,7 +912,7 @@ accumEvent !statsAccum (CapEvent mcap ev) =
                  -- All is known, so we update the times.
                  ModeGHC mainCap gen ->
                    let newTime = timeGC gen timeGenTot
-                       dgm = fromMaybe (defaultGC time) dGCMain
+                       dgm = fromMaybe (defaultGC evTime) dGCMain
                        mainGenTot = updateMainCap mainCap gcGenTot dgm
                        newMain = updateMainCap mainCap gen mainGenTot
                    in sd { dGCTable = IM.insert cap newTime dGCTable
@@ -931,4 +928,4 @@ accumEvent !statsAccum (CapEvent mcap ev) =
             in sd { dsparkTable =
                       IM.alter (alterCounter current) cap dsparkTable }
           _ -> sd
-    in scan (fromMaybe (error "Error: missing cap; use 'ghc-events validate' to verify the eventlog") mcap) statsAccum ev
+    in scan statsAccum ev

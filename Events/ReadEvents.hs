@@ -2,34 +2,35 @@ module Events.ReadEvents (
     registerEventsFromFile, registerEventsFromTrace
   ) where
 
-import Events.EventTree
-import Events.SparkTree
-import Events.HECs (HECs(..), histogram)
-import Events.TestEvents
 import Events.EventDuration
-import qualified GUI.ProgressView as ProgressView
+import Events.EventTree
+import Events.HECs (HECs (..), histogram)
+import Events.SparkTree
+import Events.TestEvents
 import GUI.ProgressView (ProgressView)
+import qualified GUI.ProgressView as ProgressView
 
-import GHC.RTS.Events -- hiding (Event)
+import GHC.RTS.Events
 
 import GHC.RTS.Events.Analysis
-import GHC.RTS.Events.Analysis.SparkThread
 import GHC.RTS.Events.Analysis.Capability
+import GHC.RTS.Events.Analysis.SparkThread
+import GHC.RTS.EventsIncremental
 
+import qualified Control.DeepSeq as DeepSeq
+import Control.Exception
+import Control.Monad
 import Data.Array
+import Data.Either
+import Data.Function
+import qualified Data.IntMap as IM
 import qualified Data.List as L
 import Data.Map (Map)
 import qualified Data.Map as M
-import qualified Data.IntMap as IM
-import Data.Set (Set)
 import Data.Maybe (catMaybes, fromMaybe)
-import Text.Printf
+import Data.Set (Set)
 import System.FilePath
-import Control.Monad
-import Control.Exception
-import qualified Control.DeepSeq as DeepSeq
-import Data.Function
-import Data.Either
+import Text.Printf
 
 -------------------------------------------------------------------------------
 -- import qualified GHC.RTS.Events as GHCEvents
@@ -51,14 +52,14 @@ import Data.Either
 
 -------------------------------------------------------------------------------
 
-rawEventsToHECs :: [CapEvent] -> Timestamp
+rawEventsToHECs :: [Event] -> Timestamp
                 -> [(Double, (DurationTree, EventTree, SparkTree))]
 rawEventsToHECs evs endTime
-  = map (\ cap -> toTree $ L.find ((Just cap ==) . ce_cap . head) heclists)
-      [0 .. maximum (0 : map (fromMaybe 0 . ce_cap) evs)]
+  = map (\cap -> toTree $ L.find ((Just cap ==) . evCap . head) heclists)
+      [0 .. maximum (0 : map (fromMaybe 0 . evCap) evs)]
   where
     heclists =
-      L.groupBy ((==) `on` ce_cap) $ L.sortBy (compare `on` ce_cap) evs
+      L.groupBy ((==) `on` evCap) $ L.sortBy (compare `on` evCap) evs
 
     toTree Nothing    = (0, (DurationTreeEmpty,
                              EventTree 0 0 (EventTreeLeaf []),
@@ -68,8 +69,7 @@ rawEventsToHECs evs endTime
        (mkDurationTree (eventsToDurations nondiscrete) endTime,
         mkEventTree discrete endTime,
         mkSparkTree sparkD endTime))
-       where es = map ce_event evs
-             (discrete, nondiscrete) = L.partition isDiscreteEvent es
+       where (discrete, nondiscrete) = L.partition isDiscreteEvent evs
              (maxSparkPool, sparkD)  = eventsToSparkDurations nondiscrete
 
 -------------------------------------------------------------------------------
@@ -118,15 +118,10 @@ buildEventLog progress from =
   divUp n k = (n + k - 1) `div` k
   build name evs = do
     let
-      specBy1000 e@EventBlock{} =
-        e{end_time = end_time e `divUp` 1000,
-          block_events = map eBy1000 (block_events e)}
-      specBy1000 e = e
-      eBy1000 ev = ev{time = time ev `divUp` 1000,
-                      spec = specBy1000 (spec ev)}
+      eBy1000 ev = ev{evTime = evTime ev `divUp` 1000}
       eventsBy = map eBy1000 (events (dat evs))
-      eventBlockEnd e | EventBlock{ end_time=t } <- spec e = t
-      eventBlockEnd e = time e
+      eventBlockEnd e | EventBlock{ end_time=t } <- evSpec e = t
+      eventBlockEnd e = evTime e
 
       -- 1, to avoid graph scale 0 and division by 0 later on
       lastTx = maximum (1 : map eventBlockEnd eventsBy)
@@ -139,18 +134,18 @@ buildEventLog progress from =
       -- one more step in the 'perf to TS' workflow and is a bit slower
       -- (yet another event sorting and loading eventlog chunks
       -- into the CPU cache).
-      steps :: [CapEvent] -> [(Map KernelThreadId Int, CapEvent)]
+      steps :: [Event] -> [(Map KernelThreadId Int, Event)]
       steps evs =
         zip (map fst $ rights $ validates capabilityTaskOSMachine evs) evs
-      addC :: (Map KernelThreadId Int, CapEvent) -> CapEvent
-      addC (state, ev@CapEvent{ce_event=Event{spec=PerfTracepoint{tid}}}) =
+      addC :: (Map KernelThreadId Int, Event) -> Event
+      addC (state, ev@Event{evSpec=PerfTracepoint{tid}}) =
         case M.lookup tid state of
           Nothing -> ev  -- unknown task's OS thread
-          ce_cap  -> ev {ce_cap}
-      addC (state, ev@CapEvent{ce_event=Event{spec=PerfCounter{tid}}}) =
+          evCap  -> ev {evCap}
+      addC (state, ev@Event{evSpec=PerfCounter{tid}}) =
         case M.lookup tid state of
           Nothing -> ev  -- unknown task's OS thread
-          ce_cap  -> ev {ce_cap}
+          evCap  -> ev {evCap}
       addC (_, ev) = ev
       addCaps evs = map addC (steps evs)
 
@@ -183,13 +178,13 @@ buildEventLog progress from =
       sparkProfile :: Process
                         ((Map ThreadId (Profile SparkThreadState),
                           (Map Int ThreadId, Set ThreadId)),
-                         CapEvent)
+                         Event)
                         (ThreadId, (SparkThreadState, Timestamp, Timestamp))
       sparkProfile  = profileRouted
-                        (refineM (spec . ce_event) sparkThreadMachine)
+                        (refineM evSpec sparkThreadMachine)
                         capabilitySparkThreadMachine
                         capabilitySparkThreadIndexer
-                        (time . ce_event)
+                        evTime
                         sorted
 
       sparkSummary :: Map ThreadId (Int, Timestamp, Timestamp)
@@ -225,9 +220,7 @@ buildEventLog progress from =
       maxYHistogram = 10000 * ceiling (fromIntegral maxY / 10000)
 
       getPerfNames nmap ev =
-        case spec ev of
-          EventBlock{block_events} ->
-            L.foldl' getPerfNames nmap block_events
+        case evSpec ev of
           PerfName{perfNum, name} ->
             IM.insert (fromIntegral perfNum) name nmap
           _ -> nmap

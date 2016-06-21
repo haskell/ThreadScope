@@ -9,8 +9,8 @@ module Events.SparkTree (
 
 import qualified Events.SparkStats as SparkStats
 
-import qualified GHC.RTS.Events as GHCEvents
 import GHC.RTS.Events (Timestamp)
+import qualified GHC.RTS.Events as GHCEvents
 
 import Control.Exception (assert)
 import Text.Printf
@@ -32,9 +32,9 @@ eventsToSparkDurations :: [GHCEvents.Event] -> (Double, [SparkDuration])
 eventsToSparkDurations es =
   let aux _startTime _startCounters [] = (0, [])
       aux startTime startCounters (event : events) =
-        case GHCEvents.spec event of
+        case GHCEvents.evSpec event of
           GHCEvents.SparkCounters crt dud ovf cnv fiz gcd rem ->
-            let endTime = GHCEvents.time event
+            let endTime = GHCEvents.evTime event
                 endCounters = (crt, dud, ovf, cnv, fiz, gcd, rem)
                 delta = SparkStats.create startCounters endCounters
                 newMaxSparkPool = SparkStats.maxPool delta

@@ -86,31 +86,31 @@ startupInfoViewNew builder = do
 
 -------------------------------------------------------------------------------
 
-startupInfoViewSetEvents :: StartupInfoView -> Maybe (Array Int CapEvent) -> IO ()
+startupInfoViewSetEvents :: StartupInfoView -> Maybe (Array Int Event) -> IO ()
 startupInfoViewSetEvents view mevents =
     updateStartupInfo view (maybe StartupInfoEmpty processEvents mevents)
 
 --TODO: none of this handles the possibility of an eventlog containing multiple
 -- OS processes. Note that the capset arg is ignored in the events below.
 
-processEvents :: Array Int CapEvent -> StartupInfoState
+processEvents :: Array Int Event -> StartupInfoState
 processEvents = foldl' accum (StartupInfoLoaded Nothing Nothing Nothing Nothing Nothing)
               . take 1000
               . elems
   where
-    accum info (CapEvent _ (Event _ (ProgramArgs _ (name:args)))) =
+    accum info (Event _ (ProgramArgs _ (name:args)) _) =
       info {
         progName = Just name,
         progArgs = Just args
       }
 
-    accum info (CapEvent _ (Event _ (ProgramEnv _ env))) =
+    accum info (Event _ (ProgramEnv _ env) _) =
       info { progEnv = Just (sort (parseEnv env)) }
 
-    accum info (CapEvent _ (Event _ (RtsIdentifier _ rtsid))) =
+    accum info (Event _ (RtsIdentifier _ rtsid) _) =
       info { progRtsId = Just rtsid }
 
-    accum info (CapEvent _ (Event timestamp (WallClockTime _ sec nsec))) =
+    accum info (Event timestamp (WallClockTime _ sec nsec) _) =
           -- WallClockTime records the wall clock time of *this* event
           -- which occurs some time after startup, so we can just subtract
           -- the timestamp since that is the relative time since startup.

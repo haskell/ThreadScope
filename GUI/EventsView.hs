@@ -44,7 +44,7 @@ data EventsState
    | EventsLoaded {
        cursorPos :: !Int,
        mrange    :: !(Maybe (Int, Int)),
-       eventsArr :: Array Int CapEvent
+       eventsArr :: Array Int Event
      }
 
 -------------------------------------------------------------------------------
@@ -181,7 +181,7 @@ eventsViewNew builder EventsViewActions{..} = do
 
 -------------------------------------------------------------------------------
 
-eventsViewSetEvents :: EventsView -> Maybe (Array Int CapEvent) -> IO ()
+eventsViewSetEvents :: EventsView -> Maybe (Array Int Event) -> IO ()
 eventsViewSetEvents eventWin@EventsView{drawArea, stateRef} mevents = do
   viewState <- readIORef stateRef
   let eventsState' = case mevents of
@@ -337,9 +337,10 @@ drawEvents EventsView{drawArea, adj}
     ]
 
   where
-    showEventTime  (CapEvent _cap (Event  time _spec)) =
+    showEventTime (Event time _spec _) =
       showFFloat (Just 6) (fromIntegral time / 1000000) "s"
-    showEventDescr (CapEvent  cap (Event _time  spec)) =
+    showEventDescr :: Event -> String
+    showEventDescr (Event _time  spec cap) =
         (case cap of
           Nothing -> ""
           Just c  -> "HEC " ++ show c ++ ": ")

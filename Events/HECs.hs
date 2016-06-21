@@ -2,7 +2,6 @@
 module Events.HECs (
     HECs(..),
     Event,
-    CapEvent,
     Timestamp,
 
     eventIndexToTimestamp,
@@ -26,7 +25,7 @@ import qualified Data.List as L
 data HECs = HECs {
        hecCount         :: Int,
        hecTrees         :: [(DurationTree, EventTree, SparkTree)],
-       hecEventArray    :: Array Int CapEvent,
+       hecEventArray    :: Array Int Event,
        hecLastEventTime :: Timestamp,
        maxSparkPool     :: Double,
        minXHistogram    :: Int,
@@ -40,7 +39,7 @@ data HECs = HECs {
 
 eventIndexToTimestamp :: HECs -> Int -> Timestamp
 eventIndexToTimestamp HECs{hecEventArray=arr} n =
-  time (ce_event (arr ! n))
+  evTime (arr ! n)
 
 timestampToEventIndex :: HECs -> Timestamp -> Int
 timestampToEventIndex HECs{hecEventArray=arr} ts =
@@ -49,17 +48,17 @@ timestampToEventIndex HECs{hecEventArray=arr} ts =
     (l,r) = bounds arr
 
     search !l !r
-      | (r - l) <= 1 = if ts > time (ce_event (arr!l)) then r else l
+      | (r - l) <= 1 = if ts > evTime (arr!l) then r else l
       | ts < tmid    = search l mid
       | otherwise    = search mid r
       where
         mid  = l + (r - l) `quot` 2
-        tmid = time (ce_event (arr!mid))
+        tmid = evTime (arr!mid)
 
 extractUserMarkers :: HECs -> [(Timestamp, String)]
 extractUserMarkers hecs =
   [ (ts, mark)
-  | CapEvent _ (Event ts (UserMarker mark)) <- elems (hecEventArray hecs) ]
+  | (Event ts (UserMarker mark) _) <- elems (hecEventArray hecs) ]
 
 -- | Sum durations in the same buckets to form a histogram.
 histogram :: [(Int, Timestamp)] -> [(Int, Timestamp)]

@@ -14,11 +14,11 @@ module Events.EventTree (
 
 import Events.EventDuration
 
-import qualified GHC.RTS.Events as GHC
 import GHC.RTS.Events hiding (Event)
+import qualified GHC.RTS.Events as GHC
 
-import Text.Printf
 import Control.Exception (assert)
+import Text.Printf
 
 -------------------------------------------------------------------------------
 
@@ -195,7 +195,7 @@ mkEventTree es endTime =
   tree
  where
   tree = splitEvents es endTime
-  (s,e) = if null es then (0,0) else (time (head es), endTime)
+  (s,e) = if null es then (0,0) else (evTime (head es), endTime)
 
 splitEvents :: [GHC.Event] -- events
             -> Timestamp       -- end time of last event in the list
@@ -223,14 +223,14 @@ splitEvents es !endTime
   | otherwise
   = -- trace (printf "len = %d, startTime = %d, endTime = %d, lhs_len = %d\n" len startTime endTime lhs_len) $
     assert (length lhs + length rhs == length es) $
-    EventSplit (time (head rhs))
+    EventSplit (evTime (head rhs))
                ltree
                rtree
     where
     -- | Integer division, rounding up.
     divUp :: Timestamp -> Timestamp -> Timestamp
     divUp n k = (n + k - 1) `div` k
-    startTime = time (head es)
+    startTime = evTime (head es)
     splitTime = startTime + (endTime - startTime) `divUp` 2
     duration  = endTime - startTime
 
@@ -257,7 +257,7 @@ splitEventList (e:es) acc !tsplit !tmax
   | otherwise
   = (reverse acc, tmax, e:es)
   where
-    t = time e
+    t = evTime e
 
 -------------------------------------------------------------------------------
 
