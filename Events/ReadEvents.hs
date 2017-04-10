@@ -15,7 +15,6 @@ import GHC.RTS.Events
 import GHC.RTS.Events.Analysis
 import GHC.RTS.Events.Analysis.Capability
 import GHC.RTS.Events.Analysis.SparkThread
-import GHC.RTS.EventsIncremental
 
 import qualified Control.DeepSeq as DeepSeq
 import Control.Exception
