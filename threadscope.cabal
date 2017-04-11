@@ -81,7 +81,8 @@ Executable threadscope
                      GUI.Timeline.Ticks,
                      GUI.Timeline.Types,
                      GUI.Timeline.Render.Constants,
-                     GUI.GtkExtras
+                     GUI.GtkExtras,
+                     Paths_threadscope
 
   ghc-options:  -Wall -fwarn-tabs -rtsopts
                 -fno-warn-type-defaults -fno-warn-name-shadowing
