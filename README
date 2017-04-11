@@ -1,0 +1,13 @@
+Building on Windows (raw notes)
+1. Using stack 1.4.0
+2. Run from: C:\Users\{User}\AppData\Local\Programs\stack\x86_64-windows\msys2-20150512
+    msys2_shell.cmd -mingw64
+3. Following https://blogs.gnome.org/nacho/2014/08/01/how-to-build-your-gtk-application-on-windows/
+    3.1. pacman -Syu
+    3.2. pacman -S mingw-w64-x86_64-toolchain
+    3.3. pacman -S mingw-w64-x86_64-gtk2
+    3.4. pacman -S mingw-w64-x86_64-zlib
+4. In project's root run: 
+    stack build
+5. Prepare distribution tree, like this on Wiki binary distributables with exception to copy:
+    threadscope.png and threadscope.ui to bin\ folder.
