@@ -6,4 +6,4 @@ getDataFileName :: FilePath -> IO FilePath
 getDataFileName = return
 
 version :: Version
-version = read "0.2.7"
+version = makeVersion [0,2,7]
