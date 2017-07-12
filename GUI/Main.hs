@@ -14,7 +14,6 @@ import System.Posix
 import Control.Concurrent
 import qualified Control.Concurrent.Chan as Chan
 import Control.Exception
-import Prelude hiding (catch)
 import Data.Array
 import Data.Maybe
 
