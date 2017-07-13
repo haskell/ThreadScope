@@ -1,0 +1,23 @@
+platform: x64
+shallow_clone: true
+environment:
+  global:
+    STACK_ROOT: "c:\\sr"
+cache:
+- "c:\\sr -> appveyor.yml"
+install:
+- set HOME=.
+- set "PATH=C:\msys64\usr\bin;%PATH%"
+- curl -ostack.zip -LsS --insecure https://www.stackage.org/stack/windows-x86_64
+- 7z x stack.zip stack.exe
+- stack setup > nul
+- stack exec -- pacman --noconfirm --needed -Sy bash pacman pacman-mirrors msys2-runtime msys2-runtime-devel
+- stack exec -- pacman --noconfirm -Syu
+- stack exec -- pacman --noconfirm -Syuu
+- stack exec -- pacman --noconfirm -S base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-gtk2
+build_script:
+- stack --no-terminal build --only-dependencies
+test_script:
+- stack --no-terminal build --ghc-options -Werror
+- stack sdist
+version: '{build}'
