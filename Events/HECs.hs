@@ -16,8 +16,13 @@ import Events.SparkTree
 import GHC.RTS.Events
 
 import Data.Array
-import qualified Data.IntMap as IM
 import qualified Data.List as L
+
+#if MIN_VERSION_containers(0,5,0)
+import qualified Data.IntMap.Strict as IM
+#else
+import qualified Data.IntMap as IM
+#endif
 
 -----------------------------------------------------------------------------
 
@@ -78,7 +83,9 @@ fromListWith' :: (a -> a -> a) -> [(Int, a)] -> IM.IntMap a
 fromListWith' f xs =
     L.foldl' ins IM.empty xs
   where
-#if MIN_VERSION_containers(0,4,1)
+#if MIN_VERSION_containers(0,5,0)
+    ins t (k,x) = IM.insertWith f k x t
+#elif MIN_VERSION_containers(0,4,1)
     ins t (k,x) = IM.insertWith' f k x t
 #else
     ins t (k,x) =
