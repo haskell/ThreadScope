@@ -7,7 +7,6 @@ import System.Glib.GError (failOnGError)
 
 -- Imports from Haskell library
 import Text.Printf
-import Control.Monad
 #ifndef mingw32_HOST_OS
 import System.Posix
 #endif

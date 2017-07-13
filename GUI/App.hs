@@ -8,11 +8,9 @@
 
 module GUI.App (initApp) where
 
--- Imports for GTK
-import qualified Graphics.UI.Gtk as Gtk
-
 -- Mac OS X-specific GTK imports
 #if defined(darwin_HOST_OS)
+import qualified Graphics.UI.Gtk as Gtk
 import qualified Graphics.UI.Gtk.OSX as OSX
 #endif
 
