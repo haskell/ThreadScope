@@ -94,7 +94,7 @@ launchProgramForURI uri = do
             1       -- SW_SHOWNORMAL
     return True
 
-foreign import stdcall unsafe "shlobj.h ShellExecuteA"
+foreign import ccall unsafe "shlobj.h ShellExecuteA"
     c_ShellExecuteA :: Ptr ()  -- HWND hwnd
                     -> CString -- LPCTSTR lpOperation
                     -> CString -- LPCTSTR lpFile
