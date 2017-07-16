@@ -7,14 +7,12 @@ import System.Glib.GError (failOnGError)
 
 -- Imports from Haskell library
 import Text.Printf
-import Control.Monad
 #ifndef mingw32_HOST_OS
 import System.Posix
 #endif
 import Control.Concurrent
 import qualified Control.Concurrent.Chan as Chan
 import Control.Exception
-import Prelude hiding (catch)
 import Data.Array
 import Data.Maybe
 

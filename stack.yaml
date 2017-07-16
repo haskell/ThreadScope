@@ -1,0 +1,7 @@
+resolver: lts-8.22
+packages:
+- .
+extra-deps:
+- ghc-events-0.6.0
+- gtk-mac-integration-0.3.3.1
+flags: {}

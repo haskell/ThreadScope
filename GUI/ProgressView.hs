@@ -17,9 +17,6 @@ import qualified Control.Concurrent as Concurrent
 import Control.Exception
 import Data.Typeable
 
-import Prelude hiding (catch)
-
-
 data ProgressView = ProgressView {
     progressWindow :: Gtk.Window,
     progressLabel  :: Gtk.Label,

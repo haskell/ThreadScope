@@ -6,7 +6,6 @@ module GUI.GtkExtras where
 
 import Graphics.UI.GtkInternals
 import Graphics.UI.Gtk (Rectangle)
-import System.Glib.GError
 import System.Glib.MainLoop
 import Graphics.Rendering.Pango.Types
 import Graphics.Rendering.Pango.BasicTypes
@@ -14,8 +13,12 @@ import Graphics.UI.Gtk.General.Enums (StateType, ShadowType)
 
 import Foreign
 import Foreign.C
-import Control.Monad
 import Control.Concurrent.MVar
+
+#if !(mingw32_HOST_OS || mingw32_TARGET_OS)
+import System.Glib.GError
+import Control.Monad
+#endif
 
 waitGUI :: IO ()
 waitGUI = do
@@ -91,7 +94,7 @@ launchProgramForURI uri = do
             1       -- SW_SHOWNORMAL
     return True
 
-foreign import stdcall unsafe "shlobj.h ShellExecuteA"
+foreign import ccall unsafe "shlobj.h ShellExecuteA"
     c_ShellExecuteA :: Ptr ()  -- HWND hwnd
                     -> CString -- LPCTSTR lpOperation
                     -> CString -- LPCTSTR lpFile
