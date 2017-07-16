@@ -14,6 +14,8 @@ cache:
   directories:
     - $HOME/.cabal/packages
     - $HOME/.cabal/store
+    - $HOME/Library/Caches/Homebrew
+    - $HOME/cabal
 
 before_cache:
   - rm -fv $HOME/.cabal/packages/hackage.haskell.org/build-reports.log
@@ -41,12 +43,31 @@ matrix:
     - compiler: "ghc-8.2.1"
     # env: TEST=--disable-tests BENCH=--disable-benchmarks
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.2.1,libgtk2.0-dev], sources: [hvr-ghc]}}
+    - compiler: "ghc"
+      os: osx
 
 before_install:
  - HC=${CC}
  - unset CC
- - PATH=/opt/ghc/bin:/opt/ghc-ppa-tools/bin:$PATH
+ - PATH=$HOME/.cabal/bin:/opt/ghc/bin:/opt/ghc-ppa-tools/bin:$PATH
  - PKGNAME='threadscope'
+ - |
+  if [ `uname` = "Darwin" ]; then
+    brew install ghc gtk+ gtk-mac-integration
+    pushd $HOME
+    if [ -d cabal/.git ]; then
+      cd cabal
+      git fetch origin
+    else
+      git clone https://github.com/haskell/cabal.git
+    fi
+    cd $HOME/cabal/cabal-install
+    git checkout 3751ec6
+    NO_DOCUMENTATION=1 EXTRA_CONFIGURE_OPTS="" ./bootstrap.sh -j --sandbox
+    mkdir -p $HOME/.cabal/bin
+    cp -v .cabal-sandbox/bin/cabal $HOME/.cabal/bin/cabal
+    popd
+  fi
 
 install:
  - cabal --version
@@ -54,10 +75,14 @@ install:
  - BENCH=${BENCH---enable-benchmarks}
  - TEST=${TEST---enable-tests}
  - travis_retry cabal update -v
- - sed -i 's/^jobs:/-- jobs:/' ${HOME}/.cabal/config
+ - sed -i'.bak' 's/^jobs:/-- jobs:/' ${HOME}/.cabal/config
  - rm -fv cabal.project.local
  - "echo 'packages: .' > cabal.project"
  - rm -f cabal.project.freeze
+ - |
+   if [ `uname` = "Darwin" ]; then
+     cabal new-configure --constraint="gtk +have-quartz-gtk"
+   fi
  - cabal new-build -w ${HC} ${TEST} ${BENCH} --dep -j2 all
  - cabal new-build -w ${HC} --disable-tests --disable-benchmarks --dep -j2 all
 
@@ -77,6 +102,10 @@ script:
  - "echo 'packages: .' > cabal.project"
  # this builds all libraries and executables (without tests/benchmarks)
  - rm -f cabal.project.freeze
+ - |
+   if [ `uname` = "Darwin" ]; then
+     cabal new-configure --constraint="gtk +have-quartz-gtk"
+   fi
  - cabal new-build -w ${HC} --disable-tests --disable-benchmarks all
  # this builds all libraries and executables (including tests/benchmarks)
  # - rm -rf ./dist-newstyle
