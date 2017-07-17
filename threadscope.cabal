@@ -1,5 +1,5 @@
 Name:                threadscope
-Version:             0.2.7
+Version:             0.2.8
 Category:            Development, Profiling, Trace
 Synopsis:            A graphical tool for profiling parallel Haskell programs.
 Description:         ThreadScope is a graphical viewer for thread profile
@@ -45,14 +45,20 @@ source-repository head
 
 Executable threadscope
   Main-is:           Main.hs
-  Build-Depends:     base >= 4.0 && < 5,
-                     gtk >= 0.12, cairo, glib, pango,
-                     binary, array, mtl, filepath,
+  Build-Depends:     base >= 4.6 && < 5,
+                     gtk >= 0.12 && < 0.15,
+                     cairo < 0.14,
+                     glib < 0.14,
+                     pango < 0.14,
+                     binary < 0.10,
+                     array < 0.6,
+                     mtl < 2.3,
+                     filepath < 1.5,
                      ghc-events >= 0.5 && < 0.7,
                      containers >= 0.2 && < 0.6,
                      deepseq >= 1.1,
-                     text,
-                     time >= 1.1
+                     text < 1.3,
+                     time >= 1.1 && < 1.9
   if os(osx)
     build-depends:   gtk-mac-integration
 
