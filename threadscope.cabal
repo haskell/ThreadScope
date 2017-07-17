@@ -45,7 +45,7 @@ source-repository head
 
 Executable threadscope
   Main-is:           Main.hs
-  Build-Depends:     base >= 4.0 && < 5,
+  Build-Depends:     base >= 4.6 && < 5,
                      gtk >= 0.12 && < 0.15,
                      cairo < 0.14,
                      glib < 0.14,
