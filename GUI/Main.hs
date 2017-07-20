@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE TemplateHaskell #-}
 module GUI.Main (runGUI) where
 
 -- Imports for GTK
@@ -16,13 +17,12 @@ import Control.Exception
 import Data.Array
 import Data.Maybe
 
-import Paths_threadscope
-
 -- Imports for ThreadScope
 import qualified GUI.App as App
 import qualified GUI.MainWindow as MainWindow
 import GUI.Types
 import Events.HECs hiding (Event)
+import GUI.DataFiles (ui)
 import GUI.Dialogs
 import Events.ReadEvents
 import GUI.EventsView
@@ -117,7 +117,7 @@ constructUI :: IO UIEnv
 constructUI = failOnGError $ do
 
   builder <- Gtk.builderNew
-  Gtk.builderAddFromFile builder =<< getDataFileName "threadscope.ui"
+  Gtk.builderAddFromString builder $ui
 
   eventQueue <- Chan.newChan
   let post = postEvent eventQueue

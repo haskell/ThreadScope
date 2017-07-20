@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 module GUI.MainWindow (
     MainWindow,
     mainWindowNew,
@@ -10,12 +11,10 @@ module GUI.MainWindow (
 
   ) where
 
-import Paths_threadscope
-
--- Imports for GTK
 import Graphics.UI.Gtk as Gtk
 import qualified System.Glib.GObject as Glib
 
+import GUI.DataFiles (loadLogo)
 
 -------------------------------------------------------------------------------
 
@@ -146,8 +145,8 @@ mainWindowNew builder actions = do
 
   ------------------------------------------------------------------------
 
-  logoPath <- getDataFileName "threadscope.png"
-  windowSetIconFromFile mainWindow logoPath
+  logo <- $loadLogo
+  set mainWindow [ windowIcon := Just logo ]
 
   ------------------------------------------------------------------------
   -- Status bar functionality
