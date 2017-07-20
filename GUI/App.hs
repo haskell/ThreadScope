@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 -------------------------------------------------------------------------------
 -- | Module : GUI.App
@@ -12,6 +13,7 @@ module GUI.App (initApp) where
 #if defined(darwin_HOST_OS)
 import qualified Graphics.UI.Gtk as Gtk
 import qualified Graphics.UI.Gtk.OSX as OSX
+import GUI.DataFiles (loadLogo)
 #endif
 
 -------------------------------------------------------------------------------
@@ -25,6 +27,8 @@ initApp = do
   app <- OSX.applicationNew
   menuBar <- Gtk.menuBarNew
   OSX.applicationSetMenuBar app menuBar
+  logo <- $loadLogo
+  OSX.applicationSetDockIconPixbuf app (Just logo)
   OSX.applicationReady app
 
 #else

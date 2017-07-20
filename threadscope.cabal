@@ -64,7 +64,7 @@ Executable threadscope
                      template-haskell < 2.13,
                      temporary >= 1.1 && < 1.3
   if os(osx)
-    build-depends:   gtk-mac-integration
+    build-depends:   gtk-mac-integration < 0.4
 
   Extensions:        RecordWildCards, NamedFieldPuns, BangPatterns, PatternGuards
   Other-Modules:     Events.HECs,
