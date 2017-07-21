@@ -11,6 +11,7 @@ git:
   submodules: false  # whether to recursively clone submodules
 
 cache:
+  timeout: 1000
   directories:
     - $HOME/.cabal/packages
     - $HOME/.cabal/store
