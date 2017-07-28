@@ -16,7 +16,7 @@ cache:
     - $HOME/.cabal/packages
     - $HOME/.cabal/store
     - $HOME/Library/Caches/Homebrew
-    - $HOME/cabal
+    - $HOME/.ghc-install
 
 before_cache:
   - rm -fv $HOME/.cabal/packages/hackage.haskell.org/build-reports.log
@@ -44,30 +44,19 @@ matrix:
     - compiler: "ghc-8.2.1"
     # env: TEST=--disable-tests BENCH=--disable-benchmarks
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.2.1,libgtk2.0-dev], sources: [hvr-ghc]}}
-    - compiler: "ghc"
+    - compiler: "ghc-8.2.1"
+    # env: TEST=--disable-tests BENCH=--disable-benchmarks
       os: osx
 
 before_install:
  - HC=${CC}
  - unset CC
- - PATH=$HOME/.cabal/bin:/opt/ghc/bin:/opt/ghc-ppa-tools/bin:$PATH
+ - sh scripts/install-on-osx.sh $HC
+ - PATH=/opt/ghc/bin:/opt/ghc-ppa-tools/bin:$HOME/.ghc-install/bin:$PATH
  - PKGNAME='threadscope'
  - |
   if [ `uname` = "Darwin" ]; then
     brew install ghc gtk+ gtk-mac-integration
-    pushd $HOME
-    if [ -d cabal/.git ]; then
-      cd cabal
-      git fetch origin
-    else
-      git clone https://github.com/haskell/cabal.git
-    fi
-    cd $HOME/cabal/cabal-install
-    git checkout 3751ec6
-    NO_DOCUMENTATION=1 EXTRA_CONFIGURE_OPTS="" ./bootstrap.sh -j --sandbox
-    mkdir -p $HOME/.cabal/bin
-    cp -v .cabal-sandbox/bin/cabal $HOME/.cabal/bin/cabal
-    popd
   fi
 
 install:
