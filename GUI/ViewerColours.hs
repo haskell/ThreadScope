@@ -18,11 +18,14 @@ runningColour = darkGreen
 gcColour :: Color
 gcColour = orange
 
+gcWaitColour :: Color
+gcWaitColour = lightOrange
+
 gcStartColour, gcWorkColour, gcIdleColour, gcEndColour :: Color
-gcStartColour = orange
+gcStartColour = lightOrange
 gcWorkColour  = orange
-gcIdleColour  = white
-gcEndColour   = orange
+gcIdleColour  = lightOrange
+gcEndColour   = lightOrange
 
 createThreadColour :: Color
 createThreadColour = lightBlue
@@ -108,6 +111,9 @@ darkRed = Color 0xcc00 0x0000 0x0000
 
 orange :: Color
 orange = Color 0xE000 0x7000 0x0000 -- orange
+
+lightOrange :: Color
+lightOrange = Color 0xE000 0xD000 0xB000 -- orange
 
 profileBackground :: Color
 profileBackground = Color 0xFFFF 0xFFFF 0xFFFF

@@ -63,6 +63,8 @@ keyData =
      "Indicates a period of time spent running Haskell code (not GC, not blocked/idle)")
   , ("GC",              KDuration, gcColour,
      "Indicates a period of time spent by the RTS performing garbage collection (GC)")
+  , ("GC waiting",      KDuration, gcWaitColour,
+     "Indicates a period of time spent by the RTS waiting to initiate or finish garbage collection (GC)")
   , ("create thread",   KEvent, createThreadColour,
      "Indicates a new Haskell thread has been created")
   , ("seq GC req",      KEvent, seqGCReqColour,
