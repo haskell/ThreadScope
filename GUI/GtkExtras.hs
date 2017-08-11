@@ -20,6 +20,8 @@ import System.Glib.GError
 import Control.Monad
 #endif
 
+#include "windows_cconv.h"
+
 waitGUI :: IO ()
 waitGUI = do
   resultVar <- newEmptyMVar
@@ -94,7 +96,7 @@ launchProgramForURI uri = do
             1       -- SW_SHOWNORMAL
     return True
 
-foreign import ccall unsafe "shlobj.h ShellExecuteA"
+foreign import WINDOWS_CCONV unsafe "shlobj.h ShellExecuteA"
     c_ShellExecuteA :: Ptr ()  -- HWND hwnd
                     -> CString -- LPCTSTR lpOperation
                     -> CString -- LPCTSTR lpFile
