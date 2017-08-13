@@ -23,3 +23,16 @@ test_script:
 - stack --no-terminal build --ghc-options -Werror
 - stack sdist
 version: '{build}'
+after_test:
+- ps: cp "$(./stack.exe path --local-install-root)/bin/threadscope.exe" threadscope.exe
+- 7z a threadscope.windows.%PLATFORM%.zip threadscope.exe
+artifacts:
+- path: threadscope.windows.%PLATFORM%.zip
+deploy:
+- provider: GitHub
+  auth_token:
+    secure: OrxZPOB9WW197eU5DpWLZ+Qn/ApoxlH9mkhvY30wjys1cbcQSZyMJXk+BYU1xmrF
+  artifact: threadscope.windows.$(platform).zip
+  release: $(appveyor_repo_tag_name)
+  on:
+    appveyor_repo_tag: true
