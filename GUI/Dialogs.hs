@@ -1,6 +1,8 @@
+{-# LANGUAGE TemplateHaskell #-}
 module GUI.Dialogs where
 
-import Paths_threadscope (getDataFileName, version)
+import GUI.DataFiles (loadLogo)
+import Paths_threadscope (version)
 
 import Graphics.UI.Gtk
 
@@ -13,8 +15,7 @@ import System.FilePath
 aboutDialog :: WindowClass window => window -> IO ()
 aboutDialog parent
  = do dialog <- aboutDialogNew
-      logoPath <- getDataFileName "threadscope.png"
-      logo <- pixbufNewFromFile logoPath
+      logo <- $loadLogo
       set dialog [
          aboutDialogName      := "ThreadScope",
          aboutDialogVersion   := showVersion version,

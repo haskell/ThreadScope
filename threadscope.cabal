@@ -59,9 +59,13 @@ Executable threadscope
                      containers >= 0.2 && < 0.6,
                      deepseq >= 1.1,
                      text < 1.3,
-                     time >= 1.1 && < 1.9
+                     time >= 1.1 && < 1.9,
+                     bytestring < 0.11,
+                     file-embed < 0.1,
+                     template-haskell < 2.13,
+                     temporary >= 1.1 && < 1.3
   if os(osx)
-    build-depends:   gtk-mac-integration
+    build-depends:   gtk-mac-integration < 0.4
 
   include-dirs:      include
   Extensions:        RecordWildCards, NamedFieldPuns, BangPatterns, PatternGuards
@@ -76,6 +80,7 @@ Executable threadscope
                      GUI.Main,
                      GUI.MainWindow,
                      GUI.EventsView,
+                     GUI.DataFiles,
                      GUI.Dialogs,
                      GUI.SaveAs,
                      GUI.Timeline,
