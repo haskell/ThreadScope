@@ -103,4 +103,18 @@ script:
  # build & run tests
  - cabal new-build -w ${HC} ${TEST} ${BENCH} all
 
+before_deploy:
+- cp $(find dist-newstyle/ -type f -name threadscope -exec test -x {} \; -print) threadscope.$TRAVIS_OS_NAME
+- gzip -f threadscope.$TRAVIS_OS_NAME
+
+deploy:
+  provider: releases
+  api_key:
+     secure: "EvY2+WMEypxVdOhZ/UKJjlSoMvYevJ8LG+W4u673SikP3xa5YebcWN5ZGvNbxuKUhMQcbsGnofOZhCZG/29ri1wn046+Nky/zwBFNoXKSyAhVmBwTGtLDLHOL1/LsoO9BVi/xPo0OckEuPNoHx3B9/AwTnn9HMddnENlOZGh1NqJ9xHDEr9N2tiEmWwrIDLKhmST/QnPYxGYnC2mDUzdy60q0unioEB7SQehG25VMMSkv2Oie7dc797pBl7fzOHfoEv312e4TIhYvHFmYznQbVdCDuI3m2X7ho9BtfwYiNNEZ/+vmhpFA87CSaq2uX/B0LEfjmJ8NzJRpPsFcwLballDZOQqqzy/+G3OIfwcgNx/2UrEOBdBRGsFYxkfw+Ww20+AgjXwEk8yqAU2UEJgXbvsHZO7DNBKhoIhE8WHL2cbmv0UhJtVoHIPvyPcPEVgMCBn4DbOd3OSTMSLUPpj6SoFJYLdHGjJRq0QxKndZvlt6CP/92TnYd3aTpaFhXROjPmvlojgobohovrYQ4RliT3qI1BP/v7oYdknAtu0P/TPTZIwRy1pEPTJOHohofgM0AMRt/cJlNDbgUNlkDCZTrK1tSkmD5TQjdfB0fMQUN2H6HZHN+Aa7jXl3QitrIozfKrWEsBCqrOi6LwjShFjKtHNgIUweJewoNJz5JGXA8Y="
+  file: threadscope.$TRAVIS_OS_NAME.gz
+  skip_cleanup: true
+  on:
+    repo: haskell/ThreadScope
+    tags: true
+    condition: "$HC = ghc-8.2.1"
 # EOF
