@@ -34,6 +34,7 @@ Build-Type:          Simple
 Cabal-version:       >= 1.6
 Data-files:          threadscope.ui, threadscope.png
 Extra-source-files:  include/windows_cconv.h
+                     README.md
 Tested-with:         GHC == 7.6.3,
                      GHC == 7.8.3,
                      GHC == 7.10.2,
