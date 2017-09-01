@@ -2,9 +2,19 @@
 [![Hackage](https://img.shields.io/hackage/v/threadscope.svg)](https://hackage.haskell.org/package/threadscope)
 [![Hackage-Deps](https://img.shields.io/hackage-deps/v/threadscope.svg)](http://packdeps.haskellers.com/feed?needle=threadscope)
 [![Build Status](https://travis-ci.org/haskell/ThreadScope.svg?branch=master)](https://travis-ci.org/haskell/ThreadScope)
-[![Build status](https://ci.appveyor.com/api/projects/status/y6kd8pyh2f3qok4f?svg=true)](https://ci.appveyor.com/project/Mikolaj/threadscope)
+[![Build status](https://ci.appveyor.com/api/projects/status/tiwkb7k6p38dde03/branch/master?svg=true)](https://ci.appveyor.com/project/maoe/threadscope-44t6e/branch/master)
 
-## Installation
+## Using pre-built binaries
+
+Currently [pre-built binaries](https://github.com/haskell/ThreadScope/releases) for the following platforms are provided:
+
+* Ubuntu Trusty (64-bit)
+* OS X
+* Windows (x64)
+
+GTK+2 needs to be installed for those binaries to work. On OS X, `gtk-mac-integration` also needs to be installed.
+
+## Building from source
 
 ### Linux
 
@@ -25,7 +35,7 @@ stack setup
 stack install
 ```
 
-### macOS
+### OS X
 
 GTK+ and gtk-mac-integration are required.
 
