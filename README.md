@@ -12,7 +12,18 @@ Currently [pre-built binaries](https://github.com/haskell/ThreadScope/releases) 
 * OS X
 * Windows (x64)
 
-GTK+2 needs to be installed for those binaries to work. On OS X, `gtk-mac-integration` also needs to be installed.
+GTK+2 needs to be installed for those binaries to work.
+
+On OS X, `gtk-mac-integration` also needs to be installed.
+```
+brew install gtk+ gtk-mac-integration
+```
+
+On Windows, the [MSYS2](http://www.msys2.org) is the recommended way to install GTK+2. In MSYS2 MINGW64 shell:
+```
+pacman -S $MINGW_PACKAGE_PREFIX-gtk2
+```
+then you can run the threadscope binary from the shell.
 
 ## Building from source
 
