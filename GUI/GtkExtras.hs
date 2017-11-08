@@ -15,12 +15,12 @@ import Foreign
 import Foreign.C
 import Control.Concurrent.MVar
 
-#if !(mingw32_HOST_OS || mingw32_TARGET_OS)
+#if mingw32_HOST_OS || mingw32_TARGET_OS
+#include "windows_cconv.h"
+#else
 import System.Glib.GError
 import Control.Monad
 #endif
-
-#include "windows_cconv.h"
 
 waitGUI :: IO ()
 waitGUI = do
