@@ -29,9 +29,6 @@ before_cache:
 
 matrix:
   include:
-    - compiler: "ghc-7.6.3"
-    # env: TEST=--disable-tests BENCH=--disable-benchmarks
-      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-7.6.3,libgtk2.0-dev], sources: [hvr-ghc]}}
     - compiler: "ghc-7.8.3"
     # env: TEST=--disable-tests BENCH=--disable-benchmarks
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-7.8.3,libgtk2.0-dev], sources: [hvr-ghc]}}
