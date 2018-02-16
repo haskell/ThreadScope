@@ -1,5 +1,12 @@
 # Revision history for threadscope
 
+## 2018-02-16 - v0.2.10
+
+* Add instructions to install gtk2 in the README
+* Do not include windows_cconv.h on non mingw32 systems (#79)
+* Relax upper version bound for ghc-events (#80)
+* Relax upper version bound for time
+
 ## 2017-09-02 - v0.2.9
 
 * Render GC waiting periods in light orange (#70)
