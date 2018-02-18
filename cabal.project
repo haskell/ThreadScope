@@ -1,0 +1,3 @@
+-- see http://cabal.readthedocs.io/en/latest/nix-local-build-overview.html for more information
+
+packages: .
