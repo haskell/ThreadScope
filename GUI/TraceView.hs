@@ -10,6 +10,7 @@ import Events.HECs
 import GUI.Types
 
 import Graphics.UI.Gtk
+import qualified Graphics.UI.Gtk.ModelView.TreeView.Compat as Compat
 import Data.Tree
 
 
@@ -44,7 +45,7 @@ traceViewNew builder actions = do
     treeViewColumnPackStart traceColumn togglecell False
     treeViewAppendColumn tracesTreeView traceColumn
 
-    treeViewSetModel tracesTreeView tracesStore
+    Compat.treeViewSetModel tracesTreeView (Just tracesStore)
 
     cellLayoutSetAttributes traceColumn textcell tracesStore $ \(tr, _) ->
       [ cellText := renderTrace tr ]

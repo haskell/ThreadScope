@@ -104,6 +104,7 @@ Executable threadscope
                      GUI.Timeline.Types,
                      GUI.Timeline.Render.Constants,
                      GUI.GtkExtras
+                     Graphics.UI.Gtk.ModelView.TreeView.Compat
                      Paths_threadscope
 
   ghc-options:  -Wall -fwarn-tabs -rtsopts

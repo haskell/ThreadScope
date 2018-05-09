@@ -10,6 +10,7 @@ import GHC.RTS.Events
 import GUI.Types
 
 import Graphics.UI.Gtk
+import qualified Graphics.UI.Gtk.ModelView.TreeView.Compat as Compat
 
 import Control.Exception (assert)
 import Control.Monad
@@ -95,7 +96,7 @@ summaryViewNew builder = do
     let summaryView = SummaryView{..}
 
     treeviewGcStats <- getWidget castToTreeView "treeviewGcStats"
-    treeViewSetModel treeviewGcStats storeGcStats
+    Compat.treeViewSetModel treeviewGcStats (Just storeGcStats)
     let addGcColumn = addColumn treeviewGcStats storeGcStats
     addGcColumn "Generation" $ \(GcStatsEntry gen _ _ _ _ _) ->
       [ cellText := if gen == -1 then "GC Total" else "Gen " ++ show gen ]
@@ -111,7 +112,7 @@ summaryViewNew builder = do
       [ cellText := (printf "%3.4fs" maxpause :: String) ]
 
     treeviewSparkStats <- getWidget castToTreeView "treeviewSparkStats"
-    treeViewSetModel treeviewSparkStats storeSparkStats
+    Compat.treeViewSetModel treeviewSparkStats (Just storeSparkStats)
     let addSparksColumn = addColumn treeviewSparkStats storeSparkStats
     addSparksColumn "HEC" $ \(hec, _) ->
       [ cellText := if hec == -1 then "Total" else "HEC " ++ show hec ]
