@@ -62,8 +62,8 @@ Executable threadscope
                      time >= 1.1 && < 1.10,
                      bytestring < 0.11,
                      file-embed < 0.1,
-                     template-haskell < 2.13,
-                     temporary >= 1.1 && < 1.3
+                     template-haskell < 2.14,
+                     temporary >= 1.1 && < 1.4
   if os(osx)
     build-depends:   gtk-mac-integration < 0.4
 
