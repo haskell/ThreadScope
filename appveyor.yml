@@ -13,7 +13,7 @@ environment:
   matrix:
     - GHCVER: "8.0.2"
     - GHCVER: "8.2.2"
-#   - GHCVER: "7.10.3.2"
+    - GHCVER: "8.4.3"
 
 cache:
  - "c:/SR"
@@ -50,3 +50,4 @@ deploy:
    release: $(appveyor_repo_tag_name)
    on:
      appveyor_repo_tag: true
+     GHCVER: "8.4.3"
