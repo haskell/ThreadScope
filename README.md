@@ -27,6 +27,8 @@ then you can run the threadscope binary from the shell.
 
 ## Building from source
 
+Use `git clone` or `cabal unpack threadscope` to get the source and move into the threadscope directory.
+
 ### Linux
 
 GTK+2 is required to be installed. On Ubuntu-like systems:
