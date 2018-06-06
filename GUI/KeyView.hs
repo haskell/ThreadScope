@@ -7,6 +7,7 @@ import GUI.ViewerColours
 import GUI.Timeline.Render.Constants
 
 import Graphics.UI.Gtk
+import qualified Graphics.UI.Gtk.ModelView.TreeView.Compat as Compat
 import qualified Graphics.Rendering.Cairo as C
 
 
@@ -40,7 +41,7 @@ keyViewNew builder = do
 
     let tooltipColumn = makeColumnIdString 0
     customStoreSetColumn keyStore tooltipColumn (\(_,tooltip,_) -> tooltip)
-    treeViewSetModel keyTreeView keyStore
+    Compat.treeViewSetModel keyTreeView (Just keyStore)
 
     set keyTreeView [ treeViewTooltipColumn := tooltipColumn ]
 

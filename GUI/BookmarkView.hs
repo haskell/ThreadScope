@@ -13,6 +13,7 @@ module GUI.BookmarkView (
 import GHC.RTS.Events (Timestamp)
 
 import Graphics.UI.Gtk
+import qualified Graphics.UI.Gtk.ModelView.TreeView.Compat as Compat
 import Numeric
 
 ---------------------------------------------------------------------------
@@ -81,7 +82,7 @@ bookmarkViewNew builder BookmarkViewActions{..} = do
     treeViewAppendColumn bookmarkTreeView columnTs
     treeViewAppendColumn bookmarkTreeView columnLabel
 
-    treeViewSetModel bookmarkTreeView bookmarkStore
+    Compat.treeViewSetModel bookmarkTreeView (Just bookmarkStore)
 
     cellLayoutSetAttributes columnTs cellTs bookmarkStore $ \(ts,_) ->
       [ cellText := showFFloat (Just 6) (fromIntegral ts / 1000000) "s" ]

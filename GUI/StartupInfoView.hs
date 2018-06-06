@@ -7,6 +7,7 @@ module GUI.StartupInfoView (
 import GHC.RTS.Events
 
 import Graphics.UI.Gtk
+import qualified Graphics.UI.Gtk.ModelView.TreeView.Compat as Compat
 
 import Data.Array
 import Data.List
@@ -54,7 +55,7 @@ startupInfoViewNew builder = do
     treeViewColumnPackStart columnArgs cellArgs True
     treeViewAppendColumn treeviewProgArgs columnArgs
 
-    treeViewSetModel treeviewProgArgs storeProgArgs
+    Compat.treeViewSetModel treeviewProgArgs (Just storeProgArgs)
 
     set cellArgs [ cellTextEditable := True ]
     cellLayoutSetAttributes columnArgs cellArgs storeProgArgs $ \arg ->
@@ -71,7 +72,7 @@ startupInfoViewNew builder = do
     treeViewAppendColumn treeviewProgEnv columnVar
     treeViewAppendColumn treeviewProgEnv columnValue
 
-    treeViewSetModel treeviewProgEnv storeProgEnv
+    Compat.treeViewSetModel treeviewProgEnv (Just storeProgEnv)
 
     cellLayoutSetAttributes columnVar cellVar storeProgEnv $ \(var,_) ->
       [ cellText := var ]
