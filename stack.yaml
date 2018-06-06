@@ -2,7 +2,7 @@ resolver: lts-11.8
 packages:
 - .
 extra-deps:
-- Cabal-2.0.1.1
+- Cabal-1.24.2.0
 - Win32-2.3.1.1
 - gio-0.13.5.0
 - gtk-0.14.9
