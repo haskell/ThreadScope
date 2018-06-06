@@ -1,5 +1,11 @@
 # Revision history for threadscope
 
+## 2018-06-08 - v0.2.11
+
+* Relax upper version bounds for template-haskell and temporary
+* Fix build failure with gtk-0.14.9
+* Modernise AppVeyor CI script
+
 ## 2018-02-16 - v0.2.10
 
 * Add instructions to install gtk2 in the README
