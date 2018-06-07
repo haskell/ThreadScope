@@ -69,9 +69,24 @@ stack install --flag gtk:have-quartz-gtk
 
 ### Windows
 
-stack is the recommended tool to build threadscope on Windows.
+[Chocolatey](https://chocolatey.org/) can be used to install GHC and [MSYS2](https://www.msys2.org/) is the recommended way to install GTK+.
 
-CAVEAT: Currently gtk2 needs to be installed twice: one for stack's MSYS2 environment and another for local MSYS2 environment.
+```sh
+choco install ghc
+refreshenv
+set PATH=C:\\msys64\\mingw64\\bin;C:\\msys64\\usr\\bin;%PATH%
+pacman -Sy mingw-w64-x86_64-gtk2
+```
+
+then you can build threadscope using cabal:
+
+```sh
+cabal new-build
+```
+
+Or you can use stack instead.
+
+CAVEAT: gtk2 needs to be installed twice: one for stack's MSYS2 environment and another for local MSYS2 environment.
 
 In command prompt:
 ```sh
@@ -90,3 +105,5 @@ echo 'export PATH=$APPDATA/local/bin:$PATH' >> .profile
 source .profile
 threadscope
 ```
+
+Building using stack is not tested in CI. If you find any issues with building with stack, please update the instructions and send a PR.
