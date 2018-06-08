@@ -40,7 +40,7 @@ test_script:
 after_test:
  - bash -c "cp -v $(find -name threadscope.exe) ./threadscope.exe"
  - 7z a threadscope.windows.%PLATFORM%.ghc-%GHCVER%.zip threadscope.exe
- - ps: "Push-AppveyorArtifact threadscope.windows.$($env:PLATFORM).ghc-$($env:GHCVER).zip"
+ - ps: "Push-AppveyorArtifact threadscope.windows.$($env:PLATFORM).zip"
 
 deploy:
  - provider: GitHub
