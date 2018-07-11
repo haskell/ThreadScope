@@ -1,5 +1,9 @@
 # Revision history for threadscope
 
+## 2018-07-12 - v0.2.11.1
+
+* Relax upper version bounds for containers and ghc-events (#88)
+
 ## 2018-06-08 - v0.2.11
 
 * Relax upper version bounds for template-haskell and temporary
