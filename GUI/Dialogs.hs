@@ -1,6 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 module GUI.Dialogs where
 
+import GUI.App (appTitle)
 import GUI.DataFiles (loadLogo)
 import Paths_threadscope (version)
 
@@ -17,7 +18,7 @@ aboutDialog parent
  = do dialog <- aboutDialogNew
       logo <- $loadLogo
       set dialog [
-         aboutDialogName      := "ThreadScope",
+         aboutDialogName      := appTitle,
          aboutDialogVersion   := showVersion version,
          aboutDialogCopyright := "Released under the GHC license as part of the Glasgow Haskell Compiler.",
          aboutDialogComments  := "A GHC eventlog profile viewer",
