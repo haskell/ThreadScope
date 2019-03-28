@@ -51,7 +51,7 @@ Executable threadscope
                      cairo < 0.14,
                      glib < 0.14,
                      pango < 0.14,
-                     binary < 0.10,
+                     binary < 0.11,
                      array < 0.6,
                      mtl < 2.3,
                      filepath < 1.5,
