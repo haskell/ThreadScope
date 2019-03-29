@@ -38,7 +38,7 @@ Extra-source-files:  include/windows_cconv.h
 Tested-with:         GHC == 7.10.2
                      GHC == 8.0.2
                      GHC == 8.2.2
-                     GHC == 8.4.2
+                     GHC == 8.4.4
 
 source-repository head
   type:     git
