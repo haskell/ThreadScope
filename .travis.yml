@@ -87,7 +87,7 @@ install:
 script:
   # test that source-distributions can be generated
   - (cd "." && cabal sdist)
-  - mv "."/dist-newstyle/threadscope-*.tar.gz ${DISTDIR}/
+  - mv "."/dist-newstyle/sdist/threadscope-*.tar.gz ${DISTDIR}/
   - cd ${DISTDIR} || false
   - find . -maxdepth 1 -name '*.tar.gz' -exec tar -xvf '{}' \;
   - "printf 'packages: threadscope-*/*.cabal\\n' > cabal.project"
