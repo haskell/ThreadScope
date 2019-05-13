@@ -1693,21 +1693,6 @@ either for the whole program or the selected time period.</property>
                       <object class="GtkVBox" id="eventsbox_old">
                         <property name="visible">True</property>
                         <child>
-                          <object class="GtkEntry" id="events_entry">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="invisible_char">●</property>
-                            <property name="width_chars">20</property>
-                            <property name="secondary_icon_stock">gtk-find</property>
-                            <property name="secondary_icon_tooltip_text">Search for event</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                        <child>
                           <object class="GtkHBox" id="eventsHBox">
                             <property name="height_request">120</property>
                             <property name="visible">True</property>

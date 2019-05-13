@@ -134,14 +134,9 @@ mainWindowNew builder actions = do
   zoomOutButton      <- getWidget castToToolButton "cpus_zoomout"
   zoomFitButton      <- getWidget castToToolButton "cpus_zoomfit"
 
-  --TODO: this is currently not used, but it'be nice if it were!
-  eventsTextEntry    <- getWidget castToEntry      "events_entry"
-
   ------------------------------------------------------------------------
   -- Show everything
   widgetShowAll mainWindow
-
-  widgetHide eventsTextEntry  -- for now we hide it, see above.
 
   ------------------------------------------------------------------------
 
