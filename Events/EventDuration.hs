@@ -9,6 +9,9 @@ module Events.EventDuration (
     isDiscreteEvent
   ) where
 
+import System.IO
+import System.IO.Unsafe
+
 -- Imports for GHC Events
 import GHC.RTS.Events hiding (Event, GCIdle, GCWork)
 import qualified GHC.RTS.Events as GHC
@@ -87,7 +90,9 @@ eventsToDurations :: [GHC.Event] -> [EventDuration]
 eventsToDurations [] = []
 eventsToDurations (event : events) =
   case evSpec event of
-     RunThread{thread=t} -> runDuration t : rest
+     RunThread{thread=t}
+       | Just ev <- runDuration t  -> ev : rest
+       | otherwise -> rest
      StopThread{}  -> rest
      StartGC       -> gcStart (evTime event) events
      EndGC{}       -> rest
@@ -95,10 +100,10 @@ eventsToDurations (event : events) =
   where
     rest = eventsToDurations events
 
-    runDuration t = ThreadRun t s (evTime event) endTime
-       where (endTime, s) = case findRunThreadTime events of
-                              Nothing -> error $ "findRunThreadTime for " ++ (show event)
-                              Just x -> x
+    runDuration :: ThreadId -> Maybe EventDuration
+    runDuration t = do
+        (endTime, s) <- findRunThreadTime events
+        return $ ThreadRun t s (evTime event) endTime
 
 isDiscreteEvent :: GHC.Event -> Bool
 isDiscreteEvent e =
@@ -172,6 +177,11 @@ findRunThreadTime [] = Nothing
 findRunThreadTime (e : es)
   = case evSpec e of
       StopThread{status=s} -> Just (evTime e, s)
-      _                    -> findRunThreadTime es
+      _ | [] <- es         -> unsafePerformIO $ do
+                                hPutStrLn stderr "warning: failed to find stop event for thread; eventlog truncated?"
+                                return $ Just (evTime e, NoStatus)
+                                -- the eventlog abruptly ended; presumably the
+                                -- thread was still running.
+        | otherwise        -> findRunThreadTime es
 
 -------------------------------------------------------------------------------
