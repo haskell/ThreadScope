@@ -141,7 +141,7 @@ mainWindowNew builder actions = do
   ------------------------------------------------------------------------
 
   logo <- $loadLogo
-  set mainWindow [ windowIcon := Just logo ]
+  set mainWindow [ windowIcon := logo ]
 
   ------------------------------------------------------------------------
   -- Status bar functionality

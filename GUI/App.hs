@@ -28,7 +28,7 @@ initApp = do
   menuBar <- Gtk.menuBarNew
   OSX.applicationSetMenuBar app menuBar
   logo <- $loadLogo
-  OSX.applicationSetDockIconPixbuf app (Just logo)
+  OSX.applicationSetDockIconPixbuf app logo
   OSX.applicationReady app
 
 #else
