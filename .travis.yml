@@ -42,12 +42,6 @@ jobs:
     - compiler: ghc-8.2.2
       addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu xenial main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.2.2","cabal-install-3.0","libgtk2.0-dev"]}}
       os: linux
-    - compiler: ghc-8.0.2
-      addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu xenial main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.0.2","cabal-install-3.0","libgtk2.0-dev"]}}
-      os: linux
-    - compiler: ghc-7.10.2
-      addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu xenial main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-7.10.2","cabal-install-3.0","libgtk2.0-dev"]}}
-      os: linux
     - compiler: ghc-8.8.1
       addons: {"homebrew": {"packages":["gtk+", "gtk-mac-integration"]}}
       env: PKG_CONFIG_PATH=/usr/local/opt/libffi/lib/pkgconfig

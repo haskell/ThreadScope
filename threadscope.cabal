@@ -35,9 +35,7 @@ Cabal-version:       >= 1.6
 Data-files:          threadscope.ui, threadscope.png
 Extra-source-files:  include/windows_cconv.h
                      README.md
-Tested-with:         GHC == 7.10.2
-                     GHC == 8.0.2
-                     GHC == 8.2.2
+Tested-with:         GHC == 8.2.2
                      GHC == 8.4.4
                      GHC == 8.6.5
                      GHC == 8.8.1
@@ -48,7 +46,7 @@ source-repository head
 
 Executable threadscope
   Main-is:           Main.hs
-  Build-Depends:     base >= 4.6 && < 5,
+  Build-Depends:     base >= 4.10 && < 5,
                      gtk >= 0.12 && < 0.16,
                      cairo < 0.14,
                      glib < 0.14,
