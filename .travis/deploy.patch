@@ -1,0 +1,23 @@
+diff --git a/.travis.yml b/.travis.yml
+index d21f854..6443253 100644
+--- a/.travis.yml
++++ b/.travis.yml
+@@ -145,3 +145,18 @@ script:
+
+ # REGENDATA ["travis","threadscope.cabal","--apt","libgtk2.0-dev","--osx","8.6.5"]
+ # EOF
++
++before_deploy:
++  - cp $(find dist-newstyle/ -type f -name threadscope -exec test -x {} \; -print) threadscope.$TRAVIS_OS_NAME
++  - gzip -f threadscope.$TRAVIS_OS_NAME
++
++deploy:
++  provider: releases
++  api_key:
++    secure: "CLdDbxzqQRTU6wMRqyMutoprbgr8o6fQfIYZc7DBkbRi1r6bOpJl/2Bmob6FYC1XhMsdeBhZfLy0a0MqcU4LNbToLtR8yKN+SvmfEUQn3novk69vfI5KipFqLLeduN4oHgGXSdjIdck3nF/ze8kB2ottJUNdp8J3UxAgMwS9AF8="
++  file: threadscope.$TRAVIS_OS_NAME.gz
++  skip_cleanup: true
++  on:
++    repo: haskell/ThreadScope
++    tags: true
++    condition: "$HC = ghc-8.6.5"

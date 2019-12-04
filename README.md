@@ -1,4 +1,5 @@
 # ThreadScope
+
 [![Hackage](https://img.shields.io/hackage/v/threadscope.svg)](https://hackage.haskell.org/package/threadscope)
 [![Hackage-Deps](https://img.shields.io/hackage-deps/v/threadscope.svg)](http://packdeps.haskellers.com/feed?needle=threadscope)
 [![Build Status](https://travis-ci.org/haskell/ThreadScope.svg?branch=master)](https://travis-ci.org/haskell/ThreadScope)
@@ -6,23 +7,28 @@
 
 ## Using pre-built binaries
 
+NOTE: Currently Windows builds are broken. See [#98](https://github.com/haskell/ThreadScope/issues/98) for the current status.
+
 Currently [pre-built binaries](https://github.com/haskell/ThreadScope/releases) for the following platforms are provided:
 
 * Ubuntu Trusty (64-bit)
-* OS X
+* macOS (XCode 11)
 * Windows (x64)
 
 GTK+2 needs to be installed for those binaries to work.
 
-On OS X, `gtk-mac-integration` also needs to be installed.
-```
+On OS X, [`gtk-mac-integration`](https://github.com/jralls/gtk-mac-integration) also needs to be installed:
+
+```sh
 brew install gtk+ gtk-mac-integration
 ```
 
 On Windows, the [MSYS2](http://www.msys2.org) is the recommended way to install GTK+2. In MSYS2 MINGW64 shell:
-```
+
+```sh
 pacman -S $MINGW_PACKAGE_PREFIX-gtk2
 ```
+
 then you can run the threadscope binary from the shell.
 
 ## Building from source
@@ -38,11 +44,13 @@ sudo apt install libgtk2.0-dev
 ```
 
 Then you can build threadscope using cabal:
+
 ```sh
-cabal new-build
+cabal v2-build
 ```
 
 Or using stack:
+
 ```sh
 stack setup
 stack install
@@ -50,18 +58,20 @@ stack install
 
 ### OS X
 
-GTK+ and gtk-mac-integration are required.
+GTK+ and gtk-mac-integration are required:
 
 ```sh
 brew install gtk+ gtk-mac-integration
 ```
 
 Then you can build threadscope using cabal:
+
 ```sh
-cabal new-build --constraint="gtk +have-quartz-gtk"
+cabal v2-build --constraint="gtk +have-quartz-gtk"
 ```
 
 Or using stack:
+
 ```sh
 stack setup
 stack install --flag gtk:have-quartz-gtk
@@ -81,7 +91,7 @@ pacman -Sy mingw-w64-x86_64-gtk2
 then you can build threadscope using cabal:
 
 ```sh
-cabal new-build
+cabal v2-build
 ```
 
 Or you can use stack instead.
