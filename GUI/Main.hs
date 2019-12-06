@@ -442,8 +442,6 @@ eventLoop uienv@UIEnv{..} eventlogState = do
 
 runGUI :: Maybe (Either FilePath String) -> IO ()
 runGUI initialTrace = do
-  Gtk.initGUI
-
   App.initApp
 
   uiEnv <- constructUI

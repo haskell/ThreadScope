@@ -14,6 +14,7 @@ module GUI.MainWindow (
 import Graphics.UI.Gtk as Gtk
 import qualified System.Glib.GObject as Glib
 
+import GUI.App (appTitle)
 import GUI.DataFiles (loadLogo)
 
 -------------------------------------------------------------------------------
@@ -69,11 +70,11 @@ data MainWindowActions = MainWindowActions {
 setFileLoaded :: MainWindow -> Maybe FilePath -> IO ()
 setFileLoaded mainWin Nothing =
   set (mainWindow mainWin) [
-      windowTitle := "ThreadScope"
+      windowTitle := appTitle
     ]
 setFileLoaded mainWin (Just file) =
   set (mainWindow mainWin) [
-      windowTitle := file ++ " - ThreadScope"
+      windowTitle := file ++ " - " ++ appTitle
     ]
 
 setStatusMessage :: MainWindow -> String -> IO ()
