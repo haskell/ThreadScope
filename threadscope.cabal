@@ -64,8 +64,6 @@ Executable threadscope
                      file-embed < 0.1,
                      template-haskell < 2.16,
                      temporary >= 1.1 && < 1.4
-  if os(osx)
-    build-depends:   gtk-mac-integration < 0.4
 
   include-dirs:      include
   Extensions:        RecordWildCards, NamedFieldPuns, BangPatterns, PatternGuards
