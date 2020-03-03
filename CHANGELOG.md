@@ -1,5 +1,14 @@
 # Revision history for threadscope
 
+## 2020-03-04 - v0.2.12
+
+* Remove unused events entry box ([#93](https://github.com/haskell/ThreadScope/pull/93))
+* Make the app work even if it fails to load the logo ([#96](https://github.com/haskell/ThreadScope/pull/96))
+* Support GHC 8.8 ([#99](https://github.com/haskell/ThreadScope/pull/99))
+* Support ghc-events 0.12.0 ([#101](https://github.com/haskell/ThreadScope/pull/101))
+* Stop using gtk-mac-integration and fix broken CI ([#103](https://github.com/haskell/ThreadScope/pull/103))
+  * This causes a visual regression. The logo won't be displayed in Dock.
+
 ## 2018-07-12 - v0.2.11.1
 
 * Relax upper version bounds for containers and ghc-events (#88)
