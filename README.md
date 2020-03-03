@@ -7,8 +7,6 @@
 
 ## Using pre-built binaries
 
-NOTE: Currently Windows builds are broken. See [#98](https://github.com/haskell/ThreadScope/issues/98) for the current status.
-
 Currently [pre-built binaries](https://github.com/haskell/ThreadScope/releases) for the following platforms are provided:
 
 * Ubuntu Trusty (64-bit)
@@ -58,16 +56,16 @@ stack install
 
 ### OS X
 
-GTK+ and gtk-mac-integration are required:
+GTK+, gtk-mac-integration and GCC 9 are required:
 
 ```sh
-brew install gtk+ gtk-mac-integration
+brew install gtk+ gtk-mac-integration gcc@9
 ```
 
 Then you can build threadscope using cabal:
 
 ```sh
-cabal v2-build --constraint="gtk +have-quartz-gtk"
+cabal v2-build --project-file=cabal.project.osx
 ```
 
 Or using stack:
@@ -99,6 +97,7 @@ Or you can use stack instead.
 CAVEAT: gtk2 needs to be installed twice: one for stack's MSYS2 environment and another for local MSYS2 environment.
 
 In command prompt:
+
 ```sh
 stack setup
 stack exec -- pacman --needed -Sy bash pacman pacman-mirrors msys2-runtime msys2-runtime-devel
@@ -109,6 +108,7 @@ stack install
 ```
 
 Then in MSYS2 MINGW64 shell:
+
 ```sh
 pacman -S $MINGW_PACKAGE_PREFIX-gtk2
 echo 'export PATH=$APPDATA/local/bin:$PATH' >> .profile
