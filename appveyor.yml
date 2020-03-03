@@ -8,12 +8,11 @@ environment:
   global:
     APPVEYOR_SAVE_CACHE_ON_ERROR: true
     CABOPTS: "--store-dir=c:/SR --http-transport=plain-http"
-#   C_INCLUDE_PATH: "c:/msys64/mingw64/include"
-#   LIBRARY_PATH: "c:/msys64/mingw64/lib;c:/msys64/mingw64/bin"
   matrix:
-    - GHCVER: "8.0.2"
+    - GHCVER: "8.8.2"
+    - GHCVER: "8.6.5"
+    - GHCVER: "8.4.4"
     - GHCVER: "8.2.2"
-    - GHCVER: "8.4.3"
 
 cache:
  - "c:/SR"
@@ -35,12 +34,11 @@ build_script:
 
 test_script:
  - "cabal %CABOPTS% new-build -j1 -vnormal+nowrap all"
-#- "cabal %CABOPTS% new-test -j1 -vnormal+nowrap all"
 
 after_test:
  - bash -c "cp -v $(find -name threadscope.exe) ./threadscope.exe"
  - 7z a threadscope.windows.%PLATFORM%.ghc-%GHCVER%.zip threadscope.exe
- - ps: "Push-AppveyorArtifact threadscope.windows.$($env:PLATFORM).zip"
+ - ps: "Push-AppveyorArtifact threadscope.windows.$($env:PLATFORM).ghc-$($env:GHCVER).zip"
 
 deploy:
  - provider: GitHub
@@ -50,4 +48,4 @@ deploy:
    release: $(appveyor_repo_tag_name)
    on:
      appveyor_repo_tag: true
-     GHCVER: "8.4.3"
+     GHCVER: "8.8.2"
