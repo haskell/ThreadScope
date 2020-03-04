@@ -37,12 +37,18 @@ index 8d435cb..a8af409 100644
    - |
    - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(threadscope)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
    - cat cabal.project || true
-@@ -124,7 +124,7 @@ script:
+@@ -124,7 +124,14 @@ script:
    - touch cabal.project
    - |
      echo "packages: ${PKGDIR_threadscope}" >> cabal.project
--  - |
-+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then cp ${PKGDIR_threadscope}/cabal.project.osx cabal.project; fi
+   - |
++    if [ "$TRAVIS_OS_NAME" = "osx" ]; then
++      echo "constraints: gtk +have-quartz-gtk" >> cabal.project
++      echo "package *"                         >> cabal.project
++      echo "  gcc-location: gcc-9"             >> cabal.project
++      echo "program-locations"                 >> cabal.project
++      echo "  gcc-location: gcc-9"             >> cabal.project
++    fi
    - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(threadscope)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
    - cat cabal.project || true
    - cat cabal.project.local || true
