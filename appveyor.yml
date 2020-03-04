@@ -43,7 +43,7 @@ after_test:
 deploy:
  - provider: GitHub
    auth_token:
-     secure: IbU7Tokqkdq4bI5PT+HvzG0hO4O8t2Lxq3GamSuAzWsQWt4vZahOGL9StxIXIe94
+     secure: GMhp5bcepf0KYet023puZZ/jy2r60FfyEqSCNscWKhTsa9bn27ykkNxe/+r1iAGp
    artifact: threadscope.windows.$(platform).ghc-$(GHCVER).zip
    release: $(appveyor_repo_tag_name)
    on:
