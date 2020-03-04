@@ -35,6 +35,7 @@ Cabal-version:       >= 1.6
 Data-files:          threadscope.ui, threadscope.png
 Extra-source-files:  include/windows_cconv.h
                      README.md
+                     CHANGELOG.md
 Tested-with:         GHC == 8.2.2
                      GHC == 8.4.4
                      GHC == 8.6.5
