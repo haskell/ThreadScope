@@ -14,7 +14,7 @@ index d21f854..6443253 100644
 +deploy:
 +  provider: releases
 +  api_key:
-+    secure: "CLdDbxzqQRTU6wMRqyMutoprbgr8o6fQfIYZc7DBkbRi1r6bOpJl/2Bmob6FYC1XhMsdeBhZfLy0a0MqcU4LNbToLtR8yKN+SvmfEUQn3novk69vfI5KipFqLLeduN4oHgGXSdjIdck3nF/ze8kB2ottJUNdp8J3UxAgMwS9AF8="
++    secure: RzNO2ZivMrDR5JZUZI/Dquc5B1QaMm9BIB06jKOLM/IxeoRKf8HXw1+OqTmMzssGdOxXDTsY7wpagVXD31Y+7K6b1f/zKzTIPwLC/W3QTj1ooFOMqwELGZZxnZPFDld68K/O+jOuJZZZ8QMEJPMfKRR/7vVOWvM/L0h9jIeY8Vo=
 +  file: threadscope.$TRAVIS_OS_NAME.gz
 +  skip_cleanup: true
 +  on:
