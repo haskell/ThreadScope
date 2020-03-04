@@ -15,12 +15,6 @@ Currently [pre-built binaries](https://github.com/haskell/ThreadScope/releases) 
 
 GTK+2 needs to be installed for those binaries to work.
 
-On OS X, [`gtk-mac-integration`](https://github.com/jralls/gtk-mac-integration) also needs to be installed:
-
-```sh
-brew install gtk+ gtk-mac-integration
-```
-
 On Windows, the [MSYS2](http://www.msys2.org) is the recommended way to install GTK+2. In MSYS2 MINGW64 shell:
 
 ```sh
@@ -56,10 +50,10 @@ stack install
 
 ### OS X
 
-GTK+, gtk-mac-integration and GCC 9 are required:
+GTK+ and GCC 9 are required:
 
 ```sh
-brew install gtk+ gtk-mac-integration gcc@9
+brew install gtk+ gcc@9
 ```
 
 Then you can build threadscope using cabal:
