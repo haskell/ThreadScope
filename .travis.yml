@@ -168,4 +168,4 @@ deploy:
   on:
     repo: haskell/ThreadScope
     tags: true
-    condition: "$HC = ghc-8.6.5"
+    condition: "$TRAVIS_COMPILER = ghc-8.8.2"
