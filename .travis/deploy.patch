@@ -8,16 +8,16 @@ index d21f854..6443253 100644
  # EOF
 +
 +before_deploy:
-+  - cp $(find dist-newstyle/ -type f -name threadscope -exec test -x {} \; -print) threadscope.$TRAVIS_OS_NAME
-+  - gzip -f threadscope.$TRAVIS_OS_NAME
++  - cp $(find dist-newstyle/ -type f -name threadscope -exec test -x {} \; -print) threadscope.$TRAVIS_OS_NAME.$TRAVIS_COMPILER
++  - gzip -f threadscope.$TRAVIS_OS_NAME.$TRAVIS_COMPILER
 +
 +deploy:
 +  provider: releases
 +  api_key:
-+    secure: "CLdDbxzqQRTU6wMRqyMutoprbgr8o6fQfIYZc7DBkbRi1r6bOpJl/2Bmob6FYC1XhMsdeBhZfLy0a0MqcU4LNbToLtR8yKN+SvmfEUQn3novk69vfI5KipFqLLeduN4oHgGXSdjIdck3nF/ze8kB2ottJUNdp8J3UxAgMwS9AF8="
-+  file: threadscope.$TRAVIS_OS_NAME.gz
++    secure: RzNO2ZivMrDR5JZUZI/Dquc5B1QaMm9BIB06jKOLM/IxeoRKf8HXw1+OqTmMzssGdOxXDTsY7wpagVXD31Y+7K6b1f/zKzTIPwLC/W3QTj1ooFOMqwELGZZxnZPFDld68K/O+jOuJZZZ8QMEJPMfKRR/7vVOWvM/L0h9jIeY8Vo=
++  file: threadscope.$TRAVIS_OS_NAME.$TRAVIS_COMPILER.gz
 +  skip_cleanup: true
 +  on:
 +    repo: haskell/ThreadScope
 +    tags: true
-+    condition: "$HC = ghc-8.6.5"
++    condition: "$TRAVIS_COMPILER = ghc-8.8.2"
