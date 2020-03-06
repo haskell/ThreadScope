@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Events.TestEvents (testTrace)
 where
 

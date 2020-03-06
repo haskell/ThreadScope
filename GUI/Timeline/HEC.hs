@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module GUI.Timeline.HEC (
     renderHEC,
     renderInstantHEC,
@@ -19,9 +20,14 @@ import qualified GHC.RTS.Events as GHC
 import Control.Monad
 import qualified Data.IntMap as IM
 import Data.Maybe
+import Data.Text (Text)
+import qualified Data.Text as T
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Builder as TB
+import qualified Data.Text.Lazy.Builder.Int as TB (decimal)
 
 renderHEC :: ViewParameters -> Timestamp -> Timestamp
-          -> IM.IntMap String -> (DurationTree,EventTree)
+          -> IM.IntMap Text -> (DurationTree,EventTree)
           -> Render ()
 renderHEC params@ViewParameters{..} start end perfNames (dtree,etree) = do
   renderDurations params start end dtree
@@ -33,7 +39,7 @@ renderHEC params@ViewParameters{..} start end perfNames (dtree,etree) = do
          return ()
 
 renderInstantHEC :: ViewParameters -> Timestamp -> Timestamp
-                 -> IM.IntMap String -> EventTree
+                 -> IM.IntMap Text -> EventTree
                  -> Render ()
 renderInstantHEC params@ViewParameters{..} start end
                  perfNames (EventTree ltime etime tree) = do
@@ -78,7 +84,7 @@ renderEvents :: ViewParameters
              -> Timestamp -- start time of this tree node
              -> Timestamp -- end   time of this tree node
              -> Timestamp -> Timestamp -> Double
-             -> IM.IntMap String -> EventNode
+             -> IM.IntMap Text -> EventNode
              -> Render Bool
 
 renderEvents params@ViewParameters{..} !_s !_e !startPos !endPos ewidth
@@ -200,7 +206,7 @@ drawDuration ViewParameters{..} (ThreadRun t s startTime endTime) = do
    -- Optionally write the reason for the thread being stopped
    -- depending on the zoom value
   labelAt labelsMode endTime $
-    show t ++ " " ++ showThreadStopStatus s
+    T.pack $ show t ++ " " ++ showThreadStopStatus s
  where
   rectWidth = truncate (fromIntegral (endTime - startTime) / scaleValue) -- as pixels
   tStr = show t
@@ -226,7 +232,7 @@ gcBar col !startTime !endTime = do
                      (endTime - startTime)          -- w
                      (hecBarHeight `div` 2)         -- h
 
-labelAt :: Bool -> Timestamp -> String -> Render ()
+labelAt :: Bool -> Timestamp -> Text -> Render ()
 labelAt labelsMode t str
   | not labelsMode = return ()
   | otherwise = do
@@ -238,7 +244,7 @@ labelAt labelsMode t str
        showText str
        restore
 
-drawEvent :: ViewParameters -> Double -> IM.IntMap String -> GHC.Event
+drawEvent :: ViewParameters -> Double -> IM.IntMap Text -> GHC.Event
           -> Render Bool
 drawEvent params@ViewParameters{..} ewidth perfNames event =
   let renderI = renderInstantEvent params perfNames event ewidth
@@ -270,7 +276,7 @@ drawEvent params@ViewParameters{..} ewidth perfNames event =
 
     _ -> return False
 
-renderInstantEvent :: ViewParameters -> IM.IntMap String -> GHC.Event
+renderInstantEvent :: ViewParameters -> IM.IntMap Text -> GHC.Event
                    -> Double -> Color
                    -> Render Bool
 renderInstantEvent ViewParameters{..} perfNames event ewidth color = do
@@ -278,16 +284,21 @@ renderInstantEvent ViewParameters{..} perfNames event ewidth color = do
   setLineWidth (ewidth * scaleValue)
   let t = evTime event
   draw_line (t, hecBarOff-4) (t, hecBarOff+hecBarHeight+4)
-  let numToLabel PerfCounter{perfNum, period} | period == 0 =
+  let numToLabel :: EventInfo -> Maybe Text
+      numToLabel PerfCounter{perfNum, period} | period == 0 =
         IM.lookup (fromIntegral perfNum) perfNames
-      numToLabel PerfCounter{perfNum, period} =
-        fmap (++ " <" ++ show (period + 1) ++ " times>") $
-          IM.lookup (fromIntegral perfNum) perfNames
-      numToLabel PerfTracepoint{perfNum} =
-        fmap ("tracepoint: " ++) $ IM.lookup (fromIntegral perfNum) perfNames
+      numToLabel PerfCounter{perfNum, period} = do
+        name <- IM.lookup (fromIntegral perfNum) perfNames
+        return $ toText $
+          TB.fromText name <> " <" <> TB.decimal (period + 1) <> " times>"
+      numToLabel PerfTracepoint{perfNum} = do
+        name <- IM.lookup (fromIntegral perfNum) perfNames
+        return $ toText $ "tracepoint: " <> TB.fromText name
       numToLabel _ = Nothing
-      showLabel espec = fromMaybe (showEventInfo espec) (numToLabel espec)
+      showLabel espec = fromMaybe (toText $ buildEventInfo espec) (numToLabel espec)
   labelAt labelsMode t $ showLabel (evSpec event)
   return True
+  where
+    toText = TL.toStrict . TB.toLazyText
 
 -------------------------------------------------------------------------------

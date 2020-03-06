@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE OverloadedStrings #-}
 module GUI.Main (runGUI) where
 
 -- Imports for GTK
@@ -16,6 +17,7 @@ import qualified Control.Concurrent.Chan as Chan
 import Control.Exception
 import Data.Array
 import Data.Maybe
+import Data.Text (Text)
 
 -- Imports for ThreadScope
 import qualified GUI.App as App
@@ -108,7 +110,7 @@ data Event
 
    | EventBookmarkAdd
    | EventBookmarkRemove Int
-   | EventBookmarkEdit   Int String
+   | EventBookmarkEdit   Int Text
 
    | EventUserError String SomeException
                     -- can add more specific ones if necessary
