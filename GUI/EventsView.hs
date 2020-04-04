@@ -19,12 +19,14 @@ import qualified GUI.GtkExtras as GtkExt
 
 import Control.Monad.Reader
 import Data.Array
+import Data.Monoid
 import Data.IORef
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Builder as TB
 import qualified Data.Text.Lazy.Builder.Int as TB (decimal)
 import Numeric
+import Prelude
 
 -------------------------------------------------------------------------------
 

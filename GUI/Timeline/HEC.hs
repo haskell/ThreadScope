@@ -20,11 +20,13 @@ import qualified GHC.RTS.Events as GHC
 import Control.Monad
 import qualified Data.IntMap as IM
 import Data.Maybe
+import Data.Monoid
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Builder as TB
 import qualified Data.Text.Lazy.Builder.Int as TB (decimal)
+import Prelude
 
 renderHEC :: ViewParameters -> Timestamp -> Timestamp
           -> IM.IntMap Text -> (DurationTree,EventTree)
