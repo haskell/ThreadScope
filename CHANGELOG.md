@@ -1,5 +1,12 @@
 # Revision history for threadscope
 
+## 2020-04-06 - v0.2.13
+
+* Add changelog to extra-source-files ([#105](https://github.com/haskell/ThreadScope/pull/105))
+* Fix broken GitHub Releases deployment ([#106](https://github.com/haskell/ThreadScope/pull/106))
+* Update ghc-events to 0.13.0 ([#107](https://github.com/haskell/ThreadScope/pull/107))
+* Relax upper version bound for time
+
 ## 2020-03-04 - v0.2.12
 
 * Remove unused events entry box ([#93](https://github.com/haskell/ThreadScope/pull/93))
