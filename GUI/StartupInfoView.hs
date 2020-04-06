@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns #-}
 module GUI.StartupInfoView (
     StartupInfoView,
     startupInfoViewNew,
@@ -14,13 +16,15 @@ import Data.List
 import Data.Maybe
 import Data.Time
 import Data.Time.Clock.POSIX
+import Data.Text (Text)
+import qualified Data.Text as T
 
 -------------------------------------------------------------------------------
 
 data StartupInfoView = StartupInfoView
      { labelProgName      :: Label
-     , storeProgArgs      :: ListStore String
-     , storeProgEnv       :: ListStore (String, String)
+     , storeProgArgs      :: ListStore Text
+     , storeProgEnv       :: ListStore (Text, Text)
      , labelProgStartTime :: Label
      , labelProgRtsId     :: Label
      }
@@ -28,11 +32,11 @@ data StartupInfoView = StartupInfoView
 data StartupInfoState
    = StartupInfoEmpty
    | StartupInfoLoaded
-     { progName      :: Maybe String
-     , progArgs      :: Maybe [String]
-     , progEnv       :: Maybe [(String, String)]
+     { progName      :: Maybe Text
+     , progArgs      :: Maybe [Text]
+     , progEnv       :: Maybe [(Text, Text)]
      , progStartTime :: Maybe UTCTime
-     , progRtsId     :: Maybe String
+     , progRtsId     :: Maybe Text
      }
 
 -------------------------------------------------------------------------------
@@ -42,11 +46,11 @@ startupInfoViewNew builder = do
 
     let getWidget cast = builderGetObject builder cast
 
-    labelProgName      <- getWidget castToLabel    "labelProgName"
-    treeviewProgArgs   <- getWidget castToTreeView "treeviewProgArguments"
-    treeviewProgEnv    <- getWidget castToTreeView "treeviewProgEnvironment"
-    labelProgStartTime <- getWidget castToLabel    "labelProgStartTime"
-    labelProgRtsId     <- getWidget castToLabel    "labelProgRtsIdentifier"
+    labelProgName      <- getWidget castToLabel    ("labelProgName" :: Text)
+    treeviewProgArgs   <- getWidget castToTreeView ("treeviewProgArguments" :: Text)
+    treeviewProgEnv    <- getWidget castToTreeView ("treeviewProgEnvironment" :: Text)
+    labelProgStartTime <- getWidget castToLabel    ("labelProgStartTime" :: Text)
+    labelProgRtsId     <- getWidget castToLabel    ("labelProgRtsIdentifier" :: Text)
 
     storeProgArgs    <- listStoreNew []
     columnArgs       <- treeViewColumnNew
@@ -126,7 +130,7 @@ processEvents = foldl' accum (StartupInfoLoaded Nothing Nothing Nothing Nothing 
     accum info _ = info
 
     -- convert ["foo=bar", ...] to [("foo", "bar"), ...]
-    parseEnv env = [ (var, value) | (var, '=':value) <- map (span (/='=')) env ]
+    parseEnv env = [ (var, value) | (var, T.drop 1 -> value) <- map (T.span (/='=')) env ]
 
 updateStartupInfo :: StartupInfoView -> StartupInfoState -> IO ()
 updateStartupInfo StartupInfoView{..} StartupInfoLoaded{..} = do
@@ -139,8 +143,8 @@ updateStartupInfo StartupInfoView{..} StartupInfoLoaded{..} = do
     mapM_ (listStoreAppend storeProgEnv) (fromMaybe [] progEnv)
 
 updateStartupInfo StartupInfoView{..} StartupInfoEmpty = do
-    set labelProgName      [ labelText := "" ]
-    set labelProgStartTime [ labelText := "" ]
-    set labelProgRtsId     [ labelText := "" ]
+    set labelProgName      [ labelText := ("" :: Text) ]
+    set labelProgStartTime [ labelText := ("" :: Text) ]
+    set labelProgRtsId     [ labelText := ("" :: Text) ]
     listStoreClear storeProgArgs
     listStoreClear storeProgEnv

@@ -16,6 +16,7 @@ import Events.SparkTree
 import GHC.RTS.Events
 
 import Data.Array
+import Data.Text (Text)
 import qualified Data.List as L
 
 #if MIN_VERSION_containers(0,5,0)
@@ -37,7 +38,7 @@ data HECs = HECs {
        maxXHistogram    :: Int,
        maxYHistogram    :: Timestamp,
        durHistogram     :: [(Timestamp, Int, Timestamp)],
-       perfNames        :: IM.IntMap String
+       perfNames        :: IM.IntMap Text
      }
 
 -----------------------------------------------------------------------------
@@ -60,7 +61,7 @@ timestampToEventIndex HECs{hecEventArray=arr} ts =
         mid  = l + (r - l) `quot` 2
         tmid = evTime (arr!mid)
 
-extractUserMarkers :: HECs -> [(Timestamp, String)]
+extractUserMarkers :: HECs -> [(Timestamp, Text)]
 extractUserMarkers hecs =
   [ (ts, mark)
   | (Event ts (UserMarker mark) _) <- elems (hecEventArray hecs) ]

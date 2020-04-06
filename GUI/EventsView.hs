@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE OverloadedStrings #-}
 module GUI.EventsView (
     EventsView,
     eventsViewNew,
@@ -18,9 +19,14 @@ import qualified GUI.GtkExtras as GtkExt
 
 import Control.Monad.Reader
 import Data.Array
+import Data.Monoid
 import Data.IORef
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Builder as TB
+import qualified Data.Text.Lazy.Builder.Int as TB (decimal)
 import Numeric
+import Prelude
 
 -------------------------------------------------------------------------------
 
@@ -55,8 +61,8 @@ eventsViewNew builder EventsViewActions{..} = do
   stateRef <- newIORef undefined
 
   let getWidget cast = builderGetObject builder cast
-  drawArea     <- getWidget castToWidget "eventsDrawingArea"
-  vScrollbar   <- getWidget castToVScrollbar "eventsVScroll"
+  drawArea     <- getWidget castToWidget ("eventsDrawingArea" :: T.Text)
+  vScrollbar   <- getWidget castToVScrollbar ("eventsVScroll" :: T.Text)
   adj          <- get vScrollbar rangeAdjustment
 
   -- make the background white
@@ -339,16 +345,14 @@ drawEvents EventsView{drawArea, adj}
   where
     showEventTime (Event time _spec _) =
       showFFloat (Just 6) (fromIntegral time / 1000000) "s"
-    showEventDescr :: Event -> String
-    showEventDescr (Event _time  spec cap) =
-        (case cap of
-          Nothing -> ""
-          Just c  -> "HEC " ++ show c ++ ": ")
-     ++ case spec of
-          UnknownEvent{ref} -> "unknown event; " ++ show ref
-          Message     msg   -> msg
-          UserMessage msg   -> msg
-          _                 -> showEventInfo spec
+    showEventDescr :: Event -> T.Text
+    showEventDescr (Event _time  spec cap) = TL.toStrict $ TB.toLazyText $
+      maybe "" (\c -> "HEC " <> TB.decimal c <> ": ") cap
+        <> case spec of
+          UnknownEvent{ref} -> "unknown event; " <> TB.decimal ref
+          Message     msg   -> TB.fromText msg
+          UserMessage msg   -> TB.fromText msg
+          _                 -> buildEventInfo spec
 
 -------------------------------------------------------------------------------
 

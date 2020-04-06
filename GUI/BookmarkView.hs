@@ -15,13 +15,14 @@ import GHC.RTS.Events (Timestamp)
 import Graphics.UI.Gtk
 import qualified Graphics.UI.Gtk.ModelView.TreeView.Compat as Compat
 import Numeric
+import Data.Text (Text)
 
 ---------------------------------------------------------------------------
 
 -- | Abstract bookmark view object.
 --
 data BookmarkView = BookmarkView {
-       bookmarkStore :: ListStore (Timestamp, String)
+       bookmarkStore :: ListStore (Timestamp, Text)
      }
 
 -- | The actions to take in response to TraceView events.
@@ -30,12 +31,12 @@ data BookmarkViewActions = BookmarkViewActions {
        bookmarkViewAddBookmark    :: IO (),
        bookmarkViewRemoveBookmark :: Int -> IO (),
        bookmarkViewGotoBookmark   :: Timestamp -> IO (),
-       bookmarkViewEditLabel      :: Int -> String -> IO ()
+       bookmarkViewEditLabel      :: Int -> Text -> IO ()
      }
 
 ---------------------------------------------------------------------------
 
-bookmarkViewAdd :: BookmarkView -> Timestamp -> String -> IO ()
+bookmarkViewAdd :: BookmarkView -> Timestamp -> Text -> IO ()
 bookmarkViewAdd BookmarkView{bookmarkStore} ts label = do
   listStoreAppend bookmarkStore (ts, label)
   return ()
@@ -49,11 +50,11 @@ bookmarkViewClear :: BookmarkView -> IO ()
 bookmarkViewClear BookmarkView{bookmarkStore} =
   listStoreClear bookmarkStore
 
-bookmarkViewGet :: BookmarkView -> IO [(Timestamp, String)]
+bookmarkViewGet :: BookmarkView -> IO [(Timestamp, Text)]
 bookmarkViewGet BookmarkView{bookmarkStore} =
   listStoreToList bookmarkStore
 
-bookmarkViewSetLabel :: BookmarkView -> Int -> String -> IO ()
+bookmarkViewSetLabel :: BookmarkView -> Int -> Text -> IO ()
 bookmarkViewSetLabel BookmarkView{bookmarkStore} n label = do
   (ts,_) <- listStoreGetValue bookmarkStore n
   listStoreSetValue bookmarkStore n (ts, label)
