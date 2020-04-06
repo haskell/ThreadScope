@@ -60,7 +60,7 @@ Executable threadscope
                      containers >= 0.2 && < 0.7,
                      deepseq >= 1.1,
                      text < 1.3,
-                     time >= 1.1 && < 1.10,
+                     time >= 1.1 && < 1.11,
                      bytestring < 0.11,
                      file-embed < 0.1,
                      template-haskell < 2.16,
