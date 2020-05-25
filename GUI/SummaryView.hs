@@ -186,9 +186,9 @@ setSummaryStats view SummaryStats{..} hasHeapEvents = do
 setTimeStats :: SummaryView -> TimeStats -> IO ()
 setTimeStats SummaryView{..} TimeStats{..} =
   mapM_ (\(label, text) -> set label [ labelText := text ])
-    [ (labelTimeTotal       , showFFloat (Just 2) (timeToSecondsDbl timeTotal) "s")
-    , (labelTimeMutator     , showFFloat (Just 2) (timeToSecondsDbl timeMutator) "s")
-    , (labelTimeGC          , showFFloat (Just 2) (timeToSecondsDbl timeGC) "s")
+    [ (labelTimeTotal       , showTimeWithUnit timeTotal)
+    , (labelTimeMutator     , showTimeWithUnit timeMutator)
+    , (labelTimeGC          , showTimeWithUnit timeGC)
     , (labelTimeProductivity, showFFloat (Just 1) (timeProductivity * 100) "% of mutator vs total")
     ]
 
@@ -562,6 +562,17 @@ sparkStats StatsAccum{dsparkTable} =
 
 
 ------------------------------------------------------------------------------
+
+showTimeWithUnit :: Integral a => a -> String
+showTimeWithUnit t =
+    showFFloat (Just 3) t'' unit
+  where
+    (t'', unit) =
+      case timeToSecondsDbl t of
+        t' | t' < 1e-6  -> (t' / 1e-9, "ns")
+           | t' < 1e-3  -> (t' / 1e-6, "μs")
+           | t' < 1     -> (t' / 1e-3, "ms")
+           | otherwise  -> (t', "s")
 
 timeToSecondsDbl :: Integral a => a -> Double
 timeToSecondsDbl t = timeToSeconds $ fromIntegral t
