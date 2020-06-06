@@ -38,13 +38,15 @@ sudo apt install libgtk2.0-dev
 Then you can build threadscope using cabal:
 
 ```sh
-cabal v2-build
+cabal v2-build   # to only build the project, or
+cabal v2-install # to build and install the binary
 ```
 
 Or using stack:
 
 ```sh
-stack install
+stack build   # to only build the project, or
+stack install # to build and install the binary
 ```
 
 ### OS X
@@ -58,13 +60,15 @@ brew install gtk+ gcc@9
 Then you can build threadscope using cabal:
 
 ```sh
-cabal v2-build --project-file=cabal.project.osx
+cabal --project-file=cabal.project.osx v2-build   # to only build the project, or
+cabal --project-file=cabal.project.osx v2-install # to build and install the binary
 ```
 
 Or using stack:
 
 ```sh
-stack --stack-yaml=stack.osx.yaml install
+stack --stack-yaml=stack.osx.yaml build   # to only build the project, or
+stack --stack-yaml=stack.osx.yaml install # to install the binary
 ```
 
 ### Windows
