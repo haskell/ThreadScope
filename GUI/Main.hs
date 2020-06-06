@@ -86,7 +86,6 @@ data Event
    | EventFileReload
    | EventFileExport FilePath FileExportFormat
 
--- | EventStateClear
    | EventSetState HECs (Maybe FilePath) String Int Double
 
    | EventShowSidebar Bool

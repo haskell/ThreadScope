@@ -44,7 +44,6 @@ cabal v2-build
 Or using stack:
 
 ```sh
-stack setup
 stack install
 ```
 
@@ -65,8 +64,7 @@ cabal v2-build --project-file=cabal.project.osx
 Or using stack:
 
 ```sh
-stack setup
-stack install --flag gtk:have-quartz-gtk
+stack --stack-yaml=stack.osx.yaml install
 ```
 
 ### Windows
