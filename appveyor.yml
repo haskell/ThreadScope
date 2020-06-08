@@ -22,6 +22,8 @@ install:
  - "choco install -y ghc --version %GHCVER%"
  - "refreshenv"
  - "set PATH=C:\\msys64\\mingw64\\bin;C:\\msys64\\usr\\bin;%PATH%"
+ - "pacman --needed --noconfirm -Syu"
+ - "pacman --needed --noconfirm -Sy"
  - "pacman --noconfirm -Sy mingw-w64-x86_64-gtk2"
  - "cabal --version"
  - "ghc --version"
