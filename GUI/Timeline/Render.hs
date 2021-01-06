@@ -76,51 +76,51 @@ renderView TimelineState{timelineDrawingArea, timelineVAdj, timelinePrevView}
   win <- widgetGetDrawWindow timelineDrawingArea
   renderWithDrawable win $ do
 
-  let renderToNewSurface = do
-        new_surface <- withTargetSurface $ \surface ->
-          liftIO $ createSimilarSurface surface ContentColor w (height params)
-        renderWith new_surface $ do
-          clearWhite
-          renderTraces params hecs rect
-        return new_surface
+    let renderToNewSurface = do
+          new_surface <- withTargetSurface $ \surface ->
+            liftIO $ createSimilarSurface surface ContentColor w (height params)
+          renderWith new_surface $ do
+            clearWhite
+            renderTraces params hecs rect
+          return new_surface
 
-  surface <-
-    case prev_view of
-      Nothing -> renderToNewSurface
+    surface <-
+      case prev_view of
+        Nothing -> renderToNewSurface
 
-      Just (old_params, surface)
-        | old_params == params
-        -> return surface
+        Just (old_params, surface)
+          | old_params == params
+          -> return surface
 
-        | width  old_params == width  params &&
-          height old_params == height params
-        -> do
-             if old_params { hadjValue = hadjValue params } == params
-                -- only the hadjValue changed
-                && abs (hadjValue params - hadjValue old_params) <
-                   fromIntegral (width params) * scaleValue params
-                -- and the views overlap...
-               then
-                 scrollView surface old_params params hecs
-               else do
-                 renderWith surface $ do
-                   clearWhite; renderTraces params hecs rect
-                 return surface
+          | width  old_params == width  params &&
+            height old_params == height params
+          -> do
+              if old_params { hadjValue = hadjValue params } == params
+                  -- only the hadjValue changed
+                  && abs (hadjValue params - hadjValue old_params) <
+                    fromIntegral (width params) * scaleValue params
+                  -- and the views overlap...
+                then
+                  scrollView surface old_params params hecs
+                else do
+                  renderWith surface $ do
+                    clearWhite; renderTraces params hecs rect
+                  return surface
 
-        | otherwise
-        -> do surfaceFinish surface
-              renderToNewSurface
+          | otherwise
+          -> do surfaceFinish surface
+                renderToNewSurface
 
-  liftIO $ writeIORef timelinePrevView (Just (params, surface))
+    liftIO $ writeIORef timelinePrevView (Just (params, surface))
 
-  region exposeRegion
-  clip
-  setSourceSurface surface 0 (-vadj_value)
-          -- ^^ this is where we adjust for the vertical scrollbar
-  setOperator OperatorSource
-  paint
-  renderBookmarks bookmarks params
-  drawSelection params selection
+    region exposeRegion
+    clip
+    setSourceSurface surface 0 (-vadj_value)
+            -- ^^ this is where we adjust for the vertical scrollbar
+    setOperator OperatorSource
+    paint
+    renderBookmarks bookmarks params
+    drawSelection params selection
 
 -------------------------------------------------------------------------------
 

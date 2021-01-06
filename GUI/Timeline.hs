@@ -218,9 +218,9 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
   mouseStateVar <- newIORef None
 
   let withMouseState action = liftIO $ do
-      st  <- readIORef mouseStateVar
-      st' <- action st
-      writeIORef mouseStateVar st'
+        st  <- readIORef mouseStateVar
+        st' <- action st
+        writeIORef mouseStateVar st'
 
   on timelineDrawingArea buttonPressEvent $ do
     (x,_y) <- eventCoordinates
