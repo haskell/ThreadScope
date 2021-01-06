@@ -1,3 +1,4 @@
+Cabal-version:       1.24
 Name:                threadscope
 Version:             0.2.13
 Category:            Development, Profiling, Trace
@@ -31,7 +32,6 @@ Maintainer:          Simon Marlow <marlowsd@gmail.com>
 Homepage:            http://www.haskell.org/haskellwiki/ThreadScope
 Bug-reports:         https://github.com/haskell/ThreadScope/issues
 Build-Type:          Simple
-Cabal-version:       >= 1.6
 Data-files:          threadscope.ui, threadscope.png
 Extra-source-files:  include/windows_cconv.h
                      README.md
@@ -67,7 +67,7 @@ Executable threadscope
                      temporary >= 1.1 && < 1.4
 
   include-dirs:      include
-  Extensions:        RecordWildCards, NamedFieldPuns, BangPatterns, PatternGuards
+  default-extensions: RecordWildCards, NamedFieldPuns, BangPatterns, PatternGuards
   Other-Modules:     Events.HECs,
                      Events.EventDuration,
                      Events.EventTree,
@@ -117,3 +117,5 @@ Executable threadscope
 
   if !os(windows)
      build-depends: unix >= 2.3 && < 2.8
+
+  default-language: Haskell2010
