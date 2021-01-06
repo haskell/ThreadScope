@@ -133,7 +133,7 @@ timelineWindowSetBookmarks timelineWin@TimelineView{bookmarkIORef} bookmarks = d
 -----------------------------------------------------------------------------
 
 timelineViewNew :: Builder -> TimelineViewActions -> IO TimelineView
-timelineViewNew builder actions@TimelineViewActions{..} = do
+timelineViewNew builder actions = do
 
   let getWidget cast = builderGetObject builder cast
   timelineViewport    <- getWidget castToWidget "timeline_viewport"
@@ -226,7 +226,7 @@ timelineViewNew builder actions@TimelineViewActions{..} = do
     (x,_y) <- eventCoordinates
     button <- eventButton
     liftIO $ widgetGrabFocus timelineViewport
-    withMouseState (\st -> mousePress timelineWin actions st button x)
+    withMouseState (\st -> mousePress timelineWin st button x)
     return False
 
   on timelineDrawingArea buttonReleaseEvent $ do
@@ -396,9 +396,9 @@ data MouseState = None
                 | DragLeft   !Double   -- dragging with left mouse button
                 | DragMiddle !Double !Double  -- dragging with middle mouse button
 
-mousePress :: TimelineView -> TimelineViewActions
+mousePress :: TimelineView
            -> MouseState -> MouseButton -> Double -> IO MouseState
-mousePress view@TimelineView{..} TimelineViewActions{..} state button x =
+mousePress view@TimelineView{..} state button x =
   case (state, button) of
     (None, LeftButton)   -> do xv <- viewPointToTime view x
                                -- update the view without notifying the client

@@ -67,10 +67,10 @@ renderSparkConversion params !slice !start !end prof = do
   renderSpark params slice start end prof
     f1 createdConvertedColour f2 fizzledDudsColour f3 gcColour
 
-renderSparkPool :: ViewParameters -> Timestamp -> Timestamp -> Timestamp
+renderSparkPool :: Timestamp -> Timestamp -> Timestamp
                 -> [SparkStats.SparkStats]
                 -> Double -> Render ()
-renderSparkPool ViewParameters{..} !slice !start !end prof !maxSparkPool = do
+renderSparkPool !slice !start !end prof !maxSparkPool = do
   let f1 c = SparkStats.minPool c
       f2 c = SparkStats.meanPool c
       f3 c = SparkStats.maxPool c

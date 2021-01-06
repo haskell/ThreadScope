@@ -250,7 +250,7 @@ renderTraces params@ViewParameters{..} hecs (Rectangle rx _ry rw _rh) = do
                renderSparkConversion params slice start end (prof !! c)
              TracePoolHEC c ->
                let maxP = maxSparkPool hecs
-               in renderSparkPool params slice start end (prof !! c) maxP
+               in renderSparkPool slice start end (prof !! c) maxP
              TraceHistogram ->
                renderSparkHistogram params hecs
              TraceGroup _ -> error "renderTrace"

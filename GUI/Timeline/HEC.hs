@@ -43,7 +43,7 @@ renderHEC params@ViewParameters{..} start end perfNames (dtree,etree) = do
 renderInstantHEC :: ViewParameters -> Timestamp -> Timestamp
                  -> IM.IntMap Text -> EventTree
                  -> Render ()
-renderInstantHEC params@ViewParameters{..} start end
+renderInstantHEC params start end
                  perfNames (EventTree ltime etime tree) = do
   let instantDetail = 1
   renderEvents params ltime etime start end instantDetail perfNames tree
@@ -61,7 +61,7 @@ renderDurations :: ViewParameters
 
 renderDurations _ _ _ DurationTreeEmpty = return ()
 
-renderDurations params@ViewParameters{..} startPos endPos (DurationTreeLeaf e)
+renderDurations params startPos endPos (DurationTreeLeaf e)
   | inView startPos endPos e = drawDuration params e
   | otherwise                = return ()
 
@@ -89,7 +89,7 @@ renderEvents :: ViewParameters
              -> IM.IntMap Text -> EventNode
              -> Render Bool
 
-renderEvents params@ViewParameters{..} !_s !_e !startPos !endPos ewidth
+renderEvents params !_s !_e !startPos !endPos ewidth
              perfNames (EventTreeLeaf es)
   = let within = [ e | e <- es, let t = evTime e, t >= startPos && t < endPos ]
         untilTrue _ [] = return False
@@ -98,7 +98,7 @@ renderEvents params@ViewParameters{..} !_s !_e !startPos !endPos ewidth
           if b then return b else untilTrue f xs
     in untilTrue (drawEvent params ewidth perfNames) within
 
-renderEvents params@ViewParameters{..} !_s !_e !startPos !endPos ewidth
+renderEvents params !_s !_e !startPos !endPos ewidth
         perfNames (EventTreeOne ev)
   | t >= startPos && t < endPos = drawEvent params ewidth perfNames ev
   | otherwise = return False
@@ -248,7 +248,7 @@ labelAt labelsMode t str
 
 drawEvent :: ViewParameters -> Double -> IM.IntMap Text -> GHC.Event
           -> Render Bool
-drawEvent params@ViewParameters{..} ewidth perfNames event =
+drawEvent params ewidth perfNames event =
   let renderI = renderInstantEvent params perfNames event ewidth
   in case evSpec event of
     CreateThread{}  -> renderI createThreadColour
