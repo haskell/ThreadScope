@@ -1,8 +1,2 @@
 packages: .
 constraints: gtk +have-quartz-gtk
-
-package *
-  gcc-location: gcc-9
-
-program-locations
-  gcc-location: gcc-9

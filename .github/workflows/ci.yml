@@ -1,0 +1,152 @@
+name: CI
+on:
+  # - pull_request
+  - push
+jobs:
+  build_posix:
+    name: ${{ matrix.os }} / ghc ${{ matrix.ghc }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        ghc:
+          - '8.10.3'
+          - '8.8.4'
+          - '8.6.5'
+          - '8.4.4'
+          - '8.2.2'
+        cabal:
+          - '3.2'
+        os:
+          - ubuntu-latest
+          - macOS-latest
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Haskell
+        id: setup-haskell-cabal
+        uses: haskell/actions/setup@v1
+        with:
+          ghc-version: ${{ matrix.ghc }}
+          cabal-version: ${{ matrix.cabal }}
+      - name: Cache cabal-store
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
+          key: ${{ runner.os }}-${{ matrix.ghc }}-cabal
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install libgtk2.0-dev
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install gtk+ pkg-config
+      - name: Set extra cabal build options (macOS)
+        if: runner.os == 'macOS'
+        run: echo "CABAL_BUILD_OPTIONS=--constraint='gtk +have-quartz-gtk'" >> $GITHUB_ENV
+      - name: Build Haskell dependencies
+        run: |
+          echo $CABAL_BUILD_OPTIONS
+          eval cabal build $CABAL_BUILD_OPTIONS --enable-tests --enable-benchmarks --dep -j all
+          eval cabal build $CABAL_BUILD_OPTIONS --disable-tests --disable-benchmarks --dep -j all
+      - name: Build ThreadScope
+        run: |
+          DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
+          # Packaging...
+          cabal v2-sdist all
+          # Unpacking...
+          mv dist-newstyle/sdist/*.tar.gz ${DISTDIR}/
+          cd ${DISTDIR} || false
+          find . -maxdepth 1 -type f -name '*.tar.gz' -exec tar -xvf '{}' \;
+          find . -maxdepth 1 -type f -name '*.tar.gz' -exec rm       '{}' \;
+          PKGDIR_threadscope="$(find . -maxdepth 1 -type d -regex '.*/threadscope-[0-9.]*')"
+          # Generate cabal.project
+          rm -rf cabal.project cabal.project.local cabal.project.freeze
+          touch cabal.project
+          echo "packages: ${PKGDIR_threadscope}" >> cabal.project
+          for pkg in $(ghc-pkg list --simple-output); do
+            echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(threadscope)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local;
+          done
+          cat cabal.project || true
+          cat cabal.project.local || true
+          # Building...
+          # this builds all libraries and executables (without tests/benchmarks)
+          eval cabal build $CABAL_BUILD_OPTIONS --disable-tests --disable-benchmarks all
+          # Building with tests and benchmarks...
+          # build & run tests, build benchmarks
+          eval cabal build $CABAL_BUILD_OPTIONS --enable-tests --enable-benchmarks all
+          # cabal check...
+          (cd ${PKGDIR_threadscope} && cabal -vnormal check)
+          # Building without installed constraints for packages in global-db...
+          rm -f cabal.project.local
+          eval cabal build $CABAL_BUILD_OPTIONS --disable-tests --disable-benchmarks all
+          echo $(cabal v2-exec -v0 which threadscope)
+          cp "$(cabal v2-exec -v0 which threadscope)" "$GITHUB_WORKSPACE/threadscope.$PLATFORM.ghc-$GHCVER"
+          gzip -f "$GITHUB_WORKSPACE/threadscope.$PLATFORM.ghc-$GHCVER"
+        env:
+          GHCVER: ${{ matrix.ghc }}
+          PLATFORM: ${{ matrix.os }}
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: ${{ startsWith(github.ref, 'refs/tags/') && matrix.ghc == '8.10.3' }}
+        with:
+          files: threadscope.${{ matrix.os }}.ghc-${{ matrix.ghc }}.gz
+          draft: false
+          prerelease: false
+  build_windows:
+    name: ${{ matrix.os }} / ghc ${{ matrix.ghc }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        ghc:
+          - '8.10.3'
+          - '8.8.4'
+          - '8.6.5'
+          - '8.4.4'
+          - '8.2.2'
+        cabal:
+          - '3.2'
+        os:
+          - windows-latest
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Haskell
+        id: setup-haskell-cabal
+        uses: haskell/actions/setup@v1
+        with:
+          ghc-version: ${{ matrix.ghc }}
+          cabal-version: ${{ matrix.cabal }}
+      - name: Install system dependencies
+        uses: msys2/setup-msys2@v2
+        with:
+          path-type: inherit
+          install: >-
+            mingw-w64-x86_64-pkg-config
+            mingw-w64-x86_64-gtk2
+      - name: Cache cabal-store
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
+          key: ${{ runner.os }}-${{ matrix.ghc }}-cabal
+      - name: Build Haskell dependencies
+        run: cabal build -j all --dep
+        shell: msys2 {0}
+      - name: Build ThreadScope
+        run: |
+          cabal build -j all
+          cp -v $(find -name threadscope.exe) ./threadscope.exe
+          7z a threadscope.$PLATFORM.ghc-$GHCVER.zip threadscope.exe
+        shell: msys2 {0}
+        env:
+          PLATFORM: ${{ matrix.os }}
+          GHCVER: ${{ matrix.ghc }}
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: ${{ startsWith(github.ref, 'refs/tags/') && matrix.ghc == '8.10.3' }}
+        with:
+          files: threadscope.${{ matrix.os }}.ghc-${{ matrix.ghc }}.zip
+          draft: false
+          prerelease: false
