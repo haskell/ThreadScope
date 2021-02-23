@@ -64,7 +64,7 @@ Executable threadscope
                      time >= 1.1 && < 1.12,
                      bytestring < 0.12,
                      file-embed < 0.1,
-                     template-haskell < 2.17,
+                     template-haskell < 2.18,
                      temporary >= 1.1 && < 1.4
 
   include-dirs:      include
