@@ -1,6 +1,6 @@
 name: CI
 on:
-  # - pull_request
+  - pull_request
   - push
 jobs:
   build_posix:
@@ -9,13 +9,14 @@ jobs:
     strategy:
       matrix:
         ghc:
+          - '9.0.1'
           - '8.10.3'
           - '8.8.4'
           - '8.6.5'
           - '8.4.4'
           - '8.2.2'
         cabal:
-          - '3.2'
+          - latest
         os:
           - ubuntu-latest
           - macOS-latest
@@ -99,13 +100,14 @@ jobs:
     strategy:
       matrix:
         ghc:
+          - '9.0.1'
           - '8.10.3'
           - '8.8.4'
           - '8.6.5'
           - '8.4.4'
           - '8.2.2'
         cabal:
-          - '3.2'
+          - latest
         os:
           - windows-latest
       fail-fast: false
