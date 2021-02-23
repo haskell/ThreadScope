@@ -10,7 +10,7 @@ jobs:
       matrix:
         ghc:
           - '9.0.1'
-          - '8.10.3'
+          - '8.10.4'
           - '8.8.4'
           - '8.6.5'
           - '8.4.4'
@@ -89,7 +89,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: ${{ startsWith(github.ref, 'refs/tags/') && matrix.ghc == '8.10.3' }}
+        if: ${{ startsWith(github.ref, 'refs/tags/') && matrix.ghc == '8.10.4' }}
         with:
           files: threadscope.${{ matrix.os }}.ghc-${{ matrix.ghc }}.gz
           draft: false
@@ -101,7 +101,7 @@ jobs:
       matrix:
         ghc:
           - '9.0.1'
-          - '8.10.3'
+          - '8.10.4'
           - '8.8.4'
           - '8.6.5'
           - '8.4.4'
@@ -147,7 +147,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: ${{ startsWith(github.ref, 'refs/tags/') && matrix.ghc == '8.10.3' }}
+        if: ${{ startsWith(github.ref, 'refs/tags/') && matrix.ghc == '8.10.4' }}
         with:
           files: threadscope.${{ matrix.os }}.ghc-${{ matrix.ghc }}.zip
           draft: false
