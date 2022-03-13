@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
--- This demonstrates that f `par` (f + e) does not result in parallelsim.
+-- This demonstrates that f `par` (f + e) does not result in parallelism.
 
 module Main
 where

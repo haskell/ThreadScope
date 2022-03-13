@@ -331,7 +331,7 @@ viewRangeToTimeRange view (x, x') = do
     return (xv, xv')
 
 -------------------------------------------------------------------------------
--- Update the internal state and the timemline view after changing which
+-- Update the internal state and the timeline view after changing which
 -- traces are displayed, or the order of traces.
 
 queueRedrawTimelines :: TimelineState -> IO ()

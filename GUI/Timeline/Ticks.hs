@@ -86,7 +86,7 @@ renderXScaleArea ViewParameters{width, scaleValue, hadjValue, xScaleAreaHeight}
 data XScaleMode = XScaleTime | XScaleLog Double Double deriving Eq
 
 -- | Render the X (vertical) scale: render X axis and call ticks rendering.
--- TODO: refactor common parts with renderVRulers, in particlar to expose
+-- TODO: refactor common parts with renderVRulers, in particular to expose
 -- that ruler positions match tick positions.
 renderXScale :: Double -> Double -> Timestamp -> Int
              -> (Int -> Int) -> XScaleMode

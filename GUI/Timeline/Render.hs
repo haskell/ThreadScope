@@ -170,7 +170,7 @@ drawSelection vp@ViewParameters{height} (RangeSelection x x') = do
 -------------------------------------------------------------------------------
 
 -- We currently have two different way of converting from logical units
--- (ie timestamps in micro-seconds) to device units (ie pixels):
+-- (i.e. timestamps in micro-seconds) to device units (i.e. pixels):
 --   * the first is to set the cairo context to the appropriate scale
 --   * the second is to do the conversion ourself
 --
@@ -450,7 +450,7 @@ showTrace _ TraceActivity =
   "Activity"
 showTrace _ TraceGroup{} = error "Render.showTrace"
 
--- | Calcaulate the maximal Y value for a graph-like trace, or Nothing.
+-- | Calculate the maximal Y value for a graph-like trace, or Nothing.
 traceMaxSpark :: Double -> Double -> Double -> Trace -> Maybe Double
 traceMaxSpark maxS _ _ TraceCreationHEC{}   = Just $ maxS * 1000
 traceMaxSpark maxS _ _ TraceConversionHEC{} = Just $ maxS * 1000

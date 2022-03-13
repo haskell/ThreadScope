@@ -9,6 +9,6 @@ module GUI.App (initApp) where
 -------------------------------------------------------------------------------
 
 -- | Initialize application
--- Perform application initialization for non-Mac OS X platforms
+-- Perform application initialization for non-macOS platforms
 initApp :: IO ()
 initApp = return ()

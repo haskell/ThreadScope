@@ -21,7 +21,7 @@ uiFile = "threadscope.ui"
 logoFile :: FilePath
 logoFile = "threadscope.png"
 
--- | Textual representaion of the UI file
+-- | Textual representation of the UI file
 ui :: Q Exp
 ui = [| TE.decodeUtf8 $(makeRelativeToProject uiFile >>= embedFile) |]
 
