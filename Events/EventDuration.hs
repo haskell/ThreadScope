@@ -17,9 +17,9 @@ import GHC.RTS.Events hiding (Event, GCIdle, GCWork)
 import qualified GHC.RTS.Events as GHC
 
 -------------------------------------------------------------------------------
--- This datastructure is a duration-based representation of the event
--- loginformation where thread-runs and GCs are explicitly represented
--- by a single constructor identifying their start and end points.
+-- This data structure is a duration-based representation of the eventlog
+-- information where thread-runs and GCs are explicitly represented by a
+-- single constructor identifying their start and end points.
 
 data EventDuration
   = ThreadRun {-#UNPACK#-}!ThreadId

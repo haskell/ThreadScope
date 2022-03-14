@@ -9,7 +9,7 @@ import Control.Parallel
 import System.Mem
 
 -------------------------------------------------------------------------------
--- A purely sequential implementaiton of fib.
+-- A purely sequential implementation of fib.
 
 seqFib :: Int -> Integer
 seqFib 0 = 1
@@ -17,7 +17,7 @@ seqFib 1 = 1
 seqFib n = seqFib (n-1) + seqFib (n-2)
 
 -------------------------------------------------------------------------------
--- A thresh-hold value below which the parallel implementation of fib
+-- A threshold value below which the parallel implementation of fib
 -- reverts to sequential implementation.
 
 threshHold :: Int

@@ -18,7 +18,7 @@ ox = 10
 firstTraceY :: Int
 firstTraceY = 13
 
--- Gap betweem traces in the timeline view
+-- Gap between traces in the timeline view
 
 tracePad :: Int
 tracePad = 20
