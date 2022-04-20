@@ -124,7 +124,7 @@ summaryViewNew builder = do
       [ cellText := show ovf ]
     addSparksColumn "Dud" $ \(_, SparkCounts _ _ _ dud _ _) ->
       [ cellText := show dud ]
-    addSparksColumn "GC'd" $ \(_, SparkCounts _ _ _ _ gc _) ->
+    addSparksColumn "GC'ed" $ \(_, SparkCounts _ _ _ _ gc _) ->
       [ cellText := show gc ]
     addSparksColumn "Fizzled" $ \(_, SparkCounts _ _ _ _ _ fiz) ->
       [ cellText := show fiz ]
@@ -714,7 +714,7 @@ accumEvent !statsAccum ev =
       -- For events that contain discrete increments. We assume the event
       -- is emitted close to the end of the process it measures,
       -- so we ignore the first found event, because most of the process
-      -- could have happened before the start of the current inverval.
+      -- could have happened before the start of the current interval.
       -- This is consistent with @alterCounter@. For interval beginning
       -- at time 0, we start with @Just 0@.
       alterIncrement _ Nothing = Just 0
@@ -881,7 +881,7 @@ accumEvent !statsAccum ev =
                         }
                   -- Cap is not in the GC. Mark it as idle to complete
                   -- the identification of caps that take part
-                  -- in the current GC. Without overwritin the mode,
+                  -- in the current GC. Without overwriting the mode,
                   -- the cap could be processed later on as if
                   -- it took part in the GC, giving wrong results.
                   ModeEnd  -> dGC { gcMode = ModeIdle }
@@ -934,7 +934,7 @@ accumEvent !statsAccum ev =
                  ModeIdle  -> errorAs "scanEvents: EndGC ModeIdle"
                               $ sd { dGCTable = IM.insert cap endedGC dGCTable }
           SparkCounters crt dud ovf cnv fiz gcd _rem ->
-            -- We are guranteed the first spark counters event has all zeroes,
+            -- We are guaranteed the first spark counters event has all zeroes,
             -- do we don't need to rig the counters for maximal interval.
             let current = RtsSpark crt dud ovf cnv fiz gcd
             in sd { dsparkTable =

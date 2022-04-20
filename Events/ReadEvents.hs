@@ -35,12 +35,12 @@ import Text.Printf
 -- import qualified GHC.RTS.Events as GHCEvents
 --
 -- The GHC.RTS.Events library returns the profile information
--- in a data-streucture which contains a list data structure
+-- in a data-structure which contains a list data structure
 -- representing the events i.e. [GHCEvents.Event]
 -- ThreadScope transforms this list into an alternative representation
 -- which (for each HEC) records event *durations* which are ordered in time.
 -- The durations represent the run-lengths for thread execution and
--- run-lengths for garbage colleciton. This data-structure is called
+-- run-lengths for garbage collection. This data-structure is called
 -- EventDuration.
 -- ThreadScope then transformations this data-structure into another
 -- data-structure which gives a binary-tree view of the event information
@@ -207,7 +207,7 @@ buildEventLog progress from =
       allHisto :: [(Timestamp, Int, Timestamp)]
       allHisto = catMaybes . sparkSummary M.empty . toList $ sparkProfile
 
-      -- Sparks of zero lenght are already well visualized in other graphs:
+      -- Sparks of zero length are already well visualized in other graphs:
       durHistogram = filter (\ (_, logdur, _) -> logdur > 0) allHisto
       -- Precompute some extremums of the maximal interval, needed for scales.
       durs = [(logdur, dur) | (_start, logdur, dur) <- durHistogram]
