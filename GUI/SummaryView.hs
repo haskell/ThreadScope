@@ -124,7 +124,7 @@ summaryViewNew builder = do
       [ cellText := show ovf ]
     addSparksColumn "Dud" $ \(_, SparkCounts _ _ _ dud _ _) ->
       [ cellText := show dud ]
-    addSparksColumn "GC'ed" $ \(_, SparkCounts _ _ _ _ gc _) ->
+    addSparksColumn "GCed" $ \(_, SparkCounts _ _ _ _ gc _) ->
       [ cellText := show gc ]
     addSparksColumn "Fizzled" $ \(_, SparkCounts _ _ _ _ _ fiz) ->
       [ cellText := show fiz ]

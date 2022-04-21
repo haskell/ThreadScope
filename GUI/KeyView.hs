@@ -106,10 +106,10 @@ keyData =
      "In the spark conversion  graph the coloured area represents the number " ++
      "of sparks that have fizzled.")
   , ("GCed spark",      KEventAndGraph, gcColour,
-     "As an event it indicates a spark has been GC'ed, meaning it has been " ++
+     "As an event it indicates a spark has been GCed, meaning it has been " ++
      "discovered that the spark's thunk was no longer needed anywhere. " ++
      "In the spark conversion graph the coloured area represents the number " ++
-     "of sparks that were GC'ed.")
+     "of sparks that were GCed.")
   ]
 
 
