@@ -239,7 +239,7 @@ renderSparkHistogram ViewParameters{..} hecs =
     drawVRulers
     drawHRulers
     -- Move to the bottom and draw the X scale. The Y scale is drawn
-    -- independetly in another drawing area.
+    -- independently in another drawing area.
     translate 0 (fromIntegral histogramHeight)
     drawXScale
     restore

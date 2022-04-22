@@ -24,7 +24,7 @@ initial = SparkStats 0 0 0 0 0 0 0 0 0
 -- | Create spark stats for a duration, given absolute
 -- numbers of sparks in all categories at the start and end of the duration.
 -- The units for spark transitions (first 6 counters) is [spark/duration]:
--- the fact that intervals may have different lenghts is ignored here.
+-- the fact that intervals may have different lengths is ignored here.
 -- The units for the pool stats are just [spark].
 -- The values in the second counter have to be greater or equal
 -- to the values in the first counter, except for the spark pool size.

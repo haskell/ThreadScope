@@ -119,7 +119,7 @@ testEventTypes
      EventType wakeup "Wakeup thread" (Just 10),
      EventType startGC "Start GC" (Just 0),
      EventType finishGC "Finish GC" (Just 0),
-     EventType reqSeqGC "Request sequetial GC" (Just 0),
+     EventType reqSeqGC "Request sequential GC" (Just 0),
      EventType reqParGC "Reqpargc parallel GC" (Just 0),
      EventType createSparkThread "Create spark thread" (Just 8),
      EventType logMessage "Log message" Nothing,

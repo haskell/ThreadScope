@@ -106,10 +106,10 @@ keyData =
      "In the spark conversion  graph the coloured area represents the number " ++
      "of sparks that have fizzled.")
   , ("GCed spark",      KEventAndGraph, gcColour,
-     "As an event it indicates a spark has been GC'd, meaning it has been " ++
+     "As an event it indicates a spark has been GCed, meaning it has been " ++
      "discovered that the spark's thunk was no longer needed anywhere. " ++
      "In the spark conversion graph the coloured area represents the number " ++
-     "of sparks that were GC'd.")
+     "of sparks that were GCed.")
   ]
 
 
@@ -136,7 +136,7 @@ renderKeyIcon KDuration keyColour = do
 renderKeyIcon KEvent keyColour = renderKEvent keyColour
 renderKeyIcon KEventAndGraph keyColour = do
   renderKEvent keyColour
-  -- An icon roughly repreenting a jagedy graph.
+  -- An icon roughly representing a jaggedy graph.
   let x = fromIntegral ox
       y = fromIntegral hecBarHeight
   C.moveTo    (2*x)    (y - 2)
