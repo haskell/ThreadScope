@@ -9,13 +9,15 @@ jobs:
     strategy:
       matrix:
         ghc:
+          - '9.2.2'
+          - '9.0.2'
           - '8.10.3'
           - '8.8.4'
           - '8.6.5'
           - '8.4.4'
           - '8.2.2'
         cabal:
-          - '3.2'
+          - '3.6'
         os:
           - ubuntu-latest
           - macOS-latest
