@@ -27,7 +27,7 @@ import Graphics.Rendering.Cairo
 
 saveAs :: HECs -> ViewParameters -> Double -> DrawingArea
        -> (Int, Int, Render ())
-saveAs hecs params' @ViewParameters{xScaleAreaHeight, width,
+saveAs hecs params'@ViewParameters{xScaleAreaHeight, width,
                                     height = oldHeight {-, histogramHeight-}}
        yScaleAreaWidth yScaleArea =
   let histTotalHeight = histXScaleHeight -- + histogramHeight
