@@ -1,10 +1,16 @@
 # Revision history for threadscope
 
+## 2022-05-10 - v0.2.14.1
+
+* Spelling fixes ([#121](https://github.com/haskell/ThreadScope/pull/121), [#123](https://github.com/haskell/ThreadScope/pull/123))
+* Add compatibility with GHC-9.2 ([#124](https://github.com/haskell/ThreadScope/pull/124), [＃125](https://github.com/haskell/ThreadScope/pull/125))
+* Update dependencies ([#126](https://github.com/haskell/ThreadScope/pull/126))
+
 ## 2021-01-09 - v0.2.14
 
-* Print times with more sensible units [#111](https://github.com/haskell/ThreadScope/pull/111)
-* EventDuration: Make it more robust to truncated eventlogs [#110](https://github.com/haskell/ThreadScope/pull/110)
-* Use GitHub Actions for CI [#113](https://github.com/haskell/ThreadScope/pull/113)
+* Print times with more sensible units ([#111](https://github.com/haskell/ThreadScope/pull/111))
+* EventDuration: Make it more robust to truncated eventlogs ([#110](https://github.com/haskell/ThreadScope/pull/110))
+* Use GitHub Actions for CI ([#113](https://github.com/haskell/ThreadScope/pull/113))
 * Relax upper version bounds for ghc-events, time, bytestring, and template-haskell
 
 ## 2020-04-06 - v0.2.13
