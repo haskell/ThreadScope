@@ -35,7 +35,7 @@ jobs:
           key: ${{ runner.os }}-${{ matrix.ghc }}-cabal
       - name: Install system dependencies (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get install libgtk2.0-dev
+        run: sudo apt-get update && sudo apt-get install libgtk2.0-dev
       - name: Install system dependencies (macOS)
         if: runner.os == 'macOS'
         run: brew install gtk+ pkg-config
