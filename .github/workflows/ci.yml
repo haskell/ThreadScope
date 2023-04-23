@@ -45,8 +45,8 @@ jobs:
       - name: Build Haskell dependencies
         run: |
           echo $CABAL_BUILD_OPTIONS
-          eval cabal build $CABAL_BUILD_OPTIONS --enable-tests --enable-benchmarks --dep -j all
-          eval cabal build $CABAL_BUILD_OPTIONS --disable-tests --disable-benchmarks --dep -j all
+          eval cabal build $CABAL_BUILD_OPTIONS --enable-tests --enable-benchmarks --allow-newer --dep -j all
+          eval cabal build $CABAL_BUILD_OPTIONS --disable-tests --disable-benchmarks --allow-newer --dep -j all
       - name: Build ThreadScope
         run: |
           DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
