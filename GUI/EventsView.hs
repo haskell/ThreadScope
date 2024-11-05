@@ -17,6 +17,7 @@ import GHC.RTS.Events
 import Graphics.UI.Gtk
 import qualified GUI.GtkExtras as GtkExt
 
+import Control.Monad
 import Control.Monad.Reader
 import Data.Array
 import Data.Monoid
