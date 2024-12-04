@@ -56,14 +56,14 @@ Executable threadscope
                      array < 0.6,
                      mtl < 2.4,
                      filepath < 1.6,
-                     ghc-events >= 0.13 && < 0.20,
+                     ghc-events >= 0.13 && < 0.21,
                      containers >= 0.2 && < 0.8,
                      deepseq >= 1.1,
                      text < 2.2,
-                     time >= 1.1 && < 1.13,
+                     time >= 1.1 && < 1.14,
                      bytestring < 0.13,
                      file-embed < 0.1,
-                     template-haskell < 2.22,
+                     template-haskell < 2.23,
                      temporary >= 1.1 && < 1.4
 
   include-dirs:      include
