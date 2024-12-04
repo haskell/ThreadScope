@@ -99,6 +99,7 @@ jobs:
           draft: false
           prerelease: false
   build_windows:
+    if: false # This workflow is currently broken due to C library issues. See: https://github.com/haskell/ThreadScope/issues/135
     name: ${{ matrix.os }} / ghc ${{ matrix.ghc }}
     runs-on: ${{ matrix.os }}
     strategy:
