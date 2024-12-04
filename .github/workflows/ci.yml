@@ -17,7 +17,7 @@ jobs:
           - "8.10.7"
           - "8.8.4"
         cabal:
-          - "3.10.1.0"
+          - "3.12.1.0"
         os:
           - ubuntu-latest
           - macOS-latest
@@ -109,7 +109,7 @@ jobs:
           - "8.10.7"
           - "8.8.4"
         cabal:
-          - "3.10.1.0"
+          - "3.12.1.0"
         os:
           - windows-latest
       fail-fast: false
