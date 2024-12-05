@@ -9,6 +9,7 @@ jobs:
     strategy:
       matrix:
         ghc:
+          - "9.10.1"
           - "9.8.2"
           - "9.6.4"
           - "9.4.8"
@@ -17,10 +18,16 @@ jobs:
           - "8.10.7"
           - "8.8.4"
         cabal:
-          - "3.10.1.0"
+          - "3.12.1.0"
         os:
           - ubuntu-latest
-          - macOS-latest
+        include:
+          - os: macos-latest
+            ghc: "9.10.1"
+            cabal: "3.12.1.0"
+          - os: macos-latest
+            ghc: "9.8.2"
+            cabal: "3.12.1.0"
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -96,6 +103,7 @@ jobs:
           draft: false
           prerelease: false
   build_windows:
+    if: false # This workflow is currently broken due to C library issues. See: https://github.com/haskell/ThreadScope/issues/135
     name: ${{ matrix.os }} / ghc ${{ matrix.ghc }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -109,7 +117,7 @@ jobs:
           - "8.10.7"
           - "8.8.4"
         cabal:
-          - "3.10.1.0"
+          - "3.12.1.0"
         os:
           - windows-latest
       fail-fast: false
