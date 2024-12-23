@@ -9,11 +9,12 @@ jobs:
     strategy:
       matrix:
         ghc:
+          - "9.12.1"
           - "9.10.1"
-          - "9.8.2"
-          - "9.6.4"
+          - "9.8.4"
+          - "9.6.6"
           - "9.4.8"
-          - "9.2.2"
+          - "9.2.8"
           - "9.0.2"
           - "8.10.7"
           - "8.8.4"
@@ -22,6 +23,9 @@ jobs:
         os:
           - ubuntu-latest
         include:
+          - os: macos-latest
+            ghc: "9.12.1"
+            cabal: "3.12.1.0"
           - os: macos-latest
             ghc: "9.10.1"
             cabal: "3.12.1.0"
