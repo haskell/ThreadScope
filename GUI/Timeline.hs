@@ -38,6 +38,7 @@ import Graphics.Rendering.Cairo ( liftIO )
 
 import Data.IORef
 import Control.Monad
+import Control.Monad.Trans
 import qualified Data.Text as T
 
 -----------------------------------------------------------------------------
@@ -78,7 +79,7 @@ timelineGetViewParameters :: TimelineView -> IO ViewParameters
 timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, labelsModeIORef,
                                        timelineState=TimelineState{..}} = do
 
-  (w, _) <- widgetGetSize timelineDrawingArea
+  Rectangle _ _ w _ <- widgetGetAllocation timelineDrawingArea
   scaleValue  <- readIORef scaleIORef
   maxSpkValue <- readIORef maxSpkIORef
 
@@ -90,7 +91,7 @@ timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, labelsModeIORef
   bwmode <- readIORef bwmodeIORef
   labelsMode <- readIORef labelsModeIORef
 
-  (_, xScaleAreaHeight) <- widgetGetSize timelineXScaleArea
+  Rectangle _ _ _ xScaleAreaHeight <- widgetGetAllocation timelineXScaleArea
   let histTotalHeight = stdHistogramHeight + histXScaleHeight
       timelineHeight =
         calculateTotalTimelineHeight labelsMode histTotalHeight traces
@@ -169,32 +170,32 @@ timelineViewNew builder actions = do
 
   ------------------------------------------------------------------------
   -- Redrawing labelDrawingArea
-  timelineYScaleArea `onExpose` \_ -> do
+  timelineYScaleArea `on` draw $ liftIO $ do
     maybeEventArray <- readIORef hecsIORef
 
     -- Check to see if an event trace has been loaded
     case maybeEventArray of
-      Nothing   -> return False
+      Nothing   -> return ()
       Just hecs -> do
         traces <- readIORef tracesIORef
         labelsMode <- readIORef labelsModeIORef
         let maxP = maxSparkPool hecs
             maxH = fromIntegral (maxYHistogram hecs)
         updateYScaleArea timelineState maxP maxH Nothing labelsMode traces
-        return True
+        return ()
 
   ------------------------------------------------------------------------
   -- Redrawing XScaleArea
-  timelineXScaleArea `onExpose` \_ -> do
+  timelineXScaleArea `on` draw $ liftIO $ do
     maybeEventArray <- readIORef hecsIORef
 
     -- Check to see if an event trace has been loaded
     case maybeEventArray of
-      Nothing   -> return False
+      Nothing   -> return ()
       Just hecs -> do
         let lastTx = hecLastEventTime hecs
         updateXScaleArea timelineState lastTx
-        return True
+        return ()
 
   ------------------------------------------------------------------------
   -- Allow mouse wheel to be used for zoom in/out
@@ -253,7 +254,7 @@ timelineViewNew builder actions = do
           in withMouseState whenNoMouse >> return True
     keyName <- eventKeyName
     keyVal <- eventKeyVal
-#if MIN_VERSION_gtk(0,13,0)
+#if MIN_VERSION_gtk3(0,13,0)
     case (T.unpack keyName, keyToChar keyVal, keyVal) of
 #else
     case (keyName, keyToChar keyVal, keyVal) of
@@ -277,8 +278,7 @@ timelineViewNew builder actions = do
   ------------------------------------------------------------------------
   -- Redrawing
 
-  on timelineDrawingArea exposeEvent $ do
-     exposeRegion <- eventRegion
+  on timelineDrawingArea draw $ do
      liftIO $ do
        maybeEventArray <- readIORef hecsIORef
 
@@ -290,14 +290,15 @@ timelineViewNew builder actions = do
            -- render either the whole height of the timeline, or the window, whichever
            -- is larger (this just ensure we fill the background if the timeline is
            -- smaller than the window).
-           (_, h) <- widgetGetSize timelineDrawingArea
+           exposeRect <- widgetGetAllocation timelineDrawingArea
+           Rectangle _ _ _ h <- widgetGetAllocation timelineDrawingArea
            let params' = params { height = max (height params) h }
            selection  <- readIORef selectionRef
            bookmarks <- readIORef bookmarkIORef
 
-           renderView timelineState params' hecs selection bookmarks exposeRegion
+           renderView timelineState params' hecs selection bookmarks exposeRect
 
-     return True
+     return ()
 
   on timelineDrawingArea configureEvent $ do
      liftIO $ configureTimelineDrawingArea timelineWin
@@ -357,7 +358,7 @@ updateTimelineVScroll TimelineView{tracesIORef, labelsModeIORef, timelineState=T
   labelsMode <- readIORef labelsModeIORef
   let histTotalHeight = stdHistogramHeight + histXScaleHeight
       h = calculateTotalTimelineHeight labelsMode histTotalHeight traces
-  (_,winh) <- widgetGetSize timelineDrawingArea
+  Rectangle _ _ _ winh <- widgetGetAllocation timelineDrawingArea
   let winh' = fromIntegral winh;
       h' = fromIntegral h
   adjustmentSetLower    timelineVAdj 0
@@ -377,7 +378,7 @@ updateTimelineVScroll TimelineView{tracesIORef, labelsModeIORef, timelineState=T
 -- the view at all.
 updateTimelineHPageSize :: TimelineState -> IO ()
 updateTimelineHPageSize TimelineState{..} = do
-  (winw,_) <- widgetGetSize timelineDrawingArea
+  Rectangle _ _ winw _ <- widgetGetAllocation timelineDrawingArea
   scaleValue <- readIORef scaleIORef
   adjustmentSetPageSize timelineAdj (fromIntegral winw * scaleValue)
 
@@ -467,8 +468,9 @@ mouseRelease view@TimelineView{..} TimelineViewActions{..} state button x =
 
 widgetSetCursor :: WidgetClass widget => widget -> Maybe Cursor -> IO ()
 widgetSetCursor widget cursor = do
-#if MIN_VERSION_gtk(0,12,1)
-    dw <- widgetGetDrawWindow widget
+#if MIN_VERSION_gtk3(0,12,1)
+    -- TODO: get rid of this Just
+    Just dw <- widgetGetWindow widget
     drawWindowSetCursor dw cursor
 #endif
     return ()

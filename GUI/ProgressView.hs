@@ -16,6 +16,7 @@ import GUI.GtkExtras
 import qualified Control.Concurrent as Concurrent
 import Control.Exception
 import Data.Typeable
+import Control.Monad.Trans
 
 data ProgressView = ProgressView {
     progressWindow :: Gtk.Window,
@@ -95,8 +96,8 @@ new parent cancelAction = do
   progress <- progressBarNew
 
   cancel <- buttonNewFromStock stockCancel
-  onClicked cancel (widgetDestroy win >> cancelAction)
-  onDelete win (\_ -> cancelAction >> return True)
+  cancel `on` buttonActivated $ (widgetDestroy win >> cancelAction)
+  win `on` destroyEvent $ lift cancelAction >> return True
   on win keyPressEvent $ do
     keyVal <- eventKeyVal
     case keyVal of

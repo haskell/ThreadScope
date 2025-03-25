@@ -100,9 +100,9 @@ eventsViewNew builder EventsViewActions{..} = do
   -----------------------------------------------------------------------------
   -- Drawing
 
-  on drawArea exposeEvent $ liftIO $ do
+  on drawArea draw $ liftIO $ do
     drawEvents eventsView =<< readIORef stateRef
-    return True
+    return ()
 
   -----------------------------------------------------------------------------
   -- Key navigation
@@ -122,7 +122,7 @@ eventsViewNew builder EventsViewActions{..} = do
           return True
 
     key <- eventKeyName
-#if MIN_VERSION_gtk(0,13,0)
+#if MIN_VERSION_gtk3(0,13,0)
     case T.unpack key of
 #else
     case key of
@@ -239,7 +239,7 @@ updateScrollAdjustment :: EventsView -> ViewState -> IO ()
 updateScrollAdjustment EventsView{drawArea, adj}
                        ViewState{lineHeight, eventsState} = do
 
-  (_,windowHeight) <- widgetGetSize drawArea
+  Rectangle _ _ _ windowHeight <- widgetGetAllocation drawArea
   let numLines = case eventsState of
                    EventsEmpty             -> 0
                    EventsLoaded{eventsArr} -> snd (bounds eventsArr) + 1
@@ -276,7 +276,8 @@ drawEvents EventsView{drawArea, adj}
       begin = lower
       end   = min upper (snd (bounds eventsArr))
 
-  win   <- widgetGetDrawWindow drawArea
+  -- TODO: don't use Just here
+  Just win   <- widgetGetWindow drawArea
   style <- get drawArea widgetStyle
   focused <- get drawArea widgetIsFocus
   let state | focused   = StateSelected
@@ -286,7 +287,7 @@ drawEvents EventsView{drawArea, adj}
   layout   <- layoutEmpty pangoCtx
   layoutSetEllipsize layout EllipsizeEnd
 
-  (width,clipHeight) <- widgetGetSize drawArea
+  Rectangle _ _ width clipHeight <- widgetGetAllocation drawArea
   let clipRect = Rectangle 0 0 width clipHeight
 
   let -- With average char width, timeWidth is enough for 24 hours of logs
