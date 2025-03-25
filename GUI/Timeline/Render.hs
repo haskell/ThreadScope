@@ -53,6 +53,8 @@ import Data.IORef
 import Control.Monad
 import qualified Data.Text as T
 
+import qualified Graphics.UI.Gtk.Cairo as C
+
 -------------------------------------------------------------------------------
 
 -- | This function redraws the currently visible part of the
@@ -113,7 +115,7 @@ renderView TimelineState{timelineDrawingArea, timelineVAdj, timelinePrevView}
     liftIO $ writeIORef timelinePrevView (Just (params, surface))
 
     -- TODO: figure out what this did???
-    -- region exposeRegion
+    C.rectangle rect
     clip
     setSourceSurface surface 0 (-vadj_value)
             -- ^^ this is where we adjust for the vertical scrollbar

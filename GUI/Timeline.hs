@@ -24,6 +24,7 @@ module GUI.Timeline (
     timelineCentreOnCursor,
  ) where
 
+import Debug.Trace
 import GUI.Types
 import GUI.Timeline.Types
 
@@ -280,18 +281,21 @@ timelineViewNew builder actions = do
 
   on timelineDrawingArea draw $ do
      liftIO $ do
+       traceM "timelineDrawingArea"
        maybeEventArray <- readIORef hecsIORef
 
        -- Check to see if an event trace has been loaded
        case maybeEventArray of
          Nothing   -> return ()
          Just hecs -> do
+           traceShowM "just hecs"
            params <- timelineGetViewParameters timelineWin
            -- render either the whole height of the timeline, or the window, whichever
            -- is larger (this just ensure we fill the background if the timeline is
            -- smaller than the window).
            exposeRect <- widgetGetAllocation timelineDrawingArea
            Rectangle _ _ _ h <- widgetGetAllocation timelineDrawingArea
+           traceShowM exposeRect
            let params' = params { height = max (height params) h }
            selection  <- readIORef selectionRef
            bookmarks <- readIORef bookmarkIORef

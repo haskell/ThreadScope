@@ -169,7 +169,7 @@ renderKEvent keyColour = do
 renderToPixbuf :: DrawWindowClass dw => dw -> (Int, Int) -> C.Render ()
                -> IO Pixbuf
 renderToPixbuf similar (w, h) draw = do
-  -- TODO: is this right???
+  -- TODO: is this right??? I think so. It seems to work at least :shrug:
   renderWithDrawWindow similar draw
   pixbuf <- pixbufNewFromWindow similar 0 0 w h
   return pixbuf
