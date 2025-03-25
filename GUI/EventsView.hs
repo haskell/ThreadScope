@@ -13,6 +13,7 @@ module GUI.EventsView (
   ) where
 
 import GHC.RTS.Events
+import Debug.Trace
 
 import Graphics.UI.Gtk
 import qualified GUI.GtkExtras as GtkExt
@@ -278,8 +279,9 @@ drawEvents EventsView{drawArea, adj}
 
   -- TODO: don't use Just here
   Just win   <- widgetGetWindow drawArea
-  style <- get drawArea widgetStyle
-  focused <- get drawArea widgetIsFocus
+  style <- widgetGetStyle drawArea
+  focused <- widgetGetIsFocus drawArea
+  traceM "got is focus"
   let state | focused   = StateSelected
             | otherwise = StateActive
 
@@ -287,7 +289,9 @@ drawEvents EventsView{drawArea, adj}
   layout   <- layoutEmpty pangoCtx
   layoutSetEllipsize layout EllipsizeEnd
 
-  clipRect@(Rectangle _ _ width _) <- widgetGetAllocation drawArea
+
+  (Rectangle _ _ width _) <- widgetGetAllocation drawArea
+  let clipRect = Rectangle 0 0 0 0
 
   let -- With average char width, timeWidth is enough for 24 hours of logs
       -- (way more than TS can handle, currently). Aligns nicely with
@@ -299,6 +303,7 @@ drawEvents EventsView{drawArea, adj}
       columnGap  = 20
       descrWidth = width - timeWidth - columnGap
 
+  traceM "draw each"
   sequence_
     [ do when (inside || selected) $
            GtkExt.stylePaintFlatBox
@@ -307,11 +312,15 @@ drawEvents EventsView{drawArea, adj}
              clipRect
              drawArea ""
              0 (round y) width (round lineHeight)
+         traceM "stylePaint"
 
          -- The event time
          layoutSetText layout (showEventTime event)
+         traceM "set text"
          layoutSetAlignment layout AlignRight
+         traceM "set align"
          layoutSetWidth layout (Just (fromIntegral timeWidth))
+         traceM "set width"
          GtkExt.stylePaintLayout
            style win
            state2 True
@@ -319,6 +328,7 @@ drawEvents EventsView{drawArea, adj}
            drawArea ""
            0 (round y)
            layout
+         traceM "paint layout"
 
          -- The event description text
          layoutSetText layout (showEventDescr event)
