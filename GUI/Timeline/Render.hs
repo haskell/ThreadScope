@@ -20,6 +20,7 @@ import Events.HECs
 import GUI.Types
 import GUI.ViewerColours
 import GUI.Timeline.CairoDrawing
+import Debug.Trace
 
 import Graphics.UI.Gtk hiding (rectangle)
 import Graphics.Rendering.Cairo
@@ -321,10 +322,11 @@ scrollView surface old new hecs = do
 -- and not only the newly exposed area. This is comparatively very cheap.
 updateXScaleArea :: TimelineState -> Timestamp -> IO ()
 updateXScaleArea TimelineState{..} lastTx = do
+  traceM "updateXScaleArea"
   -- TODO: get rid of this Just
   Just win <- widgetGetWindow timelineXScaleArea
   Rectangle _ _ width _ <- widgetGetAllocation timelineDrawingArea
-  Rectangle _ _ xScaleAreaHeight _ <- widgetGetAllocation timelineXScaleArea
+  Rectangle _ _ _ xScaleAreaHeight <- widgetGetAllocation timelineXScaleArea
   scaleValue <- readIORef scaleIORef
   -- Snap the view to whole pixels, to avoid blurring.
   hadjValue0 <- adjustmentGetValue timelineAdj
@@ -342,6 +344,7 @@ renderYScaleArea :: ViewParameters -> HECs -> DrawingArea -> Render ()
 renderYScaleArea ViewParameters{maxSpkValue, labelsMode, viewTraces,
                                 histogramHeight, minterval}
                  hecs yScaleArea = do
+  traceM "updateXScaleArea"
   let maxP = maxSparkPool hecs
       maxH = fromIntegral $ maxYHistogram hecs
   Rectangle _ _ xoffset _ <- liftIO $ widgetGetAllocation yScaleArea

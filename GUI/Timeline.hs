@@ -293,14 +293,14 @@ timelineViewNew builder actions = do
            -- render either the whole height of the timeline, or the window, whichever
            -- is larger (this just ensure we fill the background if the timeline is
            -- smaller than the window).
-           exposeRect <- widgetGetAllocation timelineDrawingArea
+           exposeRect@(Rectangle _ _ w h)<- widgetGetAllocation timelineDrawingArea
            Rectangle _ _ _ h <- widgetGetAllocation timelineDrawingArea
            traceShowM exposeRect
            let params' = params { height = max (height params) h }
            selection  <- readIORef selectionRef
            bookmarks <- readIORef bookmarkIORef
 
-           renderView timelineState params' hecs selection bookmarks exposeRect
+           renderView timelineState params' hecs selection bookmarks (Rectangle 0 0 w h)
 
      return ()
 

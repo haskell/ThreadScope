@@ -34,6 +34,7 @@ Bug-reports:         https://github.com/haskell/ThreadScope/issues
 Build-Type:          Simple
 Data-files:          threadscope.ui, threadscope.png
 Extra-source-files:  include/windows_cconv.h
+                     threadscope.ui
                      README.md
                      CHANGELOG.md
 Tested-with:         GHC == 8.8.4
@@ -74,6 +75,7 @@ Executable threadscope
 
   include-dirs:      include
   default-extensions: RecordWildCards, NamedFieldPuns, BangPatterns, PatternGuards
+  other-extensions: TemplateHaskell
   Other-Modules:     Events.HECs,
                      Events.EventDuration,
                      Events.EventTree,

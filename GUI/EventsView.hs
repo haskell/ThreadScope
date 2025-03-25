@@ -287,8 +287,7 @@ drawEvents EventsView{drawArea, adj}
   layout   <- layoutEmpty pangoCtx
   layoutSetEllipsize layout EllipsizeEnd
 
-  Rectangle _ _ width clipHeight <- widgetGetAllocation drawArea
-  let clipRect = Rectangle 0 0 width clipHeight
+  clipRect@(Rectangle _ _ width _) <- widgetGetAllocation drawArea
 
   let -- With average char width, timeWidth is enough for 24 hours of logs
       -- (way more than TS can handle, currently). Aligns nicely with
