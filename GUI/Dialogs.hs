@@ -8,6 +8,7 @@ import Graphics.UI.Gtk
 
 import Data.Version (showVersion)
 import System.FilePath
+import Control.Monad.Trans
 
 
 -------------------------------------------------------------------------------
@@ -32,7 +33,7 @@ aboutDialog parent
          aboutDialogWebsite   := "http://www.haskell.org/haskellwiki/ThreadScope",
          windowTransientFor   := toWindow parent
         ]
-      onResponse dialog $ \_ -> widgetDestroy dialog
+      dialog `on` response $ \_ -> widgetDestroy dialog
       widgetShow dialog
 
 -------------------------------------------------------------------------------
@@ -59,7 +60,7 @@ openFileDialog parent  open
        fileFilterAddPattern allfiles "*"
        fileChooserAddFilter dialog allfiles
 
-       onResponse dialog $ \response -> do
+       dialog `on` response $ \response -> do
          case response of
            ResponseAccept -> do
              mfile <- fileChooserGetFilename dialog
@@ -105,7 +106,7 @@ exportFileDialog parent oldfile save = do
     fileFilterAddPattern pdfFiles "*.pdf"
     fileChooserAddFilter dialog pdfFiles
 
-    onResponse dialog $ \response ->
+    dialog `on` response $ \response ->
       case response of
         ResponseAccept -> do
           mfile <- fileChooserGetFilename dialog
@@ -158,5 +159,5 @@ errorMessageDialog parent headline explanation = do
   dialogAddButton dialog "Close" ResponseClose
   dialogSetDefaultResponse dialog ResponseClose
 
-  onResponse dialog $ \_-> widgetDestroy dialog
+  dialog `on` response $ \_-> widgetDestroy dialog
   widgetShowAll dialog

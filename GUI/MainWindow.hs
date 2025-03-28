@@ -32,7 +32,6 @@ instance Glib.GObjectClass  MainWindow where
   toGObject = toGObject . mainWindow
   unsafeCastGObject = error "cannot downcast to MainView type"
 
-instance Gtk.ObjectClass    MainWindow
 instance Gtk.WidgetClass    MainWindow
 instance Gtk.ContainerClass MainWindow
 instance Gtk.BinClass       MainWindow

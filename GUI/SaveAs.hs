@@ -62,14 +62,14 @@ saveAs hecs params'@ViewParameters{xScaleAreaHeight, width,
 
 saveAsPDF :: FilePath -> HECs -> ViewParameters -> DrawingArea -> IO ()
 saveAsPDF filename hecs params yScaleArea = do
-  (xoffset, _) <- liftIO $ widgetGetSize yScaleArea
+  Rectangle _ _ xoffset _ <- liftIO $ widgetGetAllocation yScaleArea
   let (w', h', drawAll) = saveAs hecs params (fromIntegral xoffset) yScaleArea
   withPDFSurface filename (fromIntegral w') (fromIntegral h') $ \surface ->
     renderWith surface drawAll
 
 saveAsPNG :: FilePath -> HECs -> ViewParameters -> DrawingArea -> IO ()
 saveAsPNG filename hecs params yScaleArea = do
-  (xoffset, _) <- liftIO $ widgetGetSize yScaleArea
+  Rectangle _ _ xoffset _ <- liftIO $ widgetGetAllocation yScaleArea
   let (w', h', drawAll) = saveAs hecs params (fromIntegral xoffset) yScaleArea
   withImageSurface FormatARGB32 w' h' $ \surface -> do
     renderWith surface drawAll
