@@ -48,15 +48,15 @@ jobs:
           zlib-dev zlib-static binutils curl \
           gcc g++ gmp-dev libc-dev libffi-dev make \
           musl-dev ncurses-dev perl tar xz \
-          gtk+2.0-dev
+          gtk+3.0-dev
 
       - name: Install system dependencies (Ubuntu)
         if: runner.os == 'Linux' && !startsWith(matrix.container, 'alpine')
-        run: sudo apt-get update && sudo apt-get install libgtk2.0-dev
+        run: sudo apt-get update && sudo apt-get install libgtk3.0-dev
 
       - name: Install system dependencies (macOS)
         if: runner.os == 'macOS'
-        run: brew install cairo gtk+ pkg-config
+        run: brew install cairo gtk+3 pkg-config
 
       - name: Set extra cabal build options (macOS)
         if: runner.os == 'macOS'
