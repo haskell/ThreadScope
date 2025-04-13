@@ -15,7 +15,8 @@ module GUI.EventsView (
 import GHC.RTS.Events
 import Debug.Trace
 
-import Graphics.UI.Gtk
+import Graphics.UI.Gtk hiding (rectangle)
+import Graphics.Rendering.Cairo
 import qualified GUI.GtkExtras as GtkExt
 
 import Control.Monad
@@ -303,44 +304,29 @@ drawEvents EventsView{drawArea, adj}
       columnGap  = 20
       descrWidth = width - timeWidth - columnGap
 
-  traceM "draw each"
   sequence_
     [ do when (inside || selected) $
-           GtkExt.stylePaintFlatBox
-             style win
-             state1 ShadowNone
-             clipRect
-             drawArea ""
-             0 (round y) width (round lineHeight)
-         traceM "stylePaint"
+           renderWithDrawWindow win $ do
+             -- TODO: figure out how I can grab the correct color from GTK's style
+             setSourceRGBA 0.2 1 1 0.2
+             rectangle 0 y (fromIntegral width) lineHeight
+             fill
 
          -- The event time
          layoutSetText layout (showEventTime event)
-         traceM "set text"
          layoutSetAlignment layout AlignRight
-         traceM "set align"
          layoutSetWidth layout (Just (fromIntegral timeWidth))
-         traceM "set width"
-         GtkExt.stylePaintLayout
-           style win
-           state2 True
-           clipRect
-           drawArea ""
-           0 (round y)
-           layout
-         traceM "paint layout"
+         renderWithDrawWindow win $ do
+           moveTo 0 y
+           showLayout layout
 
          -- The event description text
          layoutSetText layout (showEventDescr event)
          layoutSetAlignment layout AlignLeft
          layoutSetWidth layout (Just (fromIntegral descrWidth))
-         GtkExt.stylePaintLayout
-           style win
-           state2 True
-           clipRect
-           drawArea ""
-           (timeWidth + columnGap) (round y)
-           layout
+         renderWithDrawWindow win $ do
+           moveTo (fromIntegral $ timeWidth + columnGap) y
+           showLayout layout
 
     | n <- [begin..end]
     , let y = fromIntegral n * lineHeight - yOffset

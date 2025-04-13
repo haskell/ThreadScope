@@ -24,8 +24,8 @@ jobs:
         include:
           # The windows build is currently broken
           # See #135
-          #- os: windows-latest
-          #   ghc-version: '9.10'
+          - os: windows-latest
+            ghc-version: '9.10'
           - os: macos-latest
             ghc-version: '9.10'
           # gtk2hs is broken under apline
