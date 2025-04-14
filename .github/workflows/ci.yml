@@ -54,15 +54,6 @@ jobs:
         if: runner.os == 'Linux' && !startsWith(matrix.container, 'alpine')
         run: sudo apt-get update && sudo apt-get install libgtk-3-dev
 
-      - name: Install system dependencies (Windows)
-        if: ${{ startsWith(matrix.os, 'windows') }}
-        uses: msys2/setup-msys2@v2
-        with:
-          path-type: inherit
-          install: >-
-            mingw-w64-x86_64-pkg-config
-            mingw-w64-x86_64-gtk3
-
       - name: Install system dependencies (macOS)
         if: runner.os == 'macOS'
         run: brew install cairo gtk+3 pkg-config
@@ -72,12 +63,25 @@ jobs:
         run: |
           printf 'package gtk\n  flags: +have-quartz-gtk' >>cabal.project
 
-
       - name: Set up GHC ${{ matrix.ghc-version }}
         uses: haskell-actions/setup@v2
         id: setup
         with:
           ghc-version: ${{ matrix.ghc-version }}
+
+      # Taken from https://github.com/agda/agda/blob/8210048a50c35d8d6fd0ae7e5edd1699592fda6f/src/github/workflows/cabal.yml#L113C1-L124C85
+      # See: https://github.com/haskell/text-icu/pull/86
+      # pacman needs MSYS /usr/bin in PATH, but this breaks the latest cache action.
+      # -  https://github.com/actions/cache/issues/1073
+      # MSYS' pkg-config needs MSYS /mingw64/bin which we can safely add to the PATH
+      #
+      - name: Install system dependencies (Windows)
+        if: ${{ startsWith(matrix.os, 'windows') }}
+        shell: pwsh
+        run: |
+          $env:PATH = "C:\msys64\usr\bin;$env:PATH"
+          pacman --noconfirm -S msys2-keyring mingw-w64-x86_64-pkgconf mingw-w64-x86_64-gtk3
+          echo "C:\msys64\mingw64\bin" | Out-File -FilePath "$env:GITHUB_PATH" -Append
 
       - name: Enable static build (only on alpine)
         if: ${{ startsWith(matrix.container, 'alpine') }}
