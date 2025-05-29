@@ -71,7 +71,7 @@ Executable threadscope
                      file-embed < 0.1,
                      template-haskell < 2.24,
                      temporary >= 1.1 && < 1.4,
-                     transformers
+                     transformers <0.6.3
 
   include-dirs:      include
   default-extensions: RecordWildCards, NamedFieldPuns, BangPatterns, PatternGuards
