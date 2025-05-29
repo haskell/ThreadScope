@@ -115,7 +115,6 @@ renderView TimelineState{timelineDrawingArea, timelineVAdj, timelinePrevView}
 
     liftIO $ writeIORef timelinePrevView (Just (params, surface))
 
-    -- TODO: figure out what this did???
     C.rectangle rect
     clip
     setSourceSurface surface 0 (-vadj_value)
@@ -322,7 +321,6 @@ scrollView surface old new hecs = do
 -- and not only the newly exposed area. This is comparatively very cheap.
 updateXScaleArea :: TimelineState -> Timestamp -> IO ()
 updateXScaleArea TimelineState{..} lastTx = do
-  traceM "updateXScaleArea"
   -- TODO: get rid of this Just
   Just win <- widgetGetWindow timelineXScaleArea
   Rectangle _ _ width _ <- widgetGetAllocation timelineDrawingArea
@@ -344,7 +342,6 @@ renderYScaleArea :: ViewParameters -> HECs -> DrawingArea -> Render ()
 renderYScaleArea ViewParameters{maxSpkValue, labelsMode, viewTraces,
                                 histogramHeight, minterval}
                  hecs yScaleArea = do
-  traceM "updateXScaleArea"
   let maxP = maxSparkPool hecs
       maxH = fromIntegral $ maxYHistogram hecs
   Rectangle _ _ xoffset _ <- liftIO $ widgetGetAllocation yScaleArea

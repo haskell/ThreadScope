@@ -281,7 +281,6 @@ timelineViewNew builder actions = do
 
   on timelineDrawingArea draw $ do
      liftIO $ do
-       traceM "timelineDrawingArea"
        maybeEventArray <- readIORef hecsIORef
 
        -- Check to see if an event trace has been loaded

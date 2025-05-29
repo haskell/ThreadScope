@@ -282,7 +282,6 @@ drawEvents EventsView{drawArea, adj}
   Just win   <- widgetGetWindow drawArea
   style <- widgetGetStyle drawArea
   focused <- widgetGetIsFocus drawArea
-  traceM "got is focus"
   let state | focused   = StateSelected
             | otherwise = StateActive
 
