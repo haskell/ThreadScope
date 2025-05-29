@@ -286,7 +286,6 @@ timelineViewNew builder actions = do
        case maybeEventArray of
          Nothing   -> return ()
          Just hecs -> do
-           traceShowM "just hecs"
            params <- timelineGetViewParameters timelineWin
            -- render either the whole height of the timeline, or the window, whichever
            -- is larger (this just ensure we fill the background if the timeline is
