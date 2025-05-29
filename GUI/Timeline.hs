@@ -24,7 +24,6 @@ module GUI.Timeline (
     timelineCentreOnCursor,
  ) where
 
-import Debug.Trace
 import GUI.Types
 import GUI.Timeline.Types
 

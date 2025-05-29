@@ -94,13 +94,6 @@ histogramViewNew builder = do
                renderWithDrawWindow win $ do
                  C.moveTo 4 20
                  showLayout layout
-               -- GtkExt.stylePaintLayout
-               --   style win
-               --   StateNormal True
-               --   (Rectangle 0 0 w windowHeight)
-               --   histogramDrawingArea ""
-               --   4 20
-               --   layout
                return ()
            | otherwise -> do
                minterval <- readIORef mintervalIORef

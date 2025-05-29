@@ -20,7 +20,6 @@ import Events.HECs
 import GUI.Types
 import GUI.ViewerColours
 import GUI.Timeline.CairoDrawing
-import Debug.Trace
 
 import Graphics.UI.Gtk hiding (rectangle)
 import Graphics.Rendering.Cairo
