@@ -1,6 +1,6 @@
 Cabal-version:       1.24
 Name:                threadscope
-Version:             0.2.14.1
+Version:             0.2.15.0
 Category:            Development, Profiling, Trace
 Synopsis:            A graphical tool for profiling parallel Haskell programs.
 Description:         ThreadScope is a graphical viewer for thread profile
@@ -64,7 +64,7 @@ Executable threadscope
                      filepath < 1.6,
                      ghc-events >= 0.13 && < 0.21,
                      containers >= 0.2 && < 0.8,
-                     deepseq >= 1.1,
+                     deepseq >= 1.1 && <1.7.0,
                      text < 2.2,
                      time >= 1.1 && < 1.15,
                      bytestring < 0.13,
