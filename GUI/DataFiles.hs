@@ -21,14 +21,9 @@ uiFile = "threadscope.ui"
 logoFile :: FilePath
 logoFile = "threadscope.png"
 
-
-
 -- | Textual representation of the UI file
 ui :: Q Exp
 ui = [| TE.decodeUtf8 $(makeRelativeToProject uiFile >>= embedFile) |]
-
-
-
 
 renderLogo :: B.ByteString -> IO (Maybe Pixbuf)
 renderLogo bytes =
