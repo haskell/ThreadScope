@@ -8,16 +8,16 @@
 
 Currently [pre-built binaries](https://github.com/haskell/ThreadScope/releases) for the following platforms are provided:
 
-* Ubuntu 18.04 (64-bit)
-* macOS 10.15
-* Windows Server 2019 (x64)
+* Ubuntu 24.04 (64-bit)
+* macOS 14.7
+* Windows Server 2022 (x64)
 
-GTK+2 needs to be installed for these binaries to work.
+GTK+3 needs to be installed for these binaries to work.
 
-On Windows, the [MSYS2](http://www.msys2.org) is the recommended way to install GTK+2. In MSYS2 MINGW64 shell:
+On Windows, the [MSYS2](http://www.msys2.org) is the recommended way to install GTK+3. In MSYS2 MINGW64 shell:
 
 ```sh
-pacman -S $MINGW_PACKAGE_PREFIX-gtk2
+pacman -S $MINGW_PACKAGE_PREFIX-gtk3
 ```
 
 then you can run the threadscope binary from the shell.
@@ -26,12 +26,14 @@ then you can run the threadscope binary from the shell.
 
 Use `git clone` or `cabal get threadscope` to get the source and move into the threadscope directory.
 
+The code for the Github Actions is a good guide for building from source.
+
 ### Linux
 
-GTK+2 is required to be installed. On Ubuntu-like systems:
+GTK+3 is required to be installed. On Ubuntu-like systems:
 
 ```sh
-sudo apt install libgtk2.0-dev
+sudo apt install libgtk-3-dev
 ```
 
 Then you can build threadscope using cabal:
@@ -53,7 +55,7 @@ stack install # to build and install the binary
 GTK+ is required:
 
 ```sh
-brew install gtk+
+brew install cairo gtk+3 pkg-config
 ```
 
 Then you can build threadscope using cabal:
@@ -72,13 +74,16 @@ stack --stack-yaml=stack.osx.yaml install # to install the binary
 
 ### Windows
 
+> [!CAUTION]
+> The Windows instructions may be out of date. Contributions to update them would be welcome.
+
 [Chocolatey](https://chocolatey.org/) can be used to install GHC and [MSYS2](https://www.msys2.org/) is the recommended way to install GTK+.
 
 ```sh
 choco install ghc
 refreshenv
 set PATH=C:\\msys64\\mingw64\\bin;C:\\msys64\\usr\\bin;%PATH%
-pacman -Sy mingw-w64-x86_64-gtk2
+pacman -Sy mingw-w64-x86_64-gtk3
 ```
 
 then you can build threadscope using cabal:
@@ -89,7 +94,7 @@ cabal v2-build
 
 Or you can use stack instead.
 
-CAVEAT: gtk2 needs to be installed twice: one for stack's MSYS2 environment and another for local MSYS2 environment.
+CAVEAT: gtk3 needs to be installed twice: one for stack's MSYS2 environment and another for local MSYS2 environment.
 
 In command prompt:
 
@@ -98,14 +103,14 @@ stack setup
 stack exec -- pacman --needed -Sy bash pacman pacman-mirrors msys2-runtime msys2-runtime-devel
 stack exec -- pacman -Syu
 stack exec -- pacman -Syuu
-stack exec -- pacman -S base-devel mingw-w64-x86_64-pkg-config mingw-w64-x86_64-toolchain mingw-w64-x86_64-gtk2
+stack exec -- pacman -S base-devel mingw-w64-x86_64-pkg-config mingw-w64-x86_64-toolchain mingw-w64-x86_64-gtk3
 stack install
 ```
 
 Then in MSYS2 MINGW64 shell:
 
 ```sh
-pacman -S $MINGW_PACKAGE_PREFIX-gtk2
+pacman -S $MINGW_PACKAGE_PREFIX-gtk3
 echo 'export PATH=$APPDATA/local/bin:$PATH' >> .profile
 source .profile
 threadscope
