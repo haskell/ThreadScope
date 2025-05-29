@@ -13,8 +13,10 @@ module GUI.EventsView (
   ) where
 
 import GHC.RTS.Events
+import Debug.Trace
 
-import Graphics.UI.Gtk
+import Graphics.UI.Gtk hiding (rectangle)
+import Graphics.Rendering.Cairo
 import qualified GUI.GtkExtras as GtkExt
 
 import Control.Monad
@@ -100,9 +102,9 @@ eventsViewNew builder EventsViewActions{..} = do
   -----------------------------------------------------------------------------
   -- Drawing
 
-  on drawArea exposeEvent $ liftIO $ do
+  on drawArea draw $ liftIO $ do
     drawEvents eventsView =<< readIORef stateRef
-    return True
+    return ()
 
   -----------------------------------------------------------------------------
   -- Key navigation
@@ -122,7 +124,7 @@ eventsViewNew builder EventsViewActions{..} = do
           return True
 
     key <- eventKeyName
-#if MIN_VERSION_gtk(0,13,0)
+#if MIN_VERSION_gtk3(0,13,0)
     case T.unpack key of
 #else
     case key of
@@ -239,7 +241,7 @@ updateScrollAdjustment :: EventsView -> ViewState -> IO ()
 updateScrollAdjustment EventsView{drawArea, adj}
                        ViewState{lineHeight, eventsState} = do
 
-  (_,windowHeight) <- widgetGetSize drawArea
+  Rectangle _ _ _ windowHeight <- widgetGetAllocation drawArea
   let numLines = case eventsState of
                    EventsEmpty             -> 0
                    EventsLoaded{eventsArr} -> snd (bounds eventsArr) + 1
@@ -276,9 +278,10 @@ drawEvents EventsView{drawArea, adj}
       begin = lower
       end   = min upper (snd (bounds eventsArr))
 
-  win   <- widgetGetDrawWindow drawArea
-  style <- get drawArea widgetStyle
-  focused <- get drawArea widgetIsFocus
+  -- TODO: don't use Just here
+  Just win   <- widgetGetWindow drawArea
+  style <- widgetGetStyle drawArea
+  focused <- widgetGetIsFocus drawArea
   let state | focused   = StateSelected
             | otherwise = StateActive
 
@@ -286,8 +289,9 @@ drawEvents EventsView{drawArea, adj}
   layout   <- layoutEmpty pangoCtx
   layoutSetEllipsize layout EllipsizeEnd
 
-  (width,clipHeight) <- widgetGetSize drawArea
-  let clipRect = Rectangle 0 0 width clipHeight
+
+  (Rectangle _ _ width _) <- widgetGetAllocation drawArea
+  let clipRect = Rectangle 0 0 0 0
 
   let -- With average char width, timeWidth is enough for 24 hours of logs
       -- (way more than TS can handle, currently). Aligns nicely with
@@ -301,36 +305,27 @@ drawEvents EventsView{drawArea, adj}
 
   sequence_
     [ do when (inside || selected) $
-           GtkExt.stylePaintFlatBox
-             style win
-             state1 ShadowNone
-             clipRect
-             drawArea ""
-             0 (round y) width (round lineHeight)
+           renderWithDrawWindow win $ do
+             -- TODO: figure out how I can grab the correct color from GTK's style
+             setSourceRGBA 0.2 1 1 0.2
+             rectangle 0 y (fromIntegral width) lineHeight
+             fill
 
          -- The event time
          layoutSetText layout (showEventTime event)
          layoutSetAlignment layout AlignRight
          layoutSetWidth layout (Just (fromIntegral timeWidth))
-         GtkExt.stylePaintLayout
-           style win
-           state2 True
-           clipRect
-           drawArea ""
-           0 (round y)
-           layout
+         renderWithDrawWindow win $ do
+           moveTo 0 y
+           showLayout layout
 
          -- The event description text
          layoutSetText layout (showEventDescr event)
          layoutSetAlignment layout AlignLeft
          layoutSetWidth layout (Just (fromIntegral descrWidth))
-         GtkExt.stylePaintLayout
-           style win
-           state2 True
-           clipRect
-           drawArea ""
-           (timeWidth + columnGap) (round y)
-           layout
+         renderWithDrawWindow win $ do
+           moveTo (fromIntegral $ timeWidth + columnGap) y
+           showLayout layout
 
     | n <- [begin..end]
     , let y = fromIntegral n * lineHeight - yOffset

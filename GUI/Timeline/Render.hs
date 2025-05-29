@@ -53,6 +53,8 @@ import Data.IORef
 import Control.Monad
 import qualified Data.Text as T
 
+import qualified Graphics.UI.Gtk.Cairo as C
+
 -------------------------------------------------------------------------------
 
 -- | This function redraws the currently visible part of the
@@ -61,20 +63,19 @@ import qualified Data.Text as T
 renderView :: TimelineState
            -> ViewParameters
            -> HECs -> TimeSelection -> [Timestamp]
-           -> Region -> IO ()
+           -> Rectangle -> IO ()
 renderView TimelineState{timelineDrawingArea, timelineVAdj, timelinePrevView}
-           params hecs selection bookmarks exposeRegion = do
+           params hecs selection bookmarks rect = do
 
   -- Get state information from user-interface components
-  (w, _) <- widgetGetSize timelineDrawingArea
+  Rectangle _ _ w _ <- widgetGetAllocation timelineDrawingArea
   vadj_value <- adjustmentGetValue timelineVAdj
 
   prev_view <- readIORef timelinePrevView
 
-  rect <- regionGetClipbox exposeRegion
-
-  win <- widgetGetDrawWindow timelineDrawingArea
-  renderWithDrawable win $ do
+  -- TODO: get rid of this Just
+  Just win <- widgetGetWindow timelineDrawingArea
+  renderWithDrawWindow win $ do
 
     let renderToNewSurface = do
           new_surface <- withTargetSurface $ \surface ->
@@ -113,7 +114,7 @@ renderView TimelineState{timelineDrawingArea, timelineVAdj, timelinePrevView}
 
     liftIO $ writeIORef timelinePrevView (Just (params, surface))
 
-    region exposeRegion
+    C.rectangle rect
     clip
     setSourceSurface surface 0 (-vadj_value)
             -- ^^ this is where we adjust for the vertical scrollbar
@@ -319,15 +320,16 @@ scrollView surface old new hecs = do
 -- and not only the newly exposed area. This is comparatively very cheap.
 updateXScaleArea :: TimelineState -> Timestamp -> IO ()
 updateXScaleArea TimelineState{..} lastTx = do
-  win <- widgetGetDrawWindow timelineXScaleArea
-  (width, _) <- widgetGetSize timelineDrawingArea
-  (_, xScaleAreaHeight) <- widgetGetSize timelineXScaleArea
+  -- TODO: get rid of this Just
+  Just win <- widgetGetWindow timelineXScaleArea
+  Rectangle _ _ width _ <- widgetGetAllocation timelineDrawingArea
+  Rectangle _ _ _ xScaleAreaHeight <- widgetGetAllocation timelineXScaleArea
   scaleValue <- readIORef scaleIORef
   -- Snap the view to whole pixels, to avoid blurring.
   hadjValue0 <- adjustmentGetValue timelineAdj
   let hadjValue = toWholePixels scaleValue hadjValue0
       off y = y + xScaleAreaHeight - 17
-  renderWithDrawable win $
+  renderWithDrawWindow win $
     renderXScale scaleValue hadjValue lastTx width off XScaleTime
   return ()
 
@@ -341,7 +343,7 @@ renderYScaleArea ViewParameters{maxSpkValue, labelsMode, viewTraces,
                  hecs yScaleArea = do
   let maxP = maxSparkPool hecs
       maxH = fromIntegral $ maxYHistogram hecs
-  (xoffset, _) <- liftIO $ widgetGetSize yScaleArea
+  Rectangle _ _ xoffset _ <- liftIO $ widgetGetAllocation yScaleArea
   drawYScaleArea
     maxSpkValue maxP maxH minterval (fromIntegral xoffset) 0
     labelsMode histogramHeight viewTraces yScaleArea
@@ -352,11 +354,12 @@ updateYScaleArea :: TimelineState -> Double -> Double -> Maybe Interval
                  -> Bool -> [Trace] -> IO ()
 updateYScaleArea TimelineState{..} maxSparkPool maxYHistogram minterval
                  labelsMode traces = do
-  win <- widgetGetDrawWindow timelineYScaleArea
+  -- TODO: get rid of this Just
+  Just win <- widgetGetWindow timelineYScaleArea
   maxSpkValue  <- readIORef maxSpkIORef
   vadj_value   <- adjustmentGetValue timelineVAdj
-  (xoffset, _) <- widgetGetSize timelineYScaleArea
-  renderWithDrawable win $
+  Rectangle _ _ xoffset _ <- widgetGetAllocation timelineYScaleArea
+  renderWithDrawWindow win $
     drawYScaleArea maxSpkValue maxSparkPool maxYHistogram minterval
       (fromIntegral xoffset) vadj_value labelsMode stdHistogramHeight traces
       timelineYScaleArea
@@ -393,7 +396,7 @@ drawSingleYScale maxSpkValue maxSparkPool maxYHistogram minterval xoffset
     -- Note: the following does not always work, see the HACK in Timeline.hs
     layoutSetAttributes layout [AttrSize minBound maxBound 8,
                                 AttrFamily minBound maxBound
-#if MIN_VERSION_gtk(0,13,0)
+#if MIN_VERSION_gtk3(0,13,0)
                                   (T.pack "sans serif")]
 #else
                                   "sans serif"]

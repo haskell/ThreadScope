@@ -24,7 +24,8 @@ keyViewNew builder = do
 
     keyTreeView <- builderGetObject builder castToTreeView "key_list"
 
-    dw <- widgetGetDrawWindow keyTreeView
+    -- TODO: get rid of this Just
+    Just dw <- widgetGetWindow keyTreeView
     keyEntries  <- createKeyEntries dw keyData
 
     keyStore    <- listStoreNew keyEntries
@@ -113,7 +114,7 @@ keyData =
   ]
 
 
-createKeyEntries :: DrawableClass dw
+createKeyEntries :: DrawWindowClass dw
                  => dw
                  -> [(String, KeyStyle, Color,String)]
                  -> IO [(String, String, Pixbuf)]
@@ -165,12 +166,11 @@ renderKEvent keyColour = do
   C.relLineTo 0 25
   C.stroke
 
-renderToPixbuf :: DrawableClass dw => dw -> (Int, Int) -> C.Render ()
+renderToPixbuf :: DrawWindowClass dw => dw -> (Int, Int) -> C.Render ()
                -> IO Pixbuf
 renderToPixbuf similar (w, h) draw = do
-  pixmap <- pixmapNew (Just similar) w h Nothing
-  renderWithDrawable pixmap draw
-  Just pixbuf <- pixbufGetFromDrawable pixmap (Rectangle 0 0 w h)
+  renderWithDrawWindow similar draw
+  pixbuf <- pixbufNewFromWindow similar 0 0 w h
   return pixbuf
 
 -------------------------------------------------------------------------------

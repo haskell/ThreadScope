@@ -68,7 +68,7 @@ zoomToFit TimelineState{scaleIORef, maxSpkIORef,timelineAdj,
       let lastTx = hecLastEventTime hecs
           upper = fromIntegral lastTx
           lower = 0
-      (w, _) <- widgetGetSize timelineDrawingArea
+      Rectangle _ _ w _ <- widgetGetAllocation timelineDrawingArea
       let newScaleValue = upper / fromIntegral w
           (sliceAll, profAll) = treesProfile newScaleValue 0 lastTx hecs
           -- TODO: verify that no empty lists possible below
