@@ -42,10 +42,11 @@ Tested-with:         GHC == 8.8.4
                      GHC == 9.0.2
                      GHC == 9.2.8
                      GHC == 9.4.8
-                     GHC == 9.6.6
+                     GHC == 9.6.7
                      GHC == 9.8.4
-                     GHC == 9.10.1
-                     GHC == 9.12.1
+                     GHC == 9.10.3
+                     GHC == 9.12.2
+                     GHC == 9.14.1
 
 source-repository head
   type:     git
@@ -62,16 +63,16 @@ Executable threadscope
                      array < 0.6,
                      mtl < 2.4,
                      filepath < 1.6,
-                     ghc-events >= 0.13 && < 0.21,
-                     containers >= 0.2 && < 0.8,
+                     ghc-events >= 0.13 && < 0.22,
+                     containers >= 0.2 && < 0.9,
                      deepseq >= 1.1 && <1.7.0,
                      text < 2.2,
-                     time >= 1.1 && < 1.15,
+                     time >= 1.1 && < 1.17,
                      bytestring < 0.13,
                      file-embed < 0.1,
-                     template-haskell < 2.24,
+                     template-haskell < 2.25,
                      temporary >= 1.1 && < 1.4,
-                     transformers <0.6.3
+                     transformers <0.6.4
 
   include-dirs:      include
   default-extensions: RecordWildCards, NamedFieldPuns, BangPatterns, PatternGuards
