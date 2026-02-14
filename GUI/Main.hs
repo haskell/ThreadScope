@@ -350,37 +350,21 @@ eventLoop uienv@UIEnv{..} eventlogState = do
     dispatch (EventCursorChangedIndex cursorPos') EventlogLoaded{hecs} = do
       let cursorTs'  = eventIndexToTimestamp hecs cursorPos'
           selection' = PointSelection cursorTs'
-      timelineSetSelection timelineWin selection'
-      eventsViewSetCursor eventsView  cursorPos' Nothing
-      continueWith eventlogState {
-        selection = selection',
-        cursorPos = cursorPos'
-      }
+      mselection <- timelineSetSelection timelineWin selection'
+      setSelection cursorPos' Nothing mselection
 
     dispatch (EventCursorChangedSelection selection'@(PointSelection cursorTs'))
              EventlogLoaded{hecs} = do
       let cursorPos' = timestampToEventIndex hecs cursorTs'
-      timelineSetSelection timelineWin selection'
-      eventsViewSetCursor eventsView cursorPos' Nothing
-      histogramViewSetInterval histogramView Nothing
-      summaryViewSetInterval summaryView Nothing
-      continueWith eventlogState {
-        selection = selection',
-        cursorPos = cursorPos'
-      }
+      mselection <- timelineSetSelection timelineWin selection'
+      setSelection cursorPos' Nothing mselection
 
     dispatch (EventCursorChangedSelection selection'@(RangeSelection start end))
              EventlogLoaded{hecs} = do
       let cursorPos' = timestampToEventIndex hecs start
           mrange = Just (cursorPos', timestampToEventIndex hecs end)
-      timelineSetSelection timelineWin selection'
-      eventsViewSetCursor eventsView cursorPos' mrange
-      histogramViewSetInterval histogramView (Just (start, end))
-      summaryViewSetInterval summaryView (Just (start, end))
-      continueWith eventlogState {
-        selection = selection',
-        cursorPos = cursorPos'
-      }
+      mselection <- timelineSetSelection timelineWin selection'
+      setSelection cursorPos' mrange mselection
 
     dispatch (EventTracesChanged traces) _ = do
       timelineWindowSetTraces timelineWin traces
@@ -434,6 +418,24 @@ eventLoop uienv@UIEnv{..} eventlogState = do
 
     async doing action =
       forkIO (action `catch` \e -> post (EventUserError doing e))
+
+    setSelection cursorPos' _ (Just selection'@(PointSelection _)) = do
+      eventsViewSetCursor eventsView cursorPos' Nothing
+      histogramViewSetInterval histogramView Nothing
+      summaryViewSetInterval summaryView Nothing
+      continueWith eventlogState {
+        selection = selection',
+        cursorPos = cursorPos'
+      }
+    setSelection cursorPos' mrange (Just selection'@(RangeSelection start end)) = do
+      eventsViewSetCursor eventsView cursorPos' mrange
+      histogramViewSetInterval histogramView (Just (start, end))
+      summaryViewSetInterval summaryView (Just (start, end))
+      continueWith eventlogState {
+        selection = selection',
+        cursorPos = cursorPos'
+      }
+    setSelection _ _ Nothing = continue
 
     post = postEvent eventQueue
     continue = continueWith eventlogState

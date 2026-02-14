@@ -331,7 +331,7 @@ drawEvents EventsView{drawArea, adj}
           selected = cursorPos == n
           (state1, state2)
             | inside    = (StateSelected, StateSelected)
-            | selected  = (state, state)
+            | selected  = (StateSelected, state)
             | otherwise = (state, StateNormal)
     ]
 
