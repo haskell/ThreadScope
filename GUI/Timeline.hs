@@ -36,6 +36,7 @@ import Events.HECs
 import Graphics.UI.Gtk
 
 import Data.IORef
+import Data.Ord
 import Control.Monad
 import Control.Monad.Trans
 import qualified Data.Text as T
@@ -384,10 +385,25 @@ updateTimelineHPageSize TimelineState{..} = do
 -------------------------------------------------------------------------------
 -- Cursor / selection and mouse interaction
 
-timelineSetSelection :: TimelineView -> TimeSelection -> IO ()
+timelineSetSelection :: TimelineView -> TimeSelection -> IO (Maybe TimeSelection)
 timelineSetSelection TimelineView{..} selection = do
-  writeIORef selectionRef selection
-  queueRedrawTimelines timelineState
+  mhecs <- readIORef hecsIORef
+  case mhecs >>= (adjustSelection selection . hecLastEventTime) of
+    Nothing -> return Nothing
+    Just selection' -> do
+      writeIORef selectionRef selection'
+      queueRedrawTimelines timelineState
+      return $ Just selection'
+  where
+    -- Prevent selections that are out of bounds.
+    adjustSelection (PointSelection timestamp) lastTx
+      | timestamp < 0 || timestamp > lastTx = Nothing
+      | otherwise = Just $ PointSelection timestamp
+    adjustSelection (RangeSelection start end) lastTx
+      | start < 0 && end < 0 || start > lastTx && end > lastTx = Nothing
+      | otherwise = Just $ RangeSelection (clampSelection lastTx start) (clampSelection lastTx end)
+
+    clampSelection lastTx = clamp (0, lastTx)
 
 -- little state machine
 data MouseState = None
@@ -402,8 +418,10 @@ mousePress view@TimelineView{..} state button x =
   case (state, button) of
     (None, LeftButton)   -> do xv <- viewPointToTime view x
                                -- update the view without notifying the client
-                               timelineSetSelection view (PointSelection xv)
-                               return (PressLeft x)
+                               selection <- timelineSetSelection view (PointSelection xv)
+                               case selection of
+                                 Nothing -> return None
+                                 Just _ -> return (PressLeft x)
     (None, MiddleButton) -> do widgetSetCursor timelineDrawingArea (Just cursorMove)
                                v <- adjustmentGetValue timelineAdj
                                return (DragMiddle x v)
@@ -424,8 +442,10 @@ mouseMove view@TimelineView{..} state x =
         dragThreshold = abs (x - x0) > 5
     DragLeft  x0      -> do (xv, xv') <- viewRangeToTimeRange view (x0, x)
                             -- update the view without notifying the client
-                            timelineSetSelection view (RangeSelection xv xv')
-                            return (DragLeft x0)
+                            selection <- timelineSetSelection view (RangeSelection xv xv')
+                            case selection of
+                              Nothing -> return None
+                              Just _ -> return (DragLeft x0)
     DragMiddle x0 v   -> do xv  <- viewPointToTimeNoClamp view x
                             xv' <- viewPointToTimeNoClamp view x0
                             scrollTo timelineState (v + (xv' - xv))
