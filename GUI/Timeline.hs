@@ -34,7 +34,6 @@ import GUI.Timeline.Render.Constants
 import Events.HECs
 
 import Graphics.UI.Gtk
-import Graphics.Rendering.Cairo ( liftIO )
 
 import Data.IORef
 import Control.Monad
@@ -74,6 +73,7 @@ timelineSetLabelsMode :: TimelineView -> Bool -> IO ()
 timelineSetLabelsMode timelineWin labelsMode = do
   writeIORef (labelsModeIORef timelineWin) labelsMode
   widgetQueueDraw (timelineDrawingArea (timelineState timelineWin))
+  updateTimelineVScroll timelineWin
 
 timelineGetViewParameters :: TimelineView -> IO ViewParameters
 timelineGetViewParameters TimelineView{tracesIORef, bwmodeIORef, labelsModeIORef,
