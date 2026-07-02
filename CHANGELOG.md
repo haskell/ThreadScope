@@ -1,5 +1,9 @@
 # Revision history for threadscope
 
+## 2025-07-02 - v0.2.15.1
+* Fix a variety of UI bugs (Thanks @TuongNM!) ([#147](https://github.com/haskell/ThreadScope/pull/147))), ([#146](https://github.com/haskell/ThreadScope/pull/146))), ([#145](https://github.com/haskell/ThreadScope/pull/145)))
+* Build with GHC-9.14 (modulo an upstream bug with gtk2hs) ([#144](https://github.com/haskell/ThreadScope/pull/144)))
+
 ## 2025-05-29 - v0.2.15.0
 * Switch to GTK3 ([#137](https://github.com/haskell/ThreadScope/pull/137)))
 * Support new versions of GHC up to 9.12 and dependencies.
