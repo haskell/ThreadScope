@@ -1,3 +1,10 @@
 -- see http://cabal.readthedocs.io/en/latest/nix-local-build-overview.html for more information
 
 packages: .
+
+-- See: https://github.com/gtk2hs/gtk2hs/pull/349
+source-repository-package
+  type: git
+  location: https://github.com/TuongNM/gtk2hs
+  tag: 16c4adcf5ec20dd7e0e52bf613249df5f43bffdb
+  subdir: ./glib ./cairo ./pango ./gtk ./gio
